@@ -1,5 +1,6 @@
-import React, { memo, useEffect, useMemo } from "react"
-import { useThree } from "@react-three/fiber"
+import React, { memo, useEffect, useMemo, useRef } from "react"
+import { useFrame, useThree } from "@react-three/fiber"
+import * as THREE from "three"
 
 import type { MemoryMesh, MemoryMeshEdge } from "../../../types/memory"
 import { resolveNodeColor } from "../../../utils/mesh/colors.util"
@@ -16,11 +17,18 @@ export const MemoryMesh3DPreviewScene: React.FC<
   MemoryMesh3DPreviewSceneProps
 > = ({ meshData, highlightedNodes = new Set(), pulseIntensity = 0 }) => {
   const { camera } = useThree()
+  const groupRef = useRef<THREE.Group>(null)
 
   useEffect(() => {
     camera.position.set(0, 0, 3.5)
     camera.lookAt(0, 0, 0)
   }, [camera])
+
+  useFrame((_, delta) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.1
+    }
+  })
 
   const nodes = useMemo(() => {
     if (!meshData?.nodes?.length) return []
@@ -145,7 +153,7 @@ export const MemoryMesh3DPreviewScene: React.FC<
       <directionalLight position={[-10, -10, -8]} intensity={0.4} />
       <pointLight position={[0, 0, 0]} intensity={0.5} color="#ffffff" />
 
-      <group>
+      <group ref={groupRef}>
         {nodes.map((node) => (
           <MemoryMesh3DPreviewNode
             key={node.id}

@@ -46,6 +46,12 @@ export interface StaticProfile {
     information_processing?: string
     creativity_level?: string
   }
+  personal_narrative?: {
+    who?: string
+    why?: string
+    what?: string
+    how?: string
+  }
 }
 
 export interface DynamicProfile {

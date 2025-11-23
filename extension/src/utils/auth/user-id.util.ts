@@ -1,4 +1,4 @@
-import { storage, cookies } from './browser'
+import { storage, cookies } from '@/lib/browser'
 import { env } from '@/utils/core/env.util'
 
 export function getAuthenticatedUserId(): string | null {

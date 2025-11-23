@@ -1,5 +1,7 @@
-export const DEFAULT_API_ENDPOINT = 'http://localhost:3000/api/memory/process'
-export const DEFAULT_API_BASE = 'http://localhost:3000'
+import { env } from './env.util'
+
+export const DEFAULT_API_ENDPOINT = env.API_ENDPOINT
+export const DEFAULT_API_BASE = env.API_BASE_URL
 export const MIN_CAPTURE_INTERVAL = 10000
 export const ACTIVITY_TIMEOUT = 30000
 export const CONTENT_CHANGE_THRESHOLD = 0.1

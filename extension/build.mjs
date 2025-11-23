@@ -5,7 +5,8 @@ import { resolve } from 'node:path'
 import postcss from 'postcss'
 import tailwindcss from 'tailwindcss'
 import autoprefixer from 'autoprefixer'
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile, access } from 'node:fs/promises'
+import { constants } from 'node:fs'
 
 const rootDir = resolve(process.cwd())
 const srcDir = resolve(rootDir, 'src')
@@ -38,6 +39,32 @@ async function copyPublic() {
   }
 }
 
+async function loadEnvFile() {
+  const envPath = resolve(rootDir, '.env')
+  const env = {}
+
+  try {
+    await access(envPath, constants.F_OK)
+    const envContent = await readFile(envPath, 'utf-8')
+    const lines = envContent.split('\n')
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+
+      const match = trimmed.match(/^([^=]+)=(.*)$/)
+      if (match) {
+        const [, key, value] = match
+        env[key.trim()] = value.trim().replace(/^["']|["']$/g, '')
+      }
+    }
+  } catch {
+    // .env file doesn't exist, use defaults
+  }
+
+  return env
+}
+
 async function buildCSS() {
   const cssFile = resolve(srcDir, 'styles/index.css')
   const cssContent = await readFile(cssFile, 'utf-8')
@@ -51,11 +78,26 @@ async function buildCSS() {
 }
 
 async function buildScripts(watch = false) {
+  const envVars = await loadEnvFile()
+  const nodeEnv = process.env.NODE_ENV || envVars.NODE_ENV || 'development'
+
+  const define = {
+    'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+    'import.meta.env.NODE_ENV': JSON.stringify(nodeEnv),
+  }
+
+  for (const [key, value] of Object.entries(envVars)) {
+    if (key.startsWith('EXT_')) {
+      define[`import.meta.env.${key}`] = JSON.stringify(value)
+    }
+    define[`process.env.${key}`] = JSON.stringify(value)
+  }
+
   const options = {
     entryPoints: [
-      resolve(srcDir, 'background.ts'),
-      resolve(srcDir, 'content.ts'),
-      resolve(srcDir, 'popup.tsx'),
+      resolve(srcDir, 'background/index.ts'),
+      resolve(srcDir, 'content/index.ts'),
+      resolve(srcDir, 'popup/index.tsx'),
     ],
     outdir: outDir,
     bundle: true,
@@ -63,14 +105,12 @@ async function buildScripts(watch = false) {
     platform: 'browser',
     sourcemap: true,
     target: ['chrome120'],
-    minify: process.env.NODE_ENV === 'production',
+    minify: nodeEnv === 'production',
     splitting: false,
     jsx: 'automatic',
     jsxImportSource: 'react',
     external: [],
-    define: {
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    },
+    define,
   }
 
   if (watch) {

@@ -1,5 +1,7 @@
 import React from "react"
 
+import { Navbar } from "./Navbar"
+
 export const Header: React.FC = () => {
   return (
     <header className="fixed top-0 inset-x-0 z-40 py-3 sm:py-4 lg:py-5 relative">
@@ -33,20 +35,23 @@ export const Header: React.FC = () => {
         ))}
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-          <img
-            src="/black-transparent.png"
-            alt="Cognia"
-            className="w-8 h-8 sm:w-10 sm:h-10"
-          />
-          <div className="flex flex-col">
-            <span className="text-lg sm:text-xl font-bold text-italics font-editorial text-black">
-              Cognia
-            </span>
-            <span className="text-[10px] sm:text-xs text-gray-600 font-mono -mt-0.5 sm:-mt-1">
-              We Remember What The Web Showed You
-            </span>
+        <div className="flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+            <img
+              src="/black-transparent.png"
+              alt="Cognia"
+              className="w-8 h-8 sm:w-10 sm:h-10"
+            />
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl font-bold text-italics font-editorial text-black">
+                Cognia
+              </span>
+              <span className="text-[10px] sm:text-xs text-gray-600 font-mono -mt-0.5 sm:-mt-1">
+                We Remember What The Web Showed You
+              </span>
+            </div>
           </div>
+          <Navbar />
         </div>
       </div>
     </header>

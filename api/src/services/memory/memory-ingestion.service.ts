@@ -43,6 +43,7 @@ type CanonicalizationResult = {
 
 type MemoryCreatePayload = {
   userId: string
+  apiKeyId?: string | null
   title?: string | null
   url?: string | null
   source?: string | null
@@ -243,6 +244,7 @@ export class MemoryIngestionService {
 
     return {
       user: { connect: { id: payload.userId } },
+      ...(payload.apiKeyId ? { api_key: { connect: { id: payload.apiKeyId } } } : {}),
       source: (metadata.source as string | undefined) || payload.source || 'extension',
       url,
       title,

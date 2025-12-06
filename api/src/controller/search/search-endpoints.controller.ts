@@ -57,8 +57,10 @@ export class SearchEndpointsController {
         })
       }
 
+      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
       const searchResults = await searchMemories({
         userId: user.id,
+        apiKeyId,
         query: query as string,
         limit: parseInt(limit as string),
         enableReasoning: true,
@@ -176,11 +178,13 @@ export class SearchEndpointsController {
 
       const preFilteredMemoryIds = preFilteredMemories.map(m => m.id)
 
+      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
       const searchResults = await memoryMeshService.searchMemories(
         user.id,
         query as string,
         parseInt(limit as string),
-        preFilteredMemoryIds
+        preFilteredMemoryIds,
+        apiKeyId
       )
 
       let filteredResults = searchResults
@@ -351,7 +355,8 @@ export class SearchEndpointsController {
           user.id,
           query as string,
           parseInt(limit as string) * 2,
-          preFilteredMemoryIds
+          preFilteredMemoryIds,
+          req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
         ),
       ])
 

@@ -7,6 +7,7 @@ import profileRouter from './profile.route'
 import exportImportRouter from './export-import.route'
 import privacyRouter from './privacy.route'
 import adminRouter from './admin.route'
+import apiKeyRouter from './api-key.route'
 
 export const routes = (app: Express) => {
   app.use('/api/memory', memoryRouter)
@@ -18,4 +19,5 @@ export const routes = (app: Express) => {
   app.use('/api/export', exportImportRouter)
   app.use('/api/privacy', privacyRouter)
   app.use('/api/admin', adminRouter)
+  app.use('/api/api-keys', apiKeyRouter)
 }

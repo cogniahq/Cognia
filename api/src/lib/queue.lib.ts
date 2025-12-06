@@ -13,6 +13,7 @@ import { getRedisClient } from './redis.lib'
 export interface ContentJobData {
   user_id: string
   raw_text: string
+  api_key_id?: string
   metadata?: {
     url?: string
     timestamp?: number

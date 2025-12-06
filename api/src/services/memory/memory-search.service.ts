@@ -43,6 +43,7 @@ export { withTimeout }
 
 export async function searchMemories(params: {
   userId: string
+  apiKeyId?: string | null
   query: string
   limit?: number
   enableReasoning?: boolean
@@ -61,6 +62,7 @@ export async function searchMemories(params: {
 }> {
   const {
     userId,
+    apiKeyId,
     query,
     limit,
     enableReasoning = process.env.SEARCH_ENABLE_REASONING !== 'false',
@@ -118,8 +120,15 @@ export async function searchMemories(params: {
     }
   }
 
+  const whereClause: { user_id: string; api_key_id?: string | null } = { user_id: user.id }
+  if (apiKeyId) {
+    whereClause.api_key_id = apiKeyId
+  } else if (apiKeyId === null) {
+    whereClause.api_key_id = null
+  }
+
   const userMemories = await prisma.memory.findMany({
-    where: { user_id: user.id },
+    where: whereClause,
     select: { id: true },
   })
 

@@ -623,6 +623,7 @@ export class MemoryMeshService {
 
   async getMemoryMesh(
     userId?: string,
+    apiKeyId?: string | null,
     limit: number = 50,
     similarityThreshold: number = 0.4
   ): Promise<{
@@ -630,8 +631,15 @@ export class MemoryMeshService {
     edges: MemoryEdge[]
   }> {
     try {
+      const whereClause: { user_id?: string; api_key_id?: string | null } = userId
+        ? { user_id: userId }
+        : {}
+      if (apiKeyId !== undefined) {
+        whereClause.api_key_id = apiKeyId
+      }
+
       const queryOptions: {
-        where: { user_id?: string } | Record<string, never>
+        where: { user_id?: string; api_key_id?: string | null } | Record<string, never>
         select: {
           id: boolean
           title: boolean
@@ -647,7 +655,7 @@ export class MemoryMeshService {
         orderBy: { created_at: 'desc' }
         take?: number
       } = {
-        where: userId ? { user_id: userId } : {},
+        where: whereClause,
         select: {
           id: true,
           title: true,
@@ -1016,7 +1024,8 @@ export class MemoryMeshService {
     userId: string,
     query: string,
     limit: number = 10,
-    preFilteredMemoryIds?: string[]
+    preFilteredMemoryIds?: string[],
+    apiKeyId?: string | null
   ): Promise<MemoryRelation[]> {
     try {
       let queryEmbedding: number[] | null = null
@@ -1035,6 +1044,10 @@ export class MemoryMeshService {
 
         const filter: QdrantFilter = {
           must: [{ key: 'user_id', match: { value: userId } }],
+        }
+
+        if (apiKeyId !== undefined) {
+          filter.must.push({ key: 'api_key_id', match: { value: apiKeyId || null } })
         }
 
         if (preFilteredMemoryIds && preFilteredMemoryIds.length > 0) {

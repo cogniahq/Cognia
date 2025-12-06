@@ -26,6 +26,7 @@ model User {
   profile          UserProfile?
   browsing_summaries BrowsingSummary[]
   audit_logs       AuditLog[]
+  api_keys         ApiKey[]
 
   @@map("users")
 }
@@ -52,6 +53,7 @@ model AuditLog {
 model Memory {
   id                     String               @id @default(uuid()) @db.Uuid
   user_id                String               @db.Uuid
+  api_key_id             String?              @db.Uuid
   source                 String
   url                    String?
   title                  String?
@@ -68,6 +70,7 @@ model Memory {
   access_count           Int                  @default(0)
   last_accessed          DateTime             @default(now())
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  api_key                ApiKey?              @relation(fields: [api_key_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
   query_related_memories QueryRelatedMemory[]
@@ -75,6 +78,7 @@ model Memory {
   @@index([user_id])
   @@index([created_at])
   @@index([user_id, created_at])
+  @@index([user_id, api_key_id])
   @@index([canonical_hash])
   @@index([url])
   @@index([memory_type])
@@ -200,5 +204,31 @@ model BrowsingSummary {
   @@index([user_id, period_type])
   @@index([user_id, period_type, period_start])
   @@map("browsing_summaries")
+}
+
+model ApiKey {
+  id                String    @id @default(uuid()) @db.Uuid
+  user_id           String    @db.Uuid
+  key_hash          String
+  key_prefix        String
+  name              String
+  description       String?
+  memory_isolation  Boolean   @default(false)
+  rate_limit        Int?
+  rate_limit_window Int?
+  expires_at        DateTime?
+  is_active         Boolean   @default(true)
+  last_used_at      DateTime?
+  usage_count       Int       @default(0)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  memories          Memory[]
+
+  @@index([user_id])
+  @@index([key_hash])
+  @@index([is_active])
+  @@index([expires_at])
+  @@map("api_keys")
 }
 

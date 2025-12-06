@@ -27,9 +27,12 @@ export class ContentController {
         return next(new AppError('raw_text, content, or text is required', 400))
       }
 
+      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
+
       const jobData: ContentJobData = {
         user_id,
         raw_text: raw_text.trim(),
+        api_key_id: apiKeyId,
         metadata: {
           ...(metadata || {}),
           ...(url ? { url } : {}),
@@ -56,9 +59,17 @@ export class ContentController {
       const limitNum = Math.min(limit, 100)
       const skip = (page - 1) * limitNum
 
+      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
+      const whereClause: { user_id: string; api_key_id?: string | null } = { user_id: userId }
+      if (apiKeyId) {
+        whereClause.api_key_id = apiKeyId
+      } else if (req.apiKey) {
+        whereClause.api_key_id = null
+      }
+
       const [memories, total] = await Promise.all([
         prisma.memory.findMany({
-          where: { user_id: userId },
+          where: whereClause,
           select: {
             id: true,
             title: true,
@@ -72,7 +83,7 @@ export class ContentController {
           take: limitNum,
         }),
         prisma.memory.count({
-          where: { user_id: userId },
+          where: whereClause,
         }),
       ])
 

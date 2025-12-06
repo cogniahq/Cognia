@@ -46,7 +46,7 @@ export const startContentWorker = () => {
 
       await ensureNotCancelled()
 
-      const { user_id, raw_text, metadata } = job.data as ContentJobData
+      const { user_id, raw_text, api_key_id, metadata } = job.data as ContentJobData
       const baseUrl =
         typeof metadata?.url === 'string' && metadata.url.trim() !== ''
           ? (metadata.url as string).trim()
@@ -167,6 +167,7 @@ export const startContentWorker = () => {
           }
           const memoryCreateInput = memoryIngestionService.buildMemoryCreatePayload({
             userId: user_id,
+            apiKeyId: api_key_id,
             title: memoryTitle,
             url: baseUrl,
             source: (metadata?.source as string | undefined) || undefined,

@@ -57,9 +57,11 @@ export class EmailController {
 
       const profileContext = await profileUpdateService.getProfileContext(userId)
 
+      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
       const searchQuery = userMessage ? `${thread} ${userMessage}` : thread
       const searchResults = await searchMemories({
         userId,
+        apiKeyId,
         query: searchQuery,
         limit: 5,
         contextOnly: true,

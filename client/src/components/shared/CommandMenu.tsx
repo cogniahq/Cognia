@@ -5,6 +5,7 @@ import {
   BookOpen,
   Brain,
   Calendar,
+  Key,
   RefreshCw,
   Search,
   User,
@@ -177,6 +178,10 @@ const CommandMenuComponent = () => {
               <BookOpen className="mr-2 h-4 w-4" />
               <span>Documentation</span>
               <CommandShortcut>⌘D</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => handleSelect(() => navigate("/api-keys"))}>
+              <Key className="mr-2 h-4 w-4" />
+              <span>API Keys</span>
             </CommandItem>
             <CommandItem
               onSelect={() => {

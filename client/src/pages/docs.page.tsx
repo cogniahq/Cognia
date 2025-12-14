@@ -770,170 +770,127 @@ export const Docs = () => {
             </section>
 
             <section id="api-reference">
-              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-gray-200 pb-2">
+              <h2 className="text-2xl font-light font-editorial mb-6 border-b border-border pb-2 text-foreground">
                 API Reference
               </h2>
-              <div className="space-y-4">
-                <p className="text-gray-700">
-                  If you want to build something cool with Cognia, we have an
-                  API that lets you access all your memories and use Cognia's
-                  features programmatically.
-                </p>
+              <div className="space-y-10">
+                <div className="prose prose-sm max-w-none text-muted-foreground">
+                  <p>
+                    Cognia provides a REST API to programmatically interact with your memory mesh.
+                    All API requests must be authenticated using an API Key.
+                  </p>
+                  <div className="not-prose mt-4">
+                    <InfoBox type="info">
+                      You can generate an API Key from the <strong>Developer</strong> tab in the navigation menu.
+                    </InfoBox>
+                  </div>
+                </div>
 
-                <h3 className="text-lg font-medium">Core Endpoints</h3>
-                <div className="space-y-3">
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Memory Management</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>POST /api/memory/process</code> - Process new
-                        content (requires auth token)
-                      </p>
-                      <p>
-                        <code>GET /api/memory/user/recent</code> - Get recent
-                        memories (query: count)
-                      </p>
-                      <p>
-                        <code>GET /api/memory/user/count</code> - Get memory
-                        count
-                      </p>
-                      <p>
-                        <code>DELETE /api/memory/:memoryId</code> - Delete a
-                        memory
-                      </p>
+                <div className="space-y-4">
+                  <h3 className="text-xl font-medium text-foreground">Authentication</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Include your API Key in the <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono text-xs">Authorization</code> header of every request.
+                  </p>
+                  <div className="bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800 shadow-sm">
+                    <div className="px-4 py-2 bg-zinc-900/50 border-b border-zinc-800 flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                      <span className="ml-2 text-xs text-zinc-500 font-mono">Header</span>
                     </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Search & AI</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>GET /api/memory/search</code> - Semantic search
-                        with AI answers (query: query, limit)
-                      </p>
-                      <p>
-                        <code>GET /api/memory/search-embeddings</code> -
-                        Semantic-only search (query: query, limit, category,
-                        topic, sentiment, source, dateRange, page)
-                      </p>
-                      <p>
-                        <code>GET /api/memory/search-hybrid</code> - Hybrid
-                        search combining keyword and semantic (query: query,
-                        limit, filters, page)
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Memory Mesh</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>GET /api/memory/mesh</code> - Get memory mesh
-                        graph (query: limit, threshold)
-                      </p>
-                      <p>
-                        <code>GET /api/memory/relations/:memoryId</code> - Get
-                        memory with relations
-                      </p>
-                      <p>
-                        <code>GET /api/memory/cluster/:memoryId</code> - Get
-                        memory cluster (query: depth)
-                      </p>
-                      <p>
-                        <code>POST /api/memory/process-mesh/:memoryId</code> -
-                        Process memory for mesh
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Analytics</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>GET /api/analytics</code> - Get analytics data
-                        (memory stats, topics, categories)
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Profile</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>GET /api/profile</code> - Get user profile
-                      </p>
-                      <p>
-                        <code>POST /api/profile/refresh</code> - Refresh user
-                        profile
-                      </p>
-                      <p>
-                        <code>GET /api/profile/context</code> - Get profile
-                        context for AI operations
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Privacy</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>GET /api/privacy/audit-logs</code> - Get audit
-                        logs (query: eventType, eventCategory, domain, limit,
-                        offset, startDate, endDate)
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-3">
-                    <h4 className="font-medium text-sm">Email Drafting</h4>
-                    <div className="text-xs text-gray-600 mt-1 space-y-1">
-                      <p>
-                        <code>POST /api/content/email/draft</code> - Generate
-                        AI-powered email reply (body: thread, context)
-                      </p>
+                    <div className="p-4 overflow-x-auto">
+                      <pre className="text-sm font-mono text-zinc-50">
+                        <code>Authorization: Bearer &lt;YOUR_API_KEY&gt;</code>
+                      </pre>
                     </div>
                   </div>
                 </div>
 
-                <h3 className="text-lg font-medium mt-6">Authentication</h3>
-                <p className="text-gray-700">
-                  The API uses JWT tokens. Include Authorization header:
-                </p>
-                <CodeBlock
-                  code={`Authorization: Bearer <your-jwt-token>
+                <div className="space-y-6">
+                  <div className="border border-border rounded-xl p-6 bg-card">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold font-mono border border-blue-200">POST</span>
+                      <code className="text-sm font-mono text-foreground">/api/memory/process</code>
+                    </div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">Add Memory</h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Add new content to your memory mesh. It will be automatically processed, embedded, and connected.
+                    </p>
 
-Request body example:
-{
-  "content": "Your content here",
-  "url": "https://example.com",
-  "title": "Page Title",
-  "metadata": {
-    "source": "extension"
-  }
-}`}
-                />
+                    <div className="space-y-4 mb-6">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Body Parameters</h4>
+                      <div className="grid grid-cols-[120px_1fr] gap-4 text-sm border-t border-border pt-3">
+                        <div className="font-mono text-primary text-xs">content</div>
+                        <div className="text-muted-foreground"><span className="text-xs border border-border px-1 rounded mr-2 bg-muted/50">string</span> The text content to save. <span className="text-red-500 text-xs ml-1">*Required</span></div>
 
-                <h3 className="text-lg font-medium mt-6">Response Format</h3>
-                <p className="text-gray-700">
-                  All API responses follow a consistent format:
-                </p>
-                <CodeBlock
-                  code={`{
-  "success": true,
-  "data": {
-    "memoryId": "uuid",
-    "userId": "user-id"
-  },
-  "message": "Memory processed successfully"
-}
+                        <div className="font-mono text-primary text-xs">url</div>
+                        <div className="text-muted-foreground"><span className="text-xs border border-border px-1 rounded mr-2 bg-muted/50">string</span> Source URL for the content.</div>
 
-Error response:
-{
-  "success": false,
-  "error": "Error message"
-}`}
-                />
+                        <div className="font-mono text-primary text-xs">title</div>
+                        <div className="text-muted-foreground"><span className="text-xs border border-border px-1 rounded mr-2 bg-muted/50">string</span> Title of the content.</div>
+                      </div>
+                    </div>
 
-                <InfoBox type="info">
-                  The API supports both synchronous and asynchronous operations.
-                  Long-running tasks like AI processing may return job IDs for
-                  status checking. All endpoints require authentication except
-                  /health.
-                </InfoBox>
+                    <div className="bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800 shadow-sm">
+                      <div className="px-4 py-2 bg-zinc-900/50 border-b border-zinc-800 flex items-center justify-between">
+                        <span className="text-xs text-zinc-500 font-mono">Example Request</span>
+                        <span className="text-xs text-zinc-600 font-mono">BASH</span>
+                      </div>
+                      <div className="p-4 overflow-x-auto">
+                        <pre className="text-sm font-mono text-zinc-300 leading-relaxed">
+                          <code>{`curl -X POST https://api.cognia.ai/api/memory/process \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "content": "React hooks allow you to use state...",
+    "url": "https://react.dev",
+    "title": "React Hooks Intro"
+  }'`}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border border-border rounded-xl p-6 bg-card">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold font-mono border border-blue-200">POST</span>
+                      <code className="text-sm font-mono text-foreground">/api/search</code>
+                    </div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">Search Memories</h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Perform a semantic search across your memories to find relevant information.
+                    </p>
+
+                    <div className="space-y-4 mb-6">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Body Parameters</h4>
+                      <div className="grid grid-cols-[120px_1fr] gap-4 text-sm border-t border-border pt-3">
+                        <div className="font-mono text-primary text-xs">query</div>
+                        <div className="text-muted-foreground"><span className="text-xs border border-border px-1 rounded mr-2 bg-muted/50">string</span> Your search question or phrase. <span className="text-red-500 text-xs ml-1">*Required</span></div>
+
+                        <div className="font-mono text-primary text-xs">limit</div>
+                        <div className="text-muted-foreground"><span className="text-xs border border-border px-1 rounded mr-2 bg-muted/50">number</span> Max results to return (default: 10).</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800 shadow-sm">
+                      <div className="px-4 py-2 bg-zinc-900/50 border-b border-zinc-800 flex items-center justify-between">
+                        <span className="text-xs text-zinc-500 font-mono">Example Request</span>
+                        <span className="text-xs text-zinc-600 font-mono">BASH</span>
+                      </div>
+                      <div className="p-4 overflow-x-auto">
+                        <pre className="text-sm font-mono text-zinc-300 leading-relaxed">
+                          <code>{`curl -X POST https://api.cognia.ai/api/search \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "query": "What are React hooks?",
+    "limit": 5
+  }'`}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -1030,9 +987,9 @@ Error response:
                 </div>
               </div>
             </section>
-          </main>
-        </div>
-      </div>
+          </main >
+        </div >
+      </div >
     </div >
   )
 }

@@ -47,17 +47,17 @@ export class ApiKeyService {
 
   static async listApiKeys(appId: string): Promise<ApiKeyInfo[]> {
     const response = await axiosInstance.get(`/v1/dev/apps/${appId}/keys`)
-    return response.data.data || []
+    return (response.data.data || []).map(this.mapToApiKeyInfo)
   }
 
   static async getApiKey(appId: string, keyId: string): Promise<ApiKeyInfo> {
     const response = await axiosInstance.get(`/v1/dev/apps/${appId}/keys/${keyId}`)
-    return response.data.data
+    return this.mapToApiKeyInfo(response.data.data)
   }
 
   static async updateApiKey(appId: string, keyId: string, data: UpdateApiKeyRequest): Promise<ApiKeyInfo> {
     const response = await axiosInstance.patch(`/v1/dev/apps/${appId}/keys/${keyId}`, data)
-    return response.data.data
+    return this.mapToApiKeyInfo(response.data.data)
   }
 
   static async revokeApiKey(appId: string, keyId: string): Promise<void> {
@@ -66,7 +66,26 @@ export class ApiKeyService {
 
   static async getApiKeyUsage(appId: string, keyId: string): Promise<{ usageCount: number; lastUsedAt: string | null }> {
     const response = await axiosInstance.get(`/v1/dev/apps/${appId}/keys/${keyId}/usage`)
+    // Usage endpoint returns camelCase or snake_case? Controller says: usageCount, lastUsedAt (lines 249-250)
+    // So usage endpoint is actually camelCase in controller! (Wait, let me double check controller line 246)
     return response.data.data
+  }
+
+  private static mapToApiKeyInfo(data: any): ApiKeyInfo {
+    return {
+      id: data.id,
+      keyPrefix: data.prefix, // Controller returns 'prefix' (line 78)
+      lastFour: data.last_four,
+      name: data.name,
+      description: data.description,
+      rateLimit: data.rate_limit,
+      rateLimitWindow: data.rate_limit_window,
+      expiresAt: data.expires_at,
+      isActive: data.is_active,
+      lastUsedAt: data.last_used_at,
+      usageCount: data.usage_count,
+      created_at: data.created_at,
+    }
   }
 }
 

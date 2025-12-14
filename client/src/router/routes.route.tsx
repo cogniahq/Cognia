@@ -26,6 +26,9 @@ const Profile = lazy(() =>
 const ApiKeys = lazy(() =>
   import("@/pages/api-keys.page").then((module) => ({ default: module.ApiKeys }))
 )
+const DeveloperApps = lazy(() =>
+  import("@/pages/developer-apps.page").then((module) => ({ default: module.DeveloperApps }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -48,7 +51,8 @@ const AppRoutes = () => {
             <Route path="/docs" element={<Docs />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/api-keys" element={<ApiKeys />} />
+            <Route path="/api-keys/:appId" element={<ApiKeys />} />
+            <Route path="/developer-apps" element={<DeveloperApps />} />
           </>
         ) : (
           <>
@@ -58,6 +62,7 @@ const AppRoutes = () => {
             <Route path="/analytics" element={<Navigate to="/" replace />} />
             <Route path="/profile" element={<Navigate to="/" replace />} />
             <Route path="/api-keys" element={<Navigate to="/" replace />} />
+            <Route path="/developer-apps" element={<Navigate to="/" replace />} />
           </>
         )}
 

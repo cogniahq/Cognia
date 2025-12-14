@@ -24,6 +24,7 @@ export class MemoryMeshController {
 
       const mesh = await memoryMeshService.getMemoryMesh(
         internalUserId,
+        undefined,
         limitValue,
         parseFloat(threshold as string)
       )

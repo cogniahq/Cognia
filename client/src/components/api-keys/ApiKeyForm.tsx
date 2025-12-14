@@ -11,7 +11,6 @@ interface ApiKeyFormProps {
 export const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSubmit, onCancel, initialData }) => {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
-  const [memoryIsolation, setMemoryIsolation] = useState(false)
   const [rateLimit, setRateLimit] = useState("")
   const [rateLimitWindow, setRateLimitWindow] = useState("")
   const [expiresAt, setExpiresAt] = useState("")
@@ -21,7 +20,6 @@ export const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSubmit, onCancel, init
     if (initialData) {
       setName(initialData.name)
       setDescription(initialData.description || "")
-      setMemoryIsolation(initialData.memoryIsolation)
       setRateLimit(initialData.rateLimit?.toString() || "")
       setRateLimitWindow(initialData.rateLimitWindow?.toString() || "")
       if (initialData.expiresAt) {
@@ -41,7 +39,6 @@ export const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSubmit, onCancel, init
       const data: CreateApiKeyRequest = {
         name: name.trim(),
         description: description.trim() || undefined,
-        memoryIsolation,
         rateLimit: rateLimit ? Number(rateLimit) : undefined,
         rateLimitWindow: rateLimitWindow ? Number(rateLimitWindow) : undefined,
         expiresAt: expiresAt || undefined,
@@ -83,21 +80,6 @@ export const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSubmit, onCancel, init
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          id="memoryIsolation"
-          type="checkbox"
-          checked={memoryIsolation}
-          onChange={e => setMemoryIsolation(e.target.checked)}
-          className="w-4 h-4"
-        />
-        <label htmlFor="memoryIsolation" className="text-sm font-medium">
-          Isolated Memory Mesh
-        </label>
-        <span className="text-xs text-gray-500">
-          (Creates a separate memory mesh for this API key)
-        </span>
-      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react"
 import { requireAuthToken } from "@/utils/auth"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { ApiKeyService, type ApiKeyInfo, type CreateApiKeyRequest } from "@/services/api-key.service"
+import { DeveloperAppService, type DeveloperAppInfo } from "@/services/developer-app.service"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -12,7 +13,9 @@ import { ApiKeyForm } from "@/components/api-keys/ApiKeyForm"
 
 export const ApiKeys: React.FC = () => {
   const navigate = useNavigate()
+  const { appId } = useParams<{ appId: string }>()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [app, setApp] = useState<DeveloperAppInfo | null>(null)
   const [apiKeys, setApiKeys] = useState<ApiKeyInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,31 +33,50 @@ export const ApiKeys: React.FC = () => {
   }, [navigate])
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated || !appId) return
 
-    const fetchApiKeys = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
         setError(null)
-        const data = await ApiKeyService.listApiKeys()
-        setApiKeys(data)
+        const [appData, keysData] = await Promise.all([
+          DeveloperAppService.getDeveloperApp(appId),
+          ApiKeyService.listApiKeys(appId),
+        ])
+        setApp(appData)
+        setApiKeys(keysData)
       } catch (err) {
         const error = err as { message?: string }
-        console.error("Error fetching API keys:", err)
-        setError(error.message || "Failed to load API keys")
+        console.error("Error fetching data:", err)
+        setError(error.message || "Failed to load data")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchApiKeys()
-  }, [isAuthenticated])
+    fetchData()
+  }, [isAuthenticated, appId])
 
   const handleCreate = async (data: CreateApiKeyRequest) => {
+    if (!appId) return
     try {
-      const result = await ApiKeyService.createApiKey(data)
-      setNewKey(result.key)
-      setApiKeys([result.info, ...apiKeys])
+      const result = await ApiKeyService.createApiKey(appId, data)
+      setNewKey(result.api_key)
+      const newKeyInfo: ApiKeyInfo = {
+        id: result.id,
+        keyPrefix: result.prefix,
+        lastFour: result.last_four,
+        name: data.name,
+        description: data.description,
+        rateLimit: data.rateLimit,
+        rateLimitWindow: data.rateLimitWindow,
+        expiresAt: data.expiresAt,
+        isActive: true,
+        lastUsedAt: null,
+        usageCount: 0,
+        created_at: result.created_at,
+      }
+      setApiKeys([newKeyInfo, ...apiKeys])
       setIsCreateDialogOpen(false)
       toast.success("API key created successfully")
     } catch (err) {
@@ -65,8 +87,9 @@ export const ApiKeys: React.FC = () => {
   }
 
   const handleUpdate = async (id: string, data: Partial<CreateApiKeyRequest>) => {
+    if (!appId) return
     try {
-      const updated = await ApiKeyService.updateApiKey(id, data)
+      const updated = await ApiKeyService.updateApiKey(appId, id, data)
       setApiKeys(apiKeys.map(key => (key.id === id ? updated : key)))
       setEditingKey(null)
       toast.success("API key updated successfully")
@@ -78,12 +101,13 @@ export const ApiKeys: React.FC = () => {
   }
 
   const handleRevoke = async (id: string) => {
+    if (!appId) return
     if (!confirm("Are you sure you want to revoke this API key? This action cannot be undone.")) {
       return
     }
 
     try {
-      await ApiKeyService.revokeApiKey(id)
+      await ApiKeyService.revokeApiKey(appId, id)
       setApiKeys(apiKeys.map(key => (key.id === id ? { ...key, isActive: false } : key)))
       toast.success("API key revoked successfully")
     } catch (err) {
@@ -124,13 +148,28 @@ export const ApiKeys: React.FC = () => {
     )
   }
 
+  if (!appId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-sm font-mono text-gray-600">App ID required</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="API Keys" />
+      <PageHeader pageName={app ? `API Keys - ${app.name}` : "API Keys"} />
       <div className="max-w-6xl mx-auto px-4 py-8">
+        {app && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-gray-600">
+              App: <strong>{app.name}</strong> | Namespace: <code className="bg-white px-2 py-1 rounded">{app.meshNamespaceId}</code>
+            </p>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-6">
           <p className="text-gray-600">
-            Create and manage API keys for programmatic access to your Cognia data.
+            Create and manage API keys for this developer app.
           </p>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
@@ -176,7 +215,7 @@ export const ApiKeys: React.FC = () => {
         {error && <ErrorMessage message={error} />}
 
         {apiKeys.length === 0 && !error ? (
-          <EmptyState message="No API keys found. Create your first API key to get started." />
+          <EmptyState title="No API keys found. Create your first API key to get started." />
         ) : (
           <div className="space-y-4">
             {apiKeys.map(key => (
@@ -191,17 +230,12 @@ export const ApiKeys: React.FC = () => {
                       <p className="text-sm text-gray-600 mb-2">{key.description}</p>
                     )}
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>Prefix: {key.keyPrefix}...</span>
+                      <span>Prefix: {key.keyPrefix}...{key.lastFour}</span>
                       <span>Created: {formatDate(key.created_at)}</span>
                       <span>Last used: {formatDate(key.lastUsedAt)}</span>
                       <span>Usage: {key.usageCount} requests</span>
                     </div>
                     <div className="mt-2 flex items-center gap-4 text-sm">
-                      {key.memoryIsolation && (
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded">
-                          Isolated Memory Mesh
-                        </span>
-                      )}
                       {key.rateLimit && (
                         <span>
                           Rate limit: {key.rateLimit} requests

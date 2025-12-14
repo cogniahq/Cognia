@@ -1,12 +1,11 @@
-import { requireAuthToken } from '@/utils/auth'
-import { getRequest, postRequest, patchRequest, deleteRequest } from '@/utils/http'
+import { axiosInstance } from '@/utils/http'
 
 export interface ApiKeyInfo {
   id: string
   keyPrefix: string
+  lastFour: string
   name: string
   description?: string | null
-  memoryIsolation: boolean
   rateLimit?: number | null
   rateLimitWindow?: number | null
   expiresAt?: string | null
@@ -14,13 +13,11 @@ export interface ApiKeyInfo {
   lastUsedAt?: string | null
   usageCount: number
   created_at: string
-  updated_at: string
 }
 
 export interface CreateApiKeyRequest {
   name: string
   description?: string
-  memoryIsolation?: boolean
   rateLimit?: number
   rateLimitWindow?: number
   expiresAt?: string
@@ -29,69 +26,47 @@ export interface CreateApiKeyRequest {
 export interface UpdateApiKeyRequest {
   name?: string
   description?: string | null
-  memoryIsolation?: boolean
   rateLimit?: number | null
   rateLimitWindow?: number | null
   expiresAt?: string | null
 }
 
 export interface CreateApiKeyResponse {
-  key: string
-  info: ApiKeyInfo
+  id: string
+  api_key: string
+  prefix: string
+  last_four: string
+  created_at: string
 }
 
 export class ApiKeyService {
-  static async createApiKey(data: CreateApiKeyRequest): Promise<CreateApiKeyResponse> {
-    requireAuthToken()
-    const response = await postRequest('/api/api-keys', data)
-    if (response.data?.success === false) {
-      throw new Error(response.data?.error || 'Failed to create API key')
-    }
-    return response.data?.data
+  static async createApiKey(appId: string, data: CreateApiKeyRequest): Promise<CreateApiKeyResponse> {
+    const response = await axiosInstance.post(`/v1/dev/apps/${appId}/keys`, data)
+    return response.data.data
   }
 
-  static async listApiKeys(): Promise<ApiKeyInfo[]> {
-    requireAuthToken()
-    const response = await getRequest('/api/api-keys')
-    if (response.data?.success === false) {
-      throw new Error(response.data?.error || 'Failed to list API keys')
-    }
-    return response.data?.data || []
+  static async listApiKeys(appId: string): Promise<ApiKeyInfo[]> {
+    const response = await axiosInstance.get(`/v1/dev/apps/${appId}/keys`)
+    return response.data.data || []
   }
 
-  static async getApiKey(id: string): Promise<ApiKeyInfo> {
-    requireAuthToken()
-    const response = await getRequest(`/api/api-keys/${id}`)
-    if (response.data?.success === false) {
-      throw new Error(response.data?.error || 'Failed to get API key')
-    }
-    return response.data?.data
+  static async getApiKey(appId: string, keyId: string): Promise<ApiKeyInfo> {
+    const response = await axiosInstance.get(`/v1/dev/apps/${appId}/keys/${keyId}`)
+    return response.data.data
   }
 
-  static async updateApiKey(id: string, data: UpdateApiKeyRequest): Promise<ApiKeyInfo> {
-    requireAuthToken()
-    const response = await patchRequest(`/api/api-keys/${id}`, data)
-    if (response.data?.success === false) {
-      throw new Error(response.data?.error || 'Failed to update API key')
-    }
-    return response.data?.data
+  static async updateApiKey(appId: string, keyId: string, data: UpdateApiKeyRequest): Promise<ApiKeyInfo> {
+    const response = await axiosInstance.patch(`/v1/dev/apps/${appId}/keys/${keyId}`, data)
+    return response.data.data
   }
 
-  static async revokeApiKey(id: string): Promise<void> {
-    requireAuthToken()
-    const response = await deleteRequest(`/api/api-keys/${id}`)
-    if (response.data?.success === false) {
-      throw new Error(response.data?.error || 'Failed to revoke API key')
-    }
+  static async revokeApiKey(appId: string, keyId: string): Promise<void> {
+    await axiosInstance.post(`/v1/dev/apps/${appId}/keys/${keyId}/revoke`, {})
   }
 
-  static async getApiKeyUsage(id: string): Promise<{ usageCount: number; lastUsedAt: string | null }> {
-    requireAuthToken()
-    const response = await getRequest(`/api/api-keys/${id}/usage`)
-    if (response.data?.success === false) {
-      throw new Error(response.data?.error || 'Failed to get API key usage')
-    }
-    return response.data?.data
+  static async getApiKeyUsage(appId: string, keyId: string): Promise<{ usageCount: number; lastUsedAt: string | null }> {
+    const response = await axiosInstance.get(`/v1/dev/apps/${appId}/keys/${keyId}/usage`)
+    return response.data.data
   }
 }
 

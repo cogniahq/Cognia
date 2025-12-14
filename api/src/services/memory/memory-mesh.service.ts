@@ -1255,6 +1255,187 @@ export class MemoryMeshService {
   ): Promise<{ memories: MemoryWithMetadata[]; relations: MemoryEdge[] }> {
     return meshClusteringService.getMemoryCluster(userId, centerMemoryId, depth)
   }
+
+  private async createEmbeddingWithNamespace(
+    memoryId: string,
+    meshNamespaceId: string,
+    text: string,
+    type: string
+  ): Promise<void> {
+    try {
+      await ensureCollection()
+      const embeddingResult = await aiProvider.generateEmbedding(text)
+      const embedding: number[] =
+        typeof embeddingResult === 'object' && 'embedding' in embeddingResult
+          ? (embeddingResult as { embedding: number[] }).embedding
+          : (embeddingResult as number[])
+
+      const pointId = randomUUID()
+      await qdrantClient.upsert(COLLECTION_NAME, {
+        wait: true,
+        points: [
+          {
+            id: pointId,
+            vector: embedding,
+            payload: {
+              memory_id: memoryId,
+              mesh_namespace_id: meshNamespaceId,
+              embedding_type: type,
+              model_name: GEMINI_EMBED_MODEL,
+              created_at: new Date().toISOString(),
+            },
+          },
+        ],
+      })
+    } catch (error) {
+      logger.error(`Error creating ${type} embedding for memory ${memoryId}:`, error)
+      throw error
+    }
+  }
+
+  async upsertMemories(
+    meshNamespaceId: string,
+    apiKeyId: string,
+    memories: Array<{
+      id?: string
+      content: string
+      metadata?: Record<string, any>
+    }>
+  ): Promise<string[]> {
+    try {
+      const apiKey = await prisma.apiKey.findUnique({
+        where: { id: apiKeyId },
+        include: {
+          developer_app: {
+            select: {
+              developer_id: true,
+            },
+          },
+        },
+      })
+
+      if (!apiKey) {
+        throw new Error('API key not found')
+      }
+
+      const userId = apiKey.developer_app.developer_id
+      const storedIds: string[] = []
+
+      for (const memoryInput of memories) {
+        const memoryId = memoryInput.id || randomUUID()
+
+        const memory = await prisma.memory.upsert({
+          where: { id: memoryId },
+          update: {
+            content: memoryInput.content,
+            page_metadata: memoryInput.metadata || {},
+            api_key_id: apiKeyId,
+          },
+          create: {
+            id: memoryId,
+            user_id: userId,
+            source: 'sdk',
+            content: memoryInput.content,
+            canonical_text: memoryInput.content,
+            page_metadata: memoryInput.metadata || {},
+            timestamp: BigInt(Date.now()),
+            api_key_id: apiKeyId,
+          },
+        })
+
+        await this.createEmbeddingWithNamespace(memory.id, meshNamespaceId, memory.content, 'content')
+        if (memory.title) {
+          await this.createEmbeddingWithNamespace(memory.id, meshNamespaceId, memory.title, 'title')
+        }
+
+        storedIds.push(memory.id)
+      }
+
+      return storedIds
+    } catch (error) {
+      logger.error('Error upserting memories:', error)
+      throw error
+    }
+  }
+
+  async queryMemories(
+    meshNamespaceId: string,
+    query: string,
+    filters?: Record<string, any>,
+    limit: number = 10
+  ): Promise<Array<{
+    id: string
+    content: string
+    metadata?: Record<string, any>
+    score: number
+  }>> {
+    try {
+      await ensureCollection()
+
+      const queryVector = await aiProvider.generateEmbedding(query)
+      const embedding: number[] =
+        typeof queryVector === 'object' && 'embedding' in queryVector
+          ? (queryVector as { embedding: number[] }).embedding
+          : (queryVector as number[])
+
+      const filter: QdrantFilter = {
+        must: [{ key: 'mesh_namespace_id', match: { value: meshNamespaceId } }],
+      }
+
+      if (filters) {
+        for (const [key, value] of Object.entries(filters)) {
+          filter.must.push({ key: `metadata.${key}`, match: { value } })
+        }
+      }
+
+      const searchResult = await qdrantClient.search(COLLECTION_NAME, {
+        vector: embedding,
+        filter,
+        limit: limit * 3,
+        with_payload: true,
+      })
+
+      if (!searchResult || searchResult.length === 0) {
+        return []
+      }
+
+      const memoryIds = searchResult.map(result => result.payload?.memory_id as string).filter(Boolean)
+
+      if (memoryIds.length === 0) {
+        return []
+      }
+
+      const memories = await prisma.memory.findMany({
+        where: {
+          id: { in: memoryIds },
+        },
+      })
+
+      const memoryMap = new Map(memories.map(m => [m.id, m]))
+
+      const results = searchResult
+        .map(result => {
+          const memoryId = result.payload?.memory_id as string
+          const memory = memoryMap.get(memoryId)
+          if (!memory) return null
+
+          return {
+            id: memory.id,
+            content: memory.content,
+            metadata: (memory.page_metadata as Record<string, any>) || {},
+            score: result.score || 0,
+          }
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+
+      return results
+    } catch (error) {
+      logger.error('Error querying memories:', error)
+      throw error
+    }
+  }
 }
 
 export const memoryMeshService = new MemoryMeshService()

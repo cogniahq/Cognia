@@ -57,7 +57,7 @@ export class SearchEndpointsController {
         })
       }
 
-      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
+      const apiKeyId = req.apiKey ? req.apiKey.id : undefined
       const searchResults = await searchMemories({
         userId: user.id,
         apiKeyId,
@@ -178,7 +178,7 @@ export class SearchEndpointsController {
 
       const preFilteredMemoryIds = preFilteredMemories.map(m => m.id)
 
-      const apiKeyId = req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
+      const apiKeyId = req.apiKey ? req.apiKey.id : undefined
       const searchResults = await memoryMeshService.searchMemories(
         user.id,
         query as string,
@@ -344,10 +344,10 @@ export class SearchEndpointsController {
               tokenConditions.length > 0
                 ? tokenConditions
                 : [
-                    { content: { contains: query as string, mode: 'insensitive' } },
-                    { title: { contains: query as string, mode: 'insensitive' } },
-                    { url: { contains: query as string, mode: 'insensitive' } },
-                  ],
+                  { content: { contains: query as string, mode: 'insensitive' } },
+                  { title: { contains: query as string, mode: 'insensitive' } },
+                  { url: { contains: query as string, mode: 'insensitive' } },
+                ],
           },
           take: parseInt(limit as string) * 2,
         }),
@@ -356,7 +356,7 @@ export class SearchEndpointsController {
           query as string,
           parseInt(limit as string) * 2,
           preFilteredMemoryIds,
-          req.apiKey?.memoryIsolation ? req.apiKey.id : undefined
+          req.apiKey ? req.apiKey.id : undefined
         ),
       ])
 

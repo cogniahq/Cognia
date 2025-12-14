@@ -65,6 +65,7 @@ export async function ensureCollection(): Promise<void> {
       const needsMemoryIdIndex = !payloadIndexes.memory_id
       const needsEmbeddingTypeIndex = !payloadIndexes.embedding_type
       const needsUserIdIndex = !payloadIndexes.user_id
+      const needsMeshNamespaceIdIndex = !payloadIndexes.mesh_namespace_id
 
       if (needsMemoryIdIndex) {
         await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
@@ -83,6 +84,13 @@ export async function ensureCollection(): Promise<void> {
       if (needsUserIdIndex) {
         await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
           field_name: 'user_id',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsMeshNamespaceIdIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'mesh_namespace_id',
           field_schema: 'keyword',
         })
       }

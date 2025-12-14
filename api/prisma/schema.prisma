@@ -26,7 +26,7 @@ model User {
   profile          UserProfile?
   browsing_summaries BrowsingSummary[]
   audit_logs       AuditLog[]
-  api_keys         ApiKey[]
+  developer_apps   DeveloperApp[]
 
   @@map("users")
 }
@@ -206,14 +206,30 @@ model BrowsingSummary {
   @@map("browsing_summaries")
 }
 
-model ApiKey {
+model DeveloperApp {
   id                String    @id @default(uuid()) @db.Uuid
-  user_id           String    @db.Uuid
-  key_hash          String
-  key_prefix        String
+  developer_id      String    @db.Uuid
   name              String
   description       String?
-  memory_isolation  Boolean   @default(false)
+  mesh_namespace_id String    @unique
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now()) @updatedAt
+  developer         User      @relation(fields: [developer_id], references: [id], onDelete: Cascade)
+  api_keys          ApiKey[]
+
+  @@index([developer_id])
+  @@index([mesh_namespace_id])
+  @@map("developer_apps")
+}
+
+model ApiKey {
+  id                String    @id @default(uuid()) @db.Uuid
+  developer_app_id  String    @db.Uuid
+  key_hash          String
+  key_prefix        String
+  last_four         String
+  name              String
+  description       String?
   rate_limit        Int?
   rate_limit_window Int?
   expires_at        DateTime?
@@ -222,10 +238,10 @@ model ApiKey {
   usage_count       Int       @default(0)
   created_at        DateTime  @default(now())
   updated_at        DateTime  @default(now()) @updatedAt
-  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  developer_app     DeveloperApp @relation(fields: [developer_app_id], references: [id], onDelete: Cascade)
   memories          Memory[]
 
-  @@index([user_id])
+  @@index([developer_app_id])
   @@index([key_hash])
   @@index([is_active])
   @@index([expires_at])

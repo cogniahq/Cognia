@@ -1,0 +1,25 @@
+{
+  "name": "@cognia/memory-mesh-sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for Cognia Memory Mesh",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "memory",
+    "mesh",
+    "sdk",
+    "cognia"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

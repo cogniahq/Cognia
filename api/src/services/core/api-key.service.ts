@@ -9,10 +9,9 @@ const API_KEY_LENGTH = 32
 const SALT_ROUNDS = 10
 
 export interface CreateApiKeyConfig {
-  userId: string
+  developerAppId: string
   name: string
   description?: string
-  memoryIsolation?: boolean
   rateLimit?: number
   rateLimitWindow?: number
   expiresAt?: Date
@@ -20,11 +19,11 @@ export interface CreateApiKeyConfig {
 
 export interface ApiKeyInfo {
   id: string
-  userId: string
+  developerAppId: string
   keyPrefix: string
+  lastFour: string
   name: string
   description?: string | null
-  memoryIsolation: boolean
   rateLimit?: number | null
   rateLimitWindow?: number | null
   expiresAt?: Date | null
@@ -56,20 +55,28 @@ export class ApiKeyService {
     return key.substring(0, API_KEY_PREFIX.length + 8)
   }
 
+  getLastFour(key: string): string {
+    if (key.length < 4) {
+      return key
+    }
+    return key.slice(-4)
+  }
+
   async createApiKey(config: CreateApiKeyConfig): Promise<{ key: string; info: ApiKeyInfo }> {
     try {
       const key = this.generateApiKey()
       const keyHash = await this.hashApiKey(key)
       const keyPrefix = this.getKeyPrefix(key)
+      const lastFour = this.getLastFour(key)
 
       const apiKey = await prisma.apiKey.create({
         data: {
-          user_id: config.userId,
+          developer_app_id: config.developerAppId,
           key_hash: keyHash,
           key_prefix: keyPrefix,
+          last_four: lastFour,
           name: config.name,
           description: config.description,
-          memory_isolation: config.memoryIsolation ?? false,
           rate_limit: config.rateLimit,
           rate_limit_window: config.rateLimitWindow,
           expires_at: config.expiresAt,
@@ -111,7 +118,7 @@ export class ApiKeyService {
     }
   }
 
-  async findApiKeyByPlainKey(plainKey: string): Promise<ApiKeyInfo | null> {
+  async findApiKeyByPlainKey(plainKey: string): Promise<{ key: ApiKeyInfo; meshNamespaceId: string } | null> {
     try {
       if (!plainKey.startsWith(API_KEY_PREFIX)) {
         return null
@@ -124,6 +131,13 @@ export class ApiKeyService {
           key_prefix: keyPrefix,
           is_active: true,
         },
+        include: {
+          developer_app: {
+            select: {
+              mesh_namespace_id: true,
+            },
+          },
+        },
       })
 
       for (const apiKey of apiKeys) {
@@ -132,7 +146,10 @@ export class ApiKeyService {
           if (apiKey.expires_at && apiKey.expires_at < new Date()) {
             return null
           }
-          return this.mapToApiKeyInfo(apiKey)
+          return {
+            key: this.mapToApiKeyInfo(apiKey),
+            meshNamespaceId: apiKey.developer_app.mesh_namespace_id,
+          }
         }
       }
 
@@ -157,26 +174,26 @@ export class ApiKeyService {
     }
   }
 
-  async getUserApiKeys(userId: string): Promise<ApiKeyInfo[]> {
+  async getApiKeysByAppId(developerAppId: string): Promise<ApiKeyInfo[]> {
     try {
       const apiKeys = await prisma.apiKey.findMany({
-        where: { user_id: userId },
+        where: { developer_app_id: developerAppId },
         orderBy: { created_at: 'desc' },
       })
 
       return apiKeys.map(key => this.mapToApiKeyInfo(key))
     } catch (error) {
-      logger.error('Error getting user API keys:', error)
+      logger.error('Error getting API keys by app ID:', error)
       throw new AppError('Failed to get API keys', 500)
     }
   }
 
-  async getApiKeyById(keyId: string, userId: string): Promise<ApiKeyInfo | null> {
+  async getApiKeyById(keyId: string, developerAppId: string): Promise<ApiKeyInfo | null> {
     try {
       const apiKey = await prisma.apiKey.findFirst({
         where: {
           id: keyId,
-          user_id: userId,
+          developer_app_id: developerAppId,
         },
       })
 
@@ -191,13 +208,43 @@ export class ApiKeyService {
     }
   }
 
+  async getApiKeyByIdWithNamespace(keyId: string): Promise<{ key: ApiKeyInfo; meshNamespaceId: string } | null> {
+    try {
+      const apiKey = await prisma.apiKey.findUnique({
+        where: { id: keyId },
+        include: {
+          developer_app: {
+            select: {
+              mesh_namespace_id: true,
+            },
+          },
+        },
+      })
+
+      if (!apiKey || !apiKey.is_active) {
+        return null
+      }
+
+      if (apiKey.expires_at && apiKey.expires_at < new Date()) {
+        return null
+      }
+
+      return {
+        key: this.mapToApiKeyInfo(apiKey),
+        meshNamespaceId: apiKey.developer_app.mesh_namespace_id,
+      }
+    } catch (error) {
+      logger.error('Error getting API key by ID with namespace:', error)
+      return null
+    }
+  }
+
   async updateApiKey(
     keyId: string,
-    userId: string,
+    developerAppId: string,
     updates: {
       name?: string
       description?: string
-      memoryIsolation?: boolean
       rateLimit?: number | null
       rateLimitWindow?: number | null
       expiresAt?: Date | null
@@ -207,12 +254,11 @@ export class ApiKeyService {
       const apiKey = await prisma.apiKey.update({
         where: {
           id: keyId,
-          user_id: userId,
+          developer_app_id: developerAppId,
         },
         data: {
           name: updates.name,
           description: updates.description,
-          memory_isolation: updates.memoryIsolation,
           rate_limit: updates.rateLimit,
           rate_limit_window: updates.rateLimitWindow,
           expires_at: updates.expiresAt,
@@ -226,12 +272,12 @@ export class ApiKeyService {
     }
   }
 
-  async revokeApiKey(keyId: string, userId: string): Promise<void> {
+  async revokeApiKey(keyId: string, developerAppId: string): Promise<void> {
     try {
       await prisma.apiKey.update({
         where: {
           id: keyId,
-          user_id: userId,
+          developer_app_id: developerAppId,
         },
         data: {
           is_active: false,
@@ -245,11 +291,11 @@ export class ApiKeyService {
 
   private mapToApiKeyInfo(apiKey: {
     id: string
-    user_id: string
+    developer_app_id: string
     key_prefix: string
+    last_four: string
     name: string
     description: string | null
-    memory_isolation: boolean
     rate_limit: number | null
     rate_limit_window: number | null
     expires_at: Date | null
@@ -261,11 +307,11 @@ export class ApiKeyService {
   }): ApiKeyInfo {
     return {
       id: apiKey.id,
-      userId: apiKey.user_id,
+      developerAppId: apiKey.developer_app_id,
       keyPrefix: apiKey.key_prefix,
+      lastFour: apiKey.last_four,
       name: apiKey.name,
       description: apiKey.description,
-      memoryIsolation: apiKey.memory_isolation,
       rateLimit: apiKey.rate_limit,
       rateLimitWindow: apiKey.rate_limit_window,
       expiresAt: apiKey.expires_at,

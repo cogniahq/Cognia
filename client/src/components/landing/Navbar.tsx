@@ -14,6 +14,7 @@ export const Navbar = () => {
     { path: "/docs", label: "Docs" },
     { path: "/analytics", label: "Analytics" },
     { path: "/profile", label: "Profile" },
+    { path: "/developer-apps", label: "Developer" },
     { path: "/login", label: "Login" },
   ]
 
@@ -25,11 +26,10 @@ export const Navbar = () => {
           <Link
             key={item.path}
             to={item.path}
-            className={`text-sm font-primary transition-colors ${
-              isActive
+            className={`text-sm font-primary transition-colors ${isActive
                 ? "text-black font-semibold"
                 : "text-gray-600 hover:text-black"
-            }`}
+              }`}
           >
             {item.label}
           </Link>

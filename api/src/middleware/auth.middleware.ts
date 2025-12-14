@@ -14,7 +14,8 @@ export interface AuthenticatedRequest extends Request {
   }
   apiKey?: {
     id: string
-    memoryIsolation: boolean
+    developerAppId: string
+    meshNamespaceId: string
   }
 }
 
@@ -37,11 +38,13 @@ export async function authenticateToken(
     }
 
     if (token.startsWith('ck_')) {
-      const apiKeyInfo = await apiKeyService.findApiKeyByPlainKey(token)
-      if (!apiKeyInfo) {
+      const apiKeyResult = await apiKeyService.findApiKeyByPlainKey(token)
+      if (!apiKeyResult) {
         res.status(401).json({ message: 'Invalid API key' })
         return
       }
+
+      const { key: apiKeyInfo, meshNamespaceId } = apiKeyResult
 
       const rateLimitResult = await rateLimitService.checkRateLimit(apiKeyInfo.id)
       if (!rateLimitResult.allowed) {
@@ -52,21 +55,10 @@ export async function authenticateToken(
         return
       }
 
-      const user = await getUserWithCache(apiKeyInfo.userId)
-      if (!user) {
-        logger.error('Auth middleware: User not found for API key userId:', apiKeyInfo.userId)
-        res.status(401).json({ message: 'User not found' })
-        return
-      }
-
-      req.user = {
-        id: user.id,
-        email: user.email || undefined,
-      }
-
       req.apiKey = {
         id: apiKeyInfo.id,
-        memoryIsolation: apiKeyInfo.memoryIsolation,
+        developerAppId: apiKeyInfo.developerAppId,
+        meshNamespaceId,
       }
 
       await apiKeyService.updateApiKeyUsage(apiKeyInfo.id)

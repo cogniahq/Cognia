@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 import { prisma } from '../../lib/prisma.lib'
+import { memoryMeshService } from '../memory/memory-mesh.service'
 import { logger } from '../../utils/core/logger.util'
 import AppError from '../../utils/http/app-error.util'
 
@@ -141,6 +142,82 @@ export class DeveloperAppService {
       logger.error('Error getting mesh namespace ID by app ID:', error)
       return null
     }
+  }
+
+  async getAppStats(appId: string, developerId: string): Promise<{
+    totalMemories: number
+    totalApiKeys: number
+    activeApiKeys: number
+    totalRequests: number
+    recentMemories: {
+      id: string
+      content: string
+      created_at: Date
+      source: string
+    }[]
+  }> {
+    try {
+      const app = await prisma.developerApp.findFirst({
+        where: { id: appId, developer_id: developerId },
+        include: {
+          api_keys: {
+            include: {
+              _count: {
+                select: { memories: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (!app) {
+        throw new AppError('Developer app not found', 404)
+      }
+
+      const totalApiKeys = app.api_keys.length
+      const activeApiKeys = app.api_keys.filter(k => k.is_active).length
+      // Sum usage_count from all keys
+      const totalRequests = app.api_keys.reduce((sum, key) => sum + key.usage_count, 0)
+      // Sum memories count from all keys
+      const totalMemories = app.api_keys.reduce((sum, key) => sum + key._count.memories, 0)
+
+      // Fetch recent memories
+      const apiKeyIds = app.api_keys.map(k => k.id)
+      const recentMemories = await prisma.memory.findMany({
+        where: { api_key_id: { in: apiKeyIds } },
+        orderBy: { created_at: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          content: true,
+          created_at: true,
+          source: true
+        }
+      })
+
+      return {
+        totalMemories,
+        totalApiKeys,
+        activeApiKeys,
+        totalRequests,
+        recentMemories
+      }
+    } catch (error) {
+      if (error instanceof AppError) throw error
+      logger.error('Error getting developer app stats:', error)
+      throw new AppError('Failed to get developer app stats', 500)
+    }
+  }
+
+  async getAppMesh(appId: string, developerId: string) {
+    // Verify ownership
+    const app = await this.getDeveloperAppById(appId, developerId)
+    if (!app) {
+      throw new AppError('Developer app not found', 404)
+    }
+
+    // Reuse MemoryMeshService logic with the new filter
+    return memoryMeshService.getMemoryMesh(undefined, undefined, 1000, 0.4, appId)
   }
 
   private mapToDeveloperAppInfo(app: {

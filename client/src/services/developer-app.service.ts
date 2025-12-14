@@ -44,4 +44,36 @@ export class DeveloperAppService {
   static async deleteDeveloperApp(id: string): Promise<void> {
     await axiosInstance.delete(`/v1/dev/apps/${id}`)
   }
+
+  static async getAppStats(appId: string): Promise<{
+    totalMemories: number
+    totalApiKeys: number
+    activeApiKeys: number
+    totalRequests: number
+    recentMemories: Array<{
+      id: string
+      content: string
+      created_at: string
+      source: string
+    }>
+  }> {
+    const response = await axiosInstance.get(`/v1/dev/apps/${appId}/stats`)
+    if (!response || !response.data || !response.data.success) {
+      throw new Error("Failed to fetch app stats")
+    }
+    return response.data.data
+  }
+
+  static async getAppMesh(id: string): Promise<{
+    nodes: any[]
+    edges: any[]
+    clusters: Record<string, string[]>
+  }> {
+    const response = await axiosInstance.get(`/v1/dev/apps/${id}/mesh`)
+    return {
+      nodes: response.data.data.nodes || [],
+      edges: response.data.data.edges || [],
+      clusters: response.data.data.clusters || {}
+    }
+  }
 }

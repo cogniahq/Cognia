@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { PageHeader } from "@/components/shared/PageHeader"
+import { Header } from "@/components/landing/Header"
 
 const TableOfContents: React.FC<{ onSectionClick: (id: string) => void }> = ({
   onSectionClick,
@@ -22,8 +22,8 @@ const TableOfContents: React.FC<{ onSectionClick: (id: string) => void }> = ({
   ]
 
   return (
-    <div className="sticky top-20 bg-white border border-gray-200 p-4 max-h-[calc(100vh-5rem)] overflow-y-auto">
-      <h3 className="text-sm font-mono uppercase tracking-wide text-gray-900 mb-4">
+    <div className="sticky top-20 bg-card border border-border p-4 max-h-[calc(100vh-5rem)] overflow-y-auto rounded-lg">
+      <h3 className="text-sm font-mono uppercase tracking-wide text-foreground mb-4">
         Table of Contents
       </h3>
       <nav className="space-y-1">
@@ -31,7 +31,7 @@ const TableOfContents: React.FC<{ onSectionClick: (id: string) => void }> = ({
           <button
             key={section.id}
             onClick={() => onSectionClick(section.id)}
-            className="block w-full text-left text-sm text-gray-600 hover:text-black hover:bg-gray-50 px-2 py-1 transition-colors"
+            className="block w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 px-2 py-1 transition-colors rounded"
           >
             {section.title}
           </button>
@@ -43,7 +43,7 @@ const TableOfContents: React.FC<{ onSectionClick: (id: string) => void }> = ({
 
 const CodeBlock: React.FC<{ code: string; language?: string }> = ({ code }) => {
   return (
-    <div className="bg-gray-900 text-gray-100 p-4 rounded border border-gray-700 overflow-x-auto">
+    <div className="bg-muted text-foreground p-4 rounded border border-border overflow-x-auto">
       <code className="font-mono text-sm">{code}</code>
     </div>
   )
@@ -54,9 +54,10 @@ const InfoBox: React.FC<{
   children: React.ReactNode
 }> = ({ type, children }) => {
   const styles = {
-    info: "bg-blue-50 border-blue-200 text-blue-900",
-    warning: "bg-yellow-50 border-yellow-200 text-yellow-900",
-    tip: "bg-green-50 border-green-200 text-green-900",
+    info: "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
+    warning:
+      "bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400",
+    tip: "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
   }
 
   const icons = {
@@ -68,7 +69,7 @@ const InfoBox: React.FC<{
   return (
     <div className={`border p-4 rounded ${styles[type]}`}>
       <div className="flex items-start gap-2">
-        <span className="text-lg">{icons[type]}</span>
+        <span className="text-lg leading-none mt-0.5">{icons[type]}</span>
         <div className="text-sm">{children}</div>
       </div>
     </div>
@@ -120,10 +121,11 @@ export const Docs = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PageHeader pageName="Documentation" />
+    <div className="min-h-screen bg-background pt-24">
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-4xl font-bold font-editorial mb-8 text-foreground">Documentation</h1>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <aside className="lg:col-span-1">
             <TableOfContents onSectionClick={scrollToSection} />
@@ -131,20 +133,20 @@ export const Docs = () => {
 
           <main className="lg:col-span-3 space-y-12">
             <section id="what-is">
-              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-gray-200 pb-2">
+              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-border pb-2 text-foreground">
                 What is Cognia?
               </h2>
-              <div className="prose prose-gray max-w-none space-y-4">
-                <p className="text-gray-700 leading-relaxed">
+              <div className="prose prose-neutral dark:prose-invert max-w-none space-y-4">
+                <p className="text-muted-foreground leading-relaxed">
                   Cognia is like having a super-powered memory for everything
                   you read online. It remembers what you've seen, helps you find
                   it later, and even connects the dots between related things
                   you've learned.
                 </p>
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed">
                   Here's what makes it special:
                 </p>
-                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                   <li>
                     <strong>It remembers automatically</strong> - Just browse
                     the web like normal, and Cognia saves what you're reading
@@ -172,13 +174,15 @@ export const Docs = () => {
             </section>
 
             <section id="quick-start">
-              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-gray-200 pb-2">
+              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-border pb-2 text-foreground">
                 Quick Start
               </h2>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-2">1. Get Started</h3>
-                  <p className="text-gray-700 mb-3">
+                  <h3 className="text-lg font-medium mb-2 text-foreground">
+                    1. Get Started
+                  </h3>
+                  <p className="text-muted-foreground mb-3">
                     First, you'll need a user ID. Don't worry - this happens
                     automatically when you install the extension. It's just a
                     way to keep all your memories connected to you.
@@ -190,10 +194,10 @@ export const Docs = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-2">
+                  <h3 className="text-lg font-medium mb-2 text-foreground">
                     2. Install the Extension
                   </h3>
-                  <p className="text-gray-700 mb-3">
+                  <p className="text-muted-foreground mb-3">
                     Install our browser extension for Chrome or Brave. This lets
                     Cognia automatically save what you're reading. If you
                     prefer, you can also add things manually through the
@@ -202,8 +206,10 @@ export const Docs = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-2">3. Just Browse</h3>
-                  <p className="text-gray-700">
+                  <h3 className="text-lg font-medium mb-2 text-foreground">
+                    3. Just Browse
+                  </h3>
+                  <p className="text-muted-foreground">
                     That's it! Just use the internet like you normally do. If
                     you have the extension installed, Cognia will save pages
                     automatically. Otherwise, you can add things manually
@@ -214,37 +220,37 @@ export const Docs = () => {
             </section>
 
             <section id="features">
-              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-gray-200 pb-2">
+              <h2 className="text-2xl font-light font-editorial mb-4 border-b border-border pb-2 text-foreground">
                 Key Features
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white border border-gray-200 p-4">
-                  <h3 className="font-medium mb-2">Smart Memory Storage</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="bg-card border border-border p-4 rounded">
+                  <h3 className="font-medium mb-2 text-foreground">Smart Memory Storage</h3>
+                  <p className="text-sm text-muted-foreground">
                     Everything you save is stored in a way that makes it easy to
                     find later, even if you don't remember the exact words
                     you're looking for.
                   </p>
                 </div>
-                <div className="bg-white border border-gray-200 p-4">
-                  <h3 className="font-medium mb-2">Natural Search</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="bg-card border border-border p-4 rounded">
+                  <h3 className="font-medium mb-2 text-foreground">Natural Search</h3>
+                  <p className="text-sm text-muted-foreground">
                     Search works like your brain does - it finds things by
                     meaning, not just matching words. Ask questions the way
                     you'd ask a friend.
                   </p>
                 </div>
-                <div className="bg-white border border-gray-200 p-4">
-                  <h3 className="font-medium mb-2">Connected Memories</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="bg-card border border-border p-4 rounded">
+                  <h3 className="font-medium mb-2 text-foreground">Connected Memories</h3>
+                  <p className="text-sm text-muted-foreground">
                     Cognia automatically finds relationships between different
                     things you've read, showing you how your knowledge connects.
                   </p>
                 </div>
 
-                <div className="bg-white border border-gray-200 p-4">
-                  <h3 className="font-medium mb-2">ChatGPT Helper</h3>
-                  <p className="text-sm text-gray-600">
+                <div className="bg-card border border-border p-4 rounded">
+                  <h3 className="font-medium mb-2 text-foreground">ChatGPT Helper</h3>
+                  <p className="text-sm text-muted-foreground">
                     When you're chatting with ChatGPT, Cognia automatically
                     brings in relevant things you've read to make your
                     conversations better.
@@ -991,7 +997,7 @@ Error response:
                       </span>
                     </button>
                     {expandedFaq === index && (
-                      <div className="px-4 pb-3 text-sm text-gray-700 border-t border-gray-100">
+                      <div className="px-4 pb-3 text-sm text-muted-foreground border-t border-border">
                         {faq.answer}
                       </div>
                     )}
@@ -1000,10 +1006,10 @@ Error response:
               </div>
             </section>
 
-            <section className="border-t border-gray-200 pt-8 mt-12">
+            <section className="border-t border-border pt-8 mt-12">
               <div className="text-center">
-                <h3 className="text-lg font-medium mb-2">Need More Help?</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium mb-2 text-foreground">Need More Help?</h3>
+                <p className="text-muted-foreground mb-4">
                   Check out our GitHub repository or join our community
                 </p>
                 <div className="flex items-center justify-center gap-4">
@@ -1011,13 +1017,13 @@ Error response:
                     href="https://github.com/cogniahq/Cognia"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-black text-white text-sm hover:bg-gray-800 transition-colors"
+                    className="px-4 py-2 bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity rounded"
                   >
                     GitHub
                   </a>
                   <button
                     onClick={() => navigate("/")}
-                    className="px-4 py-2 border border-gray-300 text-sm hover:border-black transition-colors"
+                    className="px-4 py-2 border border-border text-foreground text-sm hover:bg-accent hover:text-accent-foreground transition-colors rounded"
                   >
                     Back to Home
                   </button>
@@ -1027,6 +1033,6 @@ Error response:
           </main>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

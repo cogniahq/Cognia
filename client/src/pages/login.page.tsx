@@ -65,8 +65,8 @@ export const Login = () => {
       console.error("Auth error:", err)
       setError(
         error.response?.data?.message ||
-          error.message ||
-          `Failed to ${isRegister ? "register" : "login"}. Please try again.`
+        error.message ||
+        `Failed to ${isRegister ? "register" : "login"}. Please try again.`
       )
     } finally {
       setIsLoading(false)
@@ -249,15 +249,15 @@ export const Login = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur border border-gray-200 p-8 shadow-sm">
+          <div className="bg-card/80 backdrop-blur border border-border p-8 shadow-sm">
             <div className="space-y-6">
               <div>
-                <h2 className="text-3xl font-light font-editorial text-gray-900 mb-2">
+                <h2 className="text-3xl font-light font-editorial text-foreground mb-2">
                   {isRegister
                     ? "Create your account"
                     : "Sign in to your account"}
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {isRegister
                     ? "Get started with Cognia today"
                     : "Enter your credentials to continue"}
@@ -268,7 +268,7 @@ export const Login = () => {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-muted-foreground mb-2"
                   >
                     Email address
                   </label>
@@ -279,12 +279,12 @@ export const Login = () => {
                     autoComplete="email"
                     required
                     className={cn(
-                      "block w-full px-4 py-3 border rounded-none transition-all duration-200",
-                      "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
-                      "placeholder:text-gray-400 text-gray-900 text-sm",
+                      "block w-full px-4 py-3 border rounded-none transition-all duration-200 bg-background",
+                      "focus:outline-none focus:ring-2 focus:ring-foreground focus:border-transparent",
+                      "placeholder:text-muted-foreground text-foreground text-sm",
                       error
-                        ? "border-red-300 focus:ring-red-500"
-                        : "border-gray-300"
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-border"
                     )}
                     placeholder="name@company.com"
                     value={email}
@@ -299,7 +299,7 @@ export const Login = () => {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-muted-foreground mb-2"
                   >
                     Password
                   </label>
@@ -313,12 +313,12 @@ export const Login = () => {
                       }
                       required
                       className={cn(
-                        "block w-full px-4 py-3 pr-11 border rounded-none transition-all duration-200",
-                        "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
-                        "placeholder:text-gray-400 text-gray-900 text-sm",
+                        "block w-full px-4 py-3 pr-11 border rounded-none transition-all duration-200 bg-background",
+                        "focus:outline-none focus:ring-2 focus:ring-foreground focus:border-transparent",
+                        "placeholder:text-muted-foreground text-foreground text-sm",
                         error
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-gray-300"
+                          ? "border-destructive focus:ring-destructive"
+                          : "border-border"
                       )}
                       placeholder="Enter your password"
                       value={password}
@@ -331,7 +331,7 @@ export const Login = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? (
@@ -372,17 +372,17 @@ export const Login = () => {
                     </button>
                   </div>
                   {isRegister && (
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       Must be at least 8 characters
                     </p>
                   )}
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 p-4 rounded-none">
+                  <div className="bg-destructive/5 border border-destructive/20 p-4 rounded-none">
                     <div className="flex">
                       <svg
-                        className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0"
+                        className="w-5 h-5 text-destructive mt-0.5 mr-3 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -395,7 +395,7 @@ export const Login = () => {
                         />
                       </svg>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-red-800">
+                        <p className="text-sm font-medium text-destructive">
                           {error}
                         </p>
                       </div>
@@ -407,7 +407,7 @@ export const Login = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-gray-100 border border-gray-300 text-black hover:bg-black hover:text-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-secondary border border-border text-foreground hover:bg-foreground hover:text-background hover:border-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center">
@@ -419,17 +419,17 @@ export const Login = () => {
                         {isRegister ? "Create account" : "Sign in"}
                       </span>
                     )}
-                    <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                    <div className="absolute inset-0 bg-foreground transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
                   </button>
                 </div>
               </form>
 
               <div className="relative pt-4">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
+                  <div className="w-full border-t border-border"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white/80 text-gray-500">
+                  <span className="px-4 bg-card text-muted-foreground">
                     {isRegister
                       ? "Already have an account?"
                       : "Don't have an account?"}
@@ -447,7 +447,7 @@ export const Login = () => {
                     setPassword("")
                   }}
                   disabled={isLoading}
-                  className="text-sm font-medium text-black hover:text-gray-700 transition-colors duration-200"
+                  className="text-sm font-medium text-foreground hover:text-muted-foreground transition-colors duration-200"
                 >
                   {isRegister ? "Sign in instead" : "Create an account"}
                 </button>
@@ -459,7 +459,7 @@ export const Login = () => {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors duration-200 inline-flex items-center"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 inline-flex items-center"
             >
               <svg
                 className="w-4 h-4 mr-1"

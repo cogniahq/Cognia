@@ -6,7 +6,8 @@ import type { MemoryMesh } from "@/types/memory"
 
 export function useMemoryMesh(
   similarityThreshold: number,
-  onMeshLoad?: (mesh: MemoryMesh) => void
+  onMeshLoad?: (mesh: MemoryMesh) => void,
+  developerAppId?: string
 ) {
   const [meshData, setMeshData] = useState<MemoryMesh | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -18,10 +19,15 @@ export function useMemoryMesh(
         requireAuthToken()
         setIsLoading(true)
         setError(null)
-        const data = await MemoryService.getMemoryMesh(
-          Infinity,
-          similarityThreshold
-        )
+
+        let data: MemoryMesh
+        if (developerAppId) {
+          const { DeveloperAppService } = await import("@/services/developer-app.service")
+          data = await DeveloperAppService.getAppMesh(developerAppId)
+        } else {
+          data = await MemoryService.getMemoryMesh(Infinity, similarityThreshold)
+        }
+
         setMeshData(data)
         if (typeof onMeshLoad === "function") {
           onMeshLoad(data)
@@ -34,7 +40,7 @@ export function useMemoryMesh(
       }
     }
     fetchMeshData()
-  }, [similarityThreshold, onMeshLoad])
+  }, [similarityThreshold, onMeshLoad, developerAppId])
 
   return { meshData, isLoading, error }
 }

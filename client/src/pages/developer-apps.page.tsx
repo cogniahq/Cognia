@@ -108,18 +108,18 @@ export const DeveloperApps: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <PageHeader pageName="Developer Apps" />
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Create and manage developer apps. Each app has its own isolated memory mesh namespace.
           </p>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>Create App</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl bg-card">
               <DialogHeader>
                 <DialogTitle>Create Developer App</DialogTitle>
               </DialogHeader>
@@ -143,22 +143,29 @@ export const DeveloperApps: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{app?.name}</h3>
+                      <h3 className="font-semibold text-foreground">{app?.name}</h3>
                     </div>
                     {app?.description && (
-                      <p className="text-sm text-gray-600 mb-2">{app?.description}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{app?.description}</p>
                     )}
-                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
-                      <span>Namespace: <code className="bg-gray-100 px-2 py-1 rounded">{app?.meshNamespaceId}</code></span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                      <span>Namespace: <code className="bg-secondary px-2 py-1 rounded text-foreground">{app?.meshNamespaceId}</code></span>
                       <span>Created: {formatDate(app?.created_at)}</span>
                     </div>
                     <div className="mt-4 flex gap-2">
                       <Button
-                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/developer-apps/${app?.id}`)}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        Manage App
+                      </Button>
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => navigate(`/api-keys/${app?.id}`)}
                       >
-                        Manage API Keys
+                        API Keys
                       </Button>
                     </div>
                   </div>
@@ -186,7 +193,7 @@ export const DeveloperApps: React.FC = () => {
 
         {editingApp && (
           <Dialog open={!!editingApp} onOpenChange={() => setEditingApp(null)}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl bg-card">
               <DialogHeader>
                 <DialogTitle>Edit Developer App</DialogTitle>
               </DialogHeader>

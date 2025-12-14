@@ -625,17 +625,25 @@ export class MemoryMeshService {
     userId?: string,
     apiKeyId?: string | null,
     limit: number = 50,
-    similarityThreshold: number = 0.4
+    similarityThreshold: number = 0.4,
+    developerAppId?: string
   ): Promise<{
     nodes: Array<{ id: string; x: number; y: number; z?: number; title?: string; url?: string }>
     edges: MemoryEdge[]
   }> {
     try {
-      const whereClause: { user_id?: string; api_key_id?: string | null } = userId
-        ? { user_id: userId }
-        : {}
+      const whereClause: {
+        user_id?: string
+        api_key_id?: string | null
+        api_key?: { developer_app_id: string }
+      } = userId ? { user_id: userId } : {}
+
       if (apiKeyId !== undefined) {
         whereClause.api_key_id = apiKeyId
+      }
+
+      if (developerAppId) {
+        whereClause.api_key = { developer_app_id: developerAppId }
       }
 
       const queryOptions: {

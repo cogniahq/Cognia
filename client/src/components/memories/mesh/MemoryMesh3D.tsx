@@ -18,6 +18,7 @@ interface MemoryMesh3DProps {
   onMeshLoad?: (mesh: MemoryMesh) => void
   memorySources?: Record<string, string>
   memoryUrls?: Record<string, string>
+  developerAppId?: string
 }
 
 const ControlsUpdater: React.FC<{
@@ -40,12 +41,14 @@ const MemoryMesh3D: React.FC<MemoryMesh3DProps> = ({
   onMeshLoad,
   memorySources,
   memoryUrls,
+  developerAppId,
 }) => {
   const [isCompactView, setIsCompactView] = useState(false)
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const { meshData, isLoading, error } = useMemoryMesh(
     similarityThreshold,
-    onMeshLoad
+    onMeshLoad,
+    developerAppId
   )
 
   useEffect(() => {
@@ -116,7 +119,7 @@ const MemoryMesh3D: React.FC<MemoryMesh3DProps> = ({
           }}
           style={{ background: "transparent" }}
           dpr={[1, 1.75]}
-          onPointerMissed={() => {}}
+          onPointerMissed={() => { }}
         >
           <MemoryMesh3DScene
             meshData={meshData}

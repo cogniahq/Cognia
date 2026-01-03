@@ -28,9 +28,6 @@ coverage
 *.spec.ts
 jest.config.*
 
-*.md
-!README.md
-
 .DS_Store
 Thumbs.db
 

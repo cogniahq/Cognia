@@ -15,55 +15,40 @@
 
 ### 1. Running backend + databases with Docker
 
-You can start the API together with PostgreSQL, Qdrant and Redis using Docker. Below are a few supported ways — use the one that fits your workflow.
+You can run the stack in one of three ways. The `api` service is opt-in (profile `api`) so `docker compose up` starts the database services only by default.
 
-Option A — Recommended: Docker Compose (single command)
+Option 1 — Complete Docker (API + DB in containers)
+
+```bash
+cd api
+docker compose --profile api up -d
+```
+
+Starts `api`, `postgres`, `qdrant`, and `redis` from `api/docker-compose.yml` (development API image). Qdrant will be available at `http://localhost:6333` and `http://localhost:6334`.
+
+Option 2 — Database in Docker, run API locally (npm)
 
 ```bash
 cd api
 docker compose up -d
+
+# In another terminal (host):
+cp .env.example .env
+npm install
+npm run db:migrate
+npm start
 ```
 
-This brings up Postgres, Qdrant, Redis, and the API (if configured in `api/docker-compose.yml`). Qdrant will be available at `http://localhost:6333` (HTTP) and `http://localhost:6334` (gRPC) by default.
+This starts only the DB services (Postgres, Qdrant, Redis). Run the API on the host with `npm start` so you can iterate without rebuilding containers.
 
-Option B — Rebuild the API image then compose up
-
-If you've changed backend code and want the Compose service to run the rebuilt image:
-
-```bash
-cd api
-docker compose up --build -d
-```
-
-Option C — Run DB services only, then run API container separately
-
-Start core services with Compose and then build/run the API container manually (useful for iterating locally):
+Option 3 — DB services only (explicit)
 
 ```bash
 cd api
 docker compose up -d postgres qdrant redis
-
-# In another terminal, build and run the API container (example):
-docker build -t cognia-api:local .
-docker run --rm -it \
-	--env-file .env \
-	--network host \
-	-p 3000:3000 \
-	cognia-api:local
 ```
 
-Notes:
-- If you run the API container manually, ensure `.env` is copied from `.env.example` and updated: `cp api/.env.example api/.env`.
-- When using `--network host` on macOS Docker Desktop, networking behaves differently; alternatively connect containers using the Compose network (recommended).
-
-Option D — Run a single service from the Compose file
-
-You can start only specific services from the Compose file, for example Qdrant:
-
-```bash
-cd api
-docker compose up -d qdrant
-```
+Start just the database/support services when you don't need the full stack.
 
 Troubleshooting & logs
 
@@ -71,7 +56,7 @@ Troubleshooting & logs
 - Inspect service status: `cd api && docker compose ps`
 - View a single container log: `docker logs -f <container-name>`
 
-The API will automatically create the `memory_embeddings` collection on startup with the configured embedding dimension and payload indexes when it can reach Qdrant.
+The API will automatically create the `memory_embeddings` collection on startup when it can reach Qdrant.
 
 ### 2. API Setup
 

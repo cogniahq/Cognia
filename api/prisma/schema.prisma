@@ -9,6 +9,17 @@ enum MemoryType {
   REFERENCE
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum RelationType {
+  semantic
+  topical
+  temporal
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -18,6 +29,7 @@ model User {
   id               String           @id @default(uuid()) @db.Uuid
   email            String?          @unique
   password_hash    String?
+  role             UserRole         @default(USER)
   created_at       DateTime         @default(now())
   updated_at       DateTime         @default(now()) @updatedAt
   memories         Memory[]
@@ -78,25 +90,29 @@ model Memory {
   @@index([canonical_hash])
   @@index([url])
   @@index([memory_type])
+  @@index([user_id, importance_score])
+  @@index([user_id, memory_type])
+  @@index([last_accessed])
   @@unique([user_id, canonical_hash])
   @@map("memories")
 }
 
 model MemoryRelation {
-  id                String   @id @default(uuid()) @db.Uuid
-  memory_id         String   @db.Uuid
-  related_memory_id String   @db.Uuid
+  id                String       @id @default(uuid()) @db.Uuid
+  memory_id         String       @db.Uuid
+  related_memory_id String       @db.Uuid
   similarity_score  Float
-  relation_type     String
-  created_at        DateTime @default(now())
-  memory            Memory   @relation("MemoryRelations", fields: [memory_id], references: [id], onDelete: Cascade)
-  related_memory    Memory   @relation("RelatedMemories", fields: [related_memory_id], references: [id], onDelete: Cascade)
+  relation_type     RelationType @default(semantic)
+  created_at        DateTime     @default(now())
+  memory            Memory       @relation("MemoryRelations", fields: [memory_id], references: [id], onDelete: Cascade)
+  related_memory    Memory       @relation("RelatedMemories", fields: [related_memory_id], references: [id], onDelete: Cascade)
 
   @@unique([memory_id, related_memory_id])
   @@index([memory_id])
   @@index([related_memory_id])
   @@index([memory_id, related_memory_id])
   @@index([similarity_score])
+  @@index([relation_type])
   @@map("memory_relations")
 }
 

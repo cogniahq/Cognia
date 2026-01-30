@@ -3,11 +3,13 @@ import { verifyToken, extractTokenFromHeader } from '../utils/auth/jwt.util'
 import { getSessionCookieName } from '../utils/core/env.util'
 import { logger } from '../utils/core/logger.util'
 import { getUserWithCache } from '../utils/core/user-cache.util'
+import type { UserRole } from '@prisma/client'
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string
     email?: string
+    role?: UserRole
   }
 }
 
@@ -46,6 +48,7 @@ export async function authenticateToken(
     req.user = {
       id: user.id,
       email: user.email || undefined,
+      role: user.role,
     }
 
     next()
@@ -74,6 +77,21 @@ export function optionalAuth(req: AuthenticatedRequest, res: Response, next: Nex
       id: payload.userId,
       email: payload.email,
     }
+  }
+
+  next()
+}
+
+export function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ message: 'Authentication required' })
+    return
+  }
+
+  if (req.user.role !== 'ADMIN') {
+    logger.warn(`Admin access denied for user ${req.user.id}`)
+    res.status(403).json({ message: 'Admin access required' })
+    return
   }
 
   next()

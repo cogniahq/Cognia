@@ -2,7 +2,10 @@ import * as jwt from 'jsonwebtoken'
 import type { SignOptions } from 'jsonwebtoken'
 import type { StringValue } from 'ms'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set. Application cannot start without a secure secret.')
+}
 const JWT_EXPIRES_IN: StringValue | number = (process.env.JWT_EXPIRES_IN || '7d') as StringValue
 
 export interface JWTPayload {

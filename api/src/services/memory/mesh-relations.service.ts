@@ -8,7 +8,7 @@ import {
 import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
 import { buildContentPreview } from '../../utils/text/text.util'
-import { Prisma } from '@prisma/client'
+import { Prisma, RelationType } from '@prisma/client'
 import type {
   MemoryWithMetadata,
   MemoryRelation,
@@ -372,7 +372,7 @@ export class MeshRelationsService {
                   memory_id: memoryId,
                   related_memory_id: relatedMemoryId,
                   similarity_score: relatedMemory.similarity_score || relatedMemory.similarity,
-                  relation_type: relatedMemory.relation_type || 'semantic',
+                  relation_type: (relatedMemory.relation_type as RelationType) || RelationType.semantic,
                 },
               })
             } catch (createError: unknown) {
@@ -386,7 +386,7 @@ export class MeshRelationsService {
             }
           } else {
             const similarityScore = relatedMemory.similarity_score || relatedMemory.similarity
-            const relationType = relatedMemory.relation_type || 'semantic'
+            const relationType = (relatedMemory.relation_type as RelationType) || RelationType.semantic
             const shouldUpdate =
               similarityScore > existingRelation.similarity_score + 0.05 ||
               (similarityScore > existingRelation.similarity_score &&

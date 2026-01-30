@@ -5,6 +5,11 @@ import { generateToken } from '../utils/auth/jwt.util'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
 import { hashPassword, comparePassword } from '../utils/core/password.util'
 import { logger } from '../utils/core/logger.util'
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  extensionTokenRateLimiter,
+} from '../middleware/rate-limit.middleware'
 
 const router = Router()
 
@@ -25,7 +30,7 @@ router.post('/logout', (_req: Request, res: Response) => {
 })
 
 // Register with email/password
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', registerRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body || {}
     if (!email || !password) {
@@ -57,7 +62,7 @@ router.post('/register', async (req: Request, res: Response) => {
 })
 
 // Login with email/password
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body || {}
     if (!email || !password) {
@@ -109,8 +114,8 @@ router.delete('/session', (_req: Request, res: Response) => {
   return res.status(200).json({ message: 'session cleared' })
 })
 
-// Get token for extension (creates user if doesn't exist)
-router.post('/extension-token', async (req: Request, res: Response) => {
+// Get token for extension - requires authentication, only allows generating token for the authenticated user
+router.post('/extension-token', extensionTokenRateLimiter, authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId } = req.body
 
@@ -118,24 +123,23 @@ router.post('/extension-token', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'userId is required' })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    })
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+    // Security: Ensure the requested userId matches the authenticated user
+    if (userId !== req.user!.id) {
+      logger.warn(`Extension token attempt for different user: requested=${userId}, authenticated=${req.user!.id}`)
+      return res.status(403).json({ message: 'Cannot generate token for another user' })
     }
 
-    // Generate JWT token
+    // Generate JWT token for the authenticated user
     const token = generateToken({
-      userId: user.id,
+      userId: req.user!.id,
+      email: req.user!.email,
     })
 
     res.status(200).json({
       message: 'Token generated successfully',
       token,
       user: {
-        id: user.id,
+        id: req.user!.id,
       },
     })
   } catch (error) {

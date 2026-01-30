@@ -1,8 +1,10 @@
 import { prisma } from '../../lib/prisma.lib'
+import type { UserRole } from '@prisma/client'
 
 interface CachedUser {
   id: string
   email?: string | null
+  role: UserRole
   timestamp: number
 }
 
@@ -22,6 +24,7 @@ export async function getUserWithCache(userId: string): Promise<CachedUser | nul
     select: {
       id: true,
       email: true,
+      role: true,
     },
   })
 
@@ -32,6 +35,7 @@ export async function getUserWithCache(userId: string): Promise<CachedUser | nul
   const cachedUser: CachedUser = {
     id: user.id,
     email: user.email,
+    role: user.role,
     timestamp: now,
   }
 

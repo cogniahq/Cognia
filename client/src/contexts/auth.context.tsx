@@ -1,11 +1,11 @@
 import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
   ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
   useMemo,
+  useState,
 } from "react"
 import { axiosInstance } from "@/utils/http"
 
@@ -118,18 +118,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const setAuthState = useCallback((newToken: string | null, newUser: User | null) => {
-    setToken(newToken)
-    setUser(newUser)
+  const setAuthState = useCallback(
+    (newToken: string | null, newUser: User | null) => {
+      setToken(newToken)
+      setUser(newUser)
 
-    if (newToken) {
-      storage.setItem("auth_token", newToken)
-      syncTokenToExtension(newToken)
-    } else {
-      storage.removeItem("auth_token")
-      syncTokenToExtension(null)
-    }
-  }, [])
+      if (newToken) {
+        storage.setItem("auth_token", newToken)
+        syncTokenToExtension(newToken)
+      } else {
+        storage.removeItem("auth_token")
+        syncTokenToExtension(null)
+      }
+    },
+    []
+  )
 
   const clearAuthState = useCallback(() => {
     setToken(null)

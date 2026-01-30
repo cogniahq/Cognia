@@ -115,37 +115,44 @@ router.delete('/session', (_req: Request, res: Response) => {
 })
 
 // Get token for extension - requires authentication, only allows generating token for the authenticated user
-router.post('/extension-token', extensionTokenRateLimiter, authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { userId } = req.body
+router.post(
+  '/extension-token',
+  extensionTokenRateLimiter,
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { userId } = req.body
 
-    if (!userId || typeof userId !== 'string') {
-      return res.status(400).json({ message: 'userId is required' })
+      if (!userId || typeof userId !== 'string') {
+        return res.status(400).json({ message: 'userId is required' })
+      }
+
+      // Security: Ensure the requested userId matches the authenticated user
+      if (userId !== req.user!.id) {
+        logger.warn(
+          `Extension token attempt for different user: requested=${userId}, authenticated=${req.user!.id}`
+        )
+        return res.status(403).json({ message: 'Cannot generate token for another user' })
+      }
+
+      // Generate JWT token for the authenticated user
+      const token = generateToken({
+        userId: req.user!.id,
+        email: req.user!.email,
+      })
+
+      res.status(200).json({
+        message: 'Token generated successfully',
+        token,
+        user: {
+          id: req.user!.id,
+        },
+      })
+    } catch (error) {
+      logger.error('Extension token error:', error)
+      res.status(500).json({ message: 'Failed to generate token' })
     }
-
-    // Security: Ensure the requested userId matches the authenticated user
-    if (userId !== req.user!.id) {
-      logger.warn(`Extension token attempt for different user: requested=${userId}, authenticated=${req.user!.id}`)
-      return res.status(403).json({ message: 'Cannot generate token for another user' })
-    }
-
-    // Generate JWT token for the authenticated user
-    const token = generateToken({
-      userId: req.user!.id,
-      email: req.user!.email,
-    })
-
-    res.status(200).json({
-      message: 'Token generated successfully',
-      token,
-      user: {
-        id: req.user!.id,
-      },
-    })
-  } catch (error) {
-    logger.error('Extension token error:', error)
-    res.status(500).json({ message: 'Failed to generate token' })
   }
-})
+)
 
 export default router

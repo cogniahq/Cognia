@@ -372,7 +372,8 @@ export class MeshRelationsService {
                   memory_id: memoryId,
                   related_memory_id: relatedMemoryId,
                   similarity_score: relatedMemory.similarity_score || relatedMemory.similarity,
-                  relation_type: (relatedMemory.relation_type as RelationType) || RelationType.semantic,
+                  relation_type:
+                    (relatedMemory.relation_type as RelationType) || RelationType.semantic,
                 },
               })
             } catch (createError: unknown) {
@@ -386,7 +387,8 @@ export class MeshRelationsService {
             }
           } else {
             const similarityScore = relatedMemory.similarity_score || relatedMemory.similarity
-            const relationType = (relatedMemory.relation_type as RelationType) || RelationType.semantic
+            const relationType =
+              (relatedMemory.relation_type as RelationType) || RelationType.semantic
             const shouldUpdate =
               similarityScore > existingRelation.similarity_score + 0.05 ||
               (similarityScore > existingRelation.similarity_score &&

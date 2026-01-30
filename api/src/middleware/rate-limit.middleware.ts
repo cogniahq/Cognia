@@ -18,7 +18,12 @@ function getClientIp(req: Request): string {
 }
 
 export function createRateLimiter(options: RateLimitOptions) {
-  const { windowMs, maxRequests, keyPrefix, message = 'Too many requests, please try again later' } = options
+  const {
+    windowMs,
+    maxRequests,
+    keyPrefix,
+    message = 'Too many requests, please try again later',
+  } = options
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

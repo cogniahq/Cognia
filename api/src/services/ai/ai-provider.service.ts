@@ -168,6 +168,16 @@ JSON ONLY:`
     return result
   },
 
+  async generateContentWithImage(
+    prompt: string,
+    imageBase64: string,
+    mimeType: string,
+    timeoutOverride?: number
+  ): Promise<string> {
+    // Image processing requires Gemini (vision models)
+    return geminiService.generateContentWithImage(prompt, imageBase64, mimeType, timeoutOverride)
+  },
+
   generateFallbackMetadata(
     rawText: string,
     metadata?: Record<string, unknown>

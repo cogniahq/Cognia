@@ -63,6 +63,8 @@ volumes:
     driver: local
   cognia_redis_data:
     driver: local
+  cognia_uploads:
+    driver: local
 
 networks:
   cognia_network:

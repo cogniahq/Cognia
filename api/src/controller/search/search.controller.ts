@@ -1,12 +1,15 @@
 import { Request, Response, NextFunction } from 'express'
 import { AuthenticatedRequest } from '../../middleware/auth.middleware'
+import { OrganizationRequest } from '../../middleware/organization.middleware'
 import AppError from '../../utils/http/app-error.util'
 import { searchMemories } from '../../services/memory/memory-search.service'
 import { createSearchJob, getSearchJob } from '../../services/search/search-job.service'
+import { unifiedSearchService } from '../../services/search/unified-search.service'
 import { auditLogService } from '../../services/core/audit-log.service'
 import { logger } from '../../utils/core/logger.util'
 import { MemorySearchController } from './memory-search.controller'
 import { SearchEndpointsController } from './search-endpoints.controller'
+import { SourceType } from '@prisma/client'
 
 export class SearchController {
   // Main search endpoints
@@ -173,5 +176,95 @@ export class SearchController {
 
   static async searchMemoriesHybridEndpoint(req: AuthenticatedRequest, res: Response) {
     return SearchEndpointsController.searchMemoriesHybrid(req, res)
+  }
+
+  /**
+   * Search organization documents and memories
+   * POST /api/search/organization/:slug
+   */
+  static async searchOrganization(
+    req: OrganizationRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { query, limit, sourceTypes, includeAnswer } = req.body || {}
+
+      if (!query) {
+        return next(new AppError('query is required', 400))
+      }
+
+      if (!req.organization) {
+        return next(new AppError('Organization context required', 400))
+      }
+
+      // Parse source types if provided
+      let parsedSourceTypes: SourceType[] | undefined
+      if (sourceTypes) {
+        if (Array.isArray(sourceTypes)) {
+          parsedSourceTypes = sourceTypes.filter(
+            (t): t is SourceType => Object.values(SourceType).includes(t)
+          )
+        }
+      }
+
+      const result = await unifiedSearchService.search({
+        organizationId: req.organization.id,
+        query,
+        sourceTypes: parsedSourceTypes,
+        limit: limit || 20,
+        includeAnswer: includeAnswer !== false,
+      })
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      })
+    } catch (error) {
+      logger.error('[search] organization search failed', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Search failed', 500))
+    }
+  }
+
+  /**
+   * Search organization documents only
+   * POST /api/search/organization/:slug/documents
+   */
+  static async searchOrganizationDocuments(
+    req: OrganizationRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { query, limit } = req.body || {}
+
+      if (!query) {
+        return next(new AppError('query is required', 400))
+      }
+
+      if (!req.organization) {
+        return next(new AppError('Organization context required', 400))
+      }
+
+      const result = await unifiedSearchService.searchDocuments(
+        req.organization.id,
+        query,
+        limit || 20
+      )
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      })
+    } catch (error) {
+      logger.error('[search] organization document search failed', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Search failed', 500))
+    }
   }
 }

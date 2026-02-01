@@ -57,11 +57,14 @@
     "prisma": "^6.19.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.980.0",
+    "@aws-sdk/s3-request-presigner": "^3.980.0",
     "@google/genai": "^1.24.0",
     "@prisma/client": "^6.19.0",
     "@qdrant/js-client-rest": "^1.9.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.9.0",
     "compression": "^1.7.4",
@@ -71,8 +74,11 @@
     "express": "^4.18.2",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.11.0",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
+    "pdf-parse": "^2.4.5",
     "ts-node": "^10.9.1",
     "typescript": "^5.4.5",
     "umap-js": "^1.4.0"

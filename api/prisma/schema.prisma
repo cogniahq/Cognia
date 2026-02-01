@@ -20,26 +20,123 @@ enum RelationType {
   temporal
 }
 
+enum OrgRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SourceType {
+  EXTENSION
+  DOCUMENT
+  API
+  INTEGRATION
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id               String           @id @default(uuid()) @db.Uuid
-  email            String?          @unique
-  password_hash    String?
-  role             UserRole         @default(USER)
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @default(now()) @updatedAt
-  memories         Memory[]
-  memory_snapshots MemorySnapshot[]
-  token_usage      TokenUsage[]
-  profile          UserProfile?
-  browsing_summaries BrowsingSummary[]
-  audit_logs       AuditLog[]
+  id                       String               @id @default(uuid()) @db.Uuid
+  email                    String?              @unique
+  password_hash            String?
+  role                     UserRole             @default(USER)
+  created_at               DateTime             @default(now())
+  updated_at               DateTime             @default(now()) @updatedAt
+  memories                 Memory[]
+  memory_snapshots         MemorySnapshot[]
+  token_usage              TokenUsage[]
+  profile                  UserProfile?
+  browsing_summaries       BrowsingSummary[]
+  audit_logs               AuditLog[]
+  organization_memberships OrganizationMember[]
+  uploaded_documents       Document[]
 
   @@map("users")
+}
+
+model Organization {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String               @unique
+  description String?
+  created_at  DateTime             @default(now())
+  updated_at  DateTime             @updatedAt
+  members     OrganizationMember[]
+  documents   Document[]
+  memories    Memory[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id              String       @id @default(uuid()) @db.Uuid
+  organization_id String       @db.Uuid
+  user_id         String       @db.Uuid
+  role            OrgRole      @default(VIEWER)
+  created_at      DateTime     @default(now())
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, user_id])
+  @@index([organization_id])
+  @@index([user_id])
+  @@map("organization_members")
+}
+
+model Document {
+  id               String         @id @default(uuid()) @db.Uuid
+  organization_id  String         @db.Uuid
+  uploader_id      String         @db.Uuid
+  filename         String
+  original_name    String
+  mime_type        String
+  file_size        Int
+  storage_path     String
+  storage_provider String         @default("local")
+  status           DocumentStatus @default(PENDING)
+  error_message    String?
+  page_count       Int?
+  metadata         Json?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  organization     Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  uploader         User           @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
+  chunks           DocumentChunk[]
+
+  @@index([organization_id])
+  @@index([uploader_id])
+  @@index([status])
+  @@index([organization_id, status])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id           String   @id @default(uuid()) @db.Uuid
+  document_id  String   @db.Uuid
+  chunk_index  Int
+  content      String
+  page_number  Int?
+  char_start   Int?
+  char_end     Int?
+  memory_id    String?  @db.Uuid
+  created_at   DateTime @default(now())
+  document     Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  memory       Memory?  @relation(fields: [memory_id], references: [id], onDelete: SetNull)
+
+  @@unique([document_id, chunk_index])
+  @@index([document_id])
+  @@index([memory_id])
+  @@map("document_chunks")
 }
 
 model AuditLog {
@@ -79,10 +176,14 @@ model Memory {
   importance_score       Float?               @default(0.0)
   access_count           Int                  @default(0)
   last_accessed          DateTime             @default(now())
+  source_type            SourceType?          @default(EXTENSION)
+  organization_id        String?              @db.Uuid
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization           Organization?        @relation(fields: [organization_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
   query_related_memories QueryRelatedMemory[]
+  document_chunks        DocumentChunk[]
 
   @@index([user_id])
   @@index([created_at])
@@ -93,6 +194,8 @@ model Memory {
   @@index([user_id, importance_score])
   @@index([user_id, memory_type])
   @@index([last_accessed])
+  @@index([organization_id])
+  @@index([source_type])
   @@unique([user_id, canonical_hash])
   @@map("memories")
 }

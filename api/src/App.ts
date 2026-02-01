@@ -18,6 +18,7 @@ import { routes } from './routes/index.route'
 import { prisma } from './lib/prisma.lib'
 import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
+import { startDocumentWorker } from './workers/document-worker'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
@@ -280,6 +281,8 @@ server.listen(port, async () => {
   logger.log('[startup] content_worker_started')
   startCyclicProfileWorker()
   logger.log('[startup] profile_worker_started')
+  startDocumentWorker()
+  logger.log('[startup] document_worker_started')
   logger.log('[startup] server_listening', { protocol, port })
 })
 process.on('unhandledRejection', (err: Error) => {

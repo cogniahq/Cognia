@@ -14,6 +14,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
   const allNavButtons = [
     { label: "Memories", path: "/memories" },
+    { label: "Workspace", path: "/organization" },
     { label: "Analytics", path: "/analytics" },
     { label: "Profile", path: "/profile" },
   ]

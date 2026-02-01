@@ -538,4 +538,62 @@ Be strict. Avoid weak or surface matches.
           : 'No meaningful connection.',
     }
   }
+
+  async generateContentWithImage(
+    prompt: string,
+    imageBase64: string,
+    mimeType: string,
+    timeoutOverride?: number
+  ): Promise<string> {
+    this.ensureInit()
+
+    const originalModelIndex = this.currentModelIndex
+    let lastError: Error | GeminiError | undefined
+
+    while (this.currentModelIndex < this.availableModels.length) {
+      try {
+        const timeoutMs = timeoutOverride ?? 360000
+
+        const response = await runWithRateLimit(
+          () =>
+            this.ai!.models.generateContent({
+              model: this.getCurrentModel(),
+              contents: [
+                {
+                  role: 'user',
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType,
+                        data: imageBase64,
+                      },
+                    },
+                    { text: prompt },
+                  ],
+                },
+              ],
+            }),
+          timeoutMs
+        )
+
+        if (!response.text) throw new Error('No content generated from Gemini Vision API')
+
+        this.resetToFirstModel()
+        return response.text
+      } catch (err) {
+        lastError = err as Error | GeminiError
+
+        if (this.isRateLimitError(lastError)) {
+          if (!this.switchToNextModel()) {
+            break
+          }
+        } else {
+          break
+        }
+      }
+    }
+
+    this.currentModelIndex = originalModelIndex
+    throw lastError || new Error('Failed to generate content with image')
+  }
 }

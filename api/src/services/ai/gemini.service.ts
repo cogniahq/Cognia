@@ -97,6 +97,15 @@ export class GeminiService {
   }> {
     return this.generationService.evaluateMemoryRelationship(memoryA, memoryB)
   }
+
+  async generateContentWithImage(
+    prompt: string,
+    imageBase64: string,
+    mimeType: string,
+    timeoutOverride?: number
+  ): Promise<string> {
+    return this.generationService.generateContentWithImage(prompt, imageBase64, mimeType, timeoutOverride)
+  }
 }
 
 export const geminiService = new GeminiService()

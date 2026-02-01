@@ -7,6 +7,25 @@ import { PageHeader } from "@/components/shared/PageHeader"
 
 import { EmptyState, ErrorMessage } from "../components/ui/loading-spinner"
 
+type AccountType = "personal" | "organization"
+
+// Storage helpers for account type preference
+const getAccountType = (): AccountType => {
+  try {
+    return (localStorage.getItem("account_type") as AccountType) || "personal"
+  } catch {
+    return "personal"
+  }
+}
+
+const setAccountTypePreference = (type: AccountType): void => {
+  try {
+    localStorage.setItem("account_type", type)
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export const Profile: React.FC = () => {
   const navigate = useNavigate()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -14,6 +33,7 @@ export const Profile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dashboardType, setDashboardType] = useState<AccountType>(getAccountType())
 
   useEffect(() => {
     try {
@@ -107,6 +127,56 @@ export const Profile: React.FC = () => {
             <p className="text-xs text-gray-600">
               Your automatically maintained profile based on processed content
             </p>
+          </div>
+
+          {/* Dashboard Preference */}
+          <div className="bg-white border border-gray-200 p-4">
+            <div className="text-sm font-mono text-gray-600 mb-3 uppercase tracking-wide">
+              [DEFAULT DASHBOARD]
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Choose which dashboard to show when you sign in
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setDashboardType("personal")
+                  setAccountTypePreference("personal")
+                }}
+                className={`flex-1 p-3 border text-left transition-colors ${
+                  dashboardType === "personal"
+                    ? "border-gray-900 bg-gray-50"
+                    : "border-gray-200 hover:border-gray-400"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Personal</span>
+                </div>
+                <p className="text-xs text-gray-500">Memories & Knowledge Mesh</p>
+              </button>
+              <button
+                onClick={() => {
+                  setDashboardType("organization")
+                  setAccountTypePreference("organization")
+                }}
+                className={`flex-1 p-3 border text-left transition-colors ${
+                  dashboardType === "organization"
+                    ? "border-gray-900 bg-gray-50"
+                    : "border-gray-200 hover:border-gray-400"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Team Workspace</span>
+                </div>
+                <p className="text-xs text-gray-500">Documents & Team Search</p>
+              </button>
+            </div>
           </div>
 
           {error && (

@@ -14,13 +14,28 @@ import {
 const router = Router()
 
 // Get current user
-router.get('/me', authenticateToken, (req: AuthenticatedRequest, res: Response) => {
-  res.json({
-    user: {
-      id: req.user!.id,
-      email: req.user!.email,
-    },
-  })
+router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, email: true, account_type: true },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        account_type: user.account_type,
+      },
+    })
+  } catch (error) {
+    logger.error('Get me error:', error)
+    return res.status(500).json({ message: 'Failed to get user' })
+  }
 })
 
 // Logout (clear session cookie)
@@ -32,9 +47,13 @@ router.post('/logout', (_req: Request, res: Response) => {
 // Register with email/password
 router.post('/register', registerRateLimiter, async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body || {}
+    const { email, password, account_type } = req.body || {}
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' })
+    }
+
+    if (!account_type || !['PERSONAL', 'ORGANIZATION'].includes(account_type)) {
+      return res.status(400).json({ message: 'account_type must be PERSONAL or ORGANIZATION' })
     }
 
     const existing = await prisma.user.findFirst({ where: { email } })
@@ -43,7 +62,13 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
     }
 
     const password_hash = await hashPassword(password)
-    const user = await prisma.user.create({ data: { email, password_hash } })
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password_hash,
+        account_type: account_type as 'PERSONAL' | 'ORGANIZATION',
+      },
+    })
 
     const token = generateToken({
       userId: user.id,
@@ -53,7 +78,7 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
     return res.status(201).json({
       message: 'Registered',
       token,
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, account_type: user.account_type },
     })
   } catch (error) {
     logger.error('Register error:', error)
@@ -71,7 +96,7 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
 
     const user = await prisma.user.findFirst({
       where: { email },
-      select: { id: true, email: true, password_hash: true },
+      select: { id: true, email: true, password_hash: true, account_type: true },
     })
     if (!user || !user.password_hash) {
       return res.status(401).json({ message: 'Invalid credentials' })
@@ -90,7 +115,7 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
     return res.status(200).json({
       message: 'Logged in',
       token,
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, account_type: user.account_type },
     })
   } catch (error) {
     logger.error('Login error:', error)

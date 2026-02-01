@@ -40,6 +40,11 @@ enum SourceType {
   INTEGRATION
 }
 
+enum AccountType {
+  PERSONAL
+  ORGANIZATION
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -50,6 +55,7 @@ model User {
   email                    String?              @unique
   password_hash            String?
   role                     UserRole             @default(USER)
+  account_type             AccountType          @default(PERSONAL)
   created_at               DateTime             @default(now())
   updated_at               DateTime             @default(now()) @updatedAt
   memories                 Memory[]

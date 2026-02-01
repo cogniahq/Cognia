@@ -8,9 +8,11 @@ import { useSpotlightSearchState } from "@/hooks/use-spotlight-search-state"
 import { MemoryMesh3D } from "@/components/memories/mesh"
 import { SpotlightSearch } from "@/components/memories/spotlight-search"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { useAuth } from "@/contexts/auth.context"
 
 export const Memories: React.FC = () => {
   const navigate = useNavigate()
+  const { accountType, isLoading: authLoading } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
@@ -21,6 +23,13 @@ export const Memories: React.FC = () => {
       navigate("/login")
     }
   }, [navigate])
+
+  // Redirect ORGANIZATION users to their dashboard
+  useEffect(() => {
+    if (!authLoading && accountType === "ORGANIZATION") {
+      navigate("/organization")
+    }
+  }, [accountType, authLoading, navigate])
 
   const similarityThreshold = 0.3
   const { memories, totalMemoryCount } = useMemories()

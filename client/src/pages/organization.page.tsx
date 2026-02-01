@@ -11,10 +11,12 @@ import { OrganizationSearch } from "@/components/organization/OrganizationSearch
 import { useOrganization } from "@/contexts/organization.context"
 import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
 import { MemoryMesh3D } from "@/components/memories/mesh"
+import { useAuth } from "@/contexts/auth.context"
 import type { MemoryMeshNode } from "@/types/memory"
 
 export function Organization() {
   const navigate = useNavigate()
+  const { accountType, isLoading: authLoading } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const {
     organizations,
@@ -74,6 +76,13 @@ export function Organization() {
     }
   }, [navigate])
 
+  // Redirect PERSONAL users to their dashboard
+  useEffect(() => {
+    if (!authLoading && accountType === "PERSONAL") {
+      navigate("/memories")
+    }
+  }, [accountType, authLoading, navigate])
+
   useEffect(() => {
     if (isAuthenticated) {
       loadOrganizations()
@@ -81,6 +90,11 @@ export function Organization() {
   }, [isAuthenticated, loadOrganizations])
 
   if (!isAuthenticated) {
+    return null
+  }
+
+  // Don't render if wrong account type
+  if (accountType === "PERSONAL") {
     return null
   }
 

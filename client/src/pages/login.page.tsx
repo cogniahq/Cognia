@@ -1,52 +1,29 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { cn } from "@/lib/utils.lib"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { ConsoleButton } from "@/components/landing/ConsoleButton"
+import { useAuth } from "@/contexts/auth.context"
 
-import { axiosInstance } from "../utils/http"
+type AccountType = "PERSONAL" | "ORGANIZATION"
 
-interface User {
-  id: string
-  email: string
-  created_at: string
-}
-
-type AccountType = "personal" | "organization"
-
-// Storage helper for account type preference
-const getAccountType = (): AccountType => {
-  try {
-    return (localStorage.getItem("account_type") as AccountType) || "personal"
-  } catch {
-    return "personal"
-  }
-}
-
-const setAccountTypePreference = (type: AccountType): void => {
-  try {
-    localStorage.setItem("account_type", type)
-  } catch {
-    // Ignore localStorage errors
-  }
-}
-
-const getDashboardPath = (type: AccountType): string => {
-  return type === "organization" ? "/organization" : "/memories"
+const getDashboardPath = (type: AccountType | null | undefined): string => {
+  return type === "ORGANIZATION" ? "/organization" : "/memories"
 }
 
 export const Login = () => {
+  const navigate = useNavigate()
+  const { user, isAuthenticated, isLoading: authLoading, login, register, logout, accountType } = useAuth()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [isRegister, setIsRegister] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
   const [showPassword, setShowPassword] = useState(false)
-  const [accountType, setAccountType] = useState<AccountType>("personal")
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountType>("PERSONAL")
   const [showAccountTypeSelection, setShowAccountTypeSelection] = useState(false)
-  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,34 +41,18 @@ export const Login = () => {
     setError("")
 
     try {
-      const endpoint = isRegister ? "/auth/register" : "/auth/login"
-      const response = await axiosInstance.post(endpoint, {
-        email: email.trim(),
-        password: password.trim(),
-      })
-
-      setUser(response.data.user)
-      if (response.data?.token) {
-        try {
-          localStorage.setItem("auth_token", response.data.token)
-        } catch {
-          // Ignore localStorage errors
-        }
-      }
-
-      // For registration, save the selected account type
+      let resultUser
       if (isRegister) {
-        setAccountTypePreference(accountType)
+        resultUser = await register(email.trim(), password.trim(), selectedAccountType)
+      } else {
+        resultUser = await login(email.trim(), password.trim())
       }
 
-      // Get the dashboard path based on account type preference
-      const dashboardPath = getDashboardPath(
-        isRegister ? accountType : getAccountType()
-      )
-
+      // Navigate based on account type from server
+      const dashboardPath = getDashboardPath(resultUser.account_type)
       setTimeout(() => {
         navigate(dashboardPath)
-      }, 1000)
+      }, 500)
     } catch (err) {
       const error = err as {
         response?: { data?: { message?: string } }
@@ -110,51 +71,26 @@ export const Login = () => {
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("/auth/logout")
-      setUser(null)
-      try {
-        localStorage.removeItem("auth_token")
-      } catch {
-        // Ignore localStorage errors
-      }
+      await logout()
       setEmail("")
       setPassword("")
       setError("")
-      navigate("/login")
     } catch (err) {
       console.error("Logout error:", err)
-      setUser(null)
-      try {
-        localStorage.removeItem("auth_token")
-      } catch {
-        // Ignore localStorage errors
-      }
-      navigate("/login")
     }
   }
 
-  const checkCurrentUser = async () => {
-    try {
-      const response = await axiosInstance.get("/auth/me")
-      if (response.data?.user) {
-        setUser(response.data.user)
-      }
-    } catch (err) {
-      setUser(null)
-      try {
-        localStorage.removeItem("auth_token")
-        localStorage.removeItem("user_id")
-      } catch {
-        // Ignore localStorage errors
-      }
-    }
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
   }
 
-  useEffect(() => {
-    checkCurrentUser()
-  }, [])
-
-  if (user) {
+  // If user is already logged in
+  if (isAuthenticated && user) {
     return (
       <div
         className="min-h-screen text-black relative font-primary"
@@ -184,12 +120,15 @@ export const Login = () => {
                       {user.email}
                     </span>
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {accountType === "ORGANIZATION" ? "Team Workspace" : "Personal Account"}
+                  </p>
                 </div>
                 <div className="space-y-3 pt-4">
                   <ConsoleButton
                     variant="console_key"
                     className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md"
-                    onClick={() => navigate(getDashboardPath(getAccountType()))}
+                    onClick={() => navigate(getDashboardPath(accountType))}
                   >
                     <span className="relative z-10 text-sm font-medium">
                       Continue to Dashboard
@@ -296,7 +235,7 @@ export const Login = () => {
                 </h2>
                 <p className="text-sm text-gray-600">
                   {isRegister && showAccountTypeSelection
-                    ? "Select how you want to use Cognia"
+                    ? "This cannot be changed later"
                     : isRegister
                       ? "Get started with Cognia today"
                       : "Enter your credentials to continue"}
@@ -309,14 +248,12 @@ export const Login = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setAccountType("personal")
+                      setSelectedAccountType("PERSONAL")
                       setShowAccountTypeSelection(false)
                     }}
                     className={cn(
                       "w-full p-4 border text-left transition-all duration-200",
-                      accountType === "personal"
-                        ? "border-black bg-gray-50"
-                        : "border-gray-200 hover:border-gray-400"
+                      "border-gray-200 hover:border-gray-900 hover:bg-gray-50"
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -339,14 +276,12 @@ export const Login = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setAccountType("organization")
+                      setSelectedAccountType("ORGANIZATION")
                       setShowAccountTypeSelection(false)
                     }}
                     className={cn(
                       "w-full p-4 border text-left transition-all duration-200",
-                      accountType === "organization"
-                        ? "border-black bg-gray-50"
-                        : "border-gray-200 hover:border-gray-400"
+                      "border-gray-200 hover:border-gray-900 hover:bg-gray-50"
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -372,7 +307,7 @@ export const Login = () => {
                   {isRegister && (
                     <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200">
                       <div className="flex items-center gap-2">
-                        {accountType === "personal" ? (
+                        {selectedAccountType === "PERSONAL" ? (
                           <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
@@ -382,7 +317,7 @@ export const Login = () => {
                           </svg>
                         )}
                         <span className="text-xs font-mono text-gray-600">
-                          {accountType === "personal" ? "Personal Account" : "Team Workspace"}
+                          {selectedAccountType === "PERSONAL" ? "Personal Account" : "Team Workspace"}
                         </span>
                       </div>
                       <button
@@ -477,35 +412,35 @@ export const Login = () => {
                               strokeWidth={2}
                               d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0A9.97 9.97 0 015.12 5.12m3.29 3.29L12 12m-3.59-3.59L3 3m9.59 9.59L21 21"
                             />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                  {isRegister && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      Must be at least 8 characters
-                    </p>
-                  )}
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {isRegister && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        Must be at least 8 characters
+                      </p>
+                    )}
                   </div>
 
                   {error && (

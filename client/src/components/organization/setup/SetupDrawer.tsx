@@ -1,5 +1,4 @@
 import { ReactNode } from "react"
-import { X, ArrowLeft } from "lucide-react"
 
 interface SetupDrawerProps {
   open: boolean
@@ -15,27 +14,28 @@ export function SetupDrawer({ open, onClose, title, children }: SetupDrawerProps
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/20 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/20 z-40"
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-white border-l border-gray-200 z-50 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="text-xs font-mono text-gray-500 hover:text-gray-900 uppercase tracking-wider"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back
+            ← Back
           </button>
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+            [{title}]
+          </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="text-xs font-mono text-gray-500 hover:text-gray-900"
           >
-            <X className="h-5 w-5" />
+            ✕
           </button>
         </div>
 

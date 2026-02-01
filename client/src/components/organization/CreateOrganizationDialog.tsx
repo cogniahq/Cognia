@@ -7,7 +7,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { useOrganization } from "@/contexts/organization.context"
-import { Building2, Users, ChevronDown } from "lucide-react"
 
 interface CreateOrganizationDialogProps {
   open: boolean
@@ -31,10 +30,10 @@ const INDUSTRIES = [
 ]
 
 const TEAM_SIZES = [
-  { value: "1-10", label: "1-10", description: "Small team" },
-  { value: "11-50", label: "11-50", description: "Growing team" },
-  { value: "51-200", label: "51-200", description: "Mid-size" },
-  { value: "200+", label: "200+", description: "Enterprise" },
+  { value: "1-10", label: "1-10" },
+  { value: "11-50", label: "11-50" },
+  { value: "51-200", label: "51-200" },
+  { value: "200+", label: "200+" },
 ]
 
 export function CreateOrganizationDialog({
@@ -94,26 +93,25 @@ export function CreateOrganizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-none">
+      <DialogContent className="sm:max-w-md rounded-none">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-xs font-mono text-gray-500 uppercase tracking-wider mb-1">
-            <Building2 className="h-3.5 w-3.5" />
+          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-1">
             [NEW WORKSPACE]
           </div>
-          <DialogTitle className="text-xl font-bold">
-            Create Your Team Workspace
+          <DialogTitle className="text-lg font-bold">
+            Create Team Workspace
           </DialogTitle>
-          <p className="text-sm text-gray-500 mt-1">
-            Set up your organization to start collaborating with your team.
+          <p className="text-xs text-gray-500 mt-1">
+            Set up your organization to start collaborating
           </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-5 py-4">
+          <div className="space-y-4 py-4">
             {/* Workspace Name */}
             <div>
               <label className="block text-xs font-mono text-gray-600 uppercase tracking-wide mb-2">
-                Workspace Name <span className="text-red-500">*</span>
+                Workspace Name *
               </label>
               <input
                 type="text"
@@ -124,7 +122,7 @@ export function CreateOrganizationDialog({
                   setError("")
                 }}
                 disabled={isSubmitting}
-                className="w-full px-3 py-2.5 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 disabled:bg-gray-50 disabled:text-gray-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
                 autoFocus
               />
             </div>
@@ -132,34 +130,30 @@ export function CreateOrganizationDialog({
             {/* Industry */}
             <div>
               <label className="block text-xs font-mono text-gray-600 uppercase tracking-wide mb-2">
-                Industry <span className="text-red-500">*</span>
+                Industry *
               </label>
-              <div className="relative">
-                <select
-                  value={industry}
-                  onChange={(e) => {
-                    setIndustry(e.target.value)
-                    setError("")
-                  }}
-                  disabled={isSubmitting}
-                  className="w-full px-3 py-2.5 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 disabled:bg-gray-50 disabled:text-gray-500 appearance-none bg-white transition-colors"
-                >
-                  <option value="">Select your industry...</option>
-                  {INDUSTRIES.map((ind) => (
-                    <option key={ind.value} value={ind.value}>
-                      {ind.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              </div>
+              <select
+                value={industry}
+                onChange={(e) => {
+                  setIndustry(e.target.value)
+                  setError("")
+                }}
+                disabled={isSubmitting}
+                className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500 bg-white"
+              >
+                <option value="">Select industry...</option>
+                {INDUSTRIES.map((ind) => (
+                  <option key={ind.value} value={ind.value}>
+                    {ind.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Team Size */}
             <div>
-              <label className="flex items-center gap-2 text-xs font-mono text-gray-600 uppercase tracking-wide mb-3">
-                <Users className="h-3.5 w-3.5" />
-                Team Size <span className="text-red-500">*</span>
+              <label className="block text-xs font-mono text-gray-600 uppercase tracking-wide mb-2">
+                Team Size *
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {TEAM_SIZES.map((size) => (
@@ -172,70 +166,43 @@ export function CreateOrganizationDialog({
                     }}
                     disabled={isSubmitting}
                     className={`
-                      px-3 py-3 border text-center transition-all
+                      px-3 py-2 border text-xs font-mono text-center transition-colors
                       ${
                         teamSize === size.value
                           ? "border-gray-900 bg-gray-900 text-white"
-                          : "border-gray-300 hover:border-gray-400 bg-white"
+                          : "border-gray-300 hover:border-gray-400"
                       }
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
                   >
-                    <div className="text-sm font-semibold">{size.label}</div>
-                    <div className={`text-xs mt-0.5 ${teamSize === size.value ? "text-gray-300" : "text-gray-500"}`}>
-                      {size.description}
-                    </div>
+                    {size.label}
                   </button>
                 ))}
               </div>
             </div>
 
             {error && (
-              <div className="px-3 py-2.5 bg-red-50 border border-red-200 text-xs font-mono text-red-600">
+              <div className="px-3 py-2 bg-red-50 border border-red-200 text-xs font-mono text-red-600">
                 {error}
               </div>
             )}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">
+          <DialogFooter className="gap-2 sm:gap-0">
             <button
               type="button"
               onClick={() => handleOpenChange(false)}
               disabled={isSubmitting}
-              className="px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !name.trim() || !industry || !teamSize}
-              className="px-6 py-2.5 text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-xs font-mono bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? (
-                <>
-                  <span className="animate-spin">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                  </span>
-                  Creating...
-                </>
-              ) : (
-                "Create Workspace"
-              )}
+              {isSubmitting ? "Creating..." : "Create Workspace"}
             </button>
           </DialogFooter>
         </form>

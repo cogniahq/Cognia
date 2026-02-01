@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { Shield, Lock, Clock, Globe, Key } from "lucide-react"
 import type { Organization } from "@/types/organization"
 import { updateSecurity, type UpdateSecurityRequest } from "@/services/organization/organization.service"
 
@@ -12,21 +11,21 @@ interface SecurityComplianceFormProps {
 const DATA_RESIDENCY_OPTIONS = [
   { value: "auto", label: "Auto-detect", description: "Based on user location" },
   { value: "us", label: "United States", description: "US data centers" },
-  { value: "eu", label: "European Union", description: "EU data centers (GDPR compliant)" },
-  { value: "asia-pacific", label: "Asia-Pacific", description: "APAC data centers" },
+  { value: "eu", label: "European Union", description: "GDPR compliant" },
+  { value: "asia-pacific", label: "Asia-Pacific", description: "APAC region" },
 ]
 
 const SESSION_TIMEOUT_OPTIONS = [
-  { value: "1h", label: "1 hour", description: "High security" },
-  { value: "8h", label: "8 hours", description: "Business day" },
-  { value: "24h", label: "24 hours", description: "Daily" },
-  { value: "7d", label: "7 days", description: "Recommended" },
-  { value: "30d", label: "30 days", description: "Convenience" },
+  { value: "1h", label: "1 hour" },
+  { value: "8h", label: "8 hours" },
+  { value: "24h", label: "24 hours" },
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
 ]
 
 const PASSWORD_POLICY_OPTIONS = [
   { value: "standard", label: "Standard", description: "8+ characters" },
-  { value: "strong", label: "Strong", description: "12+ chars, mixed case, numbers, symbols" },
+  { value: "strong", label: "Strong", description: "12+ chars, mixed" },
 ]
 
 const AUDIT_RETENTION_OPTIONS = [
@@ -81,59 +80,47 @@ export function SecurityComplianceForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Data Residency */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-          <Globe className="h-4 w-4" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
           Data Residency
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {DATA_RESIDENCY_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => handleChange("dataResidency", option.value as UpdateSecurityRequest["dataResidency"])}
               className={`
-                p-3 border rounded-lg text-left transition-all
-                ${
-                  formData.dataResidency === option.value
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }
+                p-3 border text-left transition-colors
+                ${formData.dataResidency === option.value ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"}
               `}
             >
-              <div className="font-medium text-sm text-gray-900">{option.label}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{option.description}</div>
+              <div className="text-sm text-gray-900">{option.label}</div>
+              <div className="text-xs text-gray-500">{option.description}</div>
             </button>
           ))}
         </div>
       </div>
 
       {/* 2FA Requirement */}
-      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-gray-100 rounded-lg">
-            <Lock className="h-5 w-5 text-gray-600" />
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900">
-              Require Two-Factor Authentication
-            </h4>
-            <p className="text-sm text-gray-500 mt-0.5">
-              All team members must enable 2FA to access the workspace
-            </p>
-          </div>
+      <div className="flex items-center justify-between p-4 border border-gray-200">
+        <div>
+          <h4 className="text-sm text-gray-900">Require Two-Factor Authentication</h4>
+          <p className="text-xs text-gray-500 mt-0.5">
+            All members must enable 2FA
+          </p>
         </div>
         <button
           type="button"
           onClick={() => handleChange("require2FA", !formData.require2FA)}
           className={`
-            relative w-12 h-6 rounded-full transition-colors
+            w-10 h-5 flex items-center transition-colors
             ${formData.require2FA ? "bg-gray-900" : "bg-gray-300"}
           `}
         >
           <span
             className={`
-              absolute top-1 w-4 h-4 bg-white rounded-full transition-transform
-              ${formData.require2FA ? "translate-x-7" : "translate-x-1"}
+              w-4 h-4 bg-white transition-transform
+              ${formData.require2FA ? "translate-x-5" : "translate-x-0.5"}
             `}
           />
         </button>
@@ -141,18 +128,17 @@ export function SecurityComplianceForm({
 
       {/* Session Timeout */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-          <Clock className="h-4 w-4" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Session Timeout
         </label>
         <select
           value={formData.sessionTimeout}
           onChange={(e) => handleChange("sessionTimeout", e.target.value as UpdateSecurityRequest["sessionTimeout"])}
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
+          className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
         >
           {SESSION_TIMEOUT_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label} - {option.description}
+              {option.label}
             </option>
           ))}
         </select>
@@ -160,8 +146,7 @@ export function SecurityComplianceForm({
 
       {/* Password Policy */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-          <Key className="h-4 w-4" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
           Password Policy
         </label>
         <div className="space-y-2">
@@ -169,12 +154,8 @@ export function SecurityComplianceForm({
             <label
               key={option.value}
               className={`
-                flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all
-                ${
-                  formData.passwordPolicy === option.value
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }
+                flex items-center gap-3 p-3 border cursor-pointer transition-colors
+                ${formData.passwordPolicy === option.value ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"}
               `}
             >
               <input
@@ -183,11 +164,21 @@ export function SecurityComplianceForm({
                 value={option.value}
                 checked={formData.passwordPolicy === option.value}
                 onChange={(e) => handleChange("passwordPolicy", e.target.value as UpdateSecurityRequest["passwordPolicy"])}
-                className="h-4 w-4 text-gray-900 focus:ring-gray-900"
+                className="sr-only"
               />
+              <div
+                className={`
+                  w-4 h-4 border flex items-center justify-center
+                  ${formData.passwordPolicy === option.value ? "border-gray-900 bg-gray-900" : "border-gray-300"}
+                `}
+              >
+                {formData.passwordPolicy === option.value && (
+                  <span className="text-white text-xs">✓</span>
+                )}
+              </div>
               <div>
-                <span className="font-medium text-sm text-gray-900">{option.label}</span>
-                <span className="text-sm text-gray-500 ml-2">{option.description}</span>
+                <span className="text-sm text-gray-900">{option.label}</span>
+                <span className="text-xs text-gray-500 ml-2">{option.description}</span>
               </div>
             </label>
           ))}
@@ -196,14 +187,13 @@ export function SecurityComplianceForm({
 
       {/* Audit Log Retention */}
       <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-          <Shield className="h-4 w-4" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Audit Log Retention
         </label>
         <select
           value={formData.auditRetention}
           onChange={(e) => handleChange("auditRetention", e.target.value as UpdateSecurityRequest["auditRetention"])}
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
+          className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
         >
           {AUDIT_RETENTION_OPTIONS.map((option) => (
             <option
@@ -212,66 +202,38 @@ export function SecurityComplianceForm({
               disabled={option.enterprise && !isEnterprise}
             >
               {option.label}
-              {option.enterprise && !isEnterprise && " (Enterprise only)"}
+              {option.enterprise && !isEnterprise && " (Enterprise)"}
             </option>
           ))}
         </select>
       </div>
 
-      {/* SSO Section (Enterprise Only) */}
-      {isEnterprise && (
-        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <Shield className="h-4 w-4 text-gray-600" />
-            <h4 className="font-medium text-gray-900">SSO/SAML Configuration</h4>
-          </div>
-          <p className="text-sm text-gray-600">
-            Enterprise SSO configuration is available. Contact support to set up
-            Okta, Azure AD, Google Workspace, or custom SAML integration.
-          </p>
-          <button
-            type="button"
-            className="mt-3 text-sm font-medium text-gray-900 underline hover:no-underline"
-          >
-            Contact Support
-          </button>
-        </div>
-      )}
-
       {!isEnterprise && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            Need SSO/SAML, IP allowlisting, or advanced security features?
-            <button
-              type="button"
-              className="font-medium underline hover:no-underline ml-1"
-            >
-              Upgrade to Enterprise
-            </button>
-          </p>
+        <div className="px-3 py-2 bg-gray-50 border border-gray-200 text-xs text-gray-600">
+          Need SSO, IP allowlisting, or advanced security? Upgrade to Enterprise.
         </div>
       )}
 
       {error && (
-        <div className="px-3 py-2 bg-red-50 border border-red-200 text-sm text-red-600 rounded">
+        <div className="px-3 py-2 bg-red-50 border border-red-200 text-xs font-mono text-red-600">
           {error}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 border border-gray-300 rounded transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-6 py-2 text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 rounded transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-xs font-mono bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? "Saving..." : "Save & Continue"}
         </button>

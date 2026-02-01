@@ -1,4 +1,3 @@
-import { Shield, Lock, Clock, Globe } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -21,50 +20,35 @@ export function SecurityPromptModal({
 }: SecurityPromptModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-none">
         <DialogHeader>
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-6 w-6 text-blue-600" />
+          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-1">
+            [SECURITY]
           </div>
-          <DialogTitle className="text-center text-xl">
+          <DialogTitle className="text-lg font-bold">
             Secure Your Workspace
           </DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
-          <p className="text-center text-gray-600 mb-6">
-            Before your team joins, consider setting up security policies:
+          <p className="text-sm text-gray-600 mb-4">
+            Before your team joins, consider setting up:
           </p>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <Lock className="h-5 w-5 text-gray-600 flex-shrink-0" />
-              <div className="text-sm">
-                <span className="font-medium text-gray-900">
-                  Two-factor authentication
-                </span>
-                <p className="text-gray-500">Require 2FA for all team members</p>
-              </div>
+          <div className="space-y-2">
+            <div className="p-3 bg-gray-50 border border-gray-200">
+              <div className="text-sm text-gray-900">Two-factor authentication</div>
+              <p className="text-xs text-gray-500">Require 2FA for all members</p>
             </div>
 
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <Clock className="h-5 w-5 text-gray-600 flex-shrink-0" />
-              <div className="text-sm">
-                <span className="font-medium text-gray-900">
-                  Session timeout policies
-                </span>
-                <p className="text-gray-500">Auto-logout after inactivity</p>
-              </div>
+            <div className="p-3 bg-gray-50 border border-gray-200">
+              <div className="text-sm text-gray-900">Session timeout policies</div>
+              <p className="text-xs text-gray-500">Auto-logout after inactivity</p>
             </div>
 
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <Globe className="h-5 w-5 text-gray-600 flex-shrink-0" />
-              <div className="text-sm">
-                <span className="font-medium text-gray-900">
-                  Data residency preferences
-                </span>
-                <p className="text-gray-500">Choose where your data is stored</p>
-              </div>
+            <div className="p-3 bg-gray-50 border border-gray-200">
+              <div className="text-sm text-gray-900">Data residency</div>
+              <p className="text-xs text-gray-500">Choose where data is stored</p>
             </div>
           </div>
         </div>
@@ -72,13 +56,13 @@ export function SecurityPromptModal({
         <div className="flex flex-col gap-2 pt-2">
           <button
             onClick={onConfigureSecurity}
-            className="w-full px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors"
+            className="w-full px-4 py-2 bg-gray-900 text-white text-xs font-mono hover:bg-gray-800 transition-colors"
           >
             Configure Security
           </button>
           <button
             onClick={onSetUpLater}
-            className="w-full px-4 py-2.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+            className="w-full px-4 py-2 text-xs font-mono text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
           >
             Set up later
           </button>

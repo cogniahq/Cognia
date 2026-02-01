@@ -11,15 +11,15 @@ export function SetupProgress({
 }: SetupProgressProps) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-600">
-          {completedSteps} of {totalSteps} steps complete
+      <div className="flex items-center justify-between text-xs font-mono">
+        <span className="text-gray-500 uppercase tracking-wider">
+          {completedSteps}/{totalSteps} complete
         </span>
-        <span className="font-semibold text-gray-900">{percentComplete}%</span>
+        <span className="text-gray-900">{percentComplete}%</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-1 bg-gray-200">
         <div
-          className="h-full bg-gray-900 rounded-full transition-all duration-500 ease-out"
+          className="h-full bg-gray-900 transition-all duration-500"
           style={{ width: `${percentComplete}%` }}
         />
       </div>

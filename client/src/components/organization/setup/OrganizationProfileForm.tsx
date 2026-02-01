@@ -1,5 +1,4 @@
 import { useState, useRef } from "react"
-import { Upload, Globe, MapPin, Clock, Building2 } from "lucide-react"
 import type { Organization } from "@/types/organization"
 import { updateProfile, type UpdateProfileRequest } from "@/services/organization/organization.service"
 
@@ -72,7 +71,6 @@ export function OrganizationProfileForm({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // For now, just create a local URL - in production, you'd upload to cloud storage
       const reader = new FileReader()
       reader.onload = (event) => {
         setFormData((prev) => ({ ...prev, logo: event.target?.result as string }))
@@ -100,14 +98,13 @@ export function OrganizationProfileForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Logo Upload */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Upload className="inline h-4 w-4 mr-1" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Logo
         </label>
         <div className="flex items-center gap-4">
           <div
             onClick={handleLogoUpload}
-            className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors overflow-hidden"
+            className="w-16 h-16 border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors overflow-hidden"
           >
             {formData.logo ? (
               <img
@@ -116,14 +113,12 @@ export function OrganizationProfileForm({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-gray-400 text-xs text-center">
-                + Add
-              </span>
+              <span className="text-xs font-mono text-gray-400">+ Add</span>
             )}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-xs text-gray-500">
             <p>PNG, JPG up to 2MB</p>
-            <p>Recommended: 256x256px</p>
+            <p>256×256px recommended</p>
           </div>
           <input
             ref={fileInputRef}
@@ -137,21 +132,20 @@ export function OrganizationProfileForm({
 
       {/* Workspace Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Building2 className="inline h-4 w-4 mr-1" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Workspace Name
         </label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => handleChange("name", e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900"
         />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Description
         </label>
         <textarea
@@ -159,18 +153,17 @@ export function OrganizationProfileForm({
           onChange={(e) => handleChange("description", e.target.value)}
           rows={3}
           maxLength={500}
-          placeholder="Brief description of your organization..."
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+          placeholder="Brief description..."
+          className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 resize-none"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          {formData.description?.length || 0}/500 characters
+        <p className="text-xs font-mono text-gray-400 mt-1">
+          {formData.description?.length || 0}/500
         </p>
       </div>
 
       {/* Website */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Globe className="inline h-4 w-4 mr-1" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Website
         </label>
         <input
@@ -178,14 +171,13 @@ export function OrganizationProfileForm({
           value={formData.website}
           onChange={(e) => handleChange("website", e.target.value)}
           placeholder="https://example.com"
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900"
         />
       </div>
 
       {/* Address Section */}
-      <div className="space-y-4">
-        <label className="block text-sm font-medium text-gray-700">
-          <MapPin className="inline h-4 w-4 mr-1" />
+      <div className="space-y-3">
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider">
           Address
         </label>
 
@@ -194,38 +186,38 @@ export function OrganizationProfileForm({
           value={formData.streetAddress}
           onChange={(e) => handleChange("streetAddress", e.target.value)}
           placeholder="Street address"
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900"
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
             value={formData.city}
             onChange={(e) => handleChange("city", e.target.value)}
             placeholder="City"
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900"
           />
           <input
             type="text"
             value={formData.stateRegion}
             onChange={(e) => handleChange("stateRegion", e.target.value)}
             placeholder="State/Region"
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
             value={formData.postalCode}
             onChange={(e) => handleChange("postalCode", e.target.value)}
             placeholder="Postal code"
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900"
           />
           <select
             value={formData.country}
             onChange={(e) => handleChange("country", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
+            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
           >
             <option value="">Select country</option>
             {COUNTRIES.map((country) => (
@@ -239,14 +231,13 @@ export function OrganizationProfileForm({
 
       {/* Timezone */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <Clock className="inline h-4 w-4 mr-1" />
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           Timezone
         </label>
         <select
           value={formData.timezone}
           onChange={(e) => handleChange("timezone", e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
+          className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
         >
           {TIMEZONES.map((tz) => (
             <option key={tz.value} value={tz.value}>
@@ -257,25 +248,25 @@ export function OrganizationProfileForm({
       </div>
 
       {error && (
-        <div className="px-3 py-2 bg-red-50 border border-red-200 text-sm text-red-600 rounded">
+        <div className="px-3 py-2 bg-red-50 border border-red-200 text-xs font-mono text-red-600">
           {error}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 border border-gray-300 rounded transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-6 py-2 text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 rounded transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-xs font-mono bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
         >
           {isSubmitting ? "Saving..." : "Save & Continue"}
         </button>

@@ -51,6 +51,8 @@ export function DocumentList() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const isAdmin = currentOrganization?.userRole === "ADMIN"
+
   useEffect(() => {
     if (currentOrganization) {
       loadDocuments()
@@ -143,12 +145,14 @@ export function DocumentList() {
               )}
             </div>
             <div className="col-span-1 text-right">
-              <button
-                onClick={() => setDeleteId(doc.id)}
-                className="text-xs font-mono text-gray-400 hover:text-red-600 transition-colors"
-              >
-                ×
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setDeleteId(doc.id)}
+                  className="text-xs font-mono text-gray-400 hover:text-red-600 transition-colors"
+                >
+                  ×
+                </button>
+              )}
             </div>
           </div>
         ))}

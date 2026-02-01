@@ -18,7 +18,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, account_type: true },
+      select: { id: true, email: true, account_type: true, role: true },
     })
 
     if (!user) {
@@ -26,10 +26,12 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
     }
 
     res.json({
-      user: {
+      success: true,
+      data: {
         id: user.id,
         email: user.email,
         account_type: user.account_type,
+        role: user.role,
       },
     })
   } catch (error) {
@@ -96,7 +98,7 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
 
     const user = await prisma.user.findFirst({
       where: { email },
-      select: { id: true, email: true, password_hash: true, account_type: true },
+      select: { id: true, email: true, password_hash: true, account_type: true, role: true },
     })
     if (!user || !user.password_hash) {
       return res.status(401).json({ message: 'Invalid credentials' })
@@ -113,9 +115,12 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
     })
     setAuthCookie(res, token)
     return res.status(200).json({
-      message: 'Logged in',
-      token,
-      user: { id: user.id, email: user.email, account_type: user.account_type },
+      success: true,
+      data: {
+        message: 'Logged in',
+        token,
+        user: { id: user.id, email: user.email, account_type: user.account_type, role: user.role },
+      },
     })
   } catch (error) {
     logger.error('Login error:', error)

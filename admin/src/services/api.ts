@@ -60,7 +60,7 @@ export async function login(email: string, password: string): Promise<{ token: s
 
 export async function getCurrentUser(): Promise<AuthUser> {
   const response = await api.get('/auth/me')
-  return response.data.data
+  return response.data.data as AuthUser
 }
 
 // Dashboard

@@ -675,10 +675,10 @@ class AdminService {
     startDate.setHours(0, 0, 0, 0)
 
     // Get daily counts using raw queries for efficiency
-    const userGrowth = await this.getTimeSeriesData('users', 'created_at', startDate, days)
-    const memoryGrowth = await this.getTimeSeriesData('memories', 'created_at', startDate, days)
-    const searchActivity = await this.getTimeSeriesData('query_events', 'created_at', startDate, days)
-    const documentUploads = await this.getTimeSeriesData('documents', 'created_at', startDate, days)
+    const userGrowth = await this.getTimeSeriesData('users', startDate, days)
+    const memoryGrowth = await this.getTimeSeriesData('memories', startDate, days)
+    const searchActivity = await this.getTimeSeriesData('query_events', startDate, days)
+    const documentUploads = await this.getTimeSeriesData('documents', startDate, days)
 
     // Token usage time series
     const tokenUsageRaw = await prisma.tokenUsage.groupBy({
@@ -739,26 +739,48 @@ class AdminService {
   }
 
   private async getTimeSeriesData(
-    table: string,
-    dateColumn: string,
+    table: 'users' | 'memories' | 'query_events' | 'documents',
     startDate: Date,
     days: number
   ): Promise<TimeSeriesPoint[]> {
-    // Use Prisma's raw query with proper date grouping
-    const results: Array<{ date: Date; count: bigint }> = await prisma.$queryRawUnsafe(`
-      SELECT DATE("${dateColumn}") as date, COUNT(*) as count
-      FROM "${table}"
-      WHERE "${dateColumn}" >= $1
-      GROUP BY DATE("${dateColumn}")
-      ORDER BY date
-    `, startDate)
+    // Get counts by date using Prisma
+    let records: Array<{ created_at: Date }>
 
-    // Build full date range with zeros
+    switch (table) {
+      case 'users':
+        records = await prisma.user.findMany({
+          where: { created_at: { gte: startDate } },
+          select: { created_at: true },
+        })
+        break
+      case 'memories':
+        records = await prisma.memory.findMany({
+          where: { created_at: { gte: startDate } },
+          select: { created_at: true },
+        })
+        break
+      case 'query_events':
+        records = await prisma.queryEvent.findMany({
+          where: { created_at: { gte: startDate } },
+          select: { created_at: true },
+        })
+        break
+      case 'documents':
+        records = await prisma.document.findMany({
+          where: { created_at: { gte: startDate } },
+          select: { created_at: true },
+        })
+        break
+    }
+
+    // Group by date
     const countByDate = new Map<string, number>()
-    results.forEach(r => {
-      countByDate.set(r.date.toISOString().split('T')[0], Number(r.count))
+    records.forEach(r => {
+      const dateStr = r.created_at.toISOString().split('T')[0]
+      countByDate.set(dateStr, (countByDate.get(dateStr) || 0) + 1)
     })
 
+    // Build full date range with zeros
     const timeSeries: TimeSeriesPoint[] = []
     for (let i = 0; i < days; i++) {
       const d = new Date(startDate)

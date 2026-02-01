@@ -1,13 +1,21 @@
 import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import { OrgRole } from '@prisma/client'
+import { randomBytes } from 'crypto'
 import type {
   CreateOrganizationInput,
   UpdateOrganizationInput,
+  UpdateOrganizationProfileInput,
+  UpdateOrganizationBillingInput,
+  UpdateOrganizationSecurityInput,
   AddMemberInput,
   UpdateMemberInput,
   OrganizationWithMembers,
+  SetupProgress,
+  CreateInvitationInput,
 } from '../../types/organization.types'
+
+const SETUP_STEPS = ['create', 'profile', 'billing', 'security', 'team', 'integrations']
 
 export class OrganizationService {
   /**
@@ -30,6 +38,10 @@ export class OrganizationService {
         name: input.name,
         slug: input.slug,
         description: input.description,
+        industry: input.industry,
+        team_size: input.teamSize,
+        setup_completed_steps: ['create'],
+        setup_started_at: new Date(),
         members: {
           create: {
             user_id: creatorId,
@@ -51,6 +63,8 @@ export class OrganizationService {
     logger.log('[organization] created', {
       organizationId: organization.id,
       slug: organization.slug,
+      industry: input.industry,
+      teamSize: input.teamSize,
       creatorId,
     })
 
@@ -442,6 +456,418 @@ export class OrganizationService {
     return chunks
       .map(c => c.memory_id)
       .filter((id): id is string => id !== null)
+  }
+
+  // ==========================================
+  // Enterprise Setup Methods
+  // ==========================================
+
+  /**
+   * Update organization profile
+   */
+  async updateProfile(
+    organizationId: string,
+    input: UpdateOrganizationProfileInput
+  ): Promise<OrganizationWithMembers> {
+    if (input.slug) {
+      const existing = await prisma.organization.findFirst({
+        where: {
+          slug: input.slug,
+          NOT: { id: organizationId },
+        },
+      })
+
+      if (existing) {
+        throw new Error('Organization with this slug already exists')
+      }
+    }
+
+    const organization = await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        ...(input.name && { name: input.name }),
+        ...(input.slug && { slug: input.slug }),
+        ...(input.description !== undefined && { description: input.description }),
+        ...(input.logo !== undefined && { logo: input.logo }),
+        ...(input.website !== undefined && { website: input.website }),
+        ...(input.streetAddress !== undefined && { street_address: input.streetAddress }),
+        ...(input.city !== undefined && { city: input.city }),
+        ...(input.stateRegion !== undefined && { state_region: input.stateRegion }),
+        ...(input.postalCode !== undefined && { postal_code: input.postalCode }),
+        ...(input.country !== undefined && { country: input.country }),
+        ...(input.timezone !== undefined && { timezone: input.timezone }),
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, email: true },
+            },
+          },
+        },
+      },
+    })
+
+    // Mark profile step as complete if logo or description is set
+    if (organization.logo || organization.description) {
+      await this.markSetupStepComplete(organizationId, 'profile')
+    }
+
+    logger.log('[organization] profile_updated', {
+      organizationId,
+      updates: Object.keys(input),
+    })
+
+    return organization
+  }
+
+  /**
+   * Update organization billing settings
+   */
+  async updateBilling(
+    organizationId: string,
+    input: UpdateOrganizationBillingInput
+  ): Promise<OrganizationWithMembers> {
+    const organization = await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        ...(input.legalName !== undefined && { legal_name: input.legalName }),
+        ...(input.billingEmail !== undefined && { billing_email: input.billingEmail }),
+        ...(input.billingAddress !== undefined && { billing_address: input.billingAddress }),
+        ...(input.vatTaxId !== undefined && { vat_tax_id: input.vatTaxId }),
+        ...(input.plan !== undefined && { plan: input.plan }),
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, email: true },
+            },
+          },
+        },
+      },
+    })
+
+    // Mark billing step as complete if required fields are set
+    if (organization.legal_name && organization.billing_email && organization.plan) {
+      await this.markSetupStepComplete(organizationId, 'billing')
+    }
+
+    logger.log('[organization] billing_updated', {
+      organizationId,
+      plan: input.plan,
+    })
+
+    return organization
+  }
+
+  /**
+   * Update organization security settings
+   */
+  async updateSecurity(
+    organizationId: string,
+    input: UpdateOrganizationSecurityInput
+  ): Promise<OrganizationWithMembers> {
+    const organization = await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        ...(input.dataResidency !== undefined && { data_residency: input.dataResidency }),
+        ...(input.require2FA !== undefined && { require_2fa: input.require2FA }),
+        ...(input.sessionTimeout !== undefined && { session_timeout: input.sessionTimeout }),
+        ...(input.passwordPolicy !== undefined && { password_policy: input.passwordPolicy }),
+        ...(input.auditRetention !== undefined && { audit_retention: input.auditRetention }),
+        ...(input.ipAllowlist !== undefined && { ip_allowlist: input.ipAllowlist }),
+        ...(input.ssoEnabled !== undefined && { sso_enabled: input.ssoEnabled }),
+        ...(input.ssoConfig !== undefined && { sso_config: input.ssoConfig }),
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, email: true },
+            },
+          },
+        },
+      },
+    })
+
+    // Mark security step as complete
+    await this.markSetupStepComplete(organizationId, 'security')
+
+    logger.log('[organization] security_updated', {
+      organizationId,
+      updates: Object.keys(input),
+    })
+
+    return organization
+  }
+
+  /**
+   * Get setup progress for an organization
+   */
+  async getSetupProgress(organizationId: string): Promise<SetupProgress> {
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        setup_completed_steps: true,
+        setup_started_at: true,
+        setup_completed_at: true,
+      },
+    })
+
+    if (!org) {
+      throw new Error('Organization not found')
+    }
+
+    const completedSteps = org.setup_completed_steps || []
+    const percentComplete = Math.round((completedSteps.length / SETUP_STEPS.length) * 100)
+
+    return {
+      completedSteps,
+      totalSteps: SETUP_STEPS.length,
+      percentComplete,
+      startedAt: org.setup_started_at,
+      completedAt: org.setup_completed_at,
+    }
+  }
+
+  /**
+   * Mark a setup step as complete
+   */
+  async markSetupStepComplete(organizationId: string, step: string): Promise<void> {
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { setup_completed_steps: true },
+    })
+
+    if (!org) return
+
+    const completedSteps = org.setup_completed_steps || []
+    if (completedSteps.includes(step)) return
+
+    const newCompletedSteps = [...completedSteps, step]
+    const isComplete = SETUP_STEPS.every(s => newCompletedSteps.includes(s))
+
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        setup_completed_steps: newCompletedSteps,
+        ...(isComplete && { setup_completed_at: new Date() }),
+      },
+    })
+
+    logger.log('[organization] setup_step_completed', {
+      organizationId,
+      step,
+      isComplete,
+    })
+  }
+
+  /**
+   * Skip a setup step
+   */
+  async skipSetupStep(organizationId: string, step: string): Promise<void> {
+    await this.markSetupStepComplete(organizationId, step)
+  }
+
+  /**
+   * Mark security prompt as shown
+   */
+  async markSecurityPromptShown(organizationId: string): Promise<void> {
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: { security_prompt_shown: true },
+    })
+  }
+
+  // ==========================================
+  // Invitation Methods
+  // ==========================================
+
+  /**
+   * Create an invitation to join the organization
+   */
+  async createInvitation(
+    organizationId: string,
+    invitedBy: string,
+    input: CreateInvitationInput
+  ) {
+    // Check if user already exists and is a member
+    const existingUser = await prisma.user.findUnique({
+      where: { email: input.email },
+    })
+
+    if (existingUser) {
+      const existingMember = await prisma.organizationMember.findUnique({
+        where: {
+          organization_id_user_id: {
+            organization_id: organizationId,
+            user_id: existingUser.id,
+          },
+        },
+      })
+
+      if (existingMember) {
+        throw new Error('User is already a member of this organization')
+      }
+    }
+
+    // Check for existing pending invitation
+    const existingInvitation = await prisma.organizationInvitation.findUnique({
+      where: {
+        organization_id_email: {
+          organization_id: organizationId,
+          email: input.email,
+        },
+      },
+    })
+
+    if (existingInvitation && existingInvitation.expires_at > new Date()) {
+      throw new Error('An invitation has already been sent to this email')
+    }
+
+    // Delete expired invitation if exists
+    if (existingInvitation) {
+      await prisma.organizationInvitation.delete({
+        where: { id: existingInvitation.id },
+      })
+    }
+
+    // Create new invitation
+    const token = randomBytes(32).toString('hex')
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
+
+    const invitation = await prisma.organizationInvitation.create({
+      data: {
+        organization_id: organizationId,
+        email: input.email,
+        role: input.role || OrgRole.VIEWER,
+        invited_by: invitedBy,
+        token,
+        expires_at: expiresAt,
+      },
+    })
+
+    // Mark team step as complete
+    await this.markSetupStepComplete(organizationId, 'team')
+
+    logger.log('[organization] invitation_created', {
+      organizationId,
+      email: input.email,
+      role: invitation.role,
+    })
+
+    return invitation
+  }
+
+  /**
+   * Get all pending invitations for an organization
+   */
+  async getInvitations(organizationId: string) {
+    return prisma.organizationInvitation.findMany({
+      where: {
+        organization_id: organizationId,
+        accepted_at: null,
+        expires_at: { gt: new Date() },
+      },
+      orderBy: { created_at: 'desc' },
+    })
+  }
+
+  /**
+   * Accept an invitation
+   */
+  async acceptInvitation(token: string, userId: string) {
+    const invitation = await prisma.organizationInvitation.findUnique({
+      where: { token },
+      include: { organization: true },
+    })
+
+    if (!invitation) {
+      throw new Error('Invalid invitation token')
+    }
+
+    if (invitation.expires_at < new Date()) {
+      throw new Error('Invitation has expired')
+    }
+
+    if (invitation.accepted_at) {
+      throw new Error('Invitation has already been used')
+    }
+
+    // Check if user is already a member
+    const existingMember = await prisma.organizationMember.findUnique({
+      where: {
+        organization_id_user_id: {
+          organization_id: invitation.organization_id,
+          user_id: userId,
+        },
+      },
+    })
+
+    if (existingMember) {
+      throw new Error('You are already a member of this organization')
+    }
+
+    // Add user as member and mark invitation as accepted
+    await prisma.$transaction([
+      prisma.organizationMember.create({
+        data: {
+          organization_id: invitation.organization_id,
+          user_id: userId,
+          role: invitation.role,
+        },
+      }),
+      prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { accepted_at: new Date() },
+      }),
+    ])
+
+    logger.log('[organization] invitation_accepted', {
+      organizationId: invitation.organization_id,
+      userId,
+      role: invitation.role,
+    })
+
+    return invitation.organization
+  }
+
+  /**
+   * Revoke an invitation
+   */
+  async revokeInvitation(invitationId: string): Promise<void> {
+    await prisma.organizationInvitation.delete({
+      where: { id: invitationId },
+    })
+
+    logger.log('[organization] invitation_revoked', { invitationId })
+  }
+
+  /**
+   * Get invitation by token (for accept page)
+   */
+  async getInvitationByToken(token: string) {
+    const invitation = await prisma.organizationInvitation.findUnique({
+      where: { token },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+          },
+        },
+      },
+    })
+
+    if (!invitation) {
+      throw new Error('Invalid invitation token')
+    }
+
+    return invitation
   }
 }
 

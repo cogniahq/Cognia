@@ -8,6 +8,7 @@ import { DocumentUpload } from "@/components/organization/DocumentUpload"
 import { DocumentList } from "@/components/organization/DocumentList"
 import { MemberManagement } from "@/components/organization/MemberManagement"
 import { OrganizationSearch } from "@/components/organization/OrganizationSearch"
+import { SetupChecklist } from "@/components/organization/setup"
 import { useOrganization } from "@/contexts/organization.context"
 import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
 import { MemoryMesh3D } from "@/components/memories/mesh"
@@ -265,6 +266,14 @@ export function Organization() {
               </p>
             )}
           </div>
+
+          {/* Setup Checklist (shows for admins when setup incomplete) */}
+          {isAdmin && (
+            <SetupChecklist
+              organization={currentOrganization}
+              onRefresh={() => selectOrganization(currentOrganization.slug)}
+            />
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 border-b border-gray-200">

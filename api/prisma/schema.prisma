@@ -77,9 +77,48 @@ model Organization {
   description String?
   created_at  DateTime             @default(now())
   updated_at  DateTime             @updatedAt
-  members     OrganizationMember[]
-  documents   Document[]
-  memories    Memory[]
+
+  // Enterprise profile fields
+  industry      String?
+  team_size     String?              // "1-10", "11-50", "51-200", "200+"
+  logo          String?              // URL to uploaded logo
+  website       String?
+  street_address String?
+  city          String?
+  state_region  String?
+  postal_code   String?
+  country       String?
+  timezone      String?
+
+  // Billing fields
+  legal_name     String?
+  billing_email  String?
+  billing_address Json?              // Full address object
+  vat_tax_id     String?
+  plan           String              @default("free") // "free", "pro", "enterprise"
+
+  // Security fields
+  data_residency   String            @default("auto")
+  require_2fa      Boolean           @default(false)
+  session_timeout  String            @default("7d")
+  password_policy  String            @default("standard")
+  audit_retention  String            @default("90d")
+  ip_allowlist     String[]          @default([])
+  sso_enabled      Boolean           @default(false)
+  sso_config       Json?
+
+  // Setup tracking
+  setup_completed_steps  String[]    @default([])
+  setup_started_at       DateTime?
+  setup_completed_at     DateTime?
+  security_prompt_shown  Boolean     @default(false)
+
+  // Relations
+  members      OrganizationMember[]
+  documents    Document[]
+  memories     Memory[]
+  invitations  OrganizationInvitation[]
+  integrations OrganizationIntegration[]
 
   @@map("organizations")
 }
@@ -97,6 +136,40 @@ model OrganizationMember {
   @@index([organization_id])
   @@index([user_id])
   @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id              String       @id @default(uuid()) @db.Uuid
+  organization_id String       @db.Uuid
+  email           String
+  role            OrgRole      @default(VIEWER)
+  invited_by      String       @db.Uuid
+  token           String       @unique
+  expires_at      DateTime
+  accepted_at     DateTime?
+  created_at      DateTime     @default(now())
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, email])
+  @@index([token])
+  @@index([organization_id])
+  @@map("organization_invitations")
+}
+
+model OrganizationIntegration {
+  id              String       @id @default(uuid()) @db.Uuid
+  organization_id String       @db.Uuid
+  provider        String       // "slack", "google_drive", etc.
+  access_token    String       // Should be encrypted in production
+  refresh_token   String?
+  config          Json?
+  connected_by    String       @db.Uuid
+  connected_at    DateTime     @default(now())
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, provider])
+  @@index([organization_id])
+  @@map("organization_integrations")
 }
 
 model Document {

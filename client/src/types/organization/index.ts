@@ -13,6 +13,37 @@ export interface Organization {
   description?: string
   created_at: string
   updated_at: string
+  // Enterprise profile fields
+  industry?: string
+  team_size?: string
+  logo?: string
+  website?: string
+  street_address?: string
+  city?: string
+  state_region?: string
+  postal_code?: string
+  country?: string
+  timezone?: string
+  // Billing fields
+  legal_name?: string
+  billing_email?: string
+  billing_address?: Record<string, string>
+  vat_tax_id?: string
+  plan?: "free" | "pro" | "enterprise"
+  // Security fields
+  data_residency?: string
+  require_2fa?: boolean
+  session_timeout?: string
+  password_policy?: string
+  audit_retention?: string
+  ip_allowlist?: string[]
+  sso_enabled?: boolean
+  sso_config?: Record<string, string>
+  // Setup tracking
+  setup_completed_steps?: string[]
+  setup_started_at?: string
+  setup_completed_at?: string
+  security_prompt_shown?: boolean
 }
 
 export interface OrganizationMember {
@@ -64,6 +95,8 @@ export interface CreateOrganizationRequest {
   name: string
   slug?: string
   description?: string
+  industry?: string
+  teamSize?: string
 }
 
 export interface InviteMemberRequest {

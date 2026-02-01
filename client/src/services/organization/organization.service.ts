@@ -325,3 +325,200 @@ export interface OrganizationMemory {
     similarity_score: number
   }>
 }
+
+// ==========================================
+// Enterprise Setup Types
+// ==========================================
+
+export interface SetupProgress {
+  completedSteps: string[]
+  totalSteps: number
+  percentComplete: number
+  startedAt: string | null
+  completedAt: string | null
+}
+
+export interface UpdateProfileRequest {
+  name?: string
+  slug?: string
+  description?: string
+  logo?: string
+  website?: string
+  streetAddress?: string
+  city?: string
+  stateRegion?: string
+  postalCode?: string
+  country?: string
+  timezone?: string
+}
+
+export interface UpdateBillingRequest {
+  legalName?: string
+  billingEmail?: string
+  billingAddress?: {
+    street?: string
+    city?: string
+    stateRegion?: string
+    postalCode?: string
+    country?: string
+  }
+  vatTaxId?: string
+  plan?: "free" | "pro" | "enterprise"
+}
+
+export interface UpdateSecurityRequest {
+  dataResidency?: "auto" | "us" | "eu" | "asia-pacific"
+  require2FA?: boolean
+  sessionTimeout?: "1h" | "8h" | "24h" | "7d" | "30d"
+  passwordPolicy?: "standard" | "strong" | "custom"
+  auditRetention?: "30d" | "90d" | "365d" | "unlimited"
+  ipAllowlist?: string[]
+  ssoEnabled?: boolean
+  ssoConfig?: {
+    provider?: string
+    ssoUrl?: string
+    entityId?: string
+    certificate?: string
+  }
+}
+
+export interface Invitation {
+  id: string
+  organization_id: string
+  email: string
+  role: "ADMIN" | "EDITOR" | "VIEWER"
+  invited_by: string
+  token: string
+  expires_at: string
+  accepted_at: string | null
+  created_at: string
+}
+
+export interface InvitationWithOrg extends Invitation {
+  organization: {
+    id: string
+    name: string
+    slug: string
+    logo?: string
+  }
+}
+
+// ==========================================
+// Enterprise Setup API Functions
+// ==========================================
+
+export async function getSetupProgress(slug: string): Promise<SetupProgress> {
+  requireAuthToken()
+  const response = await getRequest(`${baseUrl}/${slug}/setup`)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to fetch setup progress")
+  }
+  return response.data.data.progress
+}
+
+export async function updateProfile(
+  slug: string,
+  data: UpdateProfileRequest
+): Promise<Organization> {
+  requireAuthToken()
+  const { putRequest } = await import("../../utils/http")
+  const response = await putRequest(`${baseUrl}/${slug}/profile`, data)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to update profile")
+  }
+  return response.data.data.organization
+}
+
+export async function updateBilling(
+  slug: string,
+  data: UpdateBillingRequest
+): Promise<Organization> {
+  requireAuthToken()
+  const { putRequest } = await import("../../utils/http")
+  const response = await putRequest(`${baseUrl}/${slug}/billing`, data)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to update billing")
+  }
+  return response.data.data.organization
+}
+
+export async function updateSecurity(
+  slug: string,
+  data: UpdateSecurityRequest
+): Promise<Organization> {
+  requireAuthToken()
+  const { putRequest } = await import("../../utils/http")
+  const response = await putRequest(`${baseUrl}/${slug}/security`, data)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to update security")
+  }
+  return response.data.data.organization
+}
+
+export async function skipSetupStep(slug: string, step: string): Promise<void> {
+  requireAuthToken()
+  const response = await postRequest(`${baseUrl}/${slug}/setup/skip`, { step })
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to skip step")
+  }
+}
+
+export async function markSecurityPromptShown(slug: string): Promise<void> {
+  requireAuthToken()
+  const response = await postRequest(`${baseUrl}/${slug}/setup/security-prompt-shown`, {})
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to mark security prompt")
+  }
+}
+
+// ==========================================
+// Invitation API Functions
+// ==========================================
+
+export async function createInvitations(
+  slug: string,
+  emails: string[],
+  role?: "ADMIN" | "EDITOR" | "VIEWER"
+): Promise<{ invitations: Invitation[]; errors: Array<{ email: string; error: string }> }> {
+  requireAuthToken()
+  const response = await postRequest(`${baseUrl}/${slug}/invitations`, { emails, role })
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to create invitations")
+  }
+  return response.data.data
+}
+
+export async function getInvitations(slug: string): Promise<Invitation[]> {
+  requireAuthToken()
+  const response = await getRequest(`${baseUrl}/${slug}/invitations`)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to fetch invitations")
+  }
+  return response.data.data.invitations || []
+}
+
+export async function revokeInvitation(slug: string, invitationId: string): Promise<void> {
+  requireAuthToken()
+  const response = await deleteRequest(`${baseUrl}/${slug}/invitations/${invitationId}`)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to revoke invitation")
+  }
+}
+
+export async function getInvitationByToken(token: string): Promise<InvitationWithOrg> {
+  requireAuthToken()
+  const response = await getRequest(`/invitations/${token}`)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Invalid invitation")
+  }
+  return response.data.data.invitation
+}
+
+export async function acceptInvitation(token: string): Promise<Organization> {
+  requireAuthToken()
+  const response = await postRequest(`/invitations/${token}/accept`, {})
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "Failed to accept invitation")
+  }
+  return response.data.data.organization
+}

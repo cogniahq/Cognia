@@ -3,5 +3,6 @@ export {
   getRequest,
   postRequest,
   patchRequest,
+  putRequest,
   deleteRequest,
 } from "./general-services.util"

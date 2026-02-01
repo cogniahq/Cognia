@@ -14,11 +14,19 @@ export class OrganizationController {
   static async createOrganization(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id
-      const { name, description } = req.body
+      const { name, description, industry, teamSize } = req.body
       let { slug } = req.body
 
       if (!name) {
         return next(new AppError('Name is required', 400))
+      }
+
+      if (!industry) {
+        return next(new AppError('Industry is required', 400))
+      }
+
+      if (!teamSize) {
+        return next(new AppError('Team size is required', 400))
       }
 
       // Auto-generate slug from name if not provided
@@ -38,7 +46,13 @@ export class OrganizationController {
         return next(new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400))
       }
 
-      const organization = await organizationService.createOrganization(userId, { name, slug, description })
+      const organization = await organizationService.createOrganization(userId, {
+        name,
+        slug,
+        description,
+        industry,
+        teamSize,
+      })
 
       res.status(201).json({
         success: true,
@@ -394,6 +408,317 @@ export class OrganizationController {
         organizationId: req.organization?.id,
       })
       next(new AppError('Failed to get organization mesh', 500))
+    }
+  }
+
+  // ==========================================
+  // Enterprise Setup Endpoints
+  // ==========================================
+
+  /**
+   * Update organization profile
+   * PUT /api/organizations/:slug/profile
+   */
+  static async updateProfile(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const { slug } = req.body
+
+      if (slug && !/^[a-z0-9-]+$/.test(slug)) {
+        return next(new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400))
+      }
+
+      const organization = await organizationService.updateProfile(req.organization!.id, req.body)
+
+      res.status(200).json({
+        success: true,
+        data: { organization },
+      })
+    } catch (error) {
+      logger.error('[organization] Error updating profile', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+
+      if (error instanceof Error && error.message.includes('already exists')) {
+        return next(new AppError(error.message, 409))
+      }
+
+      next(new AppError('Failed to update profile', 500))
+    }
+  }
+
+  /**
+   * Update organization billing settings
+   * PUT /api/organizations/:slug/billing
+   */
+  static async updateBilling(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const organization = await organizationService.updateBilling(req.organization!.id, req.body)
+
+      res.status(200).json({
+        success: true,
+        data: { organization },
+      })
+    } catch (error) {
+      logger.error('[organization] Error updating billing', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to update billing', 500))
+    }
+  }
+
+  /**
+   * Update organization security settings
+   * PUT /api/organizations/:slug/security
+   */
+  static async updateSecurity(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const organization = await organizationService.updateSecurity(req.organization!.id, req.body)
+
+      res.status(200).json({
+        success: true,
+        data: { organization },
+      })
+    } catch (error) {
+      logger.error('[organization] Error updating security', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to update security', 500))
+    }
+  }
+
+  /**
+   * Get setup progress
+   * GET /api/organizations/:slug/setup
+   */
+  static async getSetupProgress(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const progress = await organizationService.getSetupProgress(req.organization!.id)
+
+      res.status(200).json({
+        success: true,
+        data: { progress },
+      })
+    } catch (error) {
+      logger.error('[organization] Error getting setup progress', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to get setup progress', 500))
+    }
+  }
+
+  /**
+   * Skip a setup step
+   * POST /api/organizations/:slug/setup/skip
+   */
+  static async skipSetupStep(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const { step } = req.body
+
+      if (!step) {
+        return next(new AppError('Step is required', 400))
+      }
+
+      await organizationService.skipSetupStep(req.organization!.id, step)
+
+      res.status(200).json({
+        success: true,
+        message: 'Step skipped',
+      })
+    } catch (error) {
+      logger.error('[organization] Error skipping setup step', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to skip step', 500))
+    }
+  }
+
+  /**
+   * Mark security prompt as shown
+   * POST /api/organizations/:slug/setup/security-prompt-shown
+   */
+  static async markSecurityPromptShown(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      await organizationService.markSecurityPromptShown(req.organization!.id)
+
+      res.status(200).json({
+        success: true,
+        message: 'Security prompt marked as shown',
+      })
+    } catch (error) {
+      logger.error('[organization] Error marking security prompt', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to mark security prompt', 500))
+    }
+  }
+
+  // ==========================================
+  // Invitation Endpoints
+  // ==========================================
+
+  /**
+   * Create invitation(s)
+   * POST /api/organizations/:slug/invitations
+   */
+  static async createInvitation(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const { emails, role } = req.body
+      const inviterId = req.user!.id
+
+      if (!emails || (Array.isArray(emails) && emails.length === 0)) {
+        return next(new AppError('At least one email is required', 400))
+      }
+
+      const emailList = Array.isArray(emails) ? emails : [emails]
+      const invitations = []
+      const errors = []
+
+      for (const email of emailList) {
+        try {
+          const invitation = await organizationService.createInvitation(
+            req.organization!.id,
+            inviterId,
+            { email, role }
+          )
+          invitations.push(invitation)
+        } catch (error) {
+          errors.push({
+            email,
+            error: error instanceof Error ? error.message : 'Failed to create invitation',
+          })
+        }
+      }
+
+      res.status(201).json({
+        success: true,
+        data: { invitations, errors },
+      })
+    } catch (error) {
+      logger.error('[organization] Error creating invitations', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to create invitations', 500))
+    }
+  }
+
+  /**
+   * List pending invitations
+   * GET /api/organizations/:slug/invitations
+   */
+  static async listInvitations(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const invitations = await organizationService.getInvitations(req.organization!.id)
+
+      res.status(200).json({
+        success: true,
+        data: { invitations },
+      })
+    } catch (error) {
+      logger.error('[organization] Error listing invitations', {
+        error: error instanceof Error ? error.message : String(error),
+        organizationId: req.organization?.id,
+      })
+      next(new AppError('Failed to list invitations', 500))
+    }
+  }
+
+  /**
+   * Revoke invitation
+   * DELETE /api/organizations/:slug/invitations/:invitationId
+   */
+  static async revokeInvitation(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const { invitationId } = req.params
+
+      await organizationService.revokeInvitation(invitationId)
+
+      res.status(200).json({
+        success: true,
+        message: 'Invitation revoked',
+      })
+    } catch (error) {
+      logger.error('[organization] Error revoking invitation', {
+        error: error instanceof Error ? error.message : String(error),
+        invitationId: req.params.invitationId,
+      })
+      next(new AppError('Failed to revoke invitation', 500))
+    }
+  }
+
+  /**
+   * Get invitation by token (public endpoint for accept page)
+   * GET /api/invitations/:token
+   */
+  static async getInvitationByToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { token } = req.params
+
+      const invitation = await organizationService.getInvitationByToken(token)
+
+      // Check if expired
+      if (invitation.expires_at < new Date()) {
+        return next(new AppError('Invitation has expired', 410))
+      }
+
+      // Check if already accepted
+      if (invitation.accepted_at) {
+        return next(new AppError('Invitation has already been used', 410))
+      }
+
+      res.status(200).json({
+        success: true,
+        data: { invitation },
+      })
+    } catch (error) {
+      logger.error('[organization] Error getting invitation', {
+        error: error instanceof Error ? error.message : String(error),
+        token: req.params.token,
+      })
+
+      if (error instanceof Error && error.message.includes('Invalid')) {
+        return next(new AppError(error.message, 404))
+      }
+
+      next(new AppError('Failed to get invitation', 500))
+    }
+  }
+
+  /**
+   * Accept invitation
+   * POST /api/invitations/:token/accept
+   */
+  static async acceptInvitation(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { token } = req.params
+      const userId = req.user!.id
+
+      const organization = await organizationService.acceptInvitation(token, userId)
+
+      res.status(200).json({
+        success: true,
+        data: { organization },
+        message: 'Successfully joined organization',
+      })
+    } catch (error) {
+      logger.error('[organization] Error accepting invitation', {
+        error: error instanceof Error ? error.message : String(error),
+        token: req.params.token,
+      })
+
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid') || error.message.includes('expired') || error.message.includes('already')) {
+          return next(new AppError(error.message, 400))
+        }
+      }
+
+      next(new AppError('Failed to accept invitation', 500))
     }
   }
 }

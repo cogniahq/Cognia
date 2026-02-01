@@ -88,4 +88,71 @@ router.get(
   OrganizationController.getMesh
 )
 
+// Enterprise setup endpoints
+router.put(
+  '/:slug/profile',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.updateProfile
+)
+router.put(
+  '/:slug/billing',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.updateBilling
+)
+router.put(
+  '/:slug/security',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.updateSecurity
+)
+router.get(
+  '/:slug/setup',
+  authenticateToken,
+  requireOrganization,
+  requireOrgViewer,
+  OrganizationController.getSetupProgress
+)
+router.post(
+  '/:slug/setup/skip',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.skipSetupStep
+)
+router.post(
+  '/:slug/setup/security-prompt-shown',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.markSecurityPromptShown
+)
+
+// Invitation management
+router.post(
+  '/:slug/invitations',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.createInvitation
+)
+router.get(
+  '/:slug/invitations',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.listInvitations
+)
+router.delete(
+  '/:slug/invitations/:invitationId',
+  authenticateToken,
+  requireOrganization,
+  requireOrgAdmin,
+  OrganizationController.revokeInvitation
+)
+
 export default router

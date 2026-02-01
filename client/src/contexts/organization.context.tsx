@@ -16,7 +16,7 @@ interface OrganizationContextType {
   // Actions
   loadOrganizations: () => Promise<void>
   selectOrganization: (slug: string) => Promise<void>
-  createOrganization: (name: string, description?: string) => Promise<OrganizationWithRole>
+  createOrganization: (name: string, description?: string, industry?: string, teamSize?: string) => Promise<OrganizationWithRole>
   deleteOrganization: (slug: string) => Promise<void>
 
   // Members
@@ -100,13 +100,15 @@ export function OrganizationProvider({
   )
 
   const createOrganization = useCallback(
-    async (name: string, description?: string) => {
+    async (name: string, description?: string, industry?: string, teamSize?: string) => {
       setIsLoading(true)
       setError(null)
       try {
         const org = await organizationService.createOrganization({
           name,
           description,
+          industry,
+          teamSize,
         })
         const orgWithRole: OrganizationWithRole = {
           ...org,

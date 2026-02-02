@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { PluginRegistry, type WebhookJobData } from '@cogniahq/integrations';
-import { integrationService } from '../services/integration';
-import { logger } from '../utils/logger.util';
+import { PluginRegistry } from '@cogniahq/integrations';
+import { logger } from '../utils/core/logger.util';
 
 const router = Router();
 

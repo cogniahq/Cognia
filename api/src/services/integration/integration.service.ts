@@ -1,17 +1,14 @@
-import { PrismaClient, IntegrationStatus, SyncFrequency, StorageStrategy } from '@prisma/client';
+import { IntegrationStatus, SyncFrequency, StorageStrategy } from '@prisma/client';
 import {
   PluginRegistry,
   IntegrationQueueManager,
   createTokenEncryptor,
   type TokenSet,
-  type IntegrationPlugin,
   type PluginInfo,
-  type SyncJobData,
 } from '@cogniahq/integrations';
-import { getRedisConnection } from '../../config/redis.config';
-import { logger } from '../../utils/logger.util';
-
-const prisma = new PrismaClient();
+import { getRedisClient } from '../../lib/redis.lib';
+import { logger } from '../../utils/core/logger.util';
+import { prisma } from '../../lib/prisma.lib';
 
 // Token encryption key from environment
 const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || '';
@@ -55,9 +52,11 @@ export class IntegrationService {
     this.initializePlugins();
 
     // Initialize queue manager
-    const redis = getRedisConnection();
-    if (redis) {
+    try {
+      const redis = getRedisClient();
       this.queueManager = new IntegrationQueueManager(redis);
+    } catch (error) {
+      logger.warn('Redis not available, queue manager disabled');
     }
 
     // Sync registry with database
@@ -174,7 +173,7 @@ export class IntegrationService {
         access_token: encryptedAccessToken,
         refresh_token: encryptedRefreshToken,
         token_expires_at: tokens.expiresAt,
-        config: options.config || {},
+        config: (options.config || {}) as any,
         status: IntegrationStatus.ACTIVE,
         storage_strategy: options.storageStrategy || StorageStrategy.FULL_CONTENT,
         sync_frequency: options.syncFrequency || SyncFrequency.HOURLY,
@@ -183,7 +182,7 @@ export class IntegrationService {
         access_token: encryptedAccessToken,
         refresh_token: encryptedRefreshToken,
         token_expires_at: tokens.expiresAt,
-        config: options.config || {},
+        config: (options.config || {}) as any,
         status: IntegrationStatus.ACTIVE,
       },
     });
@@ -263,7 +262,7 @@ export class IntegrationService {
         access_token: encryptedAccessToken,
         refresh_token: encryptedRefreshToken,
         token_expires_at: tokens.expiresAt,
-        config: options.config || {},
+        config: (options.config || {}) as any,
         status: IntegrationStatus.ACTIVE,
         storage_strategy: options.storageStrategy || StorageStrategy.FULL_CONTENT,
         sync_frequency: options.syncFrequency || SyncFrequency.HOURLY,
@@ -273,7 +272,7 @@ export class IntegrationService {
         access_token: encryptedAccessToken,
         refresh_token: encryptedRefreshToken,
         token_expires_at: tokens.expiresAt,
-        config: options.config || {},
+        config: (options.config || {}) as any,
         status: IntegrationStatus.ACTIVE,
         connected_by: context.userId,
       },
@@ -490,7 +489,7 @@ export class IntegrationService {
       data: {
         sync_frequency: settings.syncFrequency,
         storage_strategy: settings.storageStrategy,
-        config: settings.config,
+        config: settings.config as any,
       },
     });
   }

@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { Router, Response } from 'express';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { integrationService } from '../services/integration';
 import { SyncFrequency, StorageStrategy } from '@prisma/client';
 
@@ -9,10 +9,10 @@ const router = Router();
  * GET /api/integrations
  * List available integrations for the current user
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const available = integrationService.listAvailable({
-      userId: req.user!.userId,
+      userId: req.user!.id,
       plan: 'free', // TODO: Get from user's plan
     });
 
@@ -26,9 +26,9 @@ router.get('/', authenticateToken, async (req, res) => {
  * GET /api/integrations/connected
  * List user's connected integrations
  */
-router.get('/connected', authenticateToken, async (req, res) => {
+router.get('/connected', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const integrations = await integrationService.getUserIntegrations(req.user!.userId);
+    const integrations = await integrationService.getUserIntegrations(req.user!.id);
     res.json({ success: true, data: integrations });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -39,7 +39,7 @@ router.get('/connected', authenticateToken, async (req, res) => {
  * POST /api/integrations/:provider/connect
  * Start OAuth flow - returns authorization URL
  */
-router.post('/:provider/connect', authenticateToken, async (req, res) => {
+router.post('/:provider/connect', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
     const { redirectUri } = req.body;
@@ -51,7 +51,7 @@ router.post('/:provider/connect', authenticateToken, async (req, res) => {
     // Generate state with user context
     const state = Buffer.from(
       JSON.stringify({
-        userId: req.user!.userId,
+        userId: req.user!.id,
         provider,
         timestamp: Date.now(),
       })
@@ -69,7 +69,7 @@ router.post('/:provider/connect', authenticateToken, async (req, res) => {
  * GET /api/integrations/:provider/callback
  * OAuth callback handler
  */
-router.get('/:provider/callback', authenticateToken, async (req, res) => {
+router.get('/:provider/callback', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
     const { code, state } = req.query;
@@ -87,7 +87,7 @@ router.get('/:provider/callback', authenticateToken, async (req, res) => {
     }
 
     // Verify user
-    if (stateData.userId !== req.user!.userId) {
+    if (stateData.userId !== req.user!.id) {
       return res.status(403).json({ success: false, error: 'State mismatch' });
     }
 
@@ -95,7 +95,7 @@ router.get('/:provider/callback', authenticateToken, async (req, res) => {
     const redirectUri = `${process.env.API_BASE_URL}/api/integrations/${provider}/callback`;
 
     const result = await integrationService.connectUserIntegration(
-      { userId: req.user!.userId },
+      { userId: req.user!.id },
       {
         provider,
         code: code as string,
@@ -116,10 +116,10 @@ router.get('/:provider/callback', authenticateToken, async (req, res) => {
  * GET /api/integrations/:provider
  * Get details of a connected integration
  */
-router.get('/:provider', authenticateToken, async (req, res) => {
+router.get('/:provider', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
-    const integrations = await integrationService.getUserIntegrations(req.user!.userId);
+    const integrations = await integrationService.getUserIntegrations(req.user!.id);
     const integration = integrations.find((i) => i.provider === provider);
 
     if (!integration) {
@@ -136,13 +136,13 @@ router.get('/:provider', authenticateToken, async (req, res) => {
  * PUT /api/integrations/:provider/config
  * Update integration settings
  */
-router.put('/:provider/config', authenticateToken, async (req, res) => {
+router.put('/:provider/config', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
     const { syncFrequency, storageStrategy, config } = req.body;
 
     const updated = await integrationService.updateUserIntegrationSettings(
-      req.user!.userId,
+      req.user!.id,
       provider,
       {
         syncFrequency: syncFrequency as SyncFrequency,
@@ -161,12 +161,12 @@ router.put('/:provider/config', authenticateToken, async (req, res) => {
  * POST /api/integrations/:provider/sync
  * Trigger manual sync
  */
-router.post('/:provider/sync', authenticateToken, async (req, res) => {
+router.post('/:provider/sync', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
     const { mode = 'incremental' } = req.body;
 
-    const integrations = await integrationService.getUserIntegrations(req.user!.userId);
+    const integrations = await integrationService.getUserIntegrations(req.user!.id);
     const integration = integrations.find((i) => i.provider === provider);
 
     if (!integration) {
@@ -185,11 +185,11 @@ router.post('/:provider/sync', authenticateToken, async (req, res) => {
  * DELETE /api/integrations/:provider
  * Disconnect integration
  */
-router.delete('/:provider', authenticateToken, async (req, res) => {
+router.delete('/:provider', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
 
-    await integrationService.disconnectUserIntegration(req.user!.userId, provider);
+    await integrationService.disconnectUserIntegration(req.user!.id, provider);
 
     res.json({ success: true, message: 'Integration disconnected' });
   } catch (error: any) {

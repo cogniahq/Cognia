@@ -216,11 +216,29 @@ export class SearchController {
         includeAnswer: includeAnswer !== false,
       })
 
+      // Check if response was already sent (e.g., by timeout handler)
+      if (res.headersSent) {
+        logger.warn('[search] organization search completed but response already sent', {
+          organizationId: req.organization.id,
+          query: query.substring(0, 50),
+        })
+        return
+      }
+
       res.status(200).json({
         success: true,
         data: result,
       })
     } catch (error) {
+      // Check if response was already sent before trying to send error
+      if (res.headersSent) {
+        logger.warn('[search] organization search error but response already sent', {
+          error: error instanceof Error ? error.message : String(error),
+          organizationId: req.organization?.id,
+        })
+        return
+      }
+
       logger.error('[search] organization search failed', {
         error: error instanceof Error ? error.message : String(error),
         organizationId: req.organization?.id,

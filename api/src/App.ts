@@ -203,7 +203,10 @@ const SEARCH_TIMEOUT_MS = Number(process.env.SEARCH_TIMEOUT_MS || 360000) // 6 m
 const EMAIL_DRAFT_TIMEOUT_MS = Number(process.env.EMAIL_DRAFT_TIMEOUT_MS || 360000) // 6 minutes for email drafts (allows for queue delays)
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const isSearchRequest = req.path === '/api/search' && req.method === 'POST'
+  // Check for any search-related endpoints
+  const isSearchRequest =
+    (req.path === '/api/search' && req.method === 'POST') ||
+    (req.path.startsWith('/api/search/organization/') && req.method === 'POST')
   const isEmailDraftRequest = req.path === '/api/content/email/draft' && req.method === 'POST'
   const timeoutMs = isSearchRequest
     ? SEARCH_TIMEOUT_MS

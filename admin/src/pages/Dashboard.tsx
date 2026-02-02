@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Users, Building2, Brain, FileText, Search, DollarSign } from 'lucide-react'
+import { Users, Building2, Brain, FileText, Search, DollarSign, HardDrive, TrendingUp, Eye } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { StatCard } from '@/components/ui/StatCard'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
-import { getDashboard } from '@/services/api'
-import type { DashboardStats } from '@/types/admin.types'
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+import { AreaChart, BarChart } from '@/components/charts'
+import { FilePreviewModal } from '@/components/ui/FilePreviewModal'
+import { chartColors } from '@/lib/chart-config'
+import { formatBytes } from '@/lib/chart-config'
+import { getDashboard, getStorageAnalytics, getDocumentDownloadUrl } from '@/services/api'
+import type { DashboardStats, StorageAnalytics, LargestFile } from '@/types/admin.types'
 
 function formatCost(cost: number): string {
   return '$' + cost.toFixed(2)
@@ -20,8 +16,14 @@ function formatCost(cost: number): string {
 
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [storageData, setStorageData] = useState<StorageAnalytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // File preview state
+  const [previewFile, setPreviewFile] = useState<LargestFile | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
   useEffect(() => {
     loadDashboard()
@@ -29,8 +31,12 @@ export function DashboardPage() {
 
   async function loadDashboard() {
     try {
-      const data = await getDashboard()
-      setStats(data)
+      const [dashboardData, storage] = await Promise.all([
+        getDashboard(),
+        getStorageAnalytics(30),
+      ])
+      setStats(dashboardData)
+      setStorageData(storage)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard')
     } finally {
@@ -38,12 +44,32 @@ export function DashboardPage() {
     }
   }
 
+  async function handleFilePreview(file: LargestFile) {
+    setPreviewFile(file)
+    setPreviewUrl(null)
+    setIsPreviewLoading(true)
+
+    try {
+      const { downloadUrl } = await getDocumentDownloadUrl(file.id)
+      setPreviewUrl(downloadUrl)
+    } catch (err) {
+      console.error('Failed to get download URL:', err)
+    } finally {
+      setIsPreviewLoading(false)
+    }
+  }
+
+  function closePreview() {
+    setPreviewFile(null)
+    setPreviewUrl(null)
+  }
+
   if (isLoading) {
     return (
       <>
         <Header title="Dashboard" subtitle="System overview and key metrics" />
         <div className="flex-1 p-6">
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
             Loading...
           </div>
         </div>
@@ -56,7 +82,7 @@ export function DashboardPage() {
       <>
         <Header title="Dashboard" subtitle="System overview and key metrics" />
         <div className="flex-1 p-6">
-          <div className="px-3 py-2 bg-red-50 border border-red-200 text-xs font-mono text-red-600">
+          <div className="px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-md text-xs font-mono text-destructive">
             {error || 'Failed to load dashboard'}
           </div>
         </div>
@@ -64,14 +90,26 @@ export function DashboardPage() {
     )
   }
 
+  // Prepare storage by org data for horizontal bar chart (top 5)
+  const storageByOrgData = storageData?.storageByOrganization.slice(0, 5).map(org => ({
+    name: org.name.length > 12 ? org.name.slice(0, 12) + '...' : org.name,
+    value: org.size,
+  })) || []
+
+  // Prepare storage by file type data for bar chart (top 6)
+  const storageByTypeData = storageData?.storageByFileType.slice(0, 6).map(ft => ({
+    name: ft.mimeType.split('/')[1]?.slice(0, 8) || ft.mimeType.slice(0, 8),
+    value: ft.size,
+  })) || []
+
   return (
     <>
       <Header title="Dashboard" subtitle="System overview and key metrics" />
       <div className="flex-1 overflow-y-auto p-6">
         {/* System Health */}
         <section className="mb-8">
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-4">
-            [SYSTEM HEALTH]
+          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+            System Health
           </div>
           <div className="grid grid-cols-4 gap-2">
             <StatusIndicator
@@ -99,8 +137,8 @@ export function DashboardPage() {
 
         {/* Key Metrics */}
         <section className="mb-8">
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-4">
-            [KEY METRICS]
+          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+            Key Metrics
           </div>
           <div className="grid grid-cols-4 gap-4">
             <StatCard
@@ -138,8 +176,8 @@ export function DashboardPage() {
 
         {/* Activity & Usage */}
         <section className="mb-8">
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-4">
-            [24H ACTIVITY]
+          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+            24h Activity
           </div>
           <div className="grid grid-cols-4 gap-4">
             <StatCard
@@ -165,10 +203,134 @@ export function DashboardPage() {
           </div>
         </section>
 
+        {/* Storage Analytics */}
+        {storageData && (
+          <section className="mb-8">
+            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+              Storage Analytics
+            </div>
+
+            {/* Storage Stats */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <StatCard
+                label="Total Storage"
+                value={formatBytes(storageData.totalStorage)}
+                icon={<HardDrive className="w-4 h-4" />}
+              />
+              <StatCard
+                label="30-Day Projection"
+                value={formatBytes(storageData.projectedStorage.thirtyDay)}
+                subValue={`+${formatBytes(storageData.projectedStorage.dailyGrowthRate)}/day`}
+                trend="up"
+                trendValue="projected"
+                icon={<TrendingUp className="w-4 h-4" />}
+              />
+              <StatCard
+                label="90-Day Projection"
+                value={formatBytes(storageData.projectedStorage.ninetyDay)}
+                icon={<TrendingUp className="w-4 h-4" />}
+              />
+              <StatCard
+                label="File Types"
+                value={storageData.storageByFileType.length}
+                subValue="unique types"
+              />
+            </div>
+
+            {/* Storage Charts */}
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              {/* Storage Growth Trend */}
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+                  Storage Growth (30 Days)
+                </div>
+                <AreaChart
+                  data={storageData.storageTrends}
+                  name="Storage"
+                  color={chartColors.primary}
+                  gradientId="storageGrowthGradient"
+                  formatValue={formatBytes}
+                />
+              </div>
+
+              {/* Storage by Organization */}
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+                  Storage by Organization (Top 5)
+                </div>
+                <BarChart
+                  data={storageByOrgData}
+                  layout="vertical"
+                  color={chartColors.accent}
+                  formatValue={formatBytes}
+                  barSize={16}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {/* Storage by File Type */}
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+                  Storage by File Type
+                </div>
+                <BarChart
+                  data={storageByTypeData}
+                  multiColor
+                  formatValue={formatBytes}
+                  barSize={24}
+                />
+              </div>
+
+              {/* Largest Files Table */}
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+                  Largest Files (Top 5)
+                </div>
+                <div className="overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="pb-2 text-left text-xs font-mono text-muted-foreground uppercase">File</th>
+                        <th className="pb-2 text-right text-xs font-mono text-muted-foreground uppercase">Size</th>
+                        <th className="pb-2 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {storageData.largestFiles.slice(0, 5).map((file) => (
+                        <tr key={file.id} className="border-b border-border/50 last:border-0 group">
+                          <td className="py-2">
+                            <div className="text-sm text-foreground truncate max-w-[180px]" title={file.name}>
+                              {file.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{file.organizationName}</div>
+                          </td>
+                          <td className="py-2 text-right font-mono text-sm text-foreground">
+                            {formatBytes(file.size)}
+                          </td>
+                          <td className="py-2 text-right">
+                            <button
+                              onClick={() => handleFilePreview(file)}
+                              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                              title="Preview file"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Token Usage */}
         <section className="mb-8">
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-4">
-            [TOKEN USAGE]
+          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+            Token Usage
           </div>
           <div className="grid grid-cols-3 gap-4">
             <StatCard
@@ -191,17 +353,17 @@ export function DashboardPage() {
         <div className="grid grid-cols-2 gap-6">
           {/* Memory Types */}
           <section>
-            <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-4">
-              [MEMORY TYPES]
+            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+              Memory Types
             </div>
-            <div className="bg-white border border-gray-200">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
               {Object.entries(stats.memories.byType).map(([type, count]) => (
                 <div
                   key={type}
-                  className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between px-4 py-3 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-gray-900">{type}</span>
-                  <span className="text-sm font-mono text-gray-500">
+                  <span className="text-sm text-foreground">{type}</span>
+                  <span className="text-sm font-mono text-muted-foreground">
                     {count.toLocaleString()}
                   </span>
                 </div>
@@ -211,17 +373,17 @@ export function DashboardPage() {
 
           {/* Document Status */}
           <section>
-            <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-4">
-              [DOCUMENT STATUS]
+            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
+              Document Status
             </div>
-            <div className="bg-white border border-gray-200">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
               {Object.entries(stats.documents.byStatus).map(([status, count]) => (
                 <div
                   key={status}
-                  className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between px-4 py-3 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-gray-900">{status}</span>
-                  <span className="text-sm font-mono text-gray-500">
+                  <span className="text-sm text-foreground">{status}</span>
+                  <span className="text-sm font-mono text-muted-foreground">
                     {count.toLocaleString()}
                   </span>
                 </div>

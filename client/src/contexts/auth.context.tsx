@@ -17,13 +17,18 @@ interface User {
   account_type?: AccountType
 }
 
+interface LoginResult {
+  user?: User
+  requires2FA?: boolean
+}
+
 interface AuthContextType {
   user: User | null
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   accountType: AccountType | null
-  login: (email: string, password: string) => Promise<User>
+  login: (email: string, password: string, totpCode?: string, backupCode?: string) => Promise<LoginResult>
   register: (email: string, password: string, accountType: AccountType) => Promise<User>
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
@@ -162,9 +167,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const response = await axiosInstance.get("/auth/me")
-      if (response.data?.user) {
+      // Handle nested response: { success, data: { id, email, ... } }
+      const userData = response.data?.data || response.data
+      if (userData?.id) {
         setToken(storedToken)
-        setUser(response.data.user)
+        setUser(userData)
       } else {
         clearAuthState()
       }
@@ -176,15 +183,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [clearAuthState])
 
   const login = useCallback(
-    async (email: string, password: string): Promise<User> => {
+    async (email: string, password: string, totpCode?: string, backupCode?: string): Promise<LoginResult> => {
       const response = await axiosInstance.post("/auth/login", {
         email: email.trim(),
         password: password.trim(),
+        ...(totpCode && { totpCode }),
+        ...(backupCode && { backupCode }),
       })
 
-      if (response.data?.token && response.data?.user) {
-        setAuthState(response.data.token, response.data.user)
-        return response.data.user
+      // Handle nested response: { success, data: { token, user } } or { success, data: { requires2FA } }
+      const responseData = response.data?.data || response.data
+
+      // Check if 2FA is required
+      if (responseData?.requires2FA) {
+        return { requires2FA: true }
+      }
+
+      const token = responseData?.token
+      const user = responseData?.user
+
+      if (token && user) {
+        setAuthState(token, user)
+        return { user }
       } else {
         throw new Error("Invalid response from server")
       }
@@ -200,9 +220,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         account_type: accountType,
       })
 
-      if (response.data?.token && response.data?.user) {
-        setAuthState(response.data.token, response.data.user)
-        return response.data.user
+      // Handle both direct and nested response structures
+      const responseData = response.data?.data || response.data
+      const token = responseData?.token
+      const user = responseData?.user
+
+      if (token && user) {
+        setAuthState(token, user)
+        return user
       } else {
         throw new Error("Invalid response from server")
       }

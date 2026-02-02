@@ -25,10 +25,12 @@ router.delete('/organizations/:orgId', AdminController.deleteOrganization)
 
 // Documents
 router.get('/documents', AdminController.listDocuments)
+router.get('/documents/:documentId/download', AdminController.getDocumentDownloadUrl)
 router.post('/documents/:documentId/reprocess', AdminController.reprocessDocument)
 
 // Analytics
 router.get('/analytics', AdminController.getAnalytics)
+router.get('/storage-analytics', AdminController.getStorageAnalytics)
 
 // Audit Logs
 router.get('/audit-logs', AdminController.getAuditLogs)

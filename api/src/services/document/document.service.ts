@@ -65,6 +65,36 @@ export class DocumentService {
   }
 
   /**
+   * Get document info from a memory ID (for citations)
+   */
+  async getDocumentByMemoryId(
+    memoryId: string,
+    organizationId: string
+  ): Promise<{ document: DocumentInfo; chunkContent: string; pageNumber: number | null } | null> {
+    const chunk = await prisma.documentChunk.findFirst({
+      where: {
+        memory_id: memoryId,
+        document: {
+          organization_id: organizationId,
+        },
+      },
+      include: {
+        document: true,
+      },
+    })
+
+    if (!chunk) {
+      return null
+    }
+
+    return {
+      document: chunk.document,
+      chunkContent: chunk.content,
+      pageNumber: chunk.page_number,
+    }
+  }
+
+  /**
    * List documents for an organization
    */
   async listDocuments(

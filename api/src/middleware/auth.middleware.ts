@@ -10,6 +10,7 @@ export interface AuthenticatedRequest extends Request {
     id: string
     email?: string
     role?: UserRole
+    iat?: number // Token issued-at timestamp (seconds since epoch)
   }
 }
 
@@ -49,6 +50,7 @@ export async function authenticateToken(
       id: user.id,
       email: user.email || undefined,
       role: user.role,
+      iat: payload.iat, // Token issued-at for session timeout checking
     }
 
     next()

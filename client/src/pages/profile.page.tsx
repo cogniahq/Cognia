@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 
 import { PageHeader } from "@/components/shared/PageHeader"
 import { useAuth } from "@/contexts/auth.context"
+import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings"
 
 import { EmptyState, ErrorMessage } from "../components/ui/loading-spinner"
 
@@ -140,6 +141,9 @@ export const Profile: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Security Settings - 2FA */}
+          <TwoFactorSettings />
 
           {error && (
             <ErrorMessage message={error} onRetry={() => setError(null)} />

@@ -7,17 +7,17 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   return (
-    <header className="border-b border-gray-200 bg-white px-6 py-4">
+    <header className="border-b border-border bg-card px-6 py-4">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-1">
-            [{title.toUpperCase()}]
-          </div>
+          <h1 className="text-lg font-semibold text-foreground mb-0.5">
+            {title}
+          </h1>
           {subtitle && (
-            <p className="text-xs text-gray-500">{subtitle}</p>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           )}
         </div>
-        <div className="text-xs font-mono text-gray-400">
+        <div className="text-xs font-mono text-muted-foreground">
           {format(new Date(), 'yyyy-MM-dd HH:mm')}
         </div>
       </div>

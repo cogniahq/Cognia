@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo } from "react"
 import { useOrganization } from "@/contexts/organization.context"
 import * as organizationService from "@/services/organization/organization.service"
 import type { OrganizationSearchResponse } from "@/types/organization"
+import type { DocumentPreviewData } from "@/services/organization/organization.service"
+import { DocumentPreviewModal } from "@/components/ui/document-preview-modal"
 
 export function OrganizationSearch() {
   const { currentOrganization, documents } = useOrganization()
@@ -9,6 +11,12 @@ export function OrganizationSearch() {
   const [isSearching, setIsSearching] = useState(false)
   const [results, setResults] = useState<OrganizationSearchResponse | null>(null)
   const [error, setError] = useState("")
+
+  // Document preview state
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const [previewData, setPreviewData] = useState<DocumentPreviewData | null>(null)
 
   const handleSearch = useCallback(
     async (e: React.FormEvent) => {
@@ -37,11 +45,42 @@ export function OrganizationSearch() {
 
   const hasDocuments = documents.length > 0
 
-  // Deduplicate citations by document name
+  // Handle clicking on a citation to preview the document
+  const handleCitationClick = useCallback(
+    async (memoryId: string) => {
+      if (!currentOrganization) return
+
+      setPreviewOpen(true)
+      setPreviewLoading(true)
+      setPreviewError(null)
+      setPreviewData(null)
+
+      try {
+        const data = await organizationService.getDocumentByMemory(
+          currentOrganization.slug,
+          memoryId
+        )
+        setPreviewData(data)
+      } catch (err) {
+        setPreviewError(err instanceof Error ? err.message : "Failed to load document")
+      } finally {
+        setPreviewLoading(false)
+      }
+    },
+    [currentOrganization]
+  )
+
+  const closePreview = useCallback(() => {
+    setPreviewOpen(false)
+    setPreviewData(null)
+    setPreviewError(null)
+  }, [])
+
+  // Deduplicate citations by document name, keeping track of memoryIds for preview
   const uniqueCitations = useMemo(() => {
     if (!results?.citations) return []
 
-    const seen = new Map<string, { index: number; documentName: string; pageNumbers: number[] }>()
+    const seen = new Map<string, { index: number; documentName: string; pageNumbers: number[]; memoryId: string }>()
 
     for (const citation of results.citations) {
       const key = citation.documentName || `memory-${citation.index}`
@@ -59,6 +98,7 @@ export function OrganizationSearch() {
           index: citation.index,
           documentName: citation.documentName || "Memory",
           pageNumbers: citation.pageNumber ? [citation.pageNumber] : [],
+          memoryId: citation.memoryId,
         })
       }
     }
@@ -122,9 +162,10 @@ export function OrganizationSearch() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {uniqueCitations.map((citation, idx) => (
-                        <span
+                        <button
                           key={`${citation.documentName}-${idx}`}
-                          className="px-2 py-1 text-xs font-mono bg-white border border-gray-200 text-gray-600"
+                          onClick={() => handleCitationClick(citation.memoryId)}
+                          className="px-2 py-1 text-xs font-mono bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
                         >
                           {citation.documentName}
                           {citation.pageNumbers.length > 0 && (
@@ -132,7 +173,7 @@ export function OrganizationSearch() {
                               {" "}p.{citation.pageNumbers.sort((a, b) => a - b).join(", ")}
                             </span>
                           )}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -155,9 +196,10 @@ export function OrganizationSearch() {
             {results.results.length > 0 ? (
               <div className="border border-gray-200 divide-y divide-gray-100">
                 {results.results.map((result) => (
-                  <div
+                  <button
                     key={result.memoryId}
-                    className="p-4 hover:bg-gray-50 transition-colors"
+                    onClick={() => handleCitationClick(result.memoryId)}
+                    className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
@@ -179,18 +221,11 @@ export function OrganizationSearch() {
                           <span>{Math.round(result.score * 100)}% match</span>
                         </div>
                       </div>
-                      {result.url && (
-                        <a
-                          href={result.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-mono text-gray-400 hover:text-gray-600"
-                        >
-                          →
-                        </a>
-                      )}
+                      <span className="text-xs font-mono text-gray-400">
+                        →
+                      </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -242,6 +277,15 @@ export function OrganizationSearch() {
           )}
         </div>
       )}
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        isOpen={previewOpen}
+        onClose={closePreview}
+        documentData={previewData}
+        isLoading={previewLoading}
+        error={previewError}
+      />
     </div>
   )
 }

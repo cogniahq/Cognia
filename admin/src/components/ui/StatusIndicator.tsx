@@ -9,21 +9,21 @@ export function StatusIndicator({ status, label, detail }: StatusIndicatorProps)
   const isDegraded = status === 'degraded'
 
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200">
+    <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-lg">
       <div className="flex items-center gap-3">
         <div
-          className={`w-2 h-2 ${
+          className={`w-2 h-2 rounded-full ${
             isHealthy
-              ? 'bg-green-500'
+              ? 'bg-chart-success'
               : isDegraded
-              ? 'bg-yellow-500'
-              : 'bg-red-500'
+              ? 'bg-chart-warning'
+              : 'bg-destructive'
           }`}
         />
-        <span className="text-sm text-gray-900">{label}</span>
+        <span className="text-sm text-foreground">{label}</span>
       </div>
       {detail && (
-        <span className="text-xs font-mono text-gray-500">{detail}</span>
+        <span className="text-xs font-mono text-muted-foreground">{detail}</span>
       )}
     </div>
   )

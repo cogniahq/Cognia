@@ -262,6 +262,53 @@ export class AdminController {
   }
 
   /**
+   * Get storage analytics data
+   */
+  static async getStorageAnalytics(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const days = parseInt(req.query.days as string) || 30
+      const storageAnalytics = await adminService.getStorageAnalytics(days)
+      res.status(200).json({ success: true, data: storageAnalytics })
+    } catch (error) {
+      logger.error('[admin] Error getting storage analytics', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: req.user?.id,
+      })
+      next(new AppError('Failed to get storage analytics', 500))
+    }
+  }
+
+  /**
+   * Get document download URL (admin access to any document)
+   */
+  static async getDocumentDownloadUrl(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { documentId } = req.params
+      const result = await adminService.getDocumentDownloadUrl(documentId)
+      res.status(200).json({
+        success: true,
+        data: {
+          downloadUrl: result.url,
+          filename: result.filename,
+          expiresIn: 3600,
+        },
+      })
+    } catch (error) {
+      logger.error('[admin] Error getting document download URL', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: req.user?.id,
+        documentId: req.params.documentId,
+      })
+
+      if (error instanceof Error && error.message === 'Document not found') {
+        return next(new AppError('Document not found', 404))
+      }
+
+      next(new AppError('Failed to get download URL', 500))
+    }
+  }
+
+  /**
    * Get audit logs
    */
   static async getAuditLogs(req: AuthenticatedRequest, res: Response, next: NextFunction) {

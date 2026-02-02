@@ -58,6 +58,12 @@ model User {
   account_type             AccountType          @default(PERSONAL)
   created_at               DateTime             @default(now())
   updated_at               DateTime             @default(now()) @updatedAt
+
+  // 2FA fields
+  two_factor_enabled       Boolean              @default(false)
+  two_factor_secret        String?              // Encrypted TOTP secret
+  two_factor_backup_codes  String[]             @default([]) // Hashed backup codes
+
   memories                 Memory[]
   memory_snapshots         MemorySnapshot[]
   token_usage              TokenUsage[]

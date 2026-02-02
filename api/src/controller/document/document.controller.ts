@@ -266,4 +266,45 @@ export class DocumentController {
       next(new AppError('Failed to reprocess document', 500))
     }
   }
+
+  /**
+   * Get document info and download URL from memory ID (for citations)
+   * GET /api/organizations/:slug/documents/by-memory/:memoryId
+   */
+  static async getDocumentByMemory(req: OrganizationRequest, res: Response, next: NextFunction) {
+    try {
+      const { memoryId } = req.params
+
+      const result = await documentService.getDocumentByMemoryId(memoryId, req.organization!.id)
+
+      if (!result) {
+        return next(new AppError('No document found for this memory', 404))
+      }
+
+      const downloadUrl = await documentService.getDownloadUrl(result.document.id, req.organization!.id)
+
+      res.status(200).json({
+        success: true,
+        data: {
+          document: {
+            id: result.document.id,
+            original_name: result.document.original_name,
+            mime_type: result.document.mime_type,
+            size_bytes: result.document.file_size,
+            page_count: result.document.page_count,
+          },
+          chunkContent: result.chunkContent,
+          pageNumber: result.pageNumber,
+          downloadUrl,
+          expiresIn: 3600,
+        },
+      })
+    } catch (error) {
+      logger.error('[document] Get by memory error', {
+        error: error instanceof Error ? error.message : String(error),
+        memoryId: req.params.memoryId,
+      })
+      next(new AppError('Failed to get document', 500))
+    }
+  }
 }

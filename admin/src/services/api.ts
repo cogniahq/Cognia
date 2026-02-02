@@ -12,6 +12,7 @@ import type {
   UserRole,
   DocumentStatus,
   AuthUser,
+  StorageAnalytics,
 } from '@/types/admin.types'
 
 const API_BASE = '/api'
@@ -48,11 +49,21 @@ api.interceptors.response.use(
 // Auth
 export async function login(email: string, password: string): Promise<{ token: string; user: AuthUser }> {
   const response = await api.post('/auth/login', { email, password })
-  const { token, user } = response.data.data
+
+  // Handle nested response structure: { success, data: { token, user } }
+  const responseData = response.data
+  const innerData = responseData?.data || responseData
+  const token = innerData?.token
+  const user = innerData?.user
+
+  if (!token || !user) {
+    console.error('Login response structure:', JSON.stringify(responseData, null, 2))
+    throw new Error('Invalid response from server')
+  }
 
   // Verify admin role
   if (user.role !== 'ADMIN') {
-    throw new Error('Admin access required')
+    throw new Error(`Admin access required. Your account role is "${user.role || 'USER'}". Contact an administrator.`)
   }
 
   return { token, user }
@@ -153,6 +164,18 @@ export async function reprocessDocument(documentId: string): Promise<void> {
 // Analytics
 export async function getAnalytics(days: number = 30): Promise<AnalyticsData> {
   const response = await api.get(`/admin/analytics?days=${days}`)
+  return response.data.data
+}
+
+// Storage Analytics
+export async function getStorageAnalytics(days: number = 30): Promise<StorageAnalytics> {
+  const response = await api.get(`/admin/storage-analytics?days=${days}`)
+  return response.data.data
+}
+
+// Document Download
+export async function getDocumentDownloadUrl(documentId: string): Promise<{ downloadUrl: string; filename: string }> {
+  const response = await api.get(`/admin/documents/${documentId}/download`)
   return response.data.data
 }
 

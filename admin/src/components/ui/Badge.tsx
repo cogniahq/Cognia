@@ -4,11 +4,11 @@ interface BadgeProps {
 }
 
 const variants = {
-  default: 'bg-gray-100 text-gray-700 border-gray-200',
-  success: 'bg-green-50 text-green-700 border-green-200',
-  warning: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  error: 'bg-red-50 text-red-700 border-red-200',
-  info: 'bg-blue-50 text-blue-700 border-blue-200',
+  default: 'bg-muted text-muted-foreground border-border',
+  success: 'bg-chart-success/10 text-chart-success border-chart-success/20',
+  warning: 'bg-chart-warning/10 text-chart-warning border-chart-warning/20',
+  error: 'bg-destructive/10 text-destructive border-destructive/20',
+  info: 'bg-chart-accent/10 text-chart-accent border-chart-accent/20',
 }
 
 export function Badge({ children, variant = 'default' }: BadgeProps) {
@@ -16,7 +16,7 @@ export function Badge({ children, variant = 'default' }: BadgeProps) {
     <span
       className={`
         inline-flex items-center px-2 py-0.5 text-xs font-mono uppercase tracking-wide
-        border ${variants[variant]}
+        border rounded-md ${variants[variant]}
       `}
     >
       {children}

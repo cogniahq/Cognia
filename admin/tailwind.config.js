@@ -8,8 +8,8 @@ module.exports = {
   prefix: "",
   theme: {
     fontFamily: {
-      geist: ["geist", "sans-serif"],
-      mono: ["JetBrains Mono", "Menlo", "Monaco", "monospace"],
+      sans: ["Inter", "system-ui", "sans-serif"],
+      mono: ["IBM Plex Mono", "Menlo", "Monaco", "monospace"],
     },
     container: {
       center: true,
@@ -53,11 +53,21 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        chart: {
+          primary: "hsl(var(--chart-primary))",
+          secondary: "hsl(var(--chart-secondary))",
+          tertiary: "hsl(var(--chart-tertiary))",
+          quaternary: "hsl(var(--chart-quaternary))",
+          accent: "hsl(var(--chart-accent))",
+          success: "hsl(var(--chart-success))",
+          warning: "hsl(var(--chart-warning))",
+          error: "hsl(var(--chart-error))",
+        },
       },
       borderRadius: {
-        lg: "0",
-        md: "0",
-        sm: "0",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
     },
   },

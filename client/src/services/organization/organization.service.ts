@@ -164,6 +164,32 @@ export async function getDocumentStatus(
   return response.data.data.document
 }
 
+export interface DocumentPreviewData {
+  document: {
+    id: string
+    original_name: string
+    mime_type: string
+    size_bytes: number
+    page_count: number | null
+  }
+  chunkContent: string
+  pageNumber: number | null
+  downloadUrl: string
+  expiresIn: number
+}
+
+export async function getDocumentByMemory(
+  slug: string,
+  memoryId: string
+): Promise<DocumentPreviewData> {
+  requireAuthToken()
+  const response = await getRequest(`${baseUrl}/${slug}/documents/by-memory/${memoryId}`)
+  if (!response.data?.success) {
+    throw new Error(response.data?.message || "No document found for this citation")
+  }
+  return response.data.data
+}
+
 // Search
 export async function searchOrganization(
   slug: string,

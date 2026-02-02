@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { Toaster } from "@/components/ui/sonner"
 import { CommandMenu } from "@/components/shared/CommandMenu"
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary"
+import { SecurityErrorHandler } from "@/components/shared/SecurityErrorHandler"
 
 function AppContent() {
   useKeyboardShortcuts()
@@ -19,6 +20,7 @@ function AppContent() {
       <CommandMenu />
       <AppRoutes />
       <Toaster />
+      <SecurityErrorHandler />
     </>
   )
 }

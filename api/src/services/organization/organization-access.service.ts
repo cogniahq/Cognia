@@ -4,6 +4,7 @@ import { OrgRole } from '@prisma/client'
 export class OrganizationAccessService {
   /**
    * Get user's membership in an organization by slug
+   * Includes security settings needed for middleware enforcement
    */
   async getUserMembership(userId: string, orgSlug: string) {
     return prisma.organizationMember.findFirst({
@@ -19,6 +20,10 @@ export class OrganizationAccessService {
             id: true,
             name: true,
             slug: true,
+            // Security settings for middleware
+            ip_allowlist: true,
+            session_timeout: true,
+            require_2fa: true,
           },
         },
       },

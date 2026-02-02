@@ -9,6 +9,10 @@ export interface OrganizationRequest extends AuthenticatedRequest {
     id: string
     slug: string
     userRole: OrgRole
+    // Security settings
+    ip_allowlist: string[]
+    session_timeout: string
+    require_2fa: boolean
   }
 }
 
@@ -44,6 +48,10 @@ export async function requireOrganization(
       id: membership.organization.id,
       slug: membership.organization.slug,
       userRole: membership.role,
+      // Security settings
+      ip_allowlist: membership.organization.ip_allowlist,
+      session_timeout: membership.organization.session_timeout,
+      require_2fa: membership.organization.require_2fa,
     }
 
     next()

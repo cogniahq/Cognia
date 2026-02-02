@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma.lib'
 import { getRedisClient } from '../../lib/redis.lib'
 import { qdrantClient, COLLECTION_NAME } from '../../lib/qdrant.lib'
+import { storageService } from '../storage/storage.service'
 import { logger } from '../../utils/core/logger.util'
 import { UserRole, OrgRole, DocumentStatus } from '@prisma/client'
 
@@ -178,6 +179,46 @@ export interface AuditLogItem {
   created_at: Date
   user: {
     email: string | null
+  }
+}
+
+export interface StorageByOrganization {
+  id: string
+  name: string
+  size: number
+  documentCount: number
+  avgFileSize: number
+}
+
+export interface StorageByFileType {
+  mimeType: string
+  size: number
+  count: number
+  percentage: number
+}
+
+export interface LargestFile {
+  id: string
+  name: string
+  size: number
+  mimeType: string
+  organizationId: string
+  organizationName: string
+  organizationSlug: string
+  createdAt: Date
+}
+
+export interface StorageAnalytics {
+  totalStorage: number
+  storageByOrganization: StorageByOrganization[]
+  storageByFileType: StorageByFileType[]
+  largestFiles: LargestFile[]
+  storageTrends: TimeSeriesPoint[]
+  projectedStorage: {
+    current: number
+    thirtyDay: number
+    ninetyDay: number
+    dailyGrowthRate: number
   }
 }
 
@@ -790,6 +831,156 @@ class AdminService {
     }
 
     return timeSeries
+  }
+
+  /**
+   * Get storage analytics
+   */
+  async getStorageAnalytics(days: number = 30): Promise<StorageAnalytics> {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+    startDate.setHours(0, 0, 0, 0)
+
+    // Get total storage
+    const totalStorageResult = await prisma.document.aggregate({
+      _sum: { file_size: true },
+    })
+    const totalStorage = totalStorageResult._sum.file_size || 0
+
+    // Get storage by organization (top 10)
+    const orgStorageRaw = await prisma.document.groupBy({
+      by: ['organization_id'],
+      _sum: { file_size: true },
+      _count: true,
+      orderBy: { _sum: { file_size: 'desc' } },
+      take: 10,
+    })
+
+    const orgIds = orgStorageRaw.map(o => o.organization_id)
+    const orgs = await prisma.organization.findMany({
+      where: { id: { in: orgIds } },
+      select: { id: true, name: true },
+    })
+    const orgMap = new Map(orgs.map(o => [o.id, o.name]))
+
+    const storageByOrganization: StorageByOrganization[] = orgStorageRaw.map(o => ({
+      id: o.organization_id,
+      name: orgMap.get(o.organization_id) || 'Unknown',
+      size: o._sum.file_size || 0,
+      documentCount: o._count,
+      avgFileSize: o._count > 0 ? Math.round((o._sum.file_size || 0) / o._count) : 0,
+    }))
+
+    // Get storage by file type
+    const fileTypeStorageRaw = await prisma.document.groupBy({
+      by: ['mime_type'],
+      _sum: { file_size: true },
+      _count: true,
+      orderBy: { _sum: { file_size: 'desc' } },
+    })
+
+    const storageByFileType: StorageByFileType[] = fileTypeStorageRaw.map(f => ({
+      mimeType: f.mime_type,
+      size: f._sum.file_size || 0,
+      count: f._count,
+      percentage: totalStorage > 0 ? ((f._sum.file_size || 0) / totalStorage) * 100 : 0,
+    }))
+
+    // Get largest files (top 10)
+    const largestFilesRaw = await prisma.document.findMany({
+      orderBy: { file_size: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        original_name: true,
+        file_size: true,
+        mime_type: true,
+        created_at: true,
+        organization: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    })
+
+    const largestFiles: LargestFile[] = largestFilesRaw.map(f => ({
+      id: f.id,
+      name: f.original_name,
+      size: f.file_size,
+      mimeType: f.mime_type,
+      organizationId: f.organization.id,
+      organizationName: f.organization.name,
+      organizationSlug: f.organization.slug,
+      createdAt: f.created_at,
+    }))
+
+    // Get storage trends (cumulative daily totals)
+    const documents = await prisma.document.findMany({
+      where: { created_at: { gte: startDate } },
+      select: { created_at: true, file_size: true },
+      orderBy: { created_at: 'asc' },
+    })
+
+    // Get storage before the start date for cumulative calculation
+    const storageBeforeStart = await prisma.document.aggregate({
+      where: { created_at: { lt: startDate } },
+      _sum: { file_size: true },
+    })
+    let cumulativeStorage = storageBeforeStart._sum.file_size || 0
+
+    // Build daily storage map
+    const dailyStorage = new Map<string, number>()
+    documents.forEach(d => {
+      const dateStr = d.created_at.toISOString().split('T')[0]
+      dailyStorage.set(dateStr, (dailyStorage.get(dateStr) || 0) + d.file_size)
+    })
+
+    // Build time series with cumulative totals
+    const storageTrends: TimeSeriesPoint[] = []
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate)
+      d.setDate(d.getDate() + i)
+      const dateStr = d.toISOString().split('T')[0]
+      cumulativeStorage += dailyStorage.get(dateStr) || 0
+      storageTrends.push({ date: dateStr, value: cumulativeStorage })
+    }
+
+    // Calculate projections
+    const dailyGrowthRate = storageTrends.length >= 2
+      ? (storageTrends[storageTrends.length - 1].value - storageTrends[0].value) / days
+      : 0
+
+    const projectedStorage = {
+      current: totalStorage,
+      thirtyDay: Math.round(totalStorage + dailyGrowthRate * 30),
+      ninetyDay: Math.round(totalStorage + dailyGrowthRate * 90),
+      dailyGrowthRate: Math.round(dailyGrowthRate),
+    }
+
+    return {
+      totalStorage,
+      storageByOrganization,
+      storageByFileType,
+      largestFiles,
+      storageTrends,
+      projectedStorage,
+    }
+  }
+
+  /**
+   * Get download URL for any document (admin access)
+   */
+  async getDocumentDownloadUrl(documentId: string): Promise<{ url: string; filename: string }> {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+      select: { storage_path: true, original_name: true },
+    })
+
+    if (!document) {
+      throw new Error('Document not found')
+    }
+
+    const url = await storageService.getSignedUrl(document.storage_path, 3600) // 1 hour expiry
+    return { url, filename: document.original_name }
   }
 
   /**

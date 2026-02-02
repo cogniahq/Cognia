@@ -187,3 +187,43 @@ export interface AuthUser {
   email: string
   role: UserRole
 }
+
+export interface StorageByOrganization {
+  id: string
+  name: string
+  size: number
+  documentCount: number
+  avgFileSize: number
+}
+
+export interface StorageByFileType {
+  mimeType: string
+  size: number
+  count: number
+  percentage: number
+}
+
+export interface LargestFile {
+  id: string
+  name: string
+  size: number
+  mimeType: string
+  organizationId: string
+  organizationName: string
+  organizationSlug: string
+  createdAt: string
+}
+
+export interface StorageAnalytics {
+  totalStorage: number
+  storageByOrganization: StorageByOrganization[]
+  storageByFileType: StorageByFileType[]
+  largestFiles: LargestFile[]
+  storageTrends: TimeSeriesPoint[]
+  projectedStorage: {
+    current: number
+    thirtyDay: number
+    ninetyDay: number
+    dailyGrowthRate: number
+  }
+}

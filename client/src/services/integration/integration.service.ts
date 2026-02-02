@@ -42,7 +42,9 @@ export async function getConnectedIntegrations(): Promise<ConnectedIntegration[]
 export async function connectIntegration(provider: string): Promise<ConnectResponse> {
   requireAuthToken()
   try {
-    const redirectUri = `${window.location.origin}/integrations/callback/${provider}`
+    // Use API base URL for OAuth callback - Google redirects to API, which then redirects to frontend
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const redirectUri = `${apiBaseUrl}/api/integrations/${provider}/callback`
     const response = await postRequest(`/integrations/${provider}/connect`, { redirectUri })
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to initiate connection")

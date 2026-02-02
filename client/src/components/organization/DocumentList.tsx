@@ -13,6 +13,13 @@ const FILE_TYPE_LABELS: Record<string, string> = {
   "image/webp": "WEBP",
 }
 
+const INTEGRATION_SOURCE_LABELS: Record<string, string> = {
+  google_drive: "Google Drive",
+  slack: "Slack",
+  notion: "Notion",
+  github: "GitHub",
+}
+
 const STATUS_LABELS: Record<Document["status"], string> = {
   PENDING: "Queued",
   PROCESSING: "Processing",
@@ -98,64 +105,86 @@ export function DocumentList() {
         </div>
 
         {/* Rows */}
-        {documents.map((doc) => (
-          <div
-            key={doc.id}
-            className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors items-center"
-          >
-            <div className="col-span-5 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-gray-400 flex-shrink-0">
-                  [{FILE_TYPE_LABELS[doc.mime_type] || "FILE"}]
-                </span>
-                <span className="text-sm text-gray-900 truncate">
-                  {doc.original_name}
-                </span>
+        {documents.map((doc) => {
+          const isIntegration = doc.type === "integration"
+          const typeLabel = isIntegration
+            ? INTEGRATION_SOURCE_LABELS[doc.source || ""] || doc.source?.toUpperCase() || "SYNC"
+            : FILE_TYPE_LABELS[doc.mime_type] || "FILE"
+
+          return (
+            <div
+              key={doc.id}
+              className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors items-center"
+            >
+              <div className="col-span-5 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs font-mono flex-shrink-0 ${
+                      isIntegration ? "text-amber-600" : "text-gray-400"
+                    }`}
+                  >
+                    [{typeLabel}]
+                  </span>
+                  {isIntegration && doc.url ? (
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                    >
+                      {doc.original_name}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-900 truncate">
+                      {doc.original_name}
+                    </span>
+                  )}
+                </div>
+                {doc.page_count && (
+                  <div className="text-xs font-mono text-gray-400 mt-0.5">
+                    {doc.page_count} page{doc.page_count !== 1 && "s"}
+                  </div>
+                )}
               </div>
-              {doc.page_count && (
-                <div className="text-xs font-mono text-gray-400 mt-0.5">
-                  {doc.page_count} page{doc.page_count !== 1 && "s"}
-                </div>
-              )}
-            </div>
-            <div className="col-span-2 hidden sm:block text-xs font-mono text-gray-500">
-              {formatFileSize(doc.size_bytes)}
-            </div>
-            <div className="col-span-2 hidden md:block text-xs font-mono text-gray-500">
-              {formatDate(doc.created_at)}
-            </div>
-            <div className="col-span-2">
-              <span
-                className={`text-xs font-mono ${
-                  doc.status === "COMPLETED"
-                    ? "text-green-600"
-                    : doc.status === "FAILED"
-                      ? "text-red-600"
-                      : doc.status === "PROCESSING"
-                        ? "text-blue-600"
-                        : "text-gray-500"
-                }`}
-              >
-                {STATUS_LABELS[doc.status]}
-              </span>
-              {doc.status === "FAILED" && doc.error_message && (
-                <div className="text-xs font-mono text-red-500 truncate mt-0.5">
-                  {doc.error_message}
-                </div>
-              )}
-            </div>
-            <div className="col-span-1 text-right">
-              {isAdmin && (
-                <button
-                  onClick={() => setDeleteId(doc.id)}
-                  className="text-xs font-mono text-gray-400 hover:text-red-600 transition-colors"
+              <div className="col-span-2 hidden sm:block text-xs font-mono text-gray-500">
+                {formatFileSize(doc.size_bytes)}
+              </div>
+              <div className="col-span-2 hidden md:block text-xs font-mono text-gray-500">
+                {formatDate(doc.created_at)}
+              </div>
+              <div className="col-span-2">
+                <span
+                  className={`text-xs font-mono ${
+                    doc.status === "COMPLETED"
+                      ? "text-green-600"
+                      : doc.status === "FAILED"
+                        ? "text-red-600"
+                        : doc.status === "PROCESSING"
+                          ? "text-blue-600"
+                          : "text-gray-500"
+                  }`}
                 >
-                  ×
-                </button>
-              )}
+                  {STATUS_LABELS[doc.status]}
+                </span>
+                {doc.status === "FAILED" && doc.error_message && (
+                  <div className="text-xs font-mono text-red-500 truncate mt-0.5">
+                    {doc.error_message}
+                  </div>
+                )}
+              </div>
+              <div className="col-span-1 text-right">
+                {isAdmin && !isIntegration && (
+                  <button
+                    onClick={() => setDeleteId(doc.id)}
+                    className="text-xs font-mono text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <ConfirmDialog

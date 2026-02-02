@@ -1,14 +1,19 @@
-import { IntegrationStatus, SyncFrequency, StorageStrategy } from '@prisma/client';
+import { IntegrationStatus, SyncFrequency, StorageStrategy, SourceType } from '@prisma/client';
 import {
   PluginRegistry,
   IntegrationQueueManager,
   createTokenEncryptor,
   type TokenSet,
   type PluginInfo,
+  type ResourceContent,
 } from '@cogniahq/integrations';
-import { getRedisClient } from '../../lib/redis.lib';
+import Redis from 'ioredis';
 import { logger } from '../../utils/core/logger.util';
 import { prisma } from '../../lib/prisma.lib';
+import { addContentJob } from '../../lib/queue.lib';
+import { memoryIngestionService } from '../memory/memory-ingestion.service';
+import { memoryMeshService } from '../memory/memory-mesh.service';
+import { getRedisConnection } from '../../utils/core/env.util';
 
 // Token encryption key from environment
 const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || '';
@@ -51,12 +56,21 @@ export class IntegrationService {
     // Initialize plugin registry with configured plugins
     this.initializePlugins();
 
-    // Initialize queue manager
+    // Initialize queue manager with BullMQ-compatible Redis connection
     try {
-      const redis = getRedisClient();
+      const connection = getRedisConnection(true); // true = BullMQ compatible (maxRetriesPerRequest: null)
+
+      let redis: Redis;
+      if ('url' in connection) {
+        redis = new Redis(connection.url, connection);
+      } else {
+        redis = new Redis(connection);
+      }
+
       this.queueManager = new IntegrationQueueManager(redis);
-    } catch (error) {
-      logger.warn('Redis not available, queue manager disabled');
+      logger.log('Integration queue manager initialized');
+    } catch (error: any) {
+      logger.warn('Redis not available, queue manager disabled:', error?.message || error);
     }
 
     // Sync registry with database
@@ -439,16 +453,14 @@ export class IntegrationService {
 
   /**
    * Trigger a manual sync
+   * @param direct - If true, sync immediately instead of queueing (useful for manual triggers)
    */
   async triggerSync(
     integrationId: string,
     integrationType: 'user' | 'organization',
-    mode: 'full' | 'incremental' = 'incremental'
+    mode: 'full' | 'incremental' = 'incremental',
+    direct: boolean = true // Default to direct sync for manual triggers
   ): Promise<void> {
-    if (!this.queueManager) {
-      throw new Error('Queue manager not initialized');
-    }
-
     const integration =
       integrationType === 'user'
         ? await prisma.userIntegration.findUnique({ where: { id: integrationId } })
@@ -458,16 +470,276 @@ export class IntegrationService {
       throw new Error('Integration not found');
     }
 
-    await this.queueManager.addSyncJob({
-      integrationId,
-      integrationType,
-      provider: integration.provider,
-      mode,
-      triggeredBy: 'manual',
-      userId: integrationType === 'user' ? (integration as any).user_id : undefined,
-      organizationId:
-        integrationType === 'organization' ? (integration as any).organization_id : undefined,
+    // For manual syncs, use direct mode for immediate feedback
+    // Queue mode is better for scheduled/automatic syncs
+    if (!direct && this.queueManager) {
+      await this.queueManager.addSyncJob({
+        integrationId,
+        integrationType,
+        provider: integration.provider,
+        mode,
+        triggeredBy: 'manual',
+        userId: integrationType === 'user' ? (integration as any).user_id : undefined,
+        organizationId:
+          integrationType === 'organization' ? (integration as any).organization_id : undefined,
+      });
+      logger.log(`Sync job queued for ${integration.provider}`);
+      return;
+    }
+
+    // Direct sync - process immediately
+    logger.log(`Direct sync for ${integration.provider}`);
+    await this.performDirectSync(integration, integrationType, mode);
+  }
+
+  /**
+   * Perform sync directly without queue (fallback for when Redis is unavailable)
+   */
+  private async performDirectSync(
+    integration: any,
+    integrationType: 'user' | 'organization',
+    _mode: 'full' | 'incremental'
+  ): Promise<void> {
+    const plugin = PluginRegistry.get(integration.provider);
+    const tokens = this.getDecryptedTokens(integration);
+    const userId = integrationType === 'user' ? integration.user_id : integration.connected_by;
+
+    // For organization integrations, use the integration's organization_id
+    // For user integrations, check if user belongs to an organization
+    let organizationId: string | null = null;
+    if (integrationType === 'organization') {
+      organizationId = integration.organization_id;
+    } else if (userId) {
+      // Check if user has an organization membership
+      const membership = await prisma.organizationMember.findFirst({
+        where: { user_id: userId },
+        select: { organization_id: true },
+      });
+      organizationId = membership?.organization_id || null;
+    }
+
+    try {
+      // List resources from the integration
+      const page = await plugin.listResources(tokens, {
+        limit: 50, // Process in smaller batches
+      });
+
+      logger.log(`Found ${page.resources.length} resources from ${integration.provider}`);
+
+      let synced = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      // Process each resource
+      for (const resource of page.resources) {
+        // Skip folders
+        if (resource.type === 'folder') {
+          logger.log(`  [skip] ${resource.name} (folder)`);
+          skipped++;
+          continue;
+        }
+
+        try {
+          // Check if already synced
+          const existingSynced = await prisma.syncedResource.findUnique({
+            where: {
+              integration_id_integration_type_external_id: {
+                integration_id: integration.id,
+                integration_type: integrationType,
+                external_id: resource.externalId,
+              },
+            },
+          });
+
+          // Skip if already synced and not modified
+          if (existingSynced && existingSynced.last_synced_at >= resource.modifiedAt) {
+            logger.log(`  [skip] ${resource.name} (unchanged)`);
+            skipped++;
+            continue;
+          }
+
+          // Fetch full content
+          logger.log(`  [fetch] ${resource.name}...`);
+          const content = await plugin.fetchResource(tokens, resource.externalId);
+
+          // Skip if no usable content
+          if (!content.content || content.content.startsWith('[Unsupported') || content.content.startsWith('[Binary')) {
+            logger.log(`  [skip] ${resource.name} (unsupported type)`);
+            skipped++;
+            continue;
+          }
+
+          // Create or update memory
+          await this.createMemoryFromContent(content, {
+            userId,
+            organizationId,
+            integrationId: integration.id,
+            integrationType,
+            provider: integration.provider,
+          });
+
+          // Track synced resource
+          await prisma.syncedResource.upsert({
+            where: {
+              integration_id_integration_type_external_id: {
+                integration_id: integration.id,
+                integration_type: integrationType,
+                external_id: resource.externalId,
+              },
+            },
+            create: {
+              integration_id: integration.id,
+              integration_type: integrationType,
+              external_id: resource.externalId,
+              resource_type: resource.type,
+              content_hash: content.contentHash,
+              last_synced_at: new Date(),
+            },
+            update: {
+              content_hash: content.contentHash,
+              last_synced_at: new Date(),
+            },
+          });
+
+          logger.log(`  [synced] ${resource.name}`);
+          synced++;
+
+          // Small delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err: any) {
+          logger.error(`  [error] ${resource.name}: ${err.message}`);
+          errors++;
+        }
+      }
+
+      logger.log(`Sync complete: ${synced} synced, ${skipped} skipped, ${errors} errors`);
+
+      // Update last sync time
+      const updateData: { last_sync_at: Date; last_error: string | null } = {
+        last_sync_at: new Date(),
+        last_error: errors > 0 ? `${errors} resources failed to sync` : null,
+      };
+
+      if (integrationType === 'user') {
+        await prisma.userIntegration.update({
+          where: { id: integration.id },
+          data: updateData,
+        });
+      } else {
+        await prisma.organizationIntegration.update({
+          where: { id: integration.id },
+          data: updateData,
+        });
+      }
+    } catch (error: any) {
+      logger.error(`Sync failed for ${integration.provider}:`, error);
+
+      // Update error status
+      const errorData = {
+        last_error: error.message,
+        status: IntegrationStatus.ERROR,
+      };
+
+      if (integrationType === 'user') {
+        await prisma.userIntegration.update({
+          where: { id: integration.id },
+          data: errorData,
+        });
+      } else {
+        await prisma.organizationIntegration.update({
+          where: { id: integration.id },
+          data: errorData,
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Create a memory from integration content
+   */
+  private async createMemoryFromContent(
+    content: ResourceContent,
+    context: {
+      userId: string;
+      organizationId?: string | null;
+      integrationId: string;
+      integrationType: 'user' | 'organization';
+      provider: string;
+    }
+  ): Promise<void> {
+    const { userId, organizationId, provider } = context;
+
+    // Canonicalize content for deduplication
+    const { canonicalText, canonicalHash } = memoryIngestionService.canonicalizeContent(
+      content.content,
+      content.url
+    );
+
+    // Check for duplicates
+    const duplicate = await memoryIngestionService.findDuplicateMemory({
+      userId,
+      canonicalHash,
+      canonicalText,
+      url: content.url,
     });
+
+    if (duplicate) {
+      logger.log(`    (duplicate of ${duplicate.memory.id})`);
+      return;
+    }
+
+    // Try to add to content queue for full processing (embeddings, etc.)
+    try {
+      await addContentJob({
+        user_id: userId,
+        raw_text: content.content,
+        metadata: {
+          url: content.url,
+          title: content.title,
+          source: provider,
+          source_type: 'INTEGRATION',
+          organization_id: organizationId || undefined,
+          timestamp: content.updatedAt?.getTime() || Date.now(),
+        },
+      });
+      logger.log(`    (queued for processing)`);
+    } catch {
+      // Queue not available, create memory directly with embeddings
+      const memory = await prisma.memory.create({
+        data: {
+          user_id: userId,
+          organization_id: organizationId || undefined,
+          source: provider,
+          source_type: SourceType.INTEGRATION,
+          url: content.url,
+          title: content.title,
+          content: content.content,
+          canonical_text: canonicalText,
+          canonical_hash: canonicalHash,
+          timestamp: BigInt(content.updatedAt?.getTime() || Date.now()),
+          page_metadata: {
+            integration_provider: provider,
+            external_id: content.externalId,
+            mime_type: content.mimeType,
+            author: content.author,
+          } as any,
+        },
+      });
+
+      // Generate embeddings in background (non-blocking)
+      setImmediate(async () => {
+        try {
+          await memoryMeshService.generateEmbeddingsForMemory(memory.id);
+          await memoryMeshService.createMemoryRelations(memory.id, userId);
+        } catch (err) {
+          logger.error(`Error generating embeddings for ${memory.id}:`, err);
+        }
+      });
+
+      logger.log(`    (created with embeddings)`);
+    }
   }
 
   /**

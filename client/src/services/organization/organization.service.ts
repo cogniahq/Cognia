@@ -211,13 +211,126 @@ export async function searchOrganization(
     },
     undefined,
     undefined,
-    120000 // 2 minute timeout for search
+    30000 // 30 second timeout for initial search results
   )
 
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Search failed")
   }
   return response.data.data
+}
+
+// Answer job result type
+export interface AnswerJobResult {
+  id: string
+  status: "pending" | "completed" | "failed"
+  answer?: string
+  citations?: Array<{
+    label: number
+    memory_id: string
+    title: string | null
+    url: string | null
+  }>
+}
+
+// Poll for answer job status (legacy, kept for fallback)
+export async function getAnswerJobStatus(jobId: string): Promise<AnswerJobResult> {
+  requireAuthToken()
+  const response = await getRequest(`/search/job/${jobId}`)
+  return response.data
+}
+
+// Subscribe to answer job via SSE
+export function subscribeToAnswerJob(
+  jobId: string,
+  callbacks: {
+    onCompleted: (result: AnswerJobResult) => void
+    onError: (error: string) => void
+    onHeartbeat?: (elapsed: number) => void
+  }
+): () => void {
+  // Build the SSE URL - bypass Vite proxy in dev mode to avoid buffering issues
+  // SSE needs direct connection to avoid proxy buffering
+  const baseUrl = import.meta.env.DEV
+    ? "http://localhost:3000/api"  // Direct connection in dev
+    : `${import.meta.env.VITE_SERVER_URL || ""}/api`
+
+  // Note: EventSource doesn't support custom headers, so we pass token as query param
+  const token = localStorage.getItem("auth_token") || ""
+  const url = `${baseUrl}/search/job/${jobId}/stream?token=${encodeURIComponent(token)}`
+
+  console.log("[SSE] Connecting to:", url)
+  const eventSource = new EventSource(url)
+
+  eventSource.addEventListener("connected", () => {
+    console.log("[SSE] Connected to answer stream", jobId)
+  })
+
+  eventSource.addEventListener("completed", (event) => {
+    console.log("[SSE] Received completed event", event.data)
+    try {
+      const data = JSON.parse(event.data) as AnswerJobResult
+      callbacks.onCompleted(data)
+    } catch (err) {
+      console.error("[SSE] Failed to parse completed event", err)
+      callbacks.onError("Failed to parse response")
+    }
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("failed", (event) => {
+    console.log("[SSE] Received failed event", event.data)
+    try {
+      const data = JSON.parse(event.data)
+      callbacks.onError(data.error || "Answer generation failed")
+    } catch {
+      callbacks.onError("Answer generation failed")
+    }
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("timeout", (event) => {
+    console.log("[SSE] Received timeout event", event.data)
+    try {
+      const data = JSON.parse(event.data)
+      callbacks.onError(data.error || "Answer generation timed out")
+    } catch {
+      callbacks.onError("Answer generation timed out")
+    }
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("error", (event) => {
+    console.log("[SSE] Error event, readyState:", eventSource.readyState, event)
+    if (eventSource.readyState === EventSource.CLOSED) {
+      return // Normal close, ignore
+    }
+    console.error("[SSE] Connection error", event)
+    callbacks.onError("Connection error")
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("heartbeat", (event) => {
+    console.log("[SSE] Heartbeat", event.data)
+    if (callbacks.onHeartbeat) {
+      try {
+        const data = JSON.parse(event.data)
+        callbacks.onHeartbeat(data.elapsed)
+      } catch {
+        // Ignore parse errors for heartbeat
+      }
+    }
+  })
+
+  // Also listen for raw messages
+  eventSource.onmessage = (event) => {
+    console.log("[SSE] Raw message received:", event.data)
+  }
+
+  // Return cleanup function
+  return () => {
+    eventSource.close()
+  }
 }
 
 export async function searchOrganizationDocuments(

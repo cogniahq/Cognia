@@ -8,7 +8,7 @@ export type { SearchJobStatus, SearchJob }
 const JOB_PREFIX = 'search_job:'
 const JOB_TTL = 15 * 60 // 15 minutes in seconds
 
-export function createSearchJob(): SearchJob {
+export async function createSearchJob(): Promise<SearchJob> {
   const id = crypto.randomUUID()
   const job: SearchJob = {
     id,
@@ -19,9 +19,14 @@ export function createSearchJob(): SearchJob {
 
   const client = getRedisClient()
   const key = `${JOB_PREFIX}${id}`
-  client.setex(key, JOB_TTL, JSON.stringify(job)).catch(err => {
+
+  try {
+    await client.setex(key, JOB_TTL, JSON.stringify(job))
+    logger.log('[search-job] created job', { jobId: id })
+  } catch (err) {
     logger.error('Error creating search job in Redis:', err)
-  })
+    throw err
+  }
 
   return job
 }
@@ -46,7 +51,7 @@ export async function setSearchJobResult(
     const existing = await client.get(key)
 
     if (!existing) {
-      logger.error('Search job not found:', id)
+      logger.error('[search-job] job not found for update', { jobId: id })
       return
     }
 
@@ -58,8 +63,14 @@ export async function setSearchJobResult(
     job.expires_at = Date.now() + JOB_TTL * 1000
 
     await client.setex(key, JOB_TTL, JSON.stringify(job))
+    logger.log('[search-job] updated job', {
+      jobId: id,
+      status: job.status,
+      hasAnswer: !!job.answer,
+      citationCount: job.citations?.length,
+    })
   } catch (error) {
-    logger.error('Error updating search job result:', error)
+    logger.error('[search-job] error updating job result', { jobId: id, error })
   }
 }
 

@@ -1,9 +1,10 @@
 import { Response, NextFunction } from 'express'
 import { OrganizationRequest } from '../../middleware/organization.middleware'
 import { documentService } from '../../services/document/document.service'
+import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import AppError from '../../utils/http/app-error.util'
-import { DocumentStatus } from '@prisma/client'
+import { DocumentStatus, SourceType } from '@prisma/client'
 
 // Supported MIME types for document upload
 const SUPPORTED_MIME_TYPES = [
@@ -82,42 +83,101 @@ export class DocumentController {
   }
 
   /**
-   * List documents for organization
+   * List documents for organization (includes uploaded documents and integration-synced content)
    * GET /api/organizations/:slug/documents
    */
   static async listDocuments(req: OrganizationRequest, res: Response, next: NextFunction) {
     try {
       const { status, limit, offset } = req.query
+      const limitNum = limit ? parseInt(limit as string) : 50
+      const offsetNum = offset ? parseInt(offset as string) : 0
 
+      // Fetch uploaded documents
       const result = await documentService.listDocuments(req.organization!.id, {
         status: status as DocumentStatus | undefined,
-        limit: limit ? parseInt(limit as string) : undefined,
-        offset: offset ? parseInt(offset as string) : undefined,
+        limit: limitNum,
+        offset: offsetNum,
       })
+
+      // Fetch integration-synced memories for this organization
+      const integrationMemories = await prisma.memory.findMany({
+        where: {
+          organization_id: req.organization!.id,
+          source_type: SourceType.INTEGRATION,
+        },
+        select: {
+          id: true,
+          title: true,
+          source: true,
+          url: true,
+          created_at: true,
+          content: true,
+        },
+        orderBy: { created_at: 'desc' },
+        take: limitNum,
+        skip: offsetNum,
+      })
+
+      // Count total integration memories
+      const integrationCount = await prisma.memory.count({
+        where: {
+          organization_id: req.organization!.id,
+          source_type: SourceType.INTEGRATION,
+        },
+      })
+
+      // Transform uploaded documents
+      const uploadedDocs = result.documents.map(doc => ({
+        id: doc.id,
+        organization_id: doc.organization_id,
+        uploader_id: doc.uploader_id,
+        original_name: doc.original_name,
+        storage_path: doc.storage_path,
+        mime_type: doc.mime_type,
+        size_bytes: doc.file_size,
+        status: doc.status,
+        error_message: doc.error_message,
+        page_count: doc.page_count,
+        metadata: doc.metadata,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        type: 'document' as const,
+      }))
+
+      // Transform integration memories to document-like format
+      const integrationDocs = integrationMemories.map(mem => ({
+        id: mem.id,
+        organization_id: req.organization!.id,
+        uploader_id: null as string | null,
+        original_name: mem.title || 'Untitled',
+        storage_path: null as string | null,
+        mime_type: 'text/plain',
+        size_bytes: mem.content?.length || 0,
+        status: 'COMPLETED' as DocumentStatus,
+        error_message: null as string | null,
+        page_count: null as number | null,
+        metadata: { source: mem.source, url: mem.url },
+        created_at: mem.created_at,
+        updated_at: mem.created_at,
+        type: 'integration' as const,
+        source: mem.source,
+        url: mem.url,
+      }))
+
+      // Combine and sort by created_at
+      const allDocuments = [...uploadedDocs, ...integrationDocs].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
 
       res.status(200).json({
         success: true,
         data: {
-          documents: result.documents.map(doc => ({
-            id: doc.id,
-            organization_id: doc.organization_id,
-            uploader_id: doc.uploader_id,
-            original_name: doc.original_name,
-            storage_path: doc.storage_path,
-            mime_type: doc.mime_type,
-            size_bytes: doc.file_size,
-            status: doc.status,
-            error_message: doc.error_message,
-            page_count: doc.page_count,
-            metadata: doc.metadata,
-            created_at: doc.created_at,
-            updated_at: doc.updated_at,
-          })),
+          documents: allDocuments,
         },
         pagination: {
-          total: result.total,
-          limit: limit ? parseInt(limit as string) : 50,
-          offset: offset ? parseInt(offset as string) : 0,
+          total: result.total + integrationCount,
+          limit: limitNum,
+          offset: offsetNum,
         },
       })
     } catch (error) {

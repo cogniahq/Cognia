@@ -18,11 +18,13 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   const allNavButtons = accountType === "ORGANIZATION"
     ? [
         { label: "Workspace", path: "/organization" },
+        { label: "Integrations", path: "/integrations" },
         { label: "Profile", path: "/profile" },
       ]
     : [
         { label: "Memories", path: "/memories" },
         { label: "Analytics", path: "/analytics" },
+        { label: "Integrations", path: "/integrations" },
         { label: "Profile", path: "/profile" },
       ]
 

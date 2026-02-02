@@ -3,6 +3,7 @@ import { qdrantClient, COLLECTION_NAME, ensureCollection } from '../../lib/qdran
 import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
 import { SourceType } from '@prisma/client'
+import { createSearchJob, setSearchJobResult } from './search-job.service'
 
 export interface UnifiedSearchOptions {
   organizationId: string
@@ -34,6 +35,7 @@ export interface UnifiedSearchResult {
     memoryId: string
   }>
   totalResults: number
+  answerJobId?: string // Job ID for async answer generation
 }
 
 export class UnifiedSearchService {
@@ -150,18 +152,22 @@ export class UnifiedSearchService {
       documentGroups.get(key)!.push(result)
     }
 
-    // Generate AI answer if requested
-    let answer: string | undefined
-    let citations: UnifiedSearchResult['citations']
+    // Generate AI answer asynchronously to prevent blocking search results
+    let answerJobId: string | undefined
 
     if (includeAnswer && results.length > 0) {
       try {
-        const answerResult = await this.generateAnswer(query, results.slice(0, 10))
-        answer = answerResult.answer
-        citations = answerResult.citations
+        // Create a job for answer generation (await to ensure it's stored before returning)
+        const job = await createSearchJob()
+        answerJobId = job.id
+
+        // Fire-and-forget: generate answer in background
+        this.generateAnswerAsync(job.id, query, results.slice(0, 10)).catch(error => {
+          logger.error('[unified-search] background answer generation failed', { error, jobId: job.id })
+        })
       } catch (error) {
-        logger.error('[unified-search] answer generation failed', { error })
-        // Continue without answer
+        logger.error('[unified-search] failed to create answer job', { error })
+        // Continue without answer job
       }
     }
 
@@ -169,14 +175,13 @@ export class UnifiedSearchService {
       organizationId,
       queryLength: query.length,
       resultCount: results.length,
-      hasAnswer: !!answer,
+      answerJobId,
     })
 
     return {
       results,
-      answer,
-      citations,
       totalResults: results.length,
+      answerJobId,
     }
   }
 
@@ -232,7 +237,51 @@ Answer:`
   }
 
   /**
-   * Search only documents (not personal memories)
+   * Generate AI answer asynchronously and update the job when done
+   */
+  private async generateAnswerAsync(
+    jobId: string,
+    query: string,
+    results: UnifiedSearchResult['results']
+  ): Promise<void> {
+    logger.log('[unified-search] starting answer generation', { jobId, query: query.substring(0, 50) })
+    const startTime = Date.now()
+
+    try {
+      const answerResult = await this.generateAnswer(query, results)
+      const elapsed = Math.round((Date.now() - startTime) / 1000)
+      logger.log('[unified-search] answer generated', { jobId, elapsed: `${elapsed}s` })
+
+      // Convert citations to job format
+      const jobCitations = answerResult.citations?.map(c => ({
+        label: c.index,
+        memory_id: c.memoryId,
+        title: c.documentName || null,
+        url: null as string | null,
+      }))
+
+      await setSearchJobResult(jobId, {
+        answer: answerResult.answer,
+        citations: jobCitations,
+        status: 'completed',
+      })
+
+      logger.log('[unified-search] answer generation completed', { jobId })
+    } catch (error) {
+      const elapsed = Math.round((Date.now() - startTime) / 1000)
+      logger.error('[unified-search] answer generation failed', {
+        jobId,
+        elapsed: `${elapsed}s`,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      await setSearchJobResult(jobId, {
+        status: 'failed',
+      })
+    }
+  }
+
+  /**
+   * Search only documents and integrations (not personal memories)
    */
   async searchDocuments(
     organizationId: string,
@@ -242,7 +291,7 @@ Answer:`
     return this.search({
       organizationId,
       query,
-      sourceTypes: [SourceType.DOCUMENT],
+      sourceTypes: [SourceType.DOCUMENT, SourceType.INTEGRATION],
       limit,
       includeAnswer: true,
     })

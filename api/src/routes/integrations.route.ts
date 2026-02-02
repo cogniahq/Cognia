@@ -67,35 +67,55 @@ router.post('/:provider/connect', authenticateToken, async (req: AuthenticatedRe
 
 /**
  * GET /api/integrations/:provider/callback
- * OAuth callback handler
+ * OAuth callback handler - NO AUTH REQUIRED (uses state parameter for user identification)
  */
-router.get('/:provider/callback', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:provider/callback', async (req, res: Response) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
   try {
     const { provider } = req.params;
-    const { code, state } = req.query;
+    const { code, state, error: oauthError } = req.query;
 
-    if (!code || !state) {
-      return res.status(400).json({ success: false, error: 'code and state are required' });
+    // Handle OAuth errors
+    if (oauthError) {
+      return res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent(oauthError as string)}`);
     }
 
-    // Parse state
+    if (!code || !state) {
+      return res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent('Missing code or state')}`);
+    }
+
+    // Parse state to get user ID
     let stateData;
     try {
       stateData = JSON.parse(Buffer.from(state as string, 'base64url').toString('utf8'));
     } catch {
-      return res.status(400).json({ success: false, error: 'Invalid state' });
+      return res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent('Invalid state')}`);
     }
 
-    // Verify user
-    if (stateData.userId !== req.user!.id) {
-      return res.status(403).json({ success: false, error: 'State mismatch' });
+    // Validate state has required fields
+    if (!stateData.userId || !stateData.provider) {
+      return res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent('Invalid state data')}`);
     }
 
-    // Get redirect URI from frontend (should be passed or derived)
-    const redirectUri = `${process.env.API_BASE_URL}/api/integrations/${provider}/callback`;
+    // Verify provider matches
+    if (stateData.provider !== provider) {
+      return res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent('Provider mismatch')}`);
+    }
 
-    const result = await integrationService.connectUserIntegration(
-      { userId: req.user!.id },
+    // Check state isn't too old (15 minute expiry)
+    const stateAge = Date.now() - stateData.timestamp;
+    if (stateAge > 15 * 60 * 1000) {
+      return res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent('Authorization expired, please try again')}`);
+    }
+
+    // Get redirect URI (must match what was sent to OAuth provider)
+    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    const redirectUri = `${apiBaseUrl}/api/integrations/${provider}/callback`;
+
+    // Connect the integration using userId from state
+    await integrationService.connectUserIntegration(
+      { userId: stateData.userId },
       {
         provider,
         code: code as string,
@@ -104,11 +124,10 @@ router.get('/:provider/callback', authenticateToken, async (req: AuthenticatedRe
     );
 
     // Redirect to frontend success page
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/integrations?connected=${provider}`);
   } catch (error: any) {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent(error.message)}`);
+    console.error('OAuth callback error:', error);
+    res.redirect(`${frontendUrl}/integrations?error=${encodeURIComponent(error.message || 'Connection failed')}`);
   }
 });
 
@@ -159,7 +178,7 @@ router.put('/:provider/config', authenticateToken, async (req: AuthenticatedRequ
 
 /**
  * POST /api/integrations/:provider/sync
- * Trigger manual sync
+ * Trigger manual sync (fire-and-forget - returns immediately, sync runs in background)
  */
 router.post('/:provider/sync', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -173,9 +192,12 @@ router.post('/:provider/sync', authenticateToken, async (req: AuthenticatedReque
       return res.status(404).json({ success: false, error: 'Integration not found' });
     }
 
-    await integrationService.triggerSync(integration.id, 'user', mode);
+    // Start sync in background (don't await) - prevents client timeout
+    integrationService.triggerSync(integration.id, 'user', mode).catch((err) => {
+      console.error(`Background sync failed for ${provider}:`, err);
+    });
 
-    res.json({ success: true, message: 'Sync triggered' });
+    res.json({ success: true, message: 'Sync started' });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }

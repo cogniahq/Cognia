@@ -144,6 +144,10 @@ export const Memories: React.FC = () => {
                       Manual/Docs
                     </span>
                     <span className="flex items-center gap-2 text-xs text-gray-700">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" />{" "}
+                      Integrations
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-gray-700">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-400" />{" "}
                       Other
                     </span>

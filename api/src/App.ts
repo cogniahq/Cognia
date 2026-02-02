@@ -23,6 +23,7 @@ import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
 import { getMorganOutputMode } from './utils/core/env.util'
+import { integrationService } from './services/integration'
 
 dotenv.config()
 
@@ -286,6 +287,12 @@ server.listen(port, async () => {
   logger.log('[startup] profile_worker_started')
   startDocumentWorker()
   logger.log('[startup] document_worker_started')
+  try {
+    await integrationService.initialize()
+    logger.log('[startup] integration_service_ready')
+  } catch (e) {
+    logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
+  }
   logger.log('[startup] server_listening', { protocol, port })
 })
 process.on('unhandledRejection', (err: Error) => {

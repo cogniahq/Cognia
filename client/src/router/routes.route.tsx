@@ -28,6 +28,11 @@ const Organization = lazy(() =>
     default: module.Organization,
   }))
 )
+const Integrations = lazy(() =>
+  import("@/pages/integrations.page").then((module) => ({
+    default: module.Integrations,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -51,6 +56,7 @@ const AppRoutes = () => {
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/organization" element={<Organization />} />
+            <Route path="/integrations" element={<Integrations />} />
           </>
         ) : (
           <>
@@ -60,6 +66,7 @@ const AppRoutes = () => {
             <Route path="/analytics" element={<Navigate to="/" replace />} />
             <Route path="/profile" element={<Navigate to="/" replace />} />
             <Route path="/organization" element={<Navigate to="/" replace />} />
+            <Route path="/integrations" element={<Navigate to="/" replace />} />
           </>
         )}
 

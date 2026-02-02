@@ -95,8 +95,19 @@ export class IntegrationService {
       logger.log('Registered Google Drive plugin');
     }
 
+    // Notion
+    if (process.env.NOTION_CLIENT_ID && process.env.NOTION_CLIENT_SECRET) {
+      const { NotionPlugin } = require('@cogniahq/integrations');
+      PluginRegistry.register(NotionPlugin, {
+        clientId: process.env.NOTION_CLIENT_ID,
+        clientSecret: process.env.NOTION_CLIENT_SECRET,
+        redirectUri: process.env.NOTION_REDIRECT_URI || '',
+      });
+      logger.log('Registered Notion plugin');
+    }
+
     // Add more plugins here as they're implemented
-    // Slack, Notion, GitHub, etc.
+    // Slack, GitHub, etc.
   }
 
   /**

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react"
 
 import { Section } from "../components/landing"
+import { AnalyticsDemo } from "../components/landing/AnalyticsDemo"
 import { CTASection } from "../components/landing/CTASection"
 import { EmailDraftingDemo } from "../components/landing/EmailDraftingDemo"
 import { FlowSection } from "../components/landing/FlowSection"
 import { Footer } from "../components/landing/Footer"
 import { Header } from "../components/landing/Header"
 import { HeroSection } from "../components/landing/HeroSection"
-import { ProductExplanationSection } from "../components/landing/ProductExplanationSection"
+import { IntegrationsDemo } from "../components/landing/IntegrationsDemo"
+import { MemoryMeshDemo } from "../components/landing/MemoryMeshDemo"
+import { SecuritySection } from "../components/landing/SecuritySection"
 
 export const Landing = () => {
   const [isVisible, setIsVisible] = useState(false)
@@ -103,13 +106,19 @@ export const Landing = () => {
 
       <FlowSection isVisible={isVisible} />
 
-      <ProductExplanationSection />
+      <IntegrationsDemo />
+
+      <MemoryMeshDemo />
 
       <Section className="bg-transparent py-8 sm:py-10 lg:py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <EmailDraftingDemo />
         </div>
       </Section>
+
+      <AnalyticsDemo />
+
+      <SecuritySection />
 
       <CTASection />
 

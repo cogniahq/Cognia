@@ -4,7 +4,7 @@
   "description": "Cognia",
   "main": "App.ts",
   "scripts": {
-    "start": "nodemon src/App.ts",
+    "start": "nodemon",
     "start_cron": "node backupCron.js",
     "build": "tsc --build",
     "start:prod": "pm2 start App.ts --name 'servercode' && pm2 save",

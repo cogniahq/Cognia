@@ -306,3 +306,27 @@ process.on('unhandledRejection', (err: Error) => {
     process.exit(1)
   })
 })
+
+// Graceful shutdown handling for nodemon restarts
+const gracefulShutdown = (signal: string) => {
+  logger.log(`[shutdown] ${signal} received, closing server...`)
+  server.close(async () => {
+    logger.log('[shutdown] HTTP server closed')
+    try {
+      await prisma.$disconnect()
+      logger.log('[shutdown] Database disconnected')
+    } catch (e) {
+      logger.error('[shutdown] Error disconnecting database:', e)
+    }
+    process.exit(0)
+  })
+
+  // Force exit if graceful shutdown takes too long
+  setTimeout(() => {
+    logger.warn('[shutdown] Forced exit after timeout')
+    process.exit(1)
+  }, 5000)
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))

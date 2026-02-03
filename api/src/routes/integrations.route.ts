@@ -6,6 +6,20 @@ import { SyncFrequency, StorageStrategy } from '@prisma/client';
 const router = Router();
 
 /**
+ * Get the redirect URI for a provider
+ * Uses provider-specific env var if set, otherwise falls back to API_BASE_URL
+ */
+function getRedirectUri(provider: string): string {
+  const providerEnvKey = `${provider.toUpperCase()}_REDIRECT_URI`;
+  const specificUri = process.env[providerEnvKey];
+  if (specificUri) {
+    return specificUri;
+  }
+  const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+  return `${apiBaseUrl}/api/integrations/${provider}/callback`;
+}
+
+/**
  * GET /api/integrations
  * List available integrations for the current user
  */
@@ -42,11 +56,9 @@ router.get('/connected', authenticateToken, async (req: AuthenticatedRequest, re
 router.post('/:provider/connect', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { provider } = req.params;
-    const { redirectUri } = req.body;
 
-    if (!redirectUri) {
-      return res.status(400).json({ success: false, error: 'redirectUri is required' });
-    }
+    // Use consistent redirect URI from env or default
+    const redirectUri = getRedirectUri(provider);
 
     // Generate state with user context
     const state = Buffer.from(
@@ -110,8 +122,7 @@ router.get('/:provider/callback', async (req, res: Response) => {
     }
 
     // Get redirect URI (must match what was sent to OAuth provider)
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    const redirectUri = `${apiBaseUrl}/api/integrations/${provider}/callback`;
+    const redirectUri = getRedirectUri(provider);
 
     // Connect the integration using userId from state
     await integrationService.connectUserIntegration(

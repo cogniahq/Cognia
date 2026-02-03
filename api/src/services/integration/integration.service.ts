@@ -562,6 +562,13 @@ export class IntegrationService {
             },
           });
 
+          // Skip if excluded from resync
+          if (existingSynced?.excluded) {
+            logger.log(`  [skip] ${resource.name} (excluded from resync)`);
+            skipped++;
+            continue;
+          }
+
           // Skip if already synced and not modified
           if (existingSynced && existingSynced.last_synced_at >= resource.modifiedAt) {
             logger.log(`  [skip] ${resource.name} (unchanged)`);

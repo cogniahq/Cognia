@@ -17,6 +17,7 @@ const INTEGRATION_SOURCE_LABELS: Record<string, string> = {
   google_drive: "Google Drive",
   slack: "Slack",
   notion: "Notion",
+  box: "Box",
   github: "GitHub",
 }
 

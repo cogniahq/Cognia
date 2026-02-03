@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 import { geminiService } from './gemini.service'
 import { tokenTracking } from '../core/token-tracking.service'
 import { logger } from '../../utils/core/logger.util'
+import { retryWithBackoff, isRateLimitError, sleep } from '../../utils/core/retry.util'
 
 type Provider = 'gemini' | 'ollama' | 'hybrid'
 
@@ -9,6 +10,11 @@ const embedProvider: Provider =
   (process.env.EMBED_PROVIDER as Provider) || (process.env.AI_PROVIDER as Provider) || 'hybrid'
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text:latest'
+
+interface ApiError {
+  status?: number
+  message?: string
+}
 
 export class EmbeddingProviderService {
   async generateEmbedding(text: string, userId?: string): Promise<number[]> {
@@ -23,7 +29,27 @@ export class EmbeddingProviderService {
 
     if (embedProvider === 'gemini') {
       logger.log('[embedding-provider] Using Gemini for embeddings')
-      const response = await geminiService.generateEmbedding(text)
+      // Use retry with exponential backoff for Gemini API calls
+      const response = await retryWithBackoff(
+        () => geminiService.generateEmbedding(text),
+        {
+          maxRetries: 4,
+          baseDelayMs: 3000,
+          maxDelayMs: 60000,
+          shouldRetry: (error) => {
+            if (isRateLimitError(error)) return true
+            const status = (error as ApiError)?.status
+            if (status === 503 || status === 502) return true
+            return false
+          },
+          onRetry: (error, attempt, delayMs) => {
+            const status = (error as ApiError)?.status
+            logger.warn(`Gemini embedding failed with status ${status}, retrying (attempt ${attempt})`, {
+              delayMs,
+            })
+          },
+        }
+      )
       result = response.embedding
       modelUsed = response.modelUsed
     } else if (embedProvider === 'hybrid') {
@@ -95,54 +121,72 @@ export class EmbeddingProviderService {
     return this.generateFallbackEmbedding(text)
   }
 
-  async tryOllamaEmbedding(text: string, model: string): Promise<number[]> {
+  async tryOllamaEmbedding(text: string, model: string, retries = 2): Promise<number[]> {
     const url = `${OLLAMA_BASE}/api/embeddings`
-    const payload = { model, input: text }
+    let lastError: Error | null = null
 
-    logger.log('[embedding-provider] Calling Ollama embeddings API', {
-      url,
-      model,
-      textLength: text.length,
-      textPreview: text.substring(0, 100),
-    })
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        logger.log('[embedding-provider] Calling Ollama embeddings API', {
+          url,
+          model,
+          textLength: text.length,
+          textPreview: text.substring(0, 100),
+          attempt,
+        })
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, input: text }),
+        })
 
-    logger.log('[embedding-provider] Ollama API response', {
-      status: res.status,
-      statusText: res.statusText,
-      ok: res.ok,
-    })
+        logger.log('[embedding-provider] Ollama API response', {
+          status: res.status,
+          statusText: res.statusText,
+          ok: res.ok,
+        })
 
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => 'Unable to read error response')
-      logger.error('[embedding-provider] Ollama API error response', {
-        status: res.status,
-        statusText: res.statusText,
-        errorText,
-      })
-      throw new Error(`Ollama embeddings failed: ${res.status} - ${errorText}`)
+        if (!res.ok) {
+          const errorText = await res.text().catch(() => 'Unable to read error response')
+          logger.error('[embedding-provider] Ollama API error response', {
+            status: res.status,
+            statusText: res.statusText,
+            errorText,
+          })
+          throw new Error(`Ollama embeddings failed: ${res.status} - ${errorText}`)
+        }
+
+        type EmbeddingResponse = { embedding?: number[]; embeddings?: number[] }
+        const data = (await res.json()) as EmbeddingResponse
+        const vec: number[] = data?.embedding || data?.embeddings || []
+
+        logger.log('[embedding-provider] Ollama embedding response parsed', {
+          hasEmbedding: !!data?.embedding,
+          hasEmbeddings: !!data?.embeddings,
+          vectorLength: vec.length,
+        })
+
+        if (!Array.isArray(vec) || vec.length === 0) {
+          throw new Error('Empty embedding array')
+        }
+
+        return vec.map((v: number | string) => Number(v) || 0)
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+
+        if (attempt < retries) {
+          const delayMs = 1000 * Math.pow(2, attempt)
+          logger.warn(`[embedding-provider] Ollama embedding failed, retrying (attempt ${attempt + 1})`, {
+            error: lastError.message,
+            delayMs,
+          })
+          await sleep(delayMs)
+        }
+      }
     }
 
-    type EmbeddingResponse = { embedding?: number[]; embeddings?: number[] }
-    const data = (await res.json()) as EmbeddingResponse
-    const vec: number[] = data?.embedding || data?.embeddings || []
-
-    logger.log('[embedding-provider] Ollama embedding response parsed', {
-      hasEmbedding: !!data?.embedding,
-      hasEmbeddings: !!data?.embeddings,
-      vectorLength: vec.length,
-    })
-
-    if (!Array.isArray(vec) || vec.length === 0) {
-      throw new Error('Empty embedding array')
-    }
-
-    return vec.map((v: number | string) => Number(v) || 0)
+    throw lastError || new Error('Ollama embedding failed')
   }
 
   generateFallbackEmbedding(text: string): number[] {

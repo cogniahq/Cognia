@@ -144,6 +144,10 @@ model Organization {
   sso_enabled      Boolean           @default(false)
   sso_config       Json?
 
+  // Integration sync settings (org-wide defaults)
+  default_sync_frequency    SyncFrequency  @default(HOURLY)
+  custom_sync_interval_min  Int?           // Custom interval in minutes (overrides default_sync_frequency if set)
+
   // Setup tracking
   setup_completed_steps  String[]    @default([])
   setup_started_at       DateTime?

@@ -44,29 +44,22 @@ export class ProfileExtractionService {
     )
 
     try {
+      // Retry with backoff is now handled at the generation provider level
       const response = await aiProvider.generateContent(prompt, false, userId)
       const parsed = profileParserService.parseProfileResponse(response)
       return { ...parsed, isFallback: false }
     } catch (error) {
-      logger.error('Error extracting profile from memories, retrying once:', error)
+      logger.error('Error extracting profile from memories, using fallback:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
 
-      try {
-        const retryResponse = await aiProvider.generateContent(prompt, false, userId)
-        const retryParsed = profileParserService.parseProfileResponse(retryResponse)
-        logger.log('Profile extraction succeeded on retry')
-        return { ...retryParsed, isFallback: false }
-      } catch (retryError) {
-        logger.error('Error extracting profile from memories on retry, using fallback:', {
-          error: retryError instanceof Error ? retryError.message : String(retryError),
-          stack: retryError instanceof Error ? retryError.stack : undefined,
-        })
-        const fallbackResult = profileFallbackService.extractProfileFallback(memories)
-        logger.log('Using fallback profile extraction', {
-          hasStatic: !!fallbackResult.static_profile_json,
-          hasDynamic: !!fallbackResult.dynamic_profile_json,
-        })
-        return { ...fallbackResult, isFallback: true }
-      }
+      const fallbackResult = profileFallbackService.extractProfileFallback(memories)
+      logger.log('Using fallback profile extraction', {
+        hasStatic: !!fallbackResult.static_profile_json,
+        hasDynamic: !!fallbackResult.dynamic_profile_json,
+      })
+      return { ...fallbackResult, isFallback: true }
     }
   }
 }

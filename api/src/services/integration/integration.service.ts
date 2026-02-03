@@ -118,6 +118,19 @@ export class IntegrationService {
       logger.log('Registered Slack plugin');
     }
 
+    // Box
+    if (process.env.BOX_CLIENT_ID && process.env.BOX_CLIENT_SECRET) {
+      const { BoxPlugin } = require('@cogniahq/integrations');
+      PluginRegistry.register(BoxPlugin, {
+        clientId: process.env.BOX_CLIENT_ID,
+        clientSecret: process.env.BOX_CLIENT_SECRET,
+        redirectUri: process.env.BOX_REDIRECT_URI || '',
+        primaryWebhookKey: process.env.BOX_PRIMARY_WEBHOOK_KEY,
+        secondaryWebhookKey: process.env.BOX_SECONDARY_WEBHOOK_KEY,
+      });
+      logger.log('Registered Box plugin');
+    }
+
     // Add more plugins here as they're implemented
     // GitHub, etc.
   }
@@ -773,7 +786,7 @@ export class IntegrationService {
   }
 
   /**
-   * Update integration settings
+   * Update user integration settings
    */
   async updateUserIntegrationSettings(
     userId: string,
@@ -787,6 +800,30 @@ export class IntegrationService {
     return prisma.userIntegration.update({
       where: {
         user_id_provider: { user_id: userId, provider },
+      },
+      data: {
+        sync_frequency: settings.syncFrequency,
+        storage_strategy: settings.storageStrategy,
+        config: settings.config as any,
+      },
+    });
+  }
+
+  /**
+   * Update organization integration settings
+   */
+  async updateOrgIntegrationSettings(
+    organizationId: string,
+    provider: string,
+    settings: {
+      syncFrequency?: SyncFrequency;
+      storageStrategy?: StorageStrategy;
+      config?: Record<string, unknown>;
+    }
+  ) {
+    return prisma.organizationIntegration.update({
+      where: {
+        organization_id_provider: { organization_id: organizationId, provider },
       },
       data: {
         sync_frequency: settings.syncFrequency,

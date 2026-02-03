@@ -285,10 +285,14 @@ model SyncedResource {
   content_hash     String   // For change detection
   memory_id        String?  @db.Uuid // Link to created memory
   last_synced_at   DateTime @default(now())
+  excluded         Boolean  @default(false) // If true, skip during resync
+  excluded_at      DateTime? // When it was excluded
+  excluded_by      String?  @db.Uuid // User who excluded it
 
   @@unique([integration_id, integration_type, external_id])
   @@index([integration_id, integration_type])
   @@index([memory_id])
+  @@index([excluded])
   @@map("synced_resources")
 }
 

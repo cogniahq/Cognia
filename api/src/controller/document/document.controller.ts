@@ -92,26 +92,45 @@ export class DocumentController {
       const limitNum = limit ? parseInt(limit as string) : 50
       const offsetNum = offset ? parseInt(offset as string) : 0
 
-      // Fetch uploaded documents
-      const result = await documentService.listDocuments(req.organization!.id, {
-        status: status as DocumentStatus | undefined,
-        limit: limitNum,
-        offset: offsetNum,
+      // Fetch uploaded documents with uploader info
+      const documents = await prisma.document.findMany({
+        where: {
+          organization_id: req.organization!.id,
+          ...(status && { status: status as DocumentStatus }),
+        },
+        include: {
+          uploader: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { created_at: 'desc' },
+        take: limitNum,
+        skip: offsetNum,
       })
 
-      // Fetch integration-synced memories for this organization
+      const docTotal = await prisma.document.count({
+        where: {
+          organization_id: req.organization!.id,
+          ...(status && { status: status as DocumentStatus }),
+        },
+      })
+
+      // Fetch integration-synced memories for this organization with user info
       const integrationMemories = await prisma.memory.findMany({
         where: {
           organization_id: req.organization!.id,
           source_type: SourceType.INTEGRATION,
         },
-        select: {
-          id: true,
-          title: true,
-          source: true,
-          url: true,
-          created_at: true,
-          content: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
         },
         orderBy: { created_at: 'desc' },
         take: limitNum,
@@ -126,43 +145,68 @@ export class DocumentController {
         },
       })
 
+      // Get organization members to map user IDs to roles
+      const members = await prisma.organizationMember.findMany({
+        where: { organization_id: req.organization!.id },
+        select: {
+          user_id: true,
+          role: true,
+        },
+      })
+      const memberRoleMap = new Map(members.map(m => [m.user_id, m.role]))
+
       // Transform uploaded documents
-      const uploadedDocs = result.documents.map(doc => ({
-        id: doc.id,
-        organization_id: doc.organization_id,
-        uploader_id: doc.uploader_id,
-        original_name: doc.original_name,
-        storage_path: doc.storage_path,
-        mime_type: doc.mime_type,
-        size_bytes: doc.file_size,
-        status: doc.status,
-        error_message: doc.error_message,
-        page_count: doc.page_count,
-        metadata: doc.metadata,
-        created_at: doc.created_at,
-        updated_at: doc.updated_at,
-        type: 'document' as const,
-      }))
+      const uploadedDocs = documents.map(doc => {
+        const uploaderRole = doc.uploader_id ? memberRoleMap.get(doc.uploader_id) : null
+        return {
+          id: doc.id,
+          organization_id: doc.organization_id,
+          uploader_id: doc.uploader_id,
+          original_name: doc.original_name,
+          storage_path: doc.storage_path,
+          mime_type: doc.mime_type,
+          size_bytes: doc.file_size,
+          status: doc.status,
+          error_message: doc.error_message,
+          page_count: doc.page_count,
+          metadata: {
+            ...(doc.metadata as object || {}),
+            uploader_name: doc.uploader?.email?.split('@')[0] || null,
+            uploader_role: uploaderRole || null,
+          },
+          created_at: doc.created_at,
+          updated_at: doc.updated_at,
+          type: 'document' as const,
+        }
+      })
 
       // Transform integration memories to document-like format
-      const integrationDocs = integrationMemories.map(mem => ({
-        id: mem.id,
-        organization_id: req.organization!.id,
-        uploader_id: null as string | null,
-        original_name: mem.title || 'Untitled',
-        storage_path: null as string | null,
-        mime_type: 'text/plain',
-        size_bytes: mem.content?.length || 0,
-        status: 'COMPLETED' as DocumentStatus,
-        error_message: null as string | null,
-        page_count: null as number | null,
-        metadata: { source: mem.source, url: mem.url },
-        created_at: mem.created_at,
-        updated_at: mem.created_at,
-        type: 'integration' as const,
-        source: mem.source,
-        url: mem.url,
-      }))
+      const integrationDocs = integrationMemories.map(mem => {
+        const userRole = mem.user_id ? memberRoleMap.get(mem.user_id) : null
+        return {
+          id: mem.id,
+          organization_id: req.organization!.id,
+          uploader_id: mem.user_id,
+          original_name: mem.title || 'Untitled',
+          storage_path: null as string | null,
+          mime_type: 'text/plain',
+          size_bytes: mem.content?.length || 0,
+          status: 'COMPLETED' as DocumentStatus,
+          error_message: null as string | null,
+          page_count: null as number | null,
+          metadata: {
+            source: mem.source,
+            url: mem.url,
+            uploader_name: mem.user?.email?.split('@')[0] || 'Integration',
+            uploader_role: userRole || null,
+          },
+          created_at: mem.created_at,
+          updated_at: mem.created_at,
+          type: 'integration' as const,
+          source: mem.source,
+          url: mem.url,
+        }
+      })
 
       // Combine and sort by created_at
       const allDocuments = [...uploadedDocs, ...integrationDocs].sort(
@@ -175,7 +219,7 @@ export class DocumentController {
           documents: allDocuments,
         },
         pagination: {
-          total: result.total + integrationCount,
+          total: docTotal + integrationCount,
           limit: limitNum,
           offset: offsetNum,
         },
@@ -272,19 +316,70 @@ export class DocumentController {
   }
 
   /**
-   * Delete document
+   * Delete document or remove integration content
    * DELETE /api/organizations/:slug/documents/:documentId
+   * Query param: type=integration to remove integration content
    */
   static async deleteDocument(req: OrganizationRequest, res: Response, next: NextFunction) {
     try {
       const { documentId } = req.params
+      const { type } = req.query
 
-      await documentService.deleteDocument(documentId, req.organization!.id)
+      if (type === 'integration') {
+        // Handle integration memory deletion - mark as excluded from resync
+        const memory = await prisma.memory.findFirst({
+          where: {
+            id: documentId,
+            organization_id: req.organization!.id,
+            source_type: SourceType.INTEGRATION,
+          },
+        })
 
-      res.status(200).json({
-        success: true,
-        message: 'Document deleted',
-      })
+        if (!memory) {
+          return next(new AppError('Integration content not found', 404))
+        }
+
+        // Find and mark the synced resource as excluded
+        const syncedResource = await prisma.syncedResource.findFirst({
+          where: { memory_id: documentId },
+        })
+
+        if (syncedResource) {
+          await prisma.syncedResource.update({
+            where: { id: syncedResource.id },
+            data: {
+              excluded: true,
+              excluded_at: new Date(),
+              excluded_by: req.user!.id,
+              memory_id: null, // Unlink from memory
+            },
+          })
+        }
+
+        // Delete the memory
+        await prisma.memory.delete({
+          where: { id: documentId },
+        })
+
+        logger.log('[document] Integration content removed and excluded from resync', {
+          memoryId: documentId,
+          organizationId: req.organization!.id,
+          excludedBy: req.user!.id,
+        })
+
+        res.status(200).json({
+          success: true,
+          message: 'Integration content removed and excluded from future syncs',
+        })
+      } else {
+        // Handle regular document deletion
+        await documentService.deleteDocument(documentId, req.organization!.id)
+
+        res.status(200).json({
+          success: true,
+          message: 'Document deleted',
+        })
+      }
     } catch (error) {
       logger.error('[document] Delete error', {
         error: error instanceof Error ? error.message : String(error),

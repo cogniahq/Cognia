@@ -144,9 +144,16 @@ export async function uploadDocument(
   return response.data.data.document
 }
 
-export async function deleteDocument(slug: string, documentId: string): Promise<void> {
+export async function deleteDocument(
+  slug: string,
+  documentId: string,
+  type?: "document" | "integration"
+): Promise<void> {
   requireAuthToken()
-  const response = await deleteRequest(`${baseUrl}/${slug}/documents/${documentId}`)
+  const url = type === "integration"
+    ? `${baseUrl}/${slug}/documents/${documentId}?type=integration`
+    : `${baseUrl}/${slug}/documents/${documentId}`
+  const response = await deleteRequest(url)
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to delete document")
   }

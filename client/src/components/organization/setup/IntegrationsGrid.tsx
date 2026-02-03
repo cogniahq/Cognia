@@ -20,9 +20,8 @@ const INTEGRATIONS: Integration[] = [
   {
     id: "slack",
     name: "Slack",
-    description: "Notifications in channels",
+    description: "Sync messages and threads",
     category: "communication",
-    comingSoon: true,
   },
   {
     id: "teams",
@@ -32,11 +31,10 @@ const INTEGRATIONS: Integration[] = [
     comingSoon: true,
   },
   {
-    id: "google-drive",
+    id: "google_drive",
     name: "Google Drive",
     description: "Import documents",
     category: "storage",
-    comingSoon: true,
   },
   {
     id: "dropbox",
@@ -48,9 +46,8 @@ const INTEGRATIONS: Integration[] = [
   {
     id: "notion",
     name: "Notion",
-    description: "Import pages",
+    description: "Import pages and databases",
     category: "development",
-    comingSoon: true,
   },
   {
     id: "github",

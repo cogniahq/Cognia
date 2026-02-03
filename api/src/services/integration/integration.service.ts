@@ -106,8 +106,20 @@ export class IntegrationService {
       logger.log('Registered Notion plugin');
     }
 
+    // Slack
+    if (process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET) {
+      const { SlackPlugin } = require('@cogniahq/integrations');
+      PluginRegistry.register(SlackPlugin, {
+        clientId: process.env.SLACK_CLIENT_ID,
+        clientSecret: process.env.SLACK_CLIENT_SECRET,
+        redirectUri: process.env.SLACK_REDIRECT_URI || '',
+        signingSecret: process.env.SLACK_SIGNING_SECRET,
+      });
+      logger.log('Registered Slack plugin');
+    }
+
     // Add more plugins here as they're implemented
-    // Slack, GitHub, etc.
+    // GitHub, etc.
   }
 
   /**

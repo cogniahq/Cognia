@@ -7,16 +7,18 @@ interface SetupDrawerProps {
   children: ReactNode
 }
 
-export function SetupDrawer({ open, onClose, title, children }: SetupDrawerProps) {
+export function SetupDrawer({
+  open,
+  onClose,
+  title,
+  children,
+}: SetupDrawerProps) {
   if (!open) return null
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/20 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
 
       {/* Drawer */}
       <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-white border-l border-gray-200 z-50 flex flex-col">

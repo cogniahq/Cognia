@@ -1,7 +1,7 @@
 import { AuthProvider } from "@/contexts/auth.context"
 import { NotificationProvider } from "@/contexts/notification.context"
-import { TransactionPopupProvider } from "@/contexts/transaction-popup.context"
 import { OrganizationProvider } from "@/contexts/organization.context"
+import { TransactionPopupProvider } from "@/contexts/transaction-popup.context"
 import AppRoutes from "@/router/routes.route"
 import { Analytics } from "@vercel/analytics/react"
 import { BrowserRouter as Router } from "react-router-dom"

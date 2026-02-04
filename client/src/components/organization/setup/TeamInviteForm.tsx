@@ -1,6 +1,10 @@
 import { useState } from "react"
+import {
+  createInvitations,
+  skipSetupStep,
+} from "@/services/organization/organization.service"
+
 import type { Organization } from "@/types/organization"
-import { createInvitations, skipSetupStep } from "@/services/organization/organization.service"
 
 interface TeamInviteFormProps {
   organization: Organization
@@ -89,7 +93,9 @@ export function TeamInviteForm({
         }, 2000)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send invitations")
+      setError(
+        err instanceof Error ? err.message : "Failed to send invitations"
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -116,7 +122,8 @@ export function TeamInviteForm({
               Invitations Sent
             </h3>
             <p className="text-xs text-gray-500 mt-1 font-mono">
-              {results.success.length} invitation{results.success.length > 1 ? "s" : ""} sent
+              {results.success.length} invitation
+              {results.success.length > 1 ? "s" : ""} sent
             </p>
             <div className="mt-4 space-y-1">
               {results.success.map((email) => (
@@ -182,7 +189,9 @@ export function TeamInviteForm({
               }}
               onKeyDown={handleKeyDown}
               onBlur={addEmail}
-              placeholder={emails.length > 0 ? "Add more..." : "email@example.com"}
+              placeholder={
+                emails.length > 0 ? "Add more..." : "email@example.com"
+              }
               className="flex-1 px-3 py-2 text-sm focus:outline-none"
             />
             <button
@@ -233,11 +242,17 @@ export function TeamInviteForm({
                 )}
               </div>
               <div className="flex-1">
-                <span className="text-sm text-gray-900">{roleOption.label}</span>
-                <span className="text-xs text-gray-500 ml-2">{roleOption.description}</span>
+                <span className="text-sm text-gray-900">
+                  {roleOption.label}
+                </span>
+                <span className="text-xs text-gray-500 ml-2">
+                  {roleOption.description}
+                </span>
               </div>
               {roleOption.value === "EDITOR" && (
-                <span className="text-xs font-mono text-gray-400">Recommended</span>
+                <span className="text-xs font-mono text-gray-400">
+                  Recommended
+                </span>
               )}
             </label>
           ))}
@@ -248,7 +263,8 @@ export function TeamInviteForm({
       {emails.length > 0 && (
         <div className="p-3 bg-gray-50 border border-gray-200">
           <div className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-            Ready to invite {emails.length} member{emails.length > 1 ? "s" : ""} as {role.toLowerCase()}
+            Ready to invite {emails.length} member{emails.length > 1 ? "s" : ""}{" "}
+            as {role.toLowerCase()}
           </div>
         </div>
       )}

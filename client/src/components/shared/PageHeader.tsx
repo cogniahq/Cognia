@@ -1,6 +1,6 @@
 import React from "react"
-import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/auth.context"
+import { useNavigate } from "react-router-dom"
 
 interface PageHeaderProps {
   pageName: string
@@ -15,18 +15,19 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   const { accountType } = useAuth()
 
   // Show different nav buttons based on account type
-  const allNavButtons = accountType === "ORGANIZATION"
-    ? [
-        { label: "Workspace", path: "/organization" },
-        { label: "Integrations", path: "/integrations" },
-        { label: "Profile", path: "/profile" },
-      ]
-    : [
-        { label: "Memories", path: "/memories" },
-        { label: "Analytics", path: "/analytics" },
-        { label: "Integrations", path: "/integrations" },
-        { label: "Profile", path: "/profile" },
-      ]
+  const allNavButtons =
+    accountType === "ORGANIZATION"
+      ? [
+          { label: "Workspace", path: "/organization" },
+          { label: "Integrations", path: "/integrations" },
+          { label: "Profile", path: "/profile" },
+        ]
+      : [
+          { label: "Memories", path: "/memories" },
+          { label: "Analytics", path: "/analytics" },
+          { label: "Integrations", path: "/integrations" },
+          { label: "Profile", path: "/profile" },
+        ]
 
   const currentPageLower = pageName.toLowerCase()
   const navButtons = allNavButtons.filter(

@@ -3,7 +3,13 @@ export interface IntegrationInfo {
   name: string
   description: string
   icon: string
-  category: "storage" | "productivity" | "communication" | "development" | "crm" | "other"
+  category:
+    | "storage"
+    | "productivity"
+    | "communication"
+    | "development"
+    | "crm"
+    | "other"
   authType: "oauth2" | "api_key" | "basic"
   capabilities: {
     pullContent: boolean
@@ -15,7 +21,13 @@ export interface IntegrationInfo {
 export interface ConnectedIntegration {
   id: string
   provider: string
-  status: "ACTIVE" | "PAUSED" | "ERROR" | "RATE_LIMITED" | "TOKEN_EXPIRED" | "DISCONNECTED"
+  status:
+    | "ACTIVE"
+    | "PAUSED"
+    | "ERROR"
+    | "RATE_LIMITED"
+    | "TOKEN_EXPIRED"
+    | "DISCONNECTED"
   storage_strategy: "METADATA_ONLY" | "FULL_CONTENT"
   sync_frequency: "REALTIME" | "FIFTEEN_MIN" | "HOURLY" | "DAILY" | "MANUAL"
   last_sync_at: string | null

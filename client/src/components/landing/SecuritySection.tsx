@@ -101,9 +101,12 @@ export const SecuritySection: React.FC = () => {
 
     securityFeatures.forEach((feature, index) => {
       timers.push(
-        setTimeout(() => {
-          setCheckedItems((prev) => new Set([...prev, feature.id]))
-        }, 800 + index * 400)
+        setTimeout(
+          () => {
+            setCheckedItems((prev) => new Set([...prev, feature.id]))
+          },
+          800 + index * 400
+        )
       )
     })
 

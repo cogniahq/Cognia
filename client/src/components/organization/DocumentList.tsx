@@ -1,11 +1,13 @@
-import { useEffect, useState, useRef } from "react"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { useEffect, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+
 import type { Document } from "@/types/organization"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const FILE_TYPE_LABELS: Record<string, string> = {
   "application/pdf": "PDF",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "DOCX",
   "text/plain": "TXT",
   "text/markdown": "MD",
   "image/png": "PNG",
@@ -148,9 +150,7 @@ export function DocumentList() {
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-sm font-mono text-gray-500">
-          No documents yet
-        </div>
+        <div className="text-sm font-mono text-gray-500">No documents yet</div>
         <p className="mt-1 text-xs text-gray-400">
           Upload files to make them searchable
         </p>
@@ -166,7 +166,9 @@ export function DocumentList() {
           <div className="col-span-5">Document</div>
           <div className="col-span-2 hidden sm:block">Size</div>
           <div className="col-span-2 hidden md:block">Added</div>
-          {isAdmin && <div className="col-span-2 hidden lg:block">Added By</div>}
+          {isAdmin && (
+            <div className="col-span-2 hidden lg:block">Added By</div>
+          )}
           <div className={isAdmin ? "col-span-1" : "col-span-3"}>Actions</div>
         </div>
 
@@ -174,7 +176,9 @@ export function DocumentList() {
         {documents.map((doc) => {
           const isIntegration = doc.type === "integration"
           const typeLabel = isIntegration
-            ? INTEGRATION_SOURCE_LABELS[doc.source || ""] || doc.source?.toUpperCase() || "SYNC"
+            ? INTEGRATION_SOURCE_LABELS[doc.source || ""] ||
+              doc.source?.toUpperCase() ||
+              "SYNC"
             : FILE_TYPE_LABELS[doc.mime_type] || "FILE"
 
           // Get uploader info from metadata if available
@@ -225,7 +229,8 @@ export function DocumentList() {
               {isAdmin && (
                 <div className="col-span-2 hidden lg:block">
                   <div className="text-xs font-mono text-gray-600 truncate">
-                    {uploaderName || (isIntegration ? "Integration" : "Unknown")}
+                    {uploaderName ||
+                      (isIntegration ? "Integration" : "Unknown")}
                   </div>
                   {uploaderRole && (
                     <div className="text-xs font-mono text-gray-400">
@@ -234,7 +239,9 @@ export function DocumentList() {
                   )}
                 </div>
               )}
-              <div className={`${isAdmin ? "col-span-1" : "col-span-3"} text-right`}>
+              <div
+                className={`${isAdmin ? "col-span-1" : "col-span-3"} text-right`}
+              >
                 <ActionMenu
                   doc={doc}
                   isAdmin={isAdmin}

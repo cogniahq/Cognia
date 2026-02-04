@@ -1,6 +1,10 @@
 import { useState } from "react"
+import {
+  updateSecurity,
+  type UpdateSecurityRequest,
+} from "@/services/organization/organization.service"
+
 import type { Organization } from "@/types/organization"
-import { updateSecurity, type UpdateSecurityRequest } from "@/services/organization/organization.service"
 
 interface SecurityComplianceFormProps {
   organization: Organization
@@ -9,7 +13,11 @@ interface SecurityComplianceFormProps {
 }
 
 const DATA_RESIDENCY_OPTIONS = [
-  { value: "auto", label: "Auto-detect", description: "Based on user location" },
+  {
+    value: "auto",
+    label: "Auto-detect",
+    description: "Based on user location",
+  },
   { value: "us", label: "United States", description: "US data centers" },
   { value: "eu", label: "European Union", description: "GDPR compliant" },
   { value: "asia-pacific", label: "Asia-Pacific", description: "APAC region" },
@@ -44,11 +52,19 @@ export function SecurityComplianceForm({
   const [error, setError] = useState("")
 
   const [formData, setFormData] = useState<UpdateSecurityRequest>({
-    dataResidency: (organization.data_residency as UpdateSecurityRequest["dataResidency"]) || "auto",
+    dataResidency:
+      (organization.data_residency as UpdateSecurityRequest["dataResidency"]) ||
+      "auto",
     require2FA: organization.require_2fa || false,
-    sessionTimeout: (organization.session_timeout as UpdateSecurityRequest["sessionTimeout"]) || "7d",
-    passwordPolicy: (organization.password_policy as UpdateSecurityRequest["passwordPolicy"]) || "standard",
-    auditRetention: (organization.audit_retention as UpdateSecurityRequest["auditRetention"]) || "90d",
+    sessionTimeout:
+      (organization.session_timeout as UpdateSecurityRequest["sessionTimeout"]) ||
+      "7d",
+    passwordPolicy:
+      (organization.password_policy as UpdateSecurityRequest["passwordPolicy"]) ||
+      "standard",
+    auditRetention:
+      (organization.audit_retention as UpdateSecurityRequest["auditRetention"]) ||
+      "90d",
   })
 
   const handleChange = <K extends keyof UpdateSecurityRequest>(
@@ -68,7 +84,11 @@ export function SecurityComplianceForm({
       await updateSecurity(organization.slug, formData)
       onComplete()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update security settings")
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update security settings"
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -88,7 +108,12 @@ export function SecurityComplianceForm({
             <button
               key={option.value}
               type="button"
-              onClick={() => handleChange("dataResidency", option.value as UpdateSecurityRequest["dataResidency"])}
+              onClick={() =>
+                handleChange(
+                  "dataResidency",
+                  option.value as UpdateSecurityRequest["dataResidency"]
+                )
+              }
               className={`
                 p-3 border text-left transition-colors
                 ${formData.dataResidency === option.value ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"}
@@ -104,7 +129,9 @@ export function SecurityComplianceForm({
       {/* 2FA Requirement */}
       <div className="flex items-center justify-between p-4 border border-gray-200">
         <div>
-          <h4 className="text-sm text-gray-900">Require Two-Factor Authentication</h4>
+          <h4 className="text-sm text-gray-900">
+            Require Two-Factor Authentication
+          </h4>
           <p className="text-xs text-gray-500 mt-0.5">
             All members must enable 2FA
           </p>
@@ -133,7 +160,12 @@ export function SecurityComplianceForm({
         </label>
         <select
           value={formData.sessionTimeout}
-          onChange={(e) => handleChange("sessionTimeout", e.target.value as UpdateSecurityRequest["sessionTimeout"])}
+          onChange={(e) =>
+            handleChange(
+              "sessionTimeout",
+              e.target.value as UpdateSecurityRequest["sessionTimeout"]
+            )
+          }
           className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
         >
           {SESSION_TIMEOUT_OPTIONS.map((option) => (
@@ -163,7 +195,12 @@ export function SecurityComplianceForm({
                 name="passwordPolicy"
                 value={option.value}
                 checked={formData.passwordPolicy === option.value}
-                onChange={(e) => handleChange("passwordPolicy", e.target.value as UpdateSecurityRequest["passwordPolicy"])}
+                onChange={(e) =>
+                  handleChange(
+                    "passwordPolicy",
+                    e.target.value as UpdateSecurityRequest["passwordPolicy"]
+                  )
+                }
                 className="sr-only"
               />
               <div
@@ -178,7 +215,9 @@ export function SecurityComplianceForm({
               </div>
               <div>
                 <span className="text-sm text-gray-900">{option.label}</span>
-                <span className="text-xs text-gray-500 ml-2">{option.description}</span>
+                <span className="text-xs text-gray-500 ml-2">
+                  {option.description}
+                </span>
               </div>
             </label>
           ))}
@@ -192,7 +231,12 @@ export function SecurityComplianceForm({
         </label>
         <select
           value={formData.auditRetention}
-          onChange={(e) => handleChange("auditRetention", e.target.value as UpdateSecurityRequest["auditRetention"])}
+          onChange={(e) =>
+            handleChange(
+              "auditRetention",
+              e.target.value as UpdateSecurityRequest["auditRetention"]
+            )
+          }
           className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
         >
           {AUDIT_RETENTION_OPTIONS.map((option) => (
@@ -210,7 +254,8 @@ export function SecurityComplianceForm({
 
       {!isEnterprise && (
         <div className="px-3 py-2 bg-gray-50 border border-gray-200 text-xs text-gray-600">
-          Need SSO, IP allowlisting, or advanced security? Upgrade to Enterprise.
+          Need SSO, IP allowlisting, or advanced security? Upgrade to
+          Enterprise.
         </div>
       )}
 

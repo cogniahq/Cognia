@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, Suspense } from "react"
+import React, { Suspense, useEffect, useRef, useState } from "react"
 
 import { mockMeshData } from "../../data/mock"
 import { MemoryMesh3DPreview } from "./mesh-preview/MemoryMesh3DPreview"
@@ -25,7 +25,12 @@ const teamMembers = [
 
 const teamDocuments = [
   { id: "d1", name: "Q4 Strategy.pdf", type: "pdf", uploadedBy: "Sarah" },
-  { id: "d2", name: "Brand Guidelines.docx", type: "doc", uploadedBy: "Marcus" },
+  {
+    id: "d2",
+    name: "Brand Guidelines.docx",
+    type: "doc",
+    uploadedBy: "Marcus",
+  },
   { id: "d3", name: "Research Notes.md", type: "md", uploadedBy: "Elena" },
 ]
 
@@ -73,9 +78,12 @@ export const MemoryMeshDemo: React.FC = () => {
     const nodesToHighlight = ["1", "2", "5", "10", "15", "20"]
     nodesToHighlight.forEach((nodeId, index) => {
       timers.push(
-        setTimeout(() => {
-          setHighlightedNodes((prev) => new Set([...prev, nodeId]))
-        }, 800 + index * 300)
+        setTimeout(
+          () => {
+            setHighlightedNodes((prev) => new Set([...prev, nodeId]))
+          },
+          800 + index * 300
+        )
       )
     })
 
@@ -102,9 +110,12 @@ export const MemoryMeshDemo: React.FC = () => {
     // Animate document uploads
     teamDocuments.forEach((doc, index) => {
       timers.push(
-        setTimeout(() => {
-          setUploadedDocs((prev) => new Set([...prev, doc.id]))
-        }, 5200 + index * 400)
+        setTimeout(
+          () => {
+            setUploadedDocs((prev) => new Set([...prev, doc.id]))
+          },
+          5200 + index * 400
+        )
       )
     })
 
@@ -185,7 +196,9 @@ export const MemoryMeshDemo: React.FC = () => {
           <div
             className="lg:col-span-1 space-y-4"
             style={{
-              animation: isInView ? "slideInUp 0.6s ease-out 0.2s both" : "none",
+              animation: isInView
+                ? "slideInUp 0.6s ease-out 0.2s both"
+                : "none",
             }}
           >
             {activeTab === "personal" ? (
@@ -220,7 +233,10 @@ export const MemoryMeshDemo: React.FC = () => {
                   </p>
                   <div className="space-y-2.5">
                     {connectionStrengths.map((strength) => (
-                      <div key={strength.label} className="flex items-center gap-2.5">
+                      <div
+                        key={strength.label}
+                        className="flex items-center gap-2.5"
+                      >
                         <div
                           className="w-6 h-0.5 rounded-full"
                           style={{
@@ -257,7 +273,9 @@ export const MemoryMeshDemo: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Avg. Links</span>
                       <span className="text-sm font-mono text-gray-900">
-                        {mockMeshData.metadata?.average_connections?.toFixed(1) ?? "N/A"}
+                        {mockMeshData.metadata?.average_connections?.toFixed(
+                          1
+                        ) ?? "N/A"}
                       </span>
                     </div>
                   </div>
@@ -358,8 +376,12 @@ export const MemoryMeshDemo: React.FC = () => {
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Shared Nodes</span>
-                      <span className="text-sm font-mono text-gray-900">127</span>
+                      <span className="text-sm text-gray-600">
+                        Shared Nodes
+                      </span>
+                      <span className="text-sm font-mono text-gray-900">
+                        127
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Documents</span>
@@ -368,7 +390,9 @@ export const MemoryMeshDemo: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Contributors</span>
+                      <span className="text-sm text-gray-600">
+                        Contributors
+                      </span>
                       <span className="text-sm font-mono text-gray-900">3</span>
                     </div>
                   </div>
@@ -422,7 +446,13 @@ export const MemoryMeshDemo: React.FC = () => {
               </div>
             )}
 
-            <div className={activeTab === "team" ? "aspect-[4/3] sm:aspect-[16/9]" : "aspect-[4/3] sm:aspect-[16/10]"}>
+            <div
+              className={
+                activeTab === "team"
+                  ? "aspect-[4/3] sm:aspect-[16/9]"
+                  : "aspect-[4/3] sm:aspect-[16/10]"
+              }
+            >
               <Suspense
                 fallback={
                   <div className="w-full h-full flex items-center justify-center">

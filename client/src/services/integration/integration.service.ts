@@ -1,6 +1,15 @@
-import { getRequest, postRequest, putRequest, deleteRequest } from "../../utils/http/general-services.util"
+import type {
+  ConnectedIntegration,
+  ConnectResponse,
+  IntegrationInfo,
+} from "../../types/integration"
 import { requireAuthToken } from "../../utils/auth"
-import type { IntegrationInfo, ConnectedIntegration, ConnectResponse } from "../../types/integration"
+import {
+  deleteRequest,
+  getRequest,
+  postRequest,
+  putRequest,
+} from "../../utils/http/general-services.util"
 
 /**
  * Get list of available integrations
@@ -22,12 +31,16 @@ export async function getAvailableIntegrations(): Promise<IntegrationInfo[]> {
 /**
  * Get list of user's connected integrations
  */
-export async function getConnectedIntegrations(): Promise<ConnectedIntegration[]> {
+export async function getConnectedIntegrations(): Promise<
+  ConnectedIntegration[]
+> {
   requireAuthToken()
   try {
     const response = await getRequest("/integrations/connected")
     if (response.data?.success === false) {
-      throw new Error(response.data?.error || "Failed to fetch connected integrations")
+      throw new Error(
+        response.data?.error || "Failed to fetch connected integrations"
+      )
     }
     return response.data?.data || []
   } catch (error) {
@@ -39,13 +52,18 @@ export async function getConnectedIntegrations(): Promise<ConnectedIntegration[]
 /**
  * Start OAuth connection flow for an integration
  */
-export async function connectIntegration(provider: string): Promise<ConnectResponse> {
+export async function connectIntegration(
+  provider: string
+): Promise<ConnectResponse> {
   requireAuthToken()
   try {
     // Use API base URL for OAuth callback - Google redirects to API, which then redirects to frontend
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
     const redirectUri = `${apiBaseUrl}/api/integrations/${provider}/callback`
-    const response = await postRequest(`/integrations/${provider}/connect`, { redirectUri })
+    const response = await postRequest(`/integrations/${provider}/connect`, {
+      redirectUri,
+    })
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to initiate connection")
     }
@@ -64,7 +82,9 @@ export async function disconnectIntegration(provider: string): Promise<void> {
   try {
     const response = await deleteRequest(`/integrations/${provider}`)
     if (response.data?.success === false) {
-      throw new Error(response.data?.error || "Failed to disconnect integration")
+      throw new Error(
+        response.data?.error || "Failed to disconnect integration"
+      )
     }
   } catch (error) {
     console.error("Error disconnecting integration:", error)
@@ -75,10 +95,15 @@ export async function disconnectIntegration(provider: string): Promise<void> {
 /**
  * Trigger manual sync for an integration
  */
-export async function syncIntegration(provider: string, mode: "full" | "incremental" = "incremental"): Promise<void> {
+export async function syncIntegration(
+  provider: string,
+  mode: "full" | "incremental" = "incremental"
+): Promise<void> {
   requireAuthToken()
   try {
-    const response = await postRequest(`/integrations/${provider}/sync`, { mode })
+    const response = await postRequest(`/integrations/${provider}/sync`, {
+      mode,
+    })
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to trigger sync")
     }
@@ -101,7 +126,10 @@ export async function updateIntegrationSettings(
 ): Promise<ConnectedIntegration> {
   requireAuthToken()
   try {
-    const response = await putRequest(`/integrations/${provider}/config`, settings)
+    const response = await putRequest(
+      `/integrations/${provider}/config`,
+      settings
+    )
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to update settings")
     }
@@ -123,10 +151,14 @@ export interface OrgSyncSettings {
 /**
  * Get organization integration sync settings
  */
-export async function getOrgIntegrationSettings(orgSlug: string): Promise<OrgSyncSettings> {
+export async function getOrgIntegrationSettings(
+  orgSlug: string
+): Promise<OrgSyncSettings> {
   requireAuthToken()
   try {
-    const response = await getRequest(`/organizations/${orgSlug}/integrations/settings`)
+    const response = await getRequest(
+      `/organizations/${orgSlug}/integrations/settings`
+    )
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to fetch settings")
     }
@@ -149,7 +181,10 @@ export async function updateOrgIntegrationSettings(
 ): Promise<OrgSyncSettings> {
   requireAuthToken()
   try {
-    const response = await putRequest(`/organizations/${orgSlug}/integrations/settings`, settings)
+    const response = await putRequest(
+      `/organizations/${orgSlug}/integrations/settings`,
+      settings
+    )
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to update settings")
     }
@@ -163,10 +198,14 @@ export async function updateOrgIntegrationSettings(
 /**
  * Get organization's connected integrations
  */
-export async function getOrgConnectedIntegrations(orgSlug: string): Promise<ConnectedIntegration[]> {
+export async function getOrgConnectedIntegrations(
+  orgSlug: string
+): Promise<ConnectedIntegration[]> {
   requireAuthToken()
   try {
-    const response = await getRequest(`/organizations/${orgSlug}/integrations/connected`)
+    const response = await getRequest(
+      `/organizations/${orgSlug}/integrations/connected`
+    )
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to fetch integrations")
     }
@@ -191,7 +230,10 @@ export async function updateOrgIntegration(
 ): Promise<ConnectedIntegration> {
   requireAuthToken()
   try {
-    const response = await putRequest(`/organizations/${orgSlug}/integrations/${provider}/config`, settings)
+    const response = await putRequest(
+      `/organizations/${orgSlug}/integrations/${provider}/config`,
+      settings
+    )
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to update settings")
     }
@@ -212,7 +254,10 @@ export async function syncOrgIntegration(
 ): Promise<void> {
   requireAuthToken()
   try {
-    const response = await postRequest(`/organizations/${orgSlug}/integrations/${provider}/sync`, { mode })
+    const response = await postRequest(
+      `/organizations/${orgSlug}/integrations/${provider}/sync`,
+      { mode }
+    )
     if (response.data?.success === false) {
       throw new Error(response.data?.error || "Failed to trigger sync")
     }

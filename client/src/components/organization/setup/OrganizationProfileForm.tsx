@@ -1,6 +1,10 @@
-import { useState, useRef } from "react"
+import { useRef, useState } from "react"
+import {
+  updateProfile,
+  type UpdateProfileRequest,
+} from "@/services/organization/organization.service"
+
 import type { Organization } from "@/types/organization"
-import { updateProfile, type UpdateProfileRequest } from "@/services/organization/organization.service"
 
 interface OrganizationProfileFormProps {
   organization: Organization
@@ -56,7 +60,8 @@ export function OrganizationProfileForm({
     stateRegion: organization.state_region || "",
     postalCode: organization.postal_code || "",
     country: organization.country || "",
-    timezone: organization.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timezone:
+      organization.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
   })
 
   const handleChange = (field: keyof UpdateProfileRequest, value: string) => {
@@ -73,7 +78,10 @@ export function OrganizationProfileForm({
     if (file) {
       const reader = new FileReader()
       reader.onload = (event) => {
-        setFormData((prev) => ({ ...prev, logo: event.target?.result as string }))
+        setFormData((prev) => ({
+          ...prev,
+          logo: event.target?.result as string,
+        }))
       }
       reader.readAsDataURL(file)
     }

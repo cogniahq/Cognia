@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { useAuth } from "@/contexts/auth.context"
 import {
   AnalyticsService,
   type AnalyticsData,
@@ -7,7 +8,6 @@ import { requireAuthToken } from "@/utils/auth"
 import { useNavigate } from "react-router-dom"
 
 import { PageHeader } from "@/components/shared/PageHeader"
-import { useAuth } from "@/contexts/auth.context"
 
 export const Analytics: React.FC = () => {
   const navigate = useNavigate()

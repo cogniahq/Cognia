@@ -1,28 +1,32 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
-import { useNavigate } from "react-router-dom"
-import { requireAuthToken } from "@/utils/auth"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { OrganizationSelector } from "@/components/organization/OrganizationSelector"
-import { CreateOrganizationDialog } from "@/components/organization/CreateOrganizationDialog"
-import { DocumentUpload } from "@/components/organization/DocumentUpload"
-import { DocumentList } from "@/components/organization/DocumentList"
-import { MemberManagement } from "@/components/organization/MemberManagement"
-import { OrganizationSearch } from "@/components/organization/OrganizationSearch"
-import { SetupChecklist } from "@/components/organization/setup"
-import { useOrganization } from "@/contexts/organization.context"
-import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
-import { MemoryMesh3D } from "@/components/memories/mesh"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
-import { Loader2 } from "lucide-react"
+import { useOrganization } from "@/contexts/organization.context"
 import {
-  getOrgIntegrationSettings,
-  updateOrgIntegrationSettings,
   getOrgConnectedIntegrations,
+  getOrgIntegrationSettings,
   syncOrgIntegration,
+  updateOrgIntegrationSettings,
   type OrgSyncSettings,
 } from "@/services/integration/integration.service"
+import { requireAuthToken } from "@/utils/auth"
+import { Loader2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+
 import type { ConnectedIntegration } from "@/types/integration"
 import type { MemoryMeshNode } from "@/types/memory"
+import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
+import { MemoryMesh3D } from "@/components/memories/mesh"
+import { CreateOrganizationDialog } from "@/components/organization/CreateOrganizationDialog"
+import { DocumentList } from "@/components/organization/DocumentList"
+import { DocumentUpload } from "@/components/organization/DocumentUpload"
+import { MemberManagement } from "@/components/organization/MemberManagement"
+import { OrganizationSearch } from "@/components/organization/OrganizationSearch"
+import { OrganizationSelector } from "@/components/organization/OrganizationSelector"
+import { SetupChecklist } from "@/components/organization/setup"
+import { PageHeader } from "@/components/shared/PageHeader"
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
 
 export function Organization() {
   const navigate = useNavigate()
@@ -39,12 +43,16 @@ export function Organization() {
   } = useOrganization()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [activeTab, setActiveTab] = useState<"search" | "mesh" | "documents" | "members" | "settings">("search")
+  const [activeTab, setActiveTab] = useState<
+    "search" | "mesh" | "documents" | "members" | "settings"
+  >("search")
 
   // Memory mesh state - hooks must be called before any conditional returns
-  const { meshData, isLoading: meshLoading, error: meshError } = useOrganizationMesh(
-    currentOrganization?.slug || null
-  )
+  const {
+    meshData,
+    isLoading: meshLoading,
+    error: meshError,
+  } = useOrganizationMesh(currentOrganization?.slug || null)
   const [clickedNodeId, setClickedNodeId] = useState<string | null>(null)
   const [selectedNode, setSelectedNode] = useState<MemoryMeshNode | null>(null)
 
@@ -68,12 +76,24 @@ export function Organization() {
   )
 
   const memorySources = useMemo(
-    () => Object.fromEntries((meshData?.nodes || []).map((n) => [n.id, (n as MemoryMeshNode & { source?: string }).source || ""])),
+    () =>
+      Object.fromEntries(
+        (meshData?.nodes || []).map((n) => [
+          n.id,
+          (n as MemoryMeshNode & { source?: string }).source || "",
+        ])
+      ),
     [meshData]
   )
 
   const memoryUrls = useMemo(
-    () => Object.fromEntries((meshData?.nodes || []).map((n) => [n.id, (n as MemoryMeshNode & { url?: string }).url || ""])),
+    () =>
+      Object.fromEntries(
+        (meshData?.nodes || []).map((n) => [
+          n.id,
+          (n as MemoryMeshNode & { url?: string }).url || "",
+        ])
+      ),
     [meshData]
   )
 
@@ -134,7 +154,8 @@ export function Organization() {
               Create Your First Workspace
             </h1>
             <p className="text-sm text-gray-600 max-w-md mx-auto">
-              A workspace lets your team upload documents and search them with AI.
+              A workspace lets your team upload documents and search them with
+              AI.
             </p>
           </div>
 
@@ -153,10 +174,7 @@ export function Organization() {
                 description: "Admin, Editor, and Viewer roles",
               },
             ].map((feature, index) => (
-              <div
-                key={index}
-                className="bg-white border border-gray-200 p-4"
-              >
+              <div key={index} className="bg-white border border-gray-200 p-4">
                 <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
                   [{String(index + 1).padStart(2, "0")}]
                 </div>
@@ -214,7 +232,8 @@ export function Organization() {
                     {org.name}
                   </div>
                   <div className="text-xs font-mono text-gray-500">
-                    {org.memberCount || 1} member{(org.memberCount || 1) !== 1 && "s"}
+                    {org.memberCount || 1} member
+                    {(org.memberCount || 1) !== 1 && "s"}
                   </div>
                 </div>
                 <span className="text-gray-400">→</span>
@@ -291,7 +310,9 @@ export function Organization() {
               { id: "mesh" as const, label: "Mesh" },
               { id: "documents" as const, label: "Documents" },
               { id: "members" as const, label: "Team" },
-              ...(isAdmin ? [{ id: "settings" as const, label: "Settings" }] : []),
+              ...(isAdmin
+                ? [{ id: "settings" as const, label: "Settings" }]
+                : []),
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -308,11 +329,16 @@ export function Organization() {
           </div>
 
           {/* Tab content */}
-          <div className={`bg-white border border-gray-200 ${activeTab === "mesh" ? "p-0" : "p-6"}`}>
+          <div
+            className={`bg-white border border-gray-200 ${activeTab === "mesh" ? "p-0" : "p-6"}`}
+          >
             {activeTab === "search" && <OrganizationSearch />}
 
             {activeTab === "mesh" && (
-              <div className="relative" style={{ height: "calc(100vh - 280px)", minHeight: "500px" }}>
+              <div
+                className="relative"
+                style={{ height: "calc(100vh - 280px)", minHeight: "500px" }}
+              >
                 <div
                   className="w-full h-full"
                   style={{
@@ -348,11 +374,15 @@ export function Organization() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs text-gray-900">
                           <span>Nodes</span>
-                          <span className="font-mono font-semibold">{meshData.nodes.length}</span>
+                          <span className="font-mono font-semibold">
+                            {meshData.nodes.length}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-900">
                           <span>Connections</span>
-                          <span className="font-mono font-semibold">{meshData.edges.length}</span>
+                          <span className="font-mono font-semibold">
+                            {meshData.edges.length}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -373,7 +403,8 @@ export function Organization() {
                 )}
                 <div>
                   <div className="text-sm font-mono text-gray-600 mb-4 uppercase tracking-wide">
-                    [DOCUMENT LIBRARY] — {documents.length} file{documents.length !== 1 && "s"}
+                    [DOCUMENT LIBRARY] — {documents.length} file
+                    {documents.length !== 1 && "s"}
                   </div>
                   <DocumentList />
                 </div>
@@ -382,9 +413,7 @@ export function Organization() {
 
             {activeTab === "members" && <MemberManagement />}
 
-            {activeTab === "settings" && isAdmin && (
-              <OrganizationSettings />
-            )}
+            {activeTab === "settings" && isAdmin && <OrganizationSettings />}
           </div>
         </div>
       </div>
@@ -400,7 +429,9 @@ function OrganizationSettings() {
 
   // Integration settings state
   const [syncSettings, setSyncSettings] = useState<OrgSyncSettings | null>(null)
-  const [connectedIntegrations, setConnectedIntegrations] = useState<ConnectedIntegration[]>([])
+  const [connectedIntegrations, setConnectedIntegrations] = useState<
+    ConnectedIntegration[]
+  >([])
   const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(true)
   const [isSavingSync, setIsSavingSync] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
@@ -418,14 +449,7 @@ function OrganizationSettings() {
     { value: "MANUAL", label: "Manual only", description: "No auto-sync" },
   ]
 
-  // Load integration settings
-  useEffect(() => {
-    if (currentOrganization?.slug) {
-      loadIntegrationSettings()
-    }
-  }, [currentOrganization?.slug])
-
-  const loadIntegrationSettings = async () => {
+  const loadIntegrationSettings = useCallback(async () => {
     if (!currentOrganization?.slug) return
     setIsLoadingIntegrations(true)
     setSyncError(null)
@@ -441,26 +465,38 @@ function OrganizationSettings() {
         setUseCustomInterval(true)
         setCustomInterval(settings.customSyncIntervalMin.toString())
       }
-    } catch (err: any) {
-      setSyncError(err.message || "Failed to load settings")
+    } catch (err) {
+      setSyncError(getErrorMessage(err, "Failed to load settings"))
     } finally {
       setIsLoadingIntegrations(false)
     }
-  }
+  }, [currentOrganization?.slug])
+
+  // Load integration settings
+  useEffect(() => {
+    loadIntegrationSettings()
+  }, [loadIntegrationSettings])
 
   const handleSaveSyncSettings = async () => {
     if (!currentOrganization?.slug) return
     setIsSavingSync(true)
     setSyncError(null)
     try {
-      const settings = useCustomInterval && customInterval
-        ? { customSyncIntervalMin: parseInt(customInterval, 10) }
-        : { defaultSyncFrequency: selectedFrequency, customSyncIntervalMin: null }
+      const settings =
+        useCustomInterval && customInterval
+          ? { customSyncIntervalMin: parseInt(customInterval, 10) }
+          : {
+              defaultSyncFrequency: selectedFrequency,
+              customSyncIntervalMin: null,
+            }
 
-      const updated = await updateOrgIntegrationSettings(currentOrganization.slug, settings)
+      const updated = await updateOrgIntegrationSettings(
+        currentOrganization.slug,
+        settings
+      )
       setSyncSettings(updated)
-    } catch (err: any) {
-      setSyncError(err.message || "Failed to save settings")
+    } catch (err) {
+      setSyncError(getErrorMessage(err, "Failed to save settings"))
     } finally {
       setIsSavingSync(false)
     }
@@ -472,8 +508,8 @@ function OrganizationSettings() {
     try {
       await syncOrgIntegration(currentOrganization.slug, provider)
       await loadIntegrationSettings()
-    } catch (err: any) {
-      setSyncError(err.message || "Failed to sync")
+    } catch (err) {
+      setSyncError(getErrorMessage(err, "Failed to sync"))
     } finally {
       setSyncingProvider(null)
     }
@@ -588,7 +624,9 @@ function OrganizationSettings() {
                       type="radio"
                       name="syncFrequency"
                       value={freq.value}
-                      checked={!useCustomInterval && selectedFrequency === freq.value}
+                      checked={
+                        !useCustomInterval && selectedFrequency === freq.value
+                      }
                       onChange={() => {
                         setSelectedFrequency(freq.value)
                         setUseCustomInterval(false)
@@ -596,11 +634,17 @@ function OrganizationSettings() {
                       className="sr-only"
                     />
                     <div className="flex-1">
-                      <span className="text-sm text-gray-900">{freq.label}</span>
-                      <span className="ml-2 text-xs text-gray-500">{freq.description}</span>
+                      <span className="text-sm text-gray-900">
+                        {freq.label}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {freq.description}
+                      </span>
                     </div>
                     {!useCustomInterval && selectedFrequency === freq.value && (
-                      <span className="text-xs font-mono text-gray-900">Selected</span>
+                      <span className="text-xs font-mono text-gray-900">
+                        Selected
+                      </span>
                     )}
                   </label>
                 ))}
@@ -634,7 +678,9 @@ function OrganizationSettings() {
                         placeholder="30"
                         className="w-20 px-2 py-1 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900"
                       />
-                      <span className="text-xs text-gray-500">minutes (5-1440)</span>
+                      <span className="text-xs text-gray-500">
+                        minutes (5-1440)
+                      </span>
                     </div>
                   )}
                 </div>
@@ -658,7 +704,11 @@ function OrganizationSettings() {
 
               {syncSettings && (
                 <div className="mt-3 text-xs text-gray-500">
-                  Current effective interval: <span className="font-mono">{syncSettings.effectiveIntervalMin}</span> minutes
+                  Current effective interval:{" "}
+                  <span className="font-mono">
+                    {syncSettings.effectiveIntervalMin}
+                  </span>{" "}
+                  minutes
                   {syncSettings.effectiveIntervalMin === 0 && " (manual only)"}
                 </div>
               )}
@@ -685,7 +735,9 @@ function OrganizationSettings() {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleSyncIntegration(integration.provider)}
+                        onClick={() =>
+                          handleSyncIntegration(integration.provider)
+                        }
                         disabled={syncingProvider === integration.provider}
                         className="px-3 py-1 text-xs font-mono border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                       >
@@ -719,7 +771,8 @@ function OrganizationSettings() {
           [DANGER ZONE]
         </div>
         <p className="text-xs text-red-600 mb-4">
-          Permanently delete this workspace and all its data. This cannot be undone.
+          Permanently delete this workspace and all its data. This cannot be
+          undone.
         </p>
         <div className="space-y-3 max-w-sm">
           <div>

@@ -1,12 +1,13 @@
 import { useState } from "react"
+import { useOrganization } from "@/contexts/organization.context"
+
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog"
-import { useOrganization } from "@/contexts/organization.context"
 
 interface CreateOrganizationDialogProps {
   open: boolean

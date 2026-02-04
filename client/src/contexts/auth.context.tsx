@@ -28,8 +28,17 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   accountType: AccountType | null
-  login: (email: string, password: string, totpCode?: string, backupCode?: string) => Promise<LoginResult>
-  register: (email: string, password: string, accountType: AccountType) => Promise<User>
+  login: (
+    email: string,
+    password: string,
+    totpCode?: string,
+    backupCode?: string
+  ) => Promise<LoginResult>
+  register: (
+    email: string,
+    password: string,
+    accountType: AccountType
+  ) => Promise<User>
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
 }
@@ -183,7 +192,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [clearAuthState])
 
   const login = useCallback(
-    async (email: string, password: string, totpCode?: string, backupCode?: string): Promise<LoginResult> => {
+    async (
+      email: string,
+      password: string,
+      totpCode?: string,
+      backupCode?: string
+    ): Promise<LoginResult> => {
       const response = await axiosInstance.post("/auth/login", {
         email: email.trim(),
         password: password.trim(),
@@ -213,7 +227,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   const register = useCallback(
-    async (email: string, password: string, accountType: AccountType): Promise<User> => {
+    async (
+      email: string,
+      password: string,
+      accountType: AccountType
+    ): Promise<User> => {
       const response = await axiosInstance.post("/auth/register", {
         email: email.trim(),
         password: password.trim(),

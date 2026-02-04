@@ -1,10 +1,6 @@
 export type OrgRole = "ADMIN" | "EDITOR" | "VIEWER"
 
-export type DocumentStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "COMPLETED"
-  | "FAILED"
+export type DocumentStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED"
 
 export interface Organization {
   id: string

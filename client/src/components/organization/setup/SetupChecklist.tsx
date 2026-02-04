@@ -1,13 +1,18 @@
-import { useState, useEffect, useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
+import {
+  getSetupProgress,
+  type SetupProgress,
+} from "@/services/organization/organization.service"
+
 import type { Organization } from "@/types/organization"
-import { getSetupProgress, type SetupProgress } from "@/services/organization/organization.service"
-import { SetupProgress as SetupProgressBar } from "./SetupProgress"
-import { SetupDrawer } from "./SetupDrawer"
-import { OrganizationProfileForm } from "./OrganizationProfileForm"
+
 import { BillingPlanForm } from "./BillingPlanForm"
-import { SecurityComplianceForm } from "./SecurityComplianceForm"
-import { TeamInviteForm } from "./TeamInviteForm"
 import { IntegrationsGrid } from "./IntegrationsGrid"
+import { OrganizationProfileForm } from "./OrganizationProfileForm"
+import { SecurityComplianceForm } from "./SecurityComplianceForm"
+import { SetupDrawer } from "./SetupDrawer"
+import { SetupProgress as SetupProgressBar } from "./SetupProgress"
+import { TeamInviteForm } from "./TeamInviteForm"
 
 interface SetupChecklistProps {
   organization: Organization
@@ -60,7 +65,10 @@ const SETUP_STEPS: SetupStep[] = [
   },
 ]
 
-export function SetupChecklist({ organization, onRefresh }: SetupChecklistProps) {
+export function SetupChecklist({
+  organization,
+  onRefresh,
+}: SetupChecklistProps) {
   const [progress, setProgress] = useState<SetupProgress | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -75,7 +83,8 @@ export function SetupChecklist({ organization, onRefresh }: SetupChecklistProps)
         setIsMinimized(true)
       } else if (data.startedAt) {
         const startDate = new Date(data.startedAt)
-        const daysSinceStart = (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        const daysSinceStart =
+          (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)
         if (daysSinceStart > 14) {
           setIsMinimized(true)
         }
@@ -161,9 +170,7 @@ export function SetupChecklist({ organization, onRefresh }: SetupChecklistProps)
             {progress.percentComplete}% complete
           </span>
         </div>
-        <span className="text-xs font-mono text-gray-500">
-          Continue →
-        </span>
+        <span className="text-xs font-mono text-gray-500">Continue →</span>
       </button>
     )
   }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { useAuth } from "@/contexts/auth.context"
 import { requireAuthToken } from "@/utils/auth"
 import { useNavigate } from "react-router-dom"
 
@@ -8,7 +9,6 @@ import { useSpotlightSearchState } from "@/hooks/use-spotlight-search-state"
 import { MemoryMesh3D } from "@/components/memories/mesh"
 import { SpotlightSearch } from "@/components/memories/spotlight-search"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { useAuth } from "@/contexts/auth.context"
 
 export const Memories: React.FC = () => {
   const navigate = useNavigate()

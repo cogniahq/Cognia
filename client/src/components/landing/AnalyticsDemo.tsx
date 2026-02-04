@@ -311,7 +311,10 @@ export const AnalyticsDemo: React.FC = () => {
               </div>
               <div className="flex justify-between mt-2">
                 {sentiments.map((sentiment) => (
-                  <div key={sentiment.label} className="flex items-center gap-1">
+                  <div
+                    key={sentiment.label}
+                    className="flex items-center gap-1"
+                  >
                     <div
                       className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: sentiment.color }}
@@ -330,7 +333,9 @@ export const AnalyticsDemo: React.FC = () => {
         <div
           className="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6"
           style={{
-            animation: isInView ? "fadeInScale 0.6s ease-out 0.6s both" : "none",
+            animation: isInView
+              ? "fadeInScale 0.6s ease-out 0.6s both"
+              : "none",
           }}
         >
           <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-4">
@@ -352,7 +357,9 @@ export const AnalyticsDemo: React.FC = () => {
                   style={{ backgroundColor: tag.color }}
                 />
                 <span className="text-sm text-gray-700">{tag.label}</span>
-                <span className="text-xs font-mono text-gray-500">{tag.count}</span>
+                <span className="text-xs font-mono text-gray-500">
+                  {tag.count}
+                </span>
               </div>
             ))}
           </div>

@@ -59,7 +59,9 @@ const MemoryMesh3D: React.FC<MemoryMesh3DProps> = ({
   )
 
   const meshData = useExternalData ? externalMeshData : internalHook.meshData
-  const isLoading = useExternalData ? (externalIsLoading ?? false) : internalHook.isLoading
+  const isLoading = useExternalData
+    ? (externalIsLoading ?? false)
+    : internalHook.isLoading
   const error = useExternalData ? externalError : internalHook.error
 
   useEffect(() => {

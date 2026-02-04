@@ -1,15 +1,20 @@
-import { requireAuthToken } from "../../utils/auth"
-import { getRequest, postRequest, patchRequest, deleteRequest } from "../../utils/http"
 import type {
-  Organization,
-  OrganizationWithRole,
-  OrganizationMember,
-  Document,
   CreateOrganizationRequest,
+  Document,
   InviteMemberRequest,
-  UpdateMemberRoleRequest,
+  Organization,
+  OrganizationMember,
   OrganizationSearchResponse,
+  OrganizationWithRole,
+  UpdateMemberRoleRequest,
 } from "../../types/organization"
+import { requireAuthToken } from "../../utils/auth"
+import {
+  deleteRequest,
+  getRequest,
+  patchRequest,
+  postRequest,
+} from "../../utils/http"
 
 const baseUrl = "/organizations"
 
@@ -34,7 +39,9 @@ export async function getUserOrganizations(): Promise<OrganizationWithRole[]> {
   return response.data.data.organizations || []
 }
 
-export async function getOrganization(slug: string): Promise<OrganizationWithRole> {
+export async function getOrganization(
+  slug: string
+): Promise<OrganizationWithRole> {
   requireAuthToken()
   const response = await getRequest(`${baseUrl}/${slug}`)
   if (!response.data?.success) {
@@ -93,14 +100,20 @@ export async function updateMemberRole(
   data: UpdateMemberRoleRequest
 ): Promise<OrganizationMember> {
   requireAuthToken()
-  const response = await patchRequest(`${baseUrl}/${slug}/members/${memberId}`, data)
+  const response = await patchRequest(
+    `${baseUrl}/${slug}/members/${memberId}`,
+    data
+  )
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to update member role")
   }
   return response.data.data.member
 }
 
-export async function removeMember(slug: string, memberId: string): Promise<void> {
+export async function removeMember(
+  slug: string,
+  memberId: string
+): Promise<void> {
   requireAuthToken()
   const response = await deleteRequest(`${baseUrl}/${slug}/members/${memberId}`)
   if (!response.data?.success) {
@@ -109,7 +122,9 @@ export async function removeMember(slug: string, memberId: string): Promise<void
 }
 
 // Document management
-export async function getOrganizationDocuments(slug: string): Promise<Document[]> {
+export async function getOrganizationDocuments(
+  slug: string
+): Promise<Document[]> {
   requireAuthToken()
   const response = await getRequest(`${baseUrl}/${slug}/documents`)
   if (!response.data?.success) {
@@ -150,9 +165,10 @@ export async function deleteDocument(
   type?: "document" | "integration"
 ): Promise<void> {
   requireAuthToken()
-  const url = type === "integration"
-    ? `${baseUrl}/${slug}/documents/${documentId}?type=integration`
-    : `${baseUrl}/${slug}/documents/${documentId}`
+  const url =
+    type === "integration"
+      ? `${baseUrl}/${slug}/documents/${documentId}?type=integration`
+      : `${baseUrl}/${slug}/documents/${documentId}`
   const response = await deleteRequest(url)
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to delete document")
@@ -164,7 +180,9 @@ export async function getDocumentStatus(
   documentId: string
 ): Promise<Document> {
   requireAuthToken()
-  const response = await getRequest(`${baseUrl}/${slug}/documents/${documentId}`)
+  const response = await getRequest(
+    `${baseUrl}/${slug}/documents/${documentId}`
+  )
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to fetch document status")
   }
@@ -190,9 +208,13 @@ export async function getDocumentByMemory(
   memoryId: string
 ): Promise<DocumentPreviewData> {
   requireAuthToken()
-  const response = await getRequest(`${baseUrl}/${slug}/documents/by-memory/${memoryId}`)
+  const response = await getRequest(
+    `${baseUrl}/${slug}/documents/by-memory/${memoryId}`
+  )
   if (!response.data?.success) {
-    throw new Error(response.data?.message || "No document found for this citation")
+    throw new Error(
+      response.data?.message || "No document found for this citation"
+    )
   }
   return response.data.data
 }
@@ -241,7 +263,9 @@ export interface AnswerJobResult {
 }
 
 // Poll for answer job status (legacy, kept for fallback)
-export async function getAnswerJobStatus(jobId: string): Promise<AnswerJobResult> {
+export async function getAnswerJobStatus(
+  jobId: string
+): Promise<AnswerJobResult> {
   requireAuthToken()
   const response = await getRequest(`/search/job/${jobId}`)
   return response.data
@@ -259,7 +283,7 @@ export function subscribeToAnswerJob(
   // Build the SSE URL - bypass Vite proxy in dev mode to avoid buffering issues
   // SSE needs direct connection to avoid proxy buffering
   const baseUrl = import.meta.env.DEV
-    ? "http://localhost:3000/api"  // Direct connection in dev
+    ? "http://localhost:3000/api" // Direct connection in dev
     : `${import.meta.env.VITE_SERVER_URL || ""}/api`
 
   // Note: EventSource doesn't support custom headers, so we pass token as query param
@@ -375,7 +399,9 @@ export async function getOrganizationMemories(
   return response.data.data.memories || []
 }
 
-export async function getOrganizationMemoryCount(slug: string): Promise<number> {
+export async function getOrganizationMemoryCount(
+  slug: string
+): Promise<number> {
   requireAuthToken()
   const response = await getRequest(`${baseUrl}/${slug}/memories/count`)
   if (!response.data?.success) {
@@ -404,12 +430,21 @@ export async function getOrganizationMesh(
   // Transform to match MemoryMesh type
   return {
     nodes: data.nodes || [],
-    edges: (data.edges || []).map((edge: { source: string; target: string; relationship_type?: string; relation_type?: string; similarity_score: number }) => ({
-      source: edge.source,
-      target: edge.target,
-      relation_type: edge.relation_type || edge.relationship_type || "semantic",
-      similarity_score: edge.similarity_score,
-    })),
+    edges: (data.edges || []).map(
+      (edge: {
+        source: string
+        target: string
+        relationship_type?: string
+        relation_type?: string
+        similarity_score: number
+      }) => ({
+        source: edge.source,
+        target: edge.target,
+        relation_type:
+          edge.relation_type || edge.relationship_type || "semantic",
+        similarity_score: edge.similarity_score,
+      })
+    ),
     clusters: data.clusters || {},
   }
 }
@@ -611,7 +646,10 @@ export async function skipSetupStep(slug: string, step: string): Promise<void> {
 
 export async function markSecurityPromptShown(slug: string): Promise<void> {
   requireAuthToken()
-  const response = await postRequest(`${baseUrl}/${slug}/setup/security-prompt-shown`, {})
+  const response = await postRequest(
+    `${baseUrl}/${slug}/setup/security-prompt-shown`,
+    {}
+  )
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to mark security prompt")
   }
@@ -625,9 +663,15 @@ export async function createInvitations(
   slug: string,
   emails: string[],
   role?: "ADMIN" | "EDITOR" | "VIEWER"
-): Promise<{ invitations: Invitation[]; errors: Array<{ email: string; error: string }> }> {
+): Promise<{
+  invitations: Invitation[]
+  errors: Array<{ email: string; error: string }>
+}> {
   requireAuthToken()
-  const response = await postRequest(`${baseUrl}/${slug}/invitations`, { emails, role })
+  const response = await postRequest(`${baseUrl}/${slug}/invitations`, {
+    emails,
+    role,
+  })
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to create invitations")
   }
@@ -643,15 +687,22 @@ export async function getInvitations(slug: string): Promise<Invitation[]> {
   return response.data.data.invitations || []
 }
 
-export async function revokeInvitation(slug: string, invitationId: string): Promise<void> {
+export async function revokeInvitation(
+  slug: string,
+  invitationId: string
+): Promise<void> {
   requireAuthToken()
-  const response = await deleteRequest(`${baseUrl}/${slug}/invitations/${invitationId}`)
+  const response = await deleteRequest(
+    `${baseUrl}/${slug}/invitations/${invitationId}`
+  )
   if (!response.data?.success) {
     throw new Error(response.data?.message || "Failed to revoke invitation")
   }
 }
 
-export async function getInvitationByToken(token: string): Promise<InvitationWithOrg> {
+export async function getInvitationByToken(
+  token: string
+): Promise<InvitationWithOrg> {
   requireAuthToken()
   const response = await getRequest(`/invitations/${token}`)
   if (!response.data?.success) {

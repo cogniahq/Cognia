@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react"
-import { X, Download, FileText, Image, File, ChevronRight } from "lucide-react"
+import { useEffect, useState } from "react"
 import type { DocumentPreviewData } from "@/services/organization/organization.service"
+import { ChevronRight, Download, File, FileText, Image, X } from "lucide-react"
 
 interface DocumentPreviewModalProps {
   isOpen: boolean
@@ -138,7 +138,8 @@ export function DocumentPreviewModal({
                   <div className="max-w-3xl mx-auto">
                     <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
                       Relevant excerpt
-                      {documentData.pageNumber && ` (Page ${documentData.pageNumber})`}
+                      {documentData.pageNumber &&
+                        ` (Page ${documentData.pageNumber})`}
                     </div>
                     <div className="bg-white border border-gray-200 p-4">
                       <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">

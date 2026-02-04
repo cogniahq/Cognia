@@ -25,7 +25,10 @@ axiosInstance.interceptors.request.use(
 )
 
 // Security error event for components to listen to
-export type SecurityErrorType = "SESSION_EXPIRED" | "IP_NOT_ALLOWED" | "2FA_REQUIRED"
+export type SecurityErrorType =
+  | "SESSION_EXPIRED"
+  | "IP_NOT_ALLOWED"
+  | "2FA_REQUIRED"
 
 export interface SecurityErrorEvent {
   type: SecurityErrorType
@@ -69,7 +72,10 @@ axiosInstance.interceptors.response.use(
     if (status === 419 || errorCode === "SESSION_EXPIRED") {
       try {
         localStorage.removeItem("auth_token")
-        dispatchSecurityError("SESSION_EXPIRED", "Your session has expired. Please log in again.")
+        dispatchSecurityError(
+          "SESSION_EXPIRED",
+          "Your session has expired. Please log in again."
+        )
         if (window.location.pathname !== "/login") {
           window.location.href = "/login?expired=true"
         }
@@ -82,7 +88,8 @@ axiosInstance.interceptors.response.use(
     if (errorCode === "IP_NOT_ALLOWED") {
       dispatchSecurityError(
         "IP_NOT_ALLOWED",
-        errorMessage || "Your IP address is not allowed to access this organization."
+        errorMessage ||
+          "Your IP address is not allowed to access this organization."
       )
     }
 

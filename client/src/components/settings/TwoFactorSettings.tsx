@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react"
 import {
   TwoFactorService,
-  type TwoFactorStatus,
   type TwoFactorSetupResponse,
+  type TwoFactorStatus,
 } from "@/services/two-factor.service"
 
 type SetupStep = "idle" | "setup" | "verify" | "complete" | "disable"
@@ -12,7 +12,9 @@ export const TwoFactorSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [setupStep, setSetupStep] = useState<SetupStep>("idle")
-  const [setupData, setSetupData] = useState<TwoFactorSetupResponse | null>(null)
+  const [setupData, setSetupData] = useState<TwoFactorSetupResponse | null>(
+    null
+  )
   const [verificationCode, setVerificationCode] = useState("")
   const [disableCode, setDisableCode] = useState("")
   const [backupCodes, setBackupCodes] = useState<string[]>([])
@@ -30,8 +32,15 @@ export const TwoFactorSettings: React.FC = () => {
       const data = await TwoFactorService.getStatus()
       setStatus(data)
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string }
-      setError(error.response?.data?.message || error.message || "Failed to load 2FA status")
+      const error = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load 2FA status"
+      )
     } finally {
       setIsLoading(false)
     }
@@ -46,8 +55,15 @@ export const TwoFactorSettings: React.FC = () => {
       setBackupCodes(data.backupCodes)
       setSetupStep("setup")
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string }
-      setError(error.response?.data?.message || error.message || "Failed to start 2FA setup")
+      const error = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to start 2FA setup"
+      )
     } finally {
       setIsProcessing(false)
     }
@@ -66,8 +82,15 @@ export const TwoFactorSettings: React.FC = () => {
       setSetupStep("complete")
       await fetchStatus()
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string }
-      setError(error.response?.data?.message || error.message || "Invalid verification code")
+      const error = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Invalid verification code"
+      )
     } finally {
       setIsProcessing(false)
     }
@@ -87,7 +110,10 @@ export const TwoFactorSettings: React.FC = () => {
       setDisableCode("")
       await fetchStatus()
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string }
+      const error = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(error.response?.data?.message || error.message || "Invalid code")
     } finally {
       setIsProcessing(false)
@@ -95,7 +121,9 @@ export const TwoFactorSettings: React.FC = () => {
   }
 
   const handleRegenerateBackupCodes = async () => {
-    const code = prompt("Enter your current 2FA code to regenerate backup codes:")
+    const code = prompt(
+      "Enter your current 2FA code to regenerate backup codes:"
+    )
     if (!code) return
 
     try {
@@ -105,8 +133,15 @@ export const TwoFactorSettings: React.FC = () => {
       setBackupCodes(data.backupCodes)
       setShowBackupCodes(true)
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string }
-      setError(error.response?.data?.message || error.message || "Failed to regenerate backup codes")
+      const error = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to regenerate backup codes"
+      )
     } finally {
       setIsProcessing(false)
     }
@@ -181,7 +216,9 @@ export const TwoFactorSettings: React.FC = () => {
           {status?.enabled && (
             <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200">
               <div>
-                <div className="text-sm font-medium text-gray-900">Backup Codes</div>
+                <div className="text-sm font-medium text-gray-900">
+                  Backup Codes
+                </div>
                 <div className="text-xs text-gray-500">
                   Use these codes if you lose access to your authenticator app
                 </div>
@@ -202,7 +239,8 @@ export const TwoFactorSettings: React.FC = () => {
       {setupStep === "setup" && setupData && (
         <div className="space-y-4">
           <div className="text-sm text-gray-700">
-            Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+            Scan this QR code with your authenticator app (Google Authenticator,
+            Authy, etc.)
           </div>
 
           <div className="flex justify-center p-4 bg-white border border-gray-200">
@@ -216,7 +254,9 @@ export const TwoFactorSettings: React.FC = () => {
           </div>
 
           <div className="p-3 bg-gray-50 border border-gray-200">
-            <div className="text-xs font-mono text-gray-500 mb-1">Manual entry code:</div>
+            <div className="text-xs font-mono text-gray-500 mb-1">
+              Manual entry code:
+            </div>
             <div className="text-sm font-mono text-gray-900 break-all select-all">
               {setupData.secret}
             </div>
@@ -227,8 +267,8 @@ export const TwoFactorSettings: React.FC = () => {
               [SAVE YOUR BACKUP CODES]
             </div>
             <div className="text-xs text-yellow-700 mb-2">
-              Store these codes in a safe place. You can use them to access your account if you
-              lose your authenticator device.
+              Store these codes in a safe place. You can use them to access your
+              account if you lose your authenticator device.
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
               {backupCodes.map((code, idx) => (
@@ -261,7 +301,8 @@ export const TwoFactorSettings: React.FC = () => {
       {setupStep === "verify" && (
         <div className="space-y-4">
           <div className="text-sm text-gray-700">
-            Enter the 6-digit code from your authenticator app to complete setup.
+            Enter the 6-digit code from your authenticator app to complete
+            setup.
           </div>
 
           <div className="flex gap-2">
@@ -304,7 +345,9 @@ export const TwoFactorSettings: React.FC = () => {
       {setupStep === "complete" && (
         <div className="space-y-4">
           <div className="p-4 bg-green-50 border border-green-200 text-center">
-            <div className="text-lg text-green-700 mb-1">2FA Enabled Successfully!</div>
+            <div className="text-lg text-green-700 mb-1">
+              2FA Enabled Successfully!
+            </div>
             <div className="text-sm text-green-600">
               Your account is now protected with two-factor authentication.
             </div>
@@ -328,10 +371,12 @@ export const TwoFactorSettings: React.FC = () => {
       {setupStep === "disable" && (
         <div className="space-y-4">
           <div className="p-3 bg-red-50 border border-red-200">
-            <div className="text-sm font-medium text-red-800 mb-1">Disable Two-Factor Authentication</div>
+            <div className="text-sm font-medium text-red-800 mb-1">
+              Disable Two-Factor Authentication
+            </div>
             <div className="text-xs text-red-700">
-              This will remove the extra security layer from your account. Enter your current 2FA
-              code to confirm.
+              This will remove the extra security layer from your account. Enter
+              your current 2FA code to confirm.
             </div>
           </div>
 
@@ -379,8 +424,8 @@ export const TwoFactorSettings: React.FC = () => {
               [NEW BACKUP CODES]
             </div>
             <div className="text-sm text-gray-700 mb-4">
-              Your previous backup codes have been invalidated. Save these new codes in a safe
-              place.
+              Your previous backup codes have been invalidated. Save these new
+              codes in a safe place.
             </div>
             <div className="grid grid-cols-2 gap-2 mb-4">
               {backupCodes.map((code, idx) => (

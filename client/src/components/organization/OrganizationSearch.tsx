@@ -1,15 +1,21 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
 import * as organizationService from "@/services/organization/organization.service"
+import type {
+  AnswerJobResult,
+  DocumentPreviewData,
+} from "@/services/organization/organization.service"
+
 import type { OrganizationSearchResponse } from "@/types/organization"
-import type { DocumentPreviewData, AnswerJobResult } from "@/services/organization/organization.service"
 import { DocumentPreviewModal } from "@/components/ui/document-preview-modal"
 
 export function OrganizationSearch() {
   const { currentOrganization, documents } = useOrganization()
   const [query, setQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
-  const [results, setResults] = useState<OrganizationSearchResponse | null>(null)
+  const [results, setResults] = useState<OrganizationSearchResponse | null>(
+    null
+  )
   const [error, setError] = useState("")
 
   // Answer streaming state
@@ -22,7 +28,9 @@ export function OrganizationSearch() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
-  const [previewData, setPreviewData] = useState<DocumentPreviewData | null>(null)
+  const [previewData, setPreviewData] = useState<DocumentPreviewData | null>(
+    null
+  )
 
   // Clean up SSE on unmount
   useEffect(() => {
@@ -119,7 +127,9 @@ export function OrganizationSearch() {
         )
         setPreviewData(data)
       } catch (err) {
-        setPreviewError(err instanceof Error ? err.message : "Failed to load document")
+        setPreviewError(
+          err instanceof Error ? err.message : "Failed to load document"
+        )
       } finally {
         setPreviewLoading(false)
       }
@@ -138,13 +148,26 @@ export function OrganizationSearch() {
   const currentCitations = answerData?.citations || results?.citations
 
   // Type for job result citation
-  type JobCitation = { label: number; memory_id: string; title: string | null; url: string | null }
+  type JobCitation = {
+    label: number
+    memory_id: string
+    title: string | null
+    url: string | null
+  }
 
   // Deduplicate citations by document name, keeping track of memoryIds for preview
   const uniqueCitations = useMemo(() => {
     if (!currentCitations) return []
 
-    const seen = new Map<string, { index: number; documentName: string; pageNumbers: number[]; memoryId: string }>()
+    const seen = new Map<
+      string,
+      {
+        index: number
+        documentName: string
+        pageNumbers: number[]
+        memoryId: string
+      }
+    >()
 
     for (const citation of currentCitations) {
       // Handle both formats: from initial response and from job result
@@ -153,7 +176,7 @@ export function OrganizationSearch() {
       let memoryId: string
       let index: number
 
-      if ('documentName' in citation) {
+      if ("documentName" in citation) {
         // Citation from initial search response
         documentName = citation.documentName
         pageNumber = citation.pageNumber
@@ -248,7 +271,9 @@ export function OrganizationSearch() {
                     <span>
                       Analyzing documents and generating answer...
                       {answerElapsed > 0 && (
-                        <span className="text-gray-400 ml-1">({answerElapsed}s)</span>
+                        <span className="text-gray-400 ml-1">
+                          ({answerElapsed}s)
+                        </span>
                       )}
                     </span>
                   </div>
@@ -266,13 +291,19 @@ export function OrganizationSearch() {
                           {uniqueCitations.map((citation, idx) => (
                             <button
                               key={`${citation.documentName}-${idx}`}
-                              onClick={() => handleCitationClick(citation.memoryId)}
+                              onClick={() =>
+                                handleCitationClick(citation.memoryId)
+                              }
                               className="px-2 py-1 text-xs font-mono bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
                             >
                               {citation.documentName}
                               {citation.pageNumbers.length > 0 && (
                                 <span className="text-gray-400">
-                                  {" "}p.{citation.pageNumbers.sort((a, b) => a - b).join(", ")}
+                                  {" "}
+                                  p.
+                                  {citation.pageNumbers
+                                    .sort((a, b) => a - b)
+                                    .join(", ")}
                                 </span>
                               )}
                             </button>
@@ -287,63 +318,73 @@ export function OrganizationSearch() {
           )}
 
           {/* Cited Sources - only show documents that are cited in the AI answer */}
-          {uniqueCitations.length > 0 && (() => {
-            // Get cited memory IDs from the AI answer
-            const citedMemoryIds = new Set(uniqueCitations.map(c => c.memoryId))
+          {uniqueCitations.length > 0 &&
+            (() => {
+              // Get cited memory IDs from the AI answer
+              const citedMemoryIds = new Set(
+                uniqueCitations.map((c) => c.memoryId)
+              )
 
-            // Filter results to only show cited documents
-            const citedResults = results.results.filter(r => citedMemoryIds.has(r.memoryId))
+              // Filter results to only show cited documents
+              const citedResults = results.results.filter((r) =>
+                citedMemoryIds.has(r.memoryId)
+              )
 
-            if (citedResults.length === 0) return null
+              if (citedResults.length === 0) return null
 
-            return (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-                    [CITED SOURCES]
-                  </span>
-                  <span className="text-xs font-mono text-gray-400">
-                    {citedResults.length} source{citedResults.length !== 1 && "s"}
-                  </span>
-                </div>
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+                      [CITED SOURCES]
+                    </span>
+                    <span className="text-xs font-mono text-gray-400">
+                      {citedResults.length} source
+                      {citedResults.length !== 1 && "s"}
+                    </span>
+                  </div>
 
-                <div className="border border-gray-200 divide-y divide-gray-100">
-                  {citedResults.map((result) => (
-                    <button
-                      key={result.memoryId}
-                      onClick={() => handleCitationClick(result.memoryId)}
-                      className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-gray-900">
-                              {result.documentName || result.title || "Document"}
-                            </span>
-                            {result.pageNumber && (
-                              <span className="text-xs font-mono text-gray-400">
-                                p.{result.pageNumber}
+                  <div className="border border-gray-200 divide-y divide-gray-100">
+                    {citedResults.map((result) => (
+                      <button
+                        key={result.memoryId}
+                        onClick={() => handleCitationClick(result.memoryId)}
+                        className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-gray-900">
+                                {result.documentName ||
+                                  result.title ||
+                                  "Document"}
                               </span>
-                            )}
+                              {result.pageNumber && (
+                                <span className="text-xs font-mono text-gray-400">
+                                  p.{result.pageNumber}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 line-clamp-2">
+                              {result.contentPreview}
+                            </p>
+                            <div className="flex items-center gap-3 mt-2 text-xs font-mono text-gray-400">
+                              <span>{result.sourceType}</span>
+                              <span>
+                                {Math.round(result.score * 100)}% match
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-xs text-gray-600 line-clamp-2">
-                            {result.contentPreview}
-                          </p>
-                          <div className="flex items-center gap-3 mt-2 text-xs font-mono text-gray-400">
-                            <span>{result.sourceType}</span>
-                            <span>{Math.round(result.score * 100)}% match</span>
-                          </div>
+                          <span className="text-xs font-mono text-gray-400">
+                            →
+                          </span>
                         </div>
-                        <span className="text-xs font-mono text-gray-400">
-                          →
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )
-          })()}
+              )
+            })()}
         </div>
       )}
 

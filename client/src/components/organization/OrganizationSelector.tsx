@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { useOrganization } from "@/contexts/organization.context"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useOrganization } from "@/contexts/organization.context"
+
 import { CreateOrganizationDialog } from "./CreateOrganizationDialog"
 
 export function OrganizationSelector() {
@@ -23,12 +25,16 @@ export function OrganizationSelector() {
             disabled={isLoading}
           >
             <span className="max-w-[120px] truncate">
-              {currentOrganization?.name || (isLoading ? "Loading..." : "Select")}
+              {currentOrganization?.name ||
+                (isLoading ? "Loading..." : "Select")}
             </span>
             <span className="text-gray-400">▼</span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[220px] rounded-none border-gray-300">
+        <DropdownMenuContent
+          align="start"
+          className="w-[220px] rounded-none border-gray-300"
+        >
           {organizations.length > 0 ? (
             <>
               <div className="px-2 py-1.5 text-xs font-mono text-gray-500 uppercase tracking-wider">

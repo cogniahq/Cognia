@@ -208,7 +208,10 @@ export const IntegrationsDemo: React.FC = () => {
         }
       `}</style>
 
-      <div ref={containerRef} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div
+        ref={containerRef}
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-300/60 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-gray-600 mb-3 sm:mb-4">
             Integrations
@@ -296,7 +299,9 @@ export const IntegrationsDemo: React.FC = () => {
                       <div className="absolute inset-0 rounded-xl overflow-hidden">
                         <div
                           className="absolute inset-0 border-2 border-blue-400 rounded-xl"
-                          style={{ animation: "pulse-ring 1s ease-out infinite" }}
+                          style={{
+                            animation: "pulse-ring 1s ease-out infinite",
+                          }}
                         />
                       </div>
                     )}
@@ -333,9 +338,7 @@ export const IntegrationsDemo: React.FC = () => {
                         <div
                           key={item}
                           className={`flex items-center gap-2 text-xs transition-all duration-300 ${
-                            isConnected
-                              ? "text-gray-700"
-                              : "text-gray-400"
+                            isConnected ? "text-gray-700" : "text-gray-400"
                           }`}
                           style={{
                             opacity: isConnected ? 1 : 0.5,

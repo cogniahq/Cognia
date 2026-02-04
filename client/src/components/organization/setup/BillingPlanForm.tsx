@@ -1,6 +1,10 @@
 import { useState } from "react"
+import {
+  updateBilling,
+  type UpdateBillingRequest,
+} from "@/services/organization/organization.service"
+
 import type { Organization } from "@/types/organization"
-import { updateBilling, type UpdateBillingRequest } from "@/services/organization/organization.service"
 
 interface BillingPlanFormProps {
   organization: Organization
@@ -60,9 +64,9 @@ export function BillingPlanForm({
 }: BillingPlanFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
-  const [selectedPlan, setSelectedPlan] = useState<"free" | "pro" | "enterprise">(
-    (organization.plan as "free" | "pro" | "enterprise") || "free"
-  )
+  const [selectedPlan, setSelectedPlan] = useState<
+    "free" | "pro" | "enterprise"
+  >((organization.plan as "free" | "pro" | "enterprise") || "free")
 
   const [formData, setFormData] = useState<UpdateBillingRequest>({
     legalName: organization.legal_name || "",
@@ -141,11 +145,15 @@ export function BillingPlanForm({
                           ${isSelected ? "border-gray-900 bg-gray-900" : "border-gray-300"}
                         `}
                       >
-                        {isSelected && <span className="text-white text-xs">✓</span>}
+                        {isSelected && (
+                          <span className="text-white text-xs">✓</span>
+                        )}
                       </div>
                       <h3 className="font-medium text-gray-900">{plan.name}</h3>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1 ml-7">{plan.description}</p>
+                    <p className="text-xs text-gray-500 mt-1 ml-7">
+                      {plan.description}
+                    </p>
                     <ul className="mt-2 ml-7 space-y-1">
                       {plan.features.map((feature) => (
                         <li key={feature} className="text-xs text-gray-600">
@@ -155,7 +163,9 @@ export function BillingPlanForm({
                     </ul>
                   </div>
                   <div className="text-right ml-4">
-                    <span className="text-lg font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {plan.price}
+                    </span>
                     <span className="text-xs text-gray-500">{plan.period}</span>
                   </div>
                 </div>

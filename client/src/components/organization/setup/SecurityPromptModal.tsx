@@ -37,18 +37,28 @@ export function SecurityPromptModal({
 
           <div className="space-y-2">
             <div className="p-3 bg-gray-50 border border-gray-200">
-              <div className="text-sm text-gray-900">Two-factor authentication</div>
-              <p className="text-xs text-gray-500">Require 2FA for all members</p>
+              <div className="text-sm text-gray-900">
+                Two-factor authentication
+              </div>
+              <p className="text-xs text-gray-500">
+                Require 2FA for all members
+              </p>
             </div>
 
             <div className="p-3 bg-gray-50 border border-gray-200">
-              <div className="text-sm text-gray-900">Session timeout policies</div>
-              <p className="text-xs text-gray-500">Auto-logout after inactivity</p>
+              <div className="text-sm text-gray-900">
+                Session timeout policies
+              </div>
+              <p className="text-xs text-gray-500">
+                Auto-logout after inactivity
+              </p>
             </div>
 
             <div className="p-3 bg-gray-50 border border-gray-200">
               <div className="text-sm text-gray-900">Data residency</div>
-              <p className="text-xs text-gray-500">Choose where data is stored</p>
+              <p className="text-xs text-gray-500">
+                Choose where data is stored
+              </p>
             </div>
           </div>
         </div>

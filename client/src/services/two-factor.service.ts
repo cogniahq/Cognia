@@ -60,8 +60,12 @@ export class TwoFactorService {
   /**
    * Regenerate backup codes
    */
-  static async regenerateBackupCodes(code: string): Promise<BackupCodesResponse> {
-    const response = await axiosInstance.post("/auth/2fa/backup-codes", { code })
+  static async regenerateBackupCodes(
+    code: string
+  ): Promise<BackupCodesResponse> {
+    const response = await axiosInstance.post("/auth/2fa/backup-codes", {
+      code,
+    })
     const data = response.data?.data || response.data
     return data
   }

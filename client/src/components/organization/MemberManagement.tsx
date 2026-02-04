@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react"
+import { useOrganization } from "@/contexts/organization.context"
+
+import type { OrgRole } from "@/types/organization"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { useOrganization } from "@/contexts/organization.context"
-import type { OrgRole } from "@/types/organization"
 
 const ROLE_LABELS: Record<OrgRole, string> = {
   ADMIN: "Admin",
@@ -107,7 +108,8 @@ export function MemberManagement() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="text-sm font-mono text-gray-600 uppercase tracking-wide">
-            [TEAM MEMBERS] — {members.length} member{members.length !== 1 && "s"}
+            [TEAM MEMBERS] — {members.length} member
+            {members.length !== 1 && "s"}
           </div>
           {isAdmin && (
             <button

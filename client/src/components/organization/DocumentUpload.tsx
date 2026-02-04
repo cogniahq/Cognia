@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from "react"
+import { useCallback, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+
 import type { Document } from "@/types/organization"
 
 const ALLOWED_TYPES = [
@@ -16,7 +17,8 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
 const FILE_TYPE_LABELS: Record<string, string> = {
   "application/pdf": "PDF",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "DOCX",
   "text/plain": "TXT",
   "text/markdown": "MD",
   "image/png": "PNG",

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import {
   SECURITY_ERROR_EVENT,
   type SecurityErrorEvent,
   type SecurityErrorType,
 } from "@/utils/http"
+import { useNavigate } from "react-router-dom"
 
 interface ErrorNotification {
   id: string
@@ -161,7 +161,12 @@ export const SecurityErrorHandler: React.FC = () => {
                     : "text-orange-500 hover:text-orange-700"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

@@ -1,10 +1,17 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
-import type {
-  OrganizationWithRole,
-  OrganizationMember,
-  Document,
-} from "../types/organization"
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react"
+
 import * as organizationService from "../services/organization/organization.service"
+import type {
+  Document,
+  OrganizationMember,
+  OrganizationWithRole,
+} from "../types/organization"
 
 interface OrganizationContextType {
   // Organizations
@@ -16,21 +23,35 @@ interface OrganizationContextType {
   // Actions
   loadOrganizations: () => Promise<void>
   selectOrganization: (slug: string) => Promise<void>
-  createOrganization: (name: string, description?: string, industry?: string, teamSize?: string) => Promise<OrganizationWithRole>
+  createOrganization: (
+    name: string,
+    description?: string,
+    industry?: string,
+    teamSize?: string
+  ) => Promise<OrganizationWithRole>
   deleteOrganization: (slug: string) => Promise<void>
 
   // Members
   members: OrganizationMember[]
   loadMembers: () => Promise<void>
-  inviteMember: (email: string, role: "ADMIN" | "EDITOR" | "VIEWER") => Promise<void>
-  updateMemberRole: (memberId: string, role: "ADMIN" | "EDITOR" | "VIEWER") => Promise<void>
+  inviteMember: (
+    email: string,
+    role: "ADMIN" | "EDITOR" | "VIEWER"
+  ) => Promise<void>
+  updateMemberRole: (
+    memberId: string,
+    role: "ADMIN" | "EDITOR" | "VIEWER"
+  ) => Promise<void>
   removeMember: (memberId: string) => Promise<void>
 
   // Documents
   documents: Document[]
   loadDocuments: () => Promise<void>
   uploadDocument: (file: File) => Promise<Document>
-  deleteDocument: (documentId: string, type?: "document" | "integration") => Promise<void>
+  deleteDocument: (
+    documentId: string,
+    type?: "document" | "integration"
+  ) => Promise<void>
   refreshDocumentStatus: (documentId: string) => Promise<Document>
 }
 
@@ -67,7 +88,8 @@ export function OrganizationProvider({
         }
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load organizations"
+      const message =
+        err instanceof Error ? err.message : "Failed to load organizations"
       setError(message)
       console.error("Failed to load organizations:", err)
     } finally {
@@ -75,32 +97,35 @@ export function OrganizationProvider({
     }
   }, [])
 
-  const selectOrganization = useCallback(
-    async (slug: string) => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const org = await organizationService.getOrganization(slug)
-        setCurrentOrganization(org)
-        localStorage.setItem("currentOrgSlug", slug)
+  const selectOrganization = useCallback(async (slug: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const org = await organizationService.getOrganization(slug)
+      setCurrentOrganization(org)
+      localStorage.setItem("currentOrgSlug", slug)
 
-        // Clear and reload members and documents
-        setMembers([])
-        setDocuments([])
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to select organization"
-        setError(message)
-        console.error("Failed to select organization:", err)
-        throw err
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    []
-  )
+      // Clear and reload members and documents
+      setMembers([])
+      setDocuments([])
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to select organization"
+      setError(message)
+      console.error("Failed to select organization:", err)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   const createOrganization = useCallback(
-    async (name: string, description?: string, industry?: string, teamSize?: string) => {
+    async (
+      name: string,
+      description?: string,
+      industry?: string,
+      teamSize?: string
+    ) => {
       setIsLoading(true)
       setError(null)
       try {
@@ -119,7 +144,8 @@ export function OrganizationProvider({
         localStorage.setItem("currentOrgSlug", org.slug)
         return orgWithRole
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to create organization"
+        const message =
+          err instanceof Error ? err.message : "Failed to create organization"
         setError(message)
         throw err
       } finally {
@@ -143,7 +169,8 @@ export function OrganizationProvider({
           setDocuments([])
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to delete organization"
+        const message =
+          err instanceof Error ? err.message : "Failed to delete organization"
         setError(message)
         throw err
       } finally {
@@ -186,9 +213,7 @@ export function OrganizationProvider({
         memberId,
         { role }
       )
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? updated : m))
-      )
+      setMembers((prev) => prev.map((m) => (m.id === memberId ? updated : m)))
     },
     [currentOrganization]
   )
@@ -248,9 +273,7 @@ export function OrganizationProvider({
         currentOrganization.slug,
         documentId
       )
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === documentId ? doc : d))
-      )
+      setDocuments((prev) => prev.map((d) => (d.id === documentId ? doc : d)))
       return doc
     },
     [currentOrganization]
@@ -292,6 +315,7 @@ export function OrganizationProvider({
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOrganization() {
   const context = useContext(OrganizationContext)
   if (context === undefined) {

@@ -22,22 +22,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
       `}</style>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 h-full flex items-center">
         <div className="w-full text-center space-y-6 sm:space-y-8 lg:space-y-10 mx-auto">
-          {/* Announcement */}
-          <div
-            className="flex justify-center"
-            style={{
-              animation: isVisible
-                ? "fadeInScale 0.8s ease-out 0.1s both"
-                : "none",
-            }}
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-300/80 bg-white/80 backdrop-blur px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs lg:text-sm text-gray-700">
-              <span className="whitespace-nowrap">
-                Never forget what you see online
-              </span>
-            </div>
-          </div>
-          {/* Headline */}
           <div className="overflow-hidden">
             <h1
               className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-light leading-[1.1] sm:leading-tight font-editorial tracking-tight"
@@ -46,9 +30,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
               }}
             >
               <span className="block text-black">
-                <span className="align-baseline">We</span>{" "}
-                <span className="font-editorial italic">Remember</span>{" "}
-                <span className="align-baseline">What The Web Showed You</span>
+                <span className="align-baseline">Remember</span>{" "}
+                <span className="font-editorial italic">everything</span>{" "}
+                <span className="align-baseline">
+                  you've<br />seen, written, or shared
+                </span>
               </span>
             </h1>
           </div>

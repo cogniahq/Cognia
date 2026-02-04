@@ -33,7 +33,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
                 <span className="align-baseline">Remember</span>{" "}
                 <span className="font-editorial italic">everything</span>{" "}
                 <span className="align-baseline">
-                  you've<br />seen, written, or shared
+                  you've
+                  <br />
+                  seen, written, or shared
                 </span>
               </span>
             </h1>

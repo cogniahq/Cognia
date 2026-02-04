@@ -1,17 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { Search, Trash2, Users, FileText, Brain } from 'lucide-react'
+import { Brain, FileText, Search, Trash2, Users } from 'lucide-react'
+
 import { Header } from '@/components/layout/Header'
-import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
+import { DataTable } from '@/components/ui/DataTable'
 import { Drawer } from '@/components/ui/Drawer'
 import {
-  listOrganizations,
-  getOrganizationDetails,
-  updateOrganizationPlan,
   deleteOrganization,
+  getOrganizationDetails,
+  listOrganizations,
+  updateOrganizationPlan,
 } from '@/services/api'
-import type { OrgListItem, OrgDetails, PaginatedResult } from '@/types/admin.types'
+import type {
+  OrgDetails,
+  OrgListItem,
+  PaginatedResult,
+} from '@/types/admin.types'
 
 const PLANS = ['free', 'pro', 'enterprise']
 
@@ -81,14 +86,21 @@ export function OrganizationsPage() {
   }
 
   async function handleDelete(orgId: string) {
-    if (!confirm('Delete this organization? This action cannot be undone and will remove all members and documents.')) return
+    if (
+      !confirm(
+        'Delete this organization? This action cannot be undone and will remove all members and documents.'
+      )
+    )
+      return
     try {
       await deleteOrganization(orgId)
       setDrawerOpen(false)
       setSelectedOrg(null)
       loadOrgs()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete organization')
+      alert(
+        err instanceof Error ? err.message : 'Failed to delete organization'
+      )
     }
   }
 
@@ -247,7 +259,9 @@ export function OrganizationsPage() {
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Team Size</span>
-                  <span className="text-xs">{selectedOrg.team_size || '-'}</span>
+                  <span className="text-xs">
+                    {selectedOrg.team_size || '-'}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Data Residency</span>
@@ -255,12 +269,17 @@ export function OrganizationsPage() {
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Require 2FA</span>
-                  <span className="text-xs">{selectedOrg.require_2fa ? 'Yes' : 'No'}</span>
+                  <span className="text-xs">
+                    {selectedOrg.require_2fa ? 'Yes' : 'No'}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Created</span>
                   <span className="text-xs">
-                    {format(new Date(selectedOrg.created_at), 'yyyy-MM-dd HH:mm')}
+                    {format(
+                      new Date(selectedOrg.created_at),
+                      'yyyy-MM-dd HH:mm'
+                    )}
                   </span>
                 </div>
               </div>
@@ -331,14 +350,20 @@ export function OrganizationsPage() {
                       className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200"
                     >
                       <div>
-                        <div className="text-sm text-gray-900">{m.user.email || 'No email'}</div>
+                        <div className="text-sm text-gray-900">
+                          {m.user.email || 'No email'}
+                        </div>
                         <div className="text-xs text-gray-500">
                           Joined {format(new Date(m.created_at), 'yyyy-MM-dd')}
                         </div>
                       </div>
                       <Badge
                         variant={
-                          m.role === 'ADMIN' ? 'info' : m.role === 'EDITOR' ? 'success' : 'default'
+                          m.role === 'ADMIN'
+                            ? 'info'
+                            : m.role === 'EDITOR'
+                              ? 'success'
+                              : 'default'
                         }
                       >
                         {m.role}
@@ -374,10 +399,10 @@ export function OrganizationsPage() {
                           d.status === 'COMPLETED'
                             ? 'success'
                             : d.status === 'FAILED'
-                            ? 'error'
-                            : d.status === 'PROCESSING'
-                            ? 'warning'
-                            : 'default'
+                              ? 'error'
+                              : d.status === 'PROCESSING'
+                                ? 'warning'
+                                : 'default'
                         }
                       >
                         {d.status}

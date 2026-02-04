@@ -1,16 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { RefreshCw } from 'lucide-react'
+
 import { Header } from '@/components/layout/Header'
-import { StatusIndicator } from '@/components/ui/StatusIndicator'
-import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
-import { getDashboard, getAuditLogs } from '@/services/api'
-import type { DashboardStats, AuditLogItem, PaginatedResult } from '@/types/admin.types'
+import { DataTable } from '@/components/ui/DataTable'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { getAuditLogs, getDashboard } from '@/services/api'
+import type {
+  AuditLogItem,
+  DashboardStats,
+  PaginatedResult,
+} from '@/types/admin.types'
 
 export function SystemPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [auditLogs, setAuditLogs] = useState<PaginatedResult<AuditLogItem> | null>(null)
+  const [auditLogs, setAuditLogs] =
+    useState<PaginatedResult<AuditLogItem> | null>(null)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [isLoadingLogs, setIsLoadingLogs] = useState(true)
   const [logsPage, setLogsPage] = useState(1)
@@ -86,7 +92,9 @@ export function SystemPage() {
       label: 'IP',
       width: '120px',
       render: (log: AuditLogItem) => (
-        <span className="text-xs font-mono text-gray-500">{log.ip_address || '-'}</span>
+        <span className="text-xs font-mono text-gray-500">
+          {log.ip_address || '-'}
+        </span>
       ),
     },
   ]
@@ -106,7 +114,9 @@ export function SystemPage() {
               className="p-1 text-gray-500 hover:text-gray-900"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoadingStats ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${isLoadingStats ? 'animate-spin' : ''}`}
+              />
             </button>
           </div>
 
@@ -158,16 +168,22 @@ export function SystemPage() {
                 </div>
               </div>
               <div className="bg-white border border-gray-200 p-4">
-                <div className="text-xs text-gray-500 mb-1">Total Documents</div>
+                <div className="text-xs text-gray-500 mb-1">
+                  Total Documents
+                </div>
                 <div className="text-xl font-mono text-gray-900">
                   {stats.documents.total.toLocaleString()}
                 </div>
               </div>
               <div className="bg-white border border-gray-200 p-4">
                 <div className="text-xs text-gray-500 mb-1">Failed Docs</div>
-                <div className={`text-xl font-mono ${
-                  (stats.documents.byStatus['FAILED'] || 0) > 0 ? 'text-red-600' : 'text-gray-900'
-                }`}>
+                <div
+                  className={`text-xl font-mono ${
+                    (stats.documents.byStatus['FAILED'] || 0) > 0
+                      ? 'text-red-600'
+                      : 'text-gray-900'
+                  }`}
+                >
                   {(stats.documents.byStatus['FAILED'] || 0).toLocaleString()}
                 </div>
               </div>
@@ -190,12 +206,16 @@ export function SystemPage() {
               <span className="text-xs font-mono">/api</span>
             </div>
             <div className="flex justify-between px-4 py-3 border-b border-gray-100">
-              <span className="text-xs text-gray-500">Admin Portal Version</span>
+              <span className="text-xs text-gray-500">
+                Admin Portal Version
+              </span>
               <span className="text-xs font-mono">1.0.0</span>
             </div>
             <div className="flex justify-between px-4 py-3">
               <span className="text-xs text-gray-500">Build Time</span>
-              <span className="text-xs font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
+              <span className="text-xs font-mono">
+                {format(new Date(), 'yyyy-MM-dd HH:mm')}
+              </span>
             </div>
           </div>
         </section>
@@ -211,7 +231,9 @@ export function SystemPage() {
               className="p-1 text-gray-500 hover:text-gray-900"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${isLoadingLogs ? 'animate-spin' : ''}`}
+              />
             </button>
           </div>
 

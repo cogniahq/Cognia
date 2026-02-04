@@ -1,15 +1,16 @@
+import { format } from 'date-fns'
 import {
-  LineChart as RechartsLineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart as RechartsLineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts'
-import { format } from 'date-fns'
-import { chartTheme, chartColors, formatAxisNumber } from '@/lib/chart-config'
+
+import { chartColors, chartTheme, formatAxisNumber } from '@/lib/chart-config'
 
 interface DataPoint {
   date: string
@@ -44,7 +45,10 @@ export function LineChart({
   return (
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RechartsLineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <RechartsLineChart
+          data={data}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+        >
           {showGrid && (
             <CartesianGrid
               strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -69,10 +73,15 @@ export function LineChart({
           <Tooltip
             contentStyle={chartTheme.tooltip.contentStyle}
             labelStyle={chartTheme.tooltip.labelStyle}
-            formatter={(value: number) => [formatValue ? formatValue(value) : value.toLocaleString(), name]}
+            formatter={(value: number) => [
+              formatValue ? formatValue(value) : value.toLocaleString(),
+              name,
+            ]}
             labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
           />
-          {showLegend && <Legend wrapperStyle={chartTheme.legend.wrapperStyle} />}
+          {showLegend && (
+            <Legend wrapperStyle={chartTheme.legend.wrapperStyle} />
+          )}
           <Line
             type="monotone"
             dataKey={dataKey}

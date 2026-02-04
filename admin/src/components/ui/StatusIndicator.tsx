@@ -4,7 +4,11 @@ interface StatusIndicatorProps {
   detail?: string
 }
 
-export function StatusIndicator({ status, label, detail }: StatusIndicatorProps) {
+export function StatusIndicator({
+  status,
+  label,
+  detail,
+}: StatusIndicatorProps) {
   const isHealthy = status === true || status === 'healthy'
   const isDegraded = status === 'degraded'
 
@@ -16,14 +20,16 @@ export function StatusIndicator({ status, label, detail }: StatusIndicatorProps)
             isHealthy
               ? 'bg-chart-success'
               : isDegraded
-              ? 'bg-chart-warning'
-              : 'bg-destructive'
+                ? 'bg-chart-warning'
+                : 'bg-destructive'
           }`}
         />
         <span className="text-sm text-foreground">{label}</span>
       </div>
       {detail && (
-        <span className="text-xs font-mono text-muted-foreground">{detail}</span>
+        <span className="text-xs font-mono text-muted-foreground">
+          {detail}
+        </span>
       )}
     </div>
   )

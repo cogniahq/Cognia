@@ -1,15 +1,21 @@
 import {
-  BarChart as RechartsBarChart,
   Bar,
+  CartesianGrid,
+  Cell,
+  Legend,
+  BarChart as RechartsBarChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  Cell,
 } from 'recharts'
-import { chartTheme, chartColors, chartColorArray, formatAxisNumber } from '@/lib/chart-config'
+
+import {
+  chartColorArray,
+  chartColors,
+  chartTheme,
+  formatAxisNumber,
+} from '@/lib/chart-config'
 
 interface DataPoint {
   name: string
@@ -99,15 +105,24 @@ export function BarChart({
           <Tooltip
             contentStyle={chartTheme.tooltip.contentStyle}
             labelStyle={chartTheme.tooltip.labelStyle}
-            formatter={(value: number) => [formatValue ? formatValue(value) : value.toLocaleString()]}
+            formatter={(value: number) => [
+              formatValue ? formatValue(value) : value.toLocaleString(),
+            ]}
           />
-          {showLegend && <Legend wrapperStyle={chartTheme.legend.wrapperStyle} />}
+          {showLegend && (
+            <Legend wrapperStyle={chartTheme.legend.wrapperStyle} />
+          )}
           <Bar dataKey={dataKey} barSize={barSize} radius={[4, 4, 0, 0]}>
-            {multiColor
-              ? data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={chartColorArray[index % chartColorArray.length]} />
-                ))
-              : <Cell fill={color} />}
+            {multiColor ? (
+              data.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={chartColorArray[index % chartColorArray.length]}
+                />
+              ))
+            ) : (
+              <Cell fill={color} />
+            )}
           </Bar>
         </RechartsBarChart>
       </ResponsiveContainer>

@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
 
 interface StatCardProps {
   label: string
@@ -41,8 +41,8 @@ export function StatCard({
               trend === 'up'
                 ? 'text-chart-success'
                 : trend === 'down'
-                ? 'text-destructive'
-                : 'text-muted-foreground'
+                  ? 'text-destructive'
+                  : 'text-muted-foreground'
             }`}
           >
             {trend === 'up' && <TrendingUp className="w-3 h-3" />}

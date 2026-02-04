@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { RefreshCw, FileText } from 'lucide-react'
+import { FileText, RefreshCw } from 'lucide-react'
+
 import { Header } from '@/components/layout/Header'
-import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
+import { DataTable } from '@/components/ui/DataTable'
 import { listDocuments, reprocessDocument } from '@/services/api'
-import type { DocumentListItem, DocumentStatus, PaginatedResult } from '@/types/admin.types'
+import type {
+  DocumentListItem,
+  DocumentStatus,
+  PaginatedResult,
+} from '@/types/admin.types'
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
@@ -29,7 +34,9 @@ function getStatusBadgeVariant(status: DocumentStatus) {
 }
 
 export function DocumentsPage() {
-  const [docs, setDocs] = useState<PaginatedResult<DocumentListItem> | null>(null)
+  const [docs, setDocs] = useState<PaginatedResult<DocumentListItem> | null>(
+    null
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | ''>('')
@@ -42,11 +49,7 @@ export function DocumentsPage() {
   async function loadDocs() {
     setIsLoading(true)
     try {
-      const data = await listDocuments(
-        page,
-        20,
-        statusFilter || undefined
-      )
+      const data = await listDocuments(page, 20, statusFilter || undefined)
       setDocs(data)
     } catch (err) {
       console.error('Failed to load documents', err)
@@ -94,7 +97,9 @@ export function DocumentsPage() {
       render: (doc: DocumentListItem) => (
         <div>
           <div className="text-sm text-gray-900">{doc.organization.name}</div>
-          <div className="text-xs text-gray-500 font-mono">{doc.organization.slug}</div>
+          <div className="text-xs text-gray-500 font-mono">
+            {doc.organization.slug}
+          </div>
         </div>
       ),
     },
@@ -103,7 +108,9 @@ export function DocumentsPage() {
       label: 'Uploader',
       width: '180px',
       render: (doc: DocumentListItem) => (
-        <span className="text-xs text-gray-500">{doc.uploader.email || '-'}</span>
+        <span className="text-xs text-gray-500">
+          {doc.uploader.email || '-'}
+        </span>
       ),
     },
     {
@@ -111,7 +118,9 @@ export function DocumentsPage() {
       label: 'Size',
       width: '100px',
       render: (doc: DocumentListItem) => (
-        <span className="text-xs font-mono text-gray-500">{formatBytes(doc.file_size)}</span>
+        <span className="text-xs font-mono text-gray-500">
+          {formatBytes(doc.file_size)}
+        </span>
       ),
     },
     {
@@ -136,7 +145,7 @@ export function DocumentsPage() {
       key: 'actions',
       label: '',
       width: '80px',
-      render: (doc: DocumentListItem) => (
+      render: (doc: DocumentListItem) =>
         doc.status === 'FAILED' ? (
           <button
             onClick={(e) => {
@@ -151,8 +160,7 @@ export function DocumentsPage() {
               className={`w-4 h-4 ${reprocessingIds.has(doc.id) ? 'animate-spin' : ''}`}
             />
           </button>
-        ) : null
-      ),
+        ) : null,
     },
   ]
 

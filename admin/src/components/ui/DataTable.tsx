@@ -82,10 +82,15 @@ export function DataTable<T extends { [key: string]: unknown }>({
                 `}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-sm text-foreground">
+                  <td
+                    key={col.key}
+                    className="px-4 py-3 text-sm text-foreground"
+                  >
                     {col.render
                       ? col.render(item)
-                      : String((item as Record<string, unknown>)[col.key] ?? '-')}
+                      : String(
+                          (item as Record<string, unknown>)[col.key] ?? '-'
+                        )}
                   </td>
                 ))}
               </tr>
@@ -97,7 +102,8 @@ export function DataTable<T extends { [key: string]: unknown }>({
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <div className="text-xs text-muted-foreground">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+            Page {pagination.page} of {pagination.totalPages} (
+            {pagination.total} total)
           </div>
           <div className="flex items-center gap-1">
             <button

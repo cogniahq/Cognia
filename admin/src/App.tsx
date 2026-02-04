@@ -1,13 +1,14 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/auth.context'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+
 import { AdminLayout } from '@/components/layout/AdminLayout'
-import { LoginPage } from '@/pages/Login'
-import { DashboardPage } from '@/pages/Dashboard'
-import { UsersPage } from '@/pages/Users'
-import { OrganizationsPage } from '@/pages/Organizations'
-import { DocumentsPage } from '@/pages/Documents'
+import { AuthProvider } from '@/contexts/auth.context'
 import { AnalyticsPage } from '@/pages/Analytics'
+import { DashboardPage } from '@/pages/Dashboard'
+import { DocumentsPage } from '@/pages/Documents'
+import { LoginPage } from '@/pages/Login'
+import { OrganizationsPage } from '@/pages/Organizations'
 import { SystemPage } from '@/pages/System'
+import { UsersPage } from '@/pages/Users'
 
 export default function App() {
   return (

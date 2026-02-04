@@ -37,10 +37,7 @@ export function Drawer({
   return (
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/20"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
 
       {/* Drawer */}
       <div
@@ -52,9 +49,7 @@ export function Drawer({
             <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-1">
               [{title.toUpperCase()}]
             </div>
-            {subtitle && (
-              <p className="text-xs text-gray-500">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
@@ -65,9 +60,7 @@ export function Drawer({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto p-4">{children}</div>
       </div>
     </div>
   )

@@ -1,14 +1,15 @@
-import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard,
-  Users,
+  BarChart3,
   Building2,
   FileText,
-  BarChart3,
-  Settings,
+  LayoutDashboard,
   LogOut,
+  Settings,
   Shield,
+  Users,
 } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+
 import { useAuth } from '@/contexts/auth.context'
 
 const navItems = [
@@ -45,9 +46,10 @@ export function Sidebar() {
                 className={({ isActive }) => `
                   flex items-center gap-3 px-3 py-2 text-xs font-mono uppercase tracking-wide
                   transition-colors
-                  ${isActive
-                    ? 'bg-white text-gray-900'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  ${
+                    isActive
+                      ? 'bg-white text-gray-900'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
                   }
                 `}
               >
@@ -64,9 +66,7 @@ export function Sidebar() {
         <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
           [ADMIN]
         </div>
-        <div className="text-xs text-gray-400 truncate mb-3">
-          {user?.email}
-        </div>
+        <div className="text-xs text-gray-400 truncate mb-3">{user?.email}</div>
         <button
           onClick={logout}
           className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-white transition-colors"

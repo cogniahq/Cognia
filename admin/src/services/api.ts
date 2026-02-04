@@ -1,18 +1,19 @@
 import axios from 'axios'
+
 import type {
-  DashboardStats,
-  PaginatedResult,
-  UserListItem,
-  UserDetails,
-  OrgListItem,
-  OrgDetails,
-  DocumentListItem,
   AnalyticsData,
   AuditLogItem,
-  UserRole,
-  DocumentStatus,
   AuthUser,
+  DashboardStats,
+  DocumentListItem,
+  DocumentStatus,
+  OrgDetails,
+  OrgListItem,
+  PaginatedResult,
   StorageAnalytics,
+  UserDetails,
+  UserListItem,
+  UserRole,
 } from '@/types/admin.types'
 
 const API_BASE = '/api'
@@ -47,7 +48,10 @@ api.interceptors.response.use(
 )
 
 // Auth
-export async function login(email: string, password: string): Promise<{ token: string; user: AuthUser }> {
+export async function login(
+  email: string,
+  password: string
+): Promise<{ token: string; user: AuthUser }> {
   const response = await api.post('/auth/login', { email, password })
 
   // Handle nested response structure: { success, data: { token, user } }
@@ -57,13 +61,18 @@ export async function login(email: string, password: string): Promise<{ token: s
   const user = innerData?.user
 
   if (!token || !user) {
-    console.error('Login response structure:', JSON.stringify(responseData, null, 2))
+    console.error(
+      'Login response structure:',
+      JSON.stringify(responseData, null, 2)
+    )
     throw new Error('Invalid response from server')
   }
 
   // Verify admin role
   if (user.role !== 'ADMIN') {
-    throw new Error(`Admin access required. Your account role is "${user.role || 'USER'}". Contact an administrator.`)
+    throw new Error(
+      `Admin access required. Your account role is "${user.role || 'USER'}". Contact an administrator.`
+    )
   }
 
   return { token, user }
@@ -102,7 +111,10 @@ export async function getUserDetails(userId: string): Promise<UserDetails> {
   return response.data.data
 }
 
-export async function updateUserRole(userId: string, role: UserRole): Promise<void> {
+export async function updateUserRole(
+  userId: string,
+  role: UserRole
+): Promise<void> {
   await api.put(`/admin/users/${userId}/role`, { role })
 }
 
@@ -127,12 +139,17 @@ export async function listOrganizations(
   return response.data.data
 }
 
-export async function getOrganizationDetails(orgId: string): Promise<OrgDetails> {
+export async function getOrganizationDetails(
+  orgId: string
+): Promise<OrgDetails> {
   const response = await api.get(`/admin/organizations/${orgId}`)
   return response.data.data
 }
 
-export async function updateOrganizationPlan(orgId: string, plan: string): Promise<void> {
+export async function updateOrganizationPlan(
+  orgId: string,
+  plan: string
+): Promise<void> {
   await api.put(`/admin/organizations/${orgId}/plan`, { plan })
 }
 
@@ -168,13 +185,17 @@ export async function getAnalytics(days: number = 30): Promise<AnalyticsData> {
 }
 
 // Storage Analytics
-export async function getStorageAnalytics(days: number = 30): Promise<StorageAnalytics> {
+export async function getStorageAnalytics(
+  days: number = 30
+): Promise<StorageAnalytics> {
   const response = await api.get(`/admin/storage-analytics?days=${days}`)
   return response.data.data
 }
 
 // Document Download
-export async function getDocumentDownloadUrl(documentId: string): Promise<{ downloadUrl: string; filename: string }> {
+export async function getDocumentDownloadUrl(
+  documentId: string
+): Promise<{ downloadUrl: string; filename: string }> {
   const response = await api.get(`/admin/documents/${documentId}/download`)
   return response.data.data
 }

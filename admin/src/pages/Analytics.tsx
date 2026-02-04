@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { Header } from '@/components/layout/Header'
+
 import { AreaChart, LineChart } from '@/components/charts'
+import { Header } from '@/components/layout/Header'
 import { chartColors } from '@/lib/chart-config'
 import { getAnalytics } from '@/services/api'
 import type { AnalyticsData } from '@/types/admin.types'

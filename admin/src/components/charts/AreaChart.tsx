@@ -1,15 +1,16 @@
+import { format } from 'date-fns'
 import {
-  AreaChart as RechartsAreaChart,
   Area,
+  CartesianGrid,
+  Legend,
+  AreaChart as RechartsAreaChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts'
-import { format } from 'date-fns'
-import { chartTheme, chartColors, formatAxisNumber } from '@/lib/chart-config'
+
+import { chartColors, chartTheme, formatAxisNumber } from '@/lib/chart-config'
 
 interface DataPoint {
   date: string
@@ -44,7 +45,10 @@ export function AreaChart({
   return (
     <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RechartsAreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <RechartsAreaChart
+          data={data}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.2} />
@@ -75,10 +79,15 @@ export function AreaChart({
           <Tooltip
             contentStyle={chartTheme.tooltip.contentStyle}
             labelStyle={chartTheme.tooltip.labelStyle}
-            formatter={(value: number) => [formatValue ? formatValue(value) : value.toLocaleString(), name]}
+            formatter={(value: number) => [
+              formatValue ? formatValue(value) : value.toLocaleString(),
+              name,
+            ]}
             labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
           />
-          {showLegend && <Legend wrapperStyle={chartTheme.legend.wrapperStyle} />}
+          {showLegend && (
+            <Legend wrapperStyle={chartTheme.legend.wrapperStyle} />
+          )}
           <Area
             type="monotone"
             dataKey={dataKey}

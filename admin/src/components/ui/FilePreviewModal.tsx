@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { X, Download, FileText, Image, File } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Download, File, FileText, Image, X } from 'lucide-react'
+
 import { formatBytes } from '@/lib/chart-config'
 
 interface FilePreviewModalProps {
@@ -33,7 +34,8 @@ export function FilePreviewModal({
 
   const isImage = file?.mimeType.startsWith('image/')
   const isPdf = file?.mimeType === 'application/pdf'
-  const isText = file?.mimeType.startsWith('text/') || file?.mimeType === 'application/json'
+  const isText =
+    file?.mimeType.startsWith('text/') || file?.mimeType === 'application/json'
   const canPreview = isImage || isPdf || isText
 
   function getFileIcon() {
@@ -45,21 +47,19 @@ export function FilePreviewModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-card border border-border rounded-lg shadow-xl w-[90vw] h-[90vh] max-w-6xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="text-muted-foreground">
-              {getFileIcon()}
-            </div>
+            <div className="text-muted-foreground">{getFileIcon()}</div>
             <div className="min-w-0">
-              <h2 className="text-sm font-medium text-foreground truncate" title={file?.name}>
+              <h2
+                className="text-sm font-medium text-foreground truncate"
+                title={file?.name}
+              >
                 {file?.name || 'Loading...'}
               </h2>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -101,11 +101,15 @@ export function FilePreviewModal({
         <div className="flex-1 overflow-hidden bg-muted/30">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-sm text-muted-foreground">Loading preview...</div>
+              <div className="text-sm text-muted-foreground">
+                Loading preview...
+              </div>
             </div>
           ) : !downloadUrl ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-sm text-muted-foreground">Failed to load file</div>
+              <div className="text-sm text-muted-foreground">
+                Failed to load file
+              </div>
             </div>
           ) : !canPreview || iframeError ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">

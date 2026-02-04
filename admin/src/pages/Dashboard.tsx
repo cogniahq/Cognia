@@ -1,14 +1,32 @@
-import { useState, useEffect } from 'react'
-import { Users, Building2, Brain, FileText, Search, DollarSign, HardDrive, TrendingUp, Eye } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import {
+  Brain,
+  Building2,
+  DollarSign,
+  Eye,
+  FileText,
+  HardDrive,
+  Search,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+
+import { AreaChart, BarChart } from '@/components/charts'
 import { Header } from '@/components/layout/Header'
+import { FilePreviewModal } from '@/components/ui/FilePreviewModal'
 import { StatCard } from '@/components/ui/StatCard'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
-import { AreaChart, BarChart } from '@/components/charts'
-import { FilePreviewModal } from '@/components/ui/FilePreviewModal'
-import { chartColors } from '@/lib/chart-config'
-import { formatBytes } from '@/lib/chart-config'
-import { getDashboard, getStorageAnalytics, getDocumentDownloadUrl } from '@/services/api'
-import type { DashboardStats, StorageAnalytics, LargestFile } from '@/types/admin.types'
+import { chartColors, formatBytes } from '@/lib/chart-config'
+import {
+  getDashboard,
+  getDocumentDownloadUrl,
+  getStorageAnalytics,
+} from '@/services/api'
+import type {
+  DashboardStats,
+  LargestFile,
+  StorageAnalytics,
+} from '@/types/admin.types'
 
 function formatCost(cost: number): string {
   return '$' + cost.toFixed(2)
@@ -91,16 +109,18 @@ export function DashboardPage() {
   }
 
   // Prepare storage by org data for horizontal bar chart (top 5)
-  const storageByOrgData = storageData?.storageByOrganization.slice(0, 5).map(org => ({
-    name: org.name.length > 12 ? org.name.slice(0, 12) + '...' : org.name,
-    value: org.size,
-  })) || []
+  const storageByOrgData =
+    storageData?.storageByOrganization.slice(0, 5).map((org) => ({
+      name: org.name.length > 12 ? org.name.slice(0, 12) + '...' : org.name,
+      value: org.size,
+    })) || []
 
   // Prepare storage by file type data for bar chart (top 6)
-  const storageByTypeData = storageData?.storageByFileType.slice(0, 6).map(ft => ({
-    name: ft.mimeType.split('/')[1]?.slice(0, 8) || ft.mimeType.slice(0, 8),
-    value: ft.size,
-  })) || []
+  const storageByTypeData =
+    storageData?.storageByFileType.slice(0, 6).map((ft) => ({
+      name: ft.mimeType.split('/')[1]?.slice(0, 8) || ft.mimeType.slice(0, 8),
+      value: ft.size,
+    })) || []
 
   return (
     <>
@@ -127,11 +147,7 @@ export function DashboardPage() {
               label="Qdrant"
               detail={`${stats.system.qdrantPoints.toLocaleString()} points`}
             />
-            <StatusIndicator
-              status={true}
-              label="API"
-              detail="Running"
-            />
+            <StatusIndicator status={true} label="API" detail="Running" />
           </div>
         </section>
 
@@ -197,7 +213,9 @@ export function DashboardPage() {
             />
             <StatCard
               label="Today's Tokens"
-              value={(stats.tokenUsage.todayInput + stats.tokenUsage.todayOutput).toLocaleString()}
+              value={(
+                stats.tokenUsage.todayInput + stats.tokenUsage.todayOutput
+              ).toLocaleString()}
               subValue="input + output"
             />
           </div>
@@ -291,19 +309,31 @@ export function DashboardPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="pb-2 text-left text-xs font-mono text-muted-foreground uppercase">File</th>
-                        <th className="pb-2 text-right text-xs font-mono text-muted-foreground uppercase">Size</th>
+                        <th className="pb-2 text-left text-xs font-mono text-muted-foreground uppercase">
+                          File
+                        </th>
+                        <th className="pb-2 text-right text-xs font-mono text-muted-foreground uppercase">
+                          Size
+                        </th>
                         <th className="pb-2 w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
                       {storageData.largestFiles.slice(0, 5).map((file) => (
-                        <tr key={file.id} className="border-b border-border/50 last:border-0 group">
+                        <tr
+                          key={file.id}
+                          className="border-b border-border/50 last:border-0 group"
+                        >
                           <td className="py-2">
-                            <div className="text-sm text-foreground truncate max-w-[180px]" title={file.name}>
+                            <div
+                              className="text-sm text-foreground truncate max-w-[180px]"
+                              title={file.name}
+                            >
                               {file.name}
                             </div>
-                            <div className="text-xs text-muted-foreground">{file.organizationName}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {file.organizationName}
+                            </div>
                           </td>
                           <td className="py-2 text-right font-mono text-sm text-foreground">
                             {formatBytes(file.size)}
@@ -377,17 +407,19 @@ export function DashboardPage() {
               Document Status
             </div>
             <div className="bg-card border border-border rounded-lg overflow-hidden">
-              {Object.entries(stats.documents.byStatus).map(([status, count]) => (
-                <div
-                  key={status}
-                  className="flex items-center justify-between px-4 py-3 border-b border-border last:border-0"
-                >
-                  <span className="text-sm text-foreground">{status}</span>
-                  <span className="text-sm font-mono text-muted-foreground">
-                    {count.toLocaleString()}
-                  </span>
-                </div>
-              ))}
+              {Object.entries(stats.documents.byStatus).map(
+                ([status, count]) => (
+                  <div
+                    key={status}
+                    className="flex items-center justify-between px-4 py-3 border-b border-border last:border-0"
+                  >
+                    <span className="text-sm text-foreground">{status}</span>
+                    <span className="text-sm font-mono text-muted-foreground">
+                      {count.toLocaleString()}
+                    </span>
+                  </div>
+                )
+              )}
             </div>
           </section>
         </div>

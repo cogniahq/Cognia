@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
 import { Shield } from 'lucide-react'
+import { Navigate, useNavigate } from 'react-router-dom'
+
 import { useAuth } from '@/contexts/auth.context'
 
 export function LoginPage() {
@@ -56,7 +57,10 @@ export function LoginPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 p-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white border border-gray-200 p-6"
+        >
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">

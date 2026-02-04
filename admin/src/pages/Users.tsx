@@ -1,12 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { Search, Trash2, Shield, User } from 'lucide-react'
+import { Search, Shield, Trash2, User } from 'lucide-react'
+
 import { Header } from '@/components/layout/Header'
-import { DataTable } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
+import { DataTable } from '@/components/ui/DataTable'
 import { Drawer } from '@/components/ui/Drawer'
-import { listUsers, getUserDetails, updateUserRole, deleteUser } from '@/services/api'
-import type { UserListItem, UserDetails, UserRole, PaginatedResult } from '@/types/admin.types'
+import {
+  deleteUser,
+  getUserDetails,
+  listUsers,
+  updateUserRole,
+} from '@/services/api'
+import type {
+  PaginatedResult,
+  UserDetails,
+  UserListItem,
+  UserRole,
+} from '@/types/admin.types'
 
 export function UsersPage() {
   const [users, setUsers] = useState<PaginatedResult<UserListItem> | null>(null)
@@ -113,7 +124,9 @@ export function UsersPage() {
       label: 'Orgs',
       width: '80px',
       render: (user: UserListItem) => (
-        <span className="font-mono text-xs">{user._count.organization_memberships}</span>
+        <span className="font-mono text-xs">
+          {user._count.organization_memberships}
+        </span>
       ),
     },
     {
@@ -215,7 +228,10 @@ export function UsersPage() {
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Created</span>
                   <span className="text-xs">
-                    {format(new Date(selectedUser.created_at), 'yyyy-MM-dd HH:mm')}
+                    {format(
+                      new Date(selectedUser.created_at),
+                      'yyyy-MM-dd HH:mm'
+                    )}
                   </span>
                 </div>
               </div>
@@ -292,8 +308,12 @@ export function UsersPage() {
                       className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200"
                     >
                       <div>
-                        <div className="text-sm text-gray-900">{m.organization.name}</div>
-                        <div className="text-xs text-gray-500">{m.organization.slug}</div>
+                        <div className="text-sm text-gray-900">
+                          {m.organization.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {m.organization.slug}
+                        </div>
                       </div>
                       <Badge>{m.role}</Badge>
                     </div>
@@ -320,7 +340,9 @@ export function UsersPage() {
                           {format(new Date(m.created_at), 'MM-dd HH:mm')}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 line-clamp-2">{m.content}</p>
+                      <p className="text-xs text-gray-600 line-clamp-2">
+                        {m.content}
+                      </p>
                     </div>
                   ))}
                 </div>

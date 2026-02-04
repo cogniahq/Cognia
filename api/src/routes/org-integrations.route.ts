@@ -102,7 +102,9 @@ router.get(
         },
       })
     } catch (error) {
-      res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to load settings') })
+      res
+        .status(500)
+        .json({ success: false, error: getErrorMessage(error, 'Failed to load settings') })
     }
   }
 )
@@ -165,7 +167,9 @@ router.put(
         },
       })
     } catch (error) {
-      res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to update settings') })
+      res
+        .status(500)
+        .json({ success: false, error: getErrorMessage(error, 'Failed to update settings') })
     }
   }
 )
@@ -349,7 +353,9 @@ router.post(
 
       res.json({ success: true, message: 'Sync started' })
     } catch (error) {
-      res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to start sync') })
+      res
+        .status(500)
+        .json({ success: false, error: getErrorMessage(error, 'Failed to start sync') })
     }
   }
 )

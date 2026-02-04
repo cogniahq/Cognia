@@ -1,11 +1,7 @@
 import fetch from 'node-fetch'
 import { geminiService } from './gemini.service'
 import { tokenTracking } from '../core/token-tracking.service'
-import {
-  retryWithBackoff,
-  isRateLimitError,
-  sleep,
-} from '../../utils/core/retry.util'
+import { retryWithBackoff, isRateLimitError, sleep } from '../../utils/core/retry.util'
 import { logger } from '../../utils/core/logger.util'
 
 type Provider = 'gemini' | 'ollama' | 'hybrid'

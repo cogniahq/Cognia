@@ -34,7 +34,9 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 
     res.json({ success: true, data: available })
   } catch (error) {
-    res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to load integrations') })
+    res
+      .status(500)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to load integrations') })
   }
 })
 
@@ -47,7 +49,9 @@ router.get('/connected', authenticateToken, async (req: AuthenticatedRequest, re
     const integrations = await integrationService.getUserIntegrations(req.user!.id)
     res.json({ success: true, data: integrations })
   } catch (error) {
-    res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to load integrations') })
+    res
+      .status(500)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to load integrations') })
   }
 })
 
@@ -78,7 +82,9 @@ router.post(
 
       res.json({ success: true, data: { authUrl, state } })
     } catch (error) {
-      res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to connect integration') })
+      res
+        .status(500)
+        .json({ success: false, error: getErrorMessage(error, 'Failed to connect integration') })
     }
   }
 )
@@ -178,7 +184,9 @@ router.get('/:provider', authenticateToken, async (req: AuthenticatedRequest, re
 
     res.json({ success: true, data: integration })
   } catch (error) {
-    res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to load integration') })
+    res
+      .status(500)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to load integration') })
   }
 })
 
@@ -206,7 +214,9 @@ router.put(
 
       res.json({ success: true, data: updated })
     } catch (error) {
-      res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to update integration') })
+      res
+        .status(500)
+        .json({ success: false, error: getErrorMessage(error, 'Failed to update integration') })
     }
   }
 )
@@ -237,7 +247,9 @@ router.post(
 
       res.json({ success: true, message: 'Sync started' })
     } catch (error) {
-      res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to start sync') })
+      res
+        .status(500)
+        .json({ success: false, error: getErrorMessage(error, 'Failed to start sync') })
     }
   }
 )
@@ -254,7 +266,9 @@ router.delete('/:provider', authenticateToken, async (req: AuthenticatedRequest,
 
     res.json({ success: true, message: 'Integration disconnected' })
   } catch (error) {
-    res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to disconnect integration') })
+    res
+      .status(500)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to disconnect integration') })
   }
 })
 

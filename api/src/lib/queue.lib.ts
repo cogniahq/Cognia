@@ -19,6 +19,8 @@ export interface ContentJobData {
     tags?: string[]
     memory_id?: string
     source?: string
+    source_type?: 'EXTENSION' | 'BROWSER' | 'MANUAL' | 'REASONING' | 'INTEGRATION'
+    organization_id?: string
     title?: string
     content_type?: string
     content_summary?: string

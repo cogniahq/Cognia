@@ -26,24 +26,50 @@ export class ProfileParserService {
           jsonStr = this.fixJsonAdvanced(jsonStr)
           data = JSON.parse(jsonStr)
         } catch (thirdError) {
-          logger.error('Error parsing profile response after fixes:', thirdError)
+          const errorMessage = thirdError instanceof Error ? thirdError.message : String(thirdError)
+          logger.error('Error parsing profile response after fixes:', {
+            error: errorMessage,
+            errorType: thirdError?.constructor?.name || 'Unknown',
+          })
           logger.error('JSON string (first 1000 chars):', jsonStr.substring(0, 1000))
           logger.error(
             'JSON string (last 500 chars):',
             jsonStr.substring(Math.max(0, jsonStr.length - 500))
           )
-          throw new Error('Failed to parse JSON after fixes')
+          throw new Error(`Failed to parse JSON after fixes: ${errorMessage}`)
         }
       }
     }
 
-    if (!data.static_profile_json || !data.dynamic_profile_json) {
-      logger.warn('Invalid profile structure: missing required fields', {
+    // Require at least static_profile_json, make dynamic optional with fallback
+    if (!data.static_profile_json) {
+      logger.warn('Invalid profile structure: missing static_profile_json', {
         hasStatic: !!data.static_profile_json,
         hasDynamic: !!data.dynamic_profile_json,
         dataKeys: Object.keys(data),
       })
-      throw new Error('Invalid profile structure: missing required fields')
+      throw new Error('Invalid profile structure: missing static_profile_json')
+    }
+
+    // If dynamic_profile_json is missing, create an empty one
+    if (!data.dynamic_profile_json) {
+      logger.warn('Missing dynamic_profile_json, using empty default', {
+        dataKeys: Object.keys(data),
+      })
+      data.dynamic_profile_json = {
+        recent_activities: [],
+        current_projects: [],
+        temporary_interests: [],
+        recent_changes: [],
+        current_context: [],
+        active_goals: [],
+        current_challenges: [],
+        recent_achievements: [],
+        current_focus_areas: [],
+        emotional_state: {},
+        active_research_topics: [],
+        upcoming_events: [],
+      }
     }
 
     return {

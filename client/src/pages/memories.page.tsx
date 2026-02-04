@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { useAuth } from "@/contexts/auth.context"
 import { requireAuthToken } from "@/utils/auth"
 import { useNavigate } from "react-router-dom"
 
@@ -11,6 +12,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 
 export const Memories: React.FC = () => {
   const navigate = useNavigate()
+  const { accountType, isLoading: authLoading } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
@@ -21,6 +23,13 @@ export const Memories: React.FC = () => {
       navigate("/login")
     }
   }, [navigate])
+
+  // Redirect ORGANIZATION users to their dashboard
+  useEffect(() => {
+    if (!authLoading && accountType === "ORGANIZATION") {
+      navigate("/organization")
+    }
+  }, [accountType, authLoading, navigate])
 
   const similarityThreshold = 0.3
   const { memories, totalMemoryCount } = useMemories()
@@ -133,6 +142,10 @@ export const Memories: React.FC = () => {
                     <span className="flex items-center gap-2 text-xs text-gray-700">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />{" "}
                       Manual/Docs
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-gray-700">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" />{" "}
+                      Integrations
                     </span>
                     <span className="flex items-center gap-2 text-xs text-gray-700">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-400" />{" "}

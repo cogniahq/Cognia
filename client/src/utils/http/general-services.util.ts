@@ -59,6 +59,21 @@ export const patchRequest = async (
   }
 }
 
+export const putRequest = async (
+  route: string,
+  data: any,
+  callback?: (res: AxiosResponse) => void
+) => {
+  try {
+    const res = await axiosInstance.put(route, data)
+    if (callback) callback(res)
+    return res
+  } catch (err: any) {
+    if (callback) callback(err)
+    return err.response
+  }
+}
+
 export const deleteRequest = async (
   route: string,
   callback?: (res: AxiosResponse) => void

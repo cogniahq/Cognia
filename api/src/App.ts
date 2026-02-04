@@ -18,10 +18,12 @@ import { routes } from './routes/index.route'
 import { prisma } from './lib/prisma.lib'
 import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
+import { startDocumentWorker } from './workers/document-worker'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
 import { getMorganOutputMode } from './utils/core/env.util'
+import { integrationService } from './services/integration'
 
 dotenv.config()
 
@@ -202,7 +204,10 @@ const SEARCH_TIMEOUT_MS = Number(process.env.SEARCH_TIMEOUT_MS || 360000) // 6 m
 const EMAIL_DRAFT_TIMEOUT_MS = Number(process.env.EMAIL_DRAFT_TIMEOUT_MS || 360000) // 6 minutes for email drafts (allows for queue delays)
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const isSearchRequest = req.path === '/api/search' && req.method === 'POST'
+  // Check for any search-related endpoints
+  const isSearchRequest =
+    (req.path === '/api/search' && req.method === 'POST') ||
+    (req.path.startsWith('/api/search/organization/') && req.method === 'POST')
   const isEmailDraftRequest = req.path === '/api/content/email/draft' && req.method === 'POST'
   const timeoutMs = isSearchRequest
     ? SEARCH_TIMEOUT_MS
@@ -280,6 +285,14 @@ server.listen(port, async () => {
   logger.log('[startup] content_worker_started')
   startCyclicProfileWorker()
   logger.log('[startup] profile_worker_started')
+  startDocumentWorker()
+  logger.log('[startup] document_worker_started')
+  try {
+    await integrationService.initialize()
+    logger.log('[startup] integration_service_ready')
+  } catch (e) {
+    logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
+  }
   logger.log('[startup] server_listening', { protocol, port })
 })
 process.on('unhandledRejection', (err: Error) => {
@@ -293,3 +306,27 @@ process.on('unhandledRejection', (err: Error) => {
     process.exit(1)
   })
 })
+
+// Graceful shutdown handling for nodemon restarts
+const gracefulShutdown = (signal: string) => {
+  logger.log(`[shutdown] ${signal} received, closing server...`)
+  server.close(async () => {
+    logger.log('[shutdown] HTTP server closed')
+    try {
+      await prisma.$disconnect()
+      logger.log('[shutdown] Database disconnected')
+    } catch (e) {
+      logger.error('[shutdown] Error disconnecting database:', e)
+    }
+    process.exit(0)
+  })
+
+  // Force exit if graceful shutdown takes too long
+  setTimeout(() => {
+    logger.warn('[shutdown] Forced exit after timeout')
+    process.exit(1)
+  }, 5000)
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))

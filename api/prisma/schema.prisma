@@ -20,26 +20,330 @@ enum RelationType {
   temporal
 }
 
+enum OrgRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SourceType {
+  EXTENSION
+  DOCUMENT
+  API
+  INTEGRATION
+}
+
+enum AccountType {
+  PERSONAL
+  ORGANIZATION
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  RATE_LIMITED
+  TOKEN_EXPIRED
+  DISCONNECTED
+}
+
+enum StorageStrategy {
+  METADATA_ONLY
+  FULL_CONTENT
+}
+
+enum SyncFrequency {
+  REALTIME
+  FIFTEEN_MIN
+  HOURLY
+  DAILY
+  MANUAL
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id               String           @id @default(uuid()) @db.Uuid
-  email            String?          @unique
-  password_hash    String?
-  role             UserRole         @default(USER)
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @default(now()) @updatedAt
-  memories         Memory[]
-  memory_snapshots MemorySnapshot[]
-  token_usage      TokenUsage[]
-  profile          UserProfile?
-  browsing_summaries BrowsingSummary[]
-  audit_logs       AuditLog[]
+  id                       String               @id @default(uuid()) @db.Uuid
+  email                    String?              @unique
+  password_hash            String?
+  role                     UserRole             @default(USER)
+  account_type             AccountType          @default(PERSONAL)
+  created_at               DateTime             @default(now())
+  updated_at               DateTime             @default(now()) @updatedAt
+
+  // 2FA fields
+  two_factor_enabled       Boolean              @default(false)
+  two_factor_secret        String?              // Encrypted TOTP secret
+  two_factor_backup_codes  String[]             @default([]) // Hashed backup codes
+
+  memories                 Memory[]
+  memory_snapshots         MemorySnapshot[]
+  token_usage              TokenUsage[]
+  profile                  UserProfile?
+  browsing_summaries       BrowsingSummary[]
+  audit_logs               AuditLog[]
+  organization_memberships OrganizationMember[]
+  uploaded_documents       Document[]
+  integrations             UserIntegration[]
 
   @@map("users")
+}
+
+model Organization {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String               @unique
+  description String?
+  created_at  DateTime             @default(now())
+  updated_at  DateTime             @updatedAt
+
+  // Enterprise profile fields
+  industry      String?
+  team_size     String?              // "1-10", "11-50", "51-200", "200+"
+  logo          String?              // URL to uploaded logo
+  website       String?
+  street_address String?
+  city          String?
+  state_region  String?
+  postal_code   String?
+  country       String?
+  timezone      String?
+
+  // Billing fields
+  legal_name     String?
+  billing_email  String?
+  billing_address Json?              // Full address object
+  vat_tax_id     String?
+  plan           String              @default("free") // "free", "pro", "enterprise"
+
+  // Security fields
+  data_residency   String            @default("auto")
+  require_2fa      Boolean           @default(false)
+  session_timeout  String            @default("7d")
+  password_policy  String            @default("standard")
+  audit_retention  String            @default("90d")
+  ip_allowlist     String[]          @default([])
+  sso_enabled      Boolean           @default(false)
+  sso_config       Json?
+
+  // Integration sync settings (org-wide defaults)
+  default_sync_frequency    SyncFrequency  @default(HOURLY)
+  custom_sync_interval_min  Int?           // Custom interval in minutes (overrides default_sync_frequency if set)
+
+  // Setup tracking
+  setup_completed_steps  String[]    @default([])
+  setup_started_at       DateTime?
+  setup_completed_at     DateTime?
+  security_prompt_shown  Boolean     @default(false)
+
+  // Relations
+  members      OrganizationMember[]
+  documents    Document[]
+  memories     Memory[]
+  invitations  OrganizationInvitation[]
+  integrations OrganizationIntegration[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id              String       @id @default(uuid()) @db.Uuid
+  organization_id String       @db.Uuid
+  user_id         String       @db.Uuid
+  role            OrgRole      @default(VIEWER)
+  created_at      DateTime     @default(now())
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, user_id])
+  @@index([organization_id])
+  @@index([user_id])
+  @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id              String       @id @default(uuid()) @db.Uuid
+  organization_id String       @db.Uuid
+  email           String
+  role            OrgRole      @default(VIEWER)
+  invited_by      String       @db.Uuid
+  token           String       @unique
+  expires_at      DateTime
+  accepted_at     DateTime?
+  created_at      DateTime     @default(now())
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, email])
+  @@index([token])
+  @@index([organization_id])
+  @@map("organization_invitations")
+}
+
+model OrganizationIntegration {
+  id               String            @id @default(uuid()) @db.Uuid
+  organization_id  String            @db.Uuid
+  provider         String            // "slack", "google_drive", etc.
+  access_token     String            // Encrypted
+  refresh_token    String?           // Encrypted
+  token_expires_at DateTime?
+  config           Json?
+  status           IntegrationStatus @default(ACTIVE)
+  storage_strategy StorageStrategy   @default(FULL_CONTENT)
+  sync_frequency   SyncFrequency     @default(HOURLY)
+  last_sync_at     DateTime?
+  last_error       String?
+  webhook_id       String?           // External webhook registration ID
+  connected_by     String            @db.Uuid
+  connected_at     DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  organization     Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, provider])
+  @@index([organization_id])
+  @@index([status])
+  @@map("organization_integrations")
+}
+
+model UserIntegration {
+  id               String            @id @default(uuid()) @db.Uuid
+  user_id          String            @db.Uuid
+  provider         String            // "google_drive", "slack", etc.
+  access_token     String            // Encrypted
+  refresh_token    String?           // Encrypted
+  token_expires_at DateTime?
+  config           Json?             // User-specific settings
+  status           IntegrationStatus @default(ACTIVE)
+  storage_strategy StorageStrategy   @default(FULL_CONTENT)
+  sync_frequency   SyncFrequency     @default(HOURLY)
+  last_sync_at     DateTime?
+  last_error       String?
+  webhook_id       String?           // External webhook registration ID
+  connected_at     DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, provider])
+  @@index([user_id])
+  @@index([status])
+  @@map("user_integrations")
+}
+
+model IntegrationRegistry {
+  id            String   @id @default(uuid()) @db.Uuid
+  provider      String   @unique
+  enabled       Boolean  @default(true)
+  allowed_plans String[] @default([]) // Empty = all plans allowed
+  default_config Json    @default("{}")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("integration_registry")
+}
+
+model IntegrationSyncJob {
+  id               String        @id @default(uuid()) @db.Uuid
+  integration_id   String
+  integration_type String        // 'user' | 'organization'
+  provider         String
+  mode             String        // 'full' | 'incremental' | 'webhook'
+  status           SyncJobStatus @default(PENDING)
+  started_at       DateTime      @default(now())
+  completed_at     DateTime?
+  resources_found  Int           @default(0)
+  resources_synced Int           @default(0)
+  resources_failed Int           @default(0)
+  error_message    String?
+  error_details    Json?
+  cursor           String?       // For resumable syncs
+
+  @@index([integration_id, integration_type])
+  @@index([status])
+  @@index([started_at])
+  @@map("integration_sync_jobs")
+}
+
+model SyncedResource {
+  id               String   @id @default(uuid()) @db.Uuid
+  integration_id   String
+  integration_type String   // 'user' | 'organization'
+  external_id      String   // ID in the external system
+  resource_type    String   // 'file', 'message', 'page', etc.
+  content_hash     String   // For change detection
+  memory_id        String?  @db.Uuid // Link to created memory
+  last_synced_at   DateTime @default(now())
+  excluded         Boolean  @default(false) // If true, skip during resync
+  excluded_at      DateTime? // When it was excluded
+  excluded_by      String?  @db.Uuid // User who excluded it
+
+  @@unique([integration_id, integration_type, external_id])
+  @@index([integration_id, integration_type])
+  @@index([memory_id])
+  @@index([excluded])
+  @@map("synced_resources")
+}
+
+model Document {
+  id               String         @id @default(uuid()) @db.Uuid
+  organization_id  String         @db.Uuid
+  uploader_id      String         @db.Uuid
+  filename         String
+  original_name    String
+  mime_type        String
+  file_size        Int
+  storage_path     String
+  storage_provider String         @default("local")
+  status           DocumentStatus @default(PENDING)
+  error_message    String?
+  page_count       Int?
+  metadata         Json?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  organization     Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  uploader         User           @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
+  chunks           DocumentChunk[]
+
+  @@index([organization_id])
+  @@index([uploader_id])
+  @@index([status])
+  @@index([organization_id, status])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id           String   @id @default(uuid()) @db.Uuid
+  document_id  String   @db.Uuid
+  chunk_index  Int
+  content      String
+  page_number  Int?
+  char_start   Int?
+  char_end     Int?
+  memory_id    String?  @db.Uuid
+  created_at   DateTime @default(now())
+  document     Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  memory       Memory?  @relation(fields: [memory_id], references: [id], onDelete: SetNull)
+
+  @@unique([document_id, chunk_index])
+  @@index([document_id])
+  @@index([memory_id])
+  @@map("document_chunks")
 }
 
 model AuditLog {
@@ -79,10 +383,14 @@ model Memory {
   importance_score       Float?               @default(0.0)
   access_count           Int                  @default(0)
   last_accessed          DateTime             @default(now())
+  source_type            SourceType?          @default(EXTENSION)
+  organization_id        String?              @db.Uuid
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization           Organization?        @relation(fields: [organization_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
   query_related_memories QueryRelatedMemory[]
+  document_chunks        DocumentChunk[]
 
   @@index([user_id])
   @@index([created_at])
@@ -93,6 +401,8 @@ model Memory {
   @@index([user_id, importance_score])
   @@index([user_id, memory_type])
   @@index([last_accessed])
+  @@index([organization_id])
+  @@index([source_type])
   @@unique([user_id, canonical_hash])
   @@map("memories")
 }

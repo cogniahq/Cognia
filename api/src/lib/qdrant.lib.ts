@@ -86,6 +86,32 @@ export async function ensureCollection(): Promise<void> {
           field_schema: 'keyword',
         })
       }
+
+      // Add organization and source type indexes for document intelligence
+      const needsOrgIdIndex = !payloadIndexes.organization_id
+      const needsSourceTypeIndex = !payloadIndexes.source_type
+      const needsDocumentIdIndex = !payloadIndexes.document_id
+
+      if (needsOrgIdIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'organization_id',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsSourceTypeIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'source_type',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsDocumentIdIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'document_id',
+          field_schema: 'keyword',
+        })
+      }
     } catch (indexError) {
       logger.warn('Error creating payload indexes (may already exist):', indexError)
     }

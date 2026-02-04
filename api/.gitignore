@@ -15,3 +15,5 @@ certs/
 # Log files
 logs/
 *.log
+
+uploads/

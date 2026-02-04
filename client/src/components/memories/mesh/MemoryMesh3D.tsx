@@ -18,6 +18,10 @@ interface MemoryMesh3DProps {
   onMeshLoad?: (mesh: MemoryMesh) => void
   memorySources?: Record<string, string>
   memoryUrls?: Record<string, string>
+  // Optional external mesh data (for organization meshes)
+  externalMeshData?: MemoryMesh | null
+  externalIsLoading?: boolean
+  externalError?: string | null
 }
 
 const ControlsUpdater: React.FC<{
@@ -40,13 +44,25 @@ const MemoryMesh3D: React.FC<MemoryMesh3DProps> = ({
   onMeshLoad,
   memorySources,
   memoryUrls,
+  externalMeshData,
+  externalIsLoading,
+  externalError,
 }) => {
   const [isCompactView, setIsCompactView] = useState(false)
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
-  const { meshData, isLoading, error } = useMemoryMesh(
-    similarityThreshold,
-    onMeshLoad
+
+  // Use external data if provided, otherwise use the hook
+  const useExternalData = externalMeshData !== undefined
+  const internalHook = useMemoryMesh(
+    useExternalData ? 0 : similarityThreshold,
+    useExternalData ? undefined : onMeshLoad
   )
+
+  const meshData = useExternalData ? externalMeshData : internalHook.meshData
+  const isLoading = useExternalData
+    ? (externalIsLoading ?? false)
+    : internalHook.isLoading
+  const error = useExternalData ? externalError : internalHook.error
 
   useEffect(() => {
     if (!controlsRef.current) return

@@ -68,6 +68,13 @@ export class MemoryMeshService {
   ): Promise<void> {
     try {
       await ensureCollection()
+
+      // Fetch memory to get organization_id and source_type
+      const memory = await prisma.memory.findUnique({
+        where: { id: memoryId },
+        select: { organization_id: true, source_type: true },
+      })
+
       const embeddingResult = await aiProvider.generateEmbedding(text)
       const embedding: number[] =
         typeof embeddingResult === 'object' && 'embedding' in embeddingResult
@@ -87,6 +94,9 @@ export class MemoryMeshService {
               embedding_type: type,
               model_name: GEMINI_EMBED_MODEL,
               created_at: new Date().toISOString(),
+              // Document intelligence fields
+              organization_id: memory?.organization_id || null,
+              source_type: memory?.source_type || 'EXTENSION',
             },
           },
         ],
@@ -621,6 +631,406 @@ export class MemoryMeshService {
     }
   }
 
+  async getMemoryMeshForMemoryIds(
+    memoryIds: string[],
+    limit: number = Infinity,
+    similarityThreshold: number = 0.4,
+    options?: {
+      sourceType?: 'EXTENSION' | 'DOCUMENT' | 'API' | 'INTEGRATION'
+      organizationId?: string
+    }
+  ): Promise<{
+    nodes: Array<{ id: string; x: number; y: number; z?: number; title?: string; url?: string }>
+    edges: MemoryEdge[]
+  }> {
+    if (memoryIds.length === 0) {
+      return { nodes: [], edges: [] }
+    }
+
+    // Build where clause with optional filters
+    const whereClause: {
+      id: { in: string[] }
+      source_type?: 'EXTENSION' | 'DOCUMENT' | 'API' | 'INTEGRATION'
+      organization_id?: string
+    } = {
+      id: { in: memoryIds },
+    }
+
+    if (options?.sourceType) {
+      whereClause.source_type = options.sourceType
+    }
+
+    if (options?.organizationId) {
+      whereClause.organization_id = options.organizationId
+    }
+
+    // Fetch the memories by IDs with optional filters
+    const memories = (await prisma.memory.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        title: true,
+        url: true,
+        created_at: true,
+        source: true,
+        timestamp: true,
+        importance_score: true,
+        user_id: true,
+        content: true,
+        page_metadata: true,
+        canonical_text: true,
+        source_type: true,
+        organization_id: true,
+      },
+      orderBy: { created_at: 'desc' },
+      take: Number.isFinite(limit) ? limit : undefined,
+    })) as MemoryWithMetadata[]
+
+    // Use the shared mesh calculation logic
+    return this.buildMeshFromMemories(memories, similarityThreshold)
+  }
+
+  private async buildMeshFromMemories(
+    memories: MemoryWithMetadata[],
+    similarityThreshold: number = 0.4
+  ): Promise<{
+    nodes: Array<{ id: string; x: number; y: number; z?: number; title?: string; url?: string }>
+    edges: MemoryEdge[]
+  }> {
+    if (memories.length === 0) {
+      return { nodes: [], edges: [] }
+    }
+
+    const latentCoords = await meshCalculationService.computeLatentSpaceProjection(memories)
+
+    const nodes = memories.map((memory, index: number) => {
+      let x, y, z
+
+      if (latentCoords.has(memory.id)) {
+        const coords = latentCoords.get(memory.id)!
+        x = coords.x
+        y = coords.y
+        z = coords.z ?? 0
+      } else {
+        const gridSize = Math.ceil(Math.sqrt(memories.length))
+        const row = Math.floor(index / gridSize)
+        const col = index % gridSize
+        const jitter = (seed: string, salt: string) => {
+          let h = 2166136261
+          const s = seed + '|' + salt
+          for (let i = 0; i < s.length; i++) {
+            h ^= s.charCodeAt(i)
+            h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)
+          }
+          return ((h >>> 0) % 1000) / 1000 - 0.5
+        }
+        const jx = jitter(memory.id, 'x')
+        const jy = jitter(memory.id, 'y')
+        x = (col - gridSize / 2) * 200 + jx * 100
+        y = (row - gridSize / 2) * 200 + jy * 100
+        const jz = jitter(memory.id, 'z')
+        z = jz * 300
+      }
+
+      const preview = buildContentPreview(
+        memory.canonical_text || memory.content || memory.title || ''
+      )
+
+      return {
+        id: memory.id,
+        type: memory.source || 'extension',
+        label: memory.title || preview.substring(0, 20) || 'Memory',
+        memory_id: memory.id,
+        title: memory.title,
+        preview,
+        url: memory.url,
+        source: memory.source || 'extension',
+        timestamp: memory.timestamp,
+        importance_score: memory.importance_score || 0.5,
+        x,
+        y,
+        hasEmbedding: latentCoords.has(memory.id),
+        z,
+        clusterId: undefined as number | undefined,
+        layout: {
+          isLatentSpace: latentCoords.has(memory.id),
+          cluster: memory.source || 'extension',
+          centrality: 0,
+        },
+      }
+    })
+
+    const rawEdges: MemoryEdge[] = []
+
+    const getDomain = (url?: string | null) => {
+      try {
+        if (!url) return null
+        const u = new URL(url)
+        return u.hostname.replace(/^www\./, '')
+      } catch {
+        return null
+      }
+    }
+
+    const nodeCount = nodes.length
+    const k = Math.min(15, Math.max(5, Math.floor(Math.sqrt(Math.max(1, nodeCount)))))
+    const minDegree = Math.min(5, Math.max(2, Math.floor(k / 2)))
+
+    const nodeIdToDomain = new Map<string, string | null>(nodes.map(n => [n.id, getDomain(n.url)]))
+    const nodeIdToSource = new Map<string, string | null>(nodes.map(n => [n.id, n.source || null]))
+    const nodeIdToTimestamp = new Map<string, number | null>(
+      nodes.map(n => [n.id, n.timestamp ? Number(n.timestamp) : null])
+    )
+
+    const nodesWithCoords = nodes.filter(n => latentCoords.has(n.id))
+    if (nodesWithCoords.length === 0) {
+      return {
+        nodes: nodes.map(n => ({
+          id: n.id,
+          x: n.x,
+          y: n.y,
+          z: n.z,
+          title: n.title,
+          url: n.url,
+        })),
+        edges: [],
+      }
+    }
+
+    const gridSize = Math.ceil(Math.sqrt(nodesWithCoords.length))
+    const gridCellSize = 2000 / gridSize
+    const spatialGrid = new Map<
+      string,
+      Array<{ node: (typeof nodes)[0]; coord: { x: number; y: number; z: number } }>
+    >()
+
+    nodesWithCoords.forEach(node => {
+      const coord = latentCoords.get(node.id)!
+      const gridX = Math.floor((coord.x + 1000) / gridCellSize)
+      const gridY = Math.floor((coord.y + 1000) / gridCellSize)
+      const gridKey = `${gridX},${gridY}`
+
+      if (!spatialGrid.has(gridKey)) {
+        spatialGrid.set(gridKey, [])
+      }
+      spatialGrid.get(gridKey)!.push({ node, coord })
+    })
+
+    const nodeDistancesMap = new Map<string, Array<{ targetId: string; distance: number }>>()
+    const allDistances: number[] = []
+    const searchRadius = 2
+
+    nodesWithCoords.forEach(node => {
+      const coord = latentCoords.get(node.id)!
+      const gridX = Math.floor((coord.x + 1000) / gridCellSize)
+      const gridY = Math.floor((coord.y + 1000) / gridCellSize)
+      const distances: Array<{ targetId: string; distance: number }> = []
+
+      for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+        for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+          const checkKey = `${gridX + dx},${gridY + dy}`
+          const cellNodes = spatialGrid.get(checkKey)
+          if (!cellNodes) continue
+
+          cellNodes.forEach(({ node: otherNode, coord: otherCoord }) => {
+            if (node.id === otherNode.id) return
+
+            const dx = coord.x - otherCoord.x
+            const dy = coord.y - otherCoord.y
+            const dz = (coord.z ?? 0) - (otherCoord.z ?? 0)
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+            distances.push({ targetId: otherNode.id, distance })
+            allDistances.push(distance)
+          })
+        }
+      }
+
+      distances.sort((a, b) => a.distance - b.distance)
+      nodeDistancesMap.set(node.id, distances)
+    })
+
+    allDistances.sort((a, b) => a - b)
+    const percentile95 = Math.floor(allDistances.length * 0.95)
+    const maxDistance =
+      allDistances[percentile95] || (allDistances.length > 0 ? Math.max(...allDistances) : 1)
+
+    // Second pass: calculate similarity scores
+    nodes.forEach(node => {
+      if (!latentCoords.has(node.id)) return
+
+      const distances = nodeDistancesMap.get(node.id)!
+      if (!distances) return
+
+      const nearest = distances.slice(0, k)
+      const chosen = nearest.length >= minDegree ? nearest : distances.slice(0, minDegree)
+
+      chosen.forEach(({ targetId, distance }) => {
+        const normalizedDist = Math.min(1, distance / maxDistance)
+        const baseSim = Math.pow(1 - normalizedDist, 1.5)
+
+        let boost = 0
+        const srcA = nodeIdToSource.get(node.id)
+        const srcB = nodeIdToSource.get(targetId)
+        if (srcA && srcB && srcA === srcB) boost += 0.02
+
+        const domA = nodeIdToDomain.get(node.id)
+        const domB = nodeIdToDomain.get(targetId)
+        if (domA && domB && domA === domB) boost += 0.03
+
+        const tsA = nodeIdToTimestamp.get(node.id)
+        const tsB = nodeIdToTimestamp.get(targetId)
+        if (tsA && tsB) {
+          const dt = Math.abs(tsA - tsB)
+          if (dt <= 60 * 60) boost += 0.02
+          else if (dt <= 24 * 60 * 60) boost += 0.015
+          else if (dt <= 7 * 24 * 60 * 60) boost += 0.01
+        }
+
+        const similarityScore = Math.max(0, Math.min(1, baseSim + boost))
+        if (similarityScore < similarityThreshold) return
+
+        rawEdges.push({
+          source: node.id,
+          target: targetId,
+          relationship_type: 'semantic',
+          similarity_score: similarityScore,
+        })
+      })
+    })
+
+    const edgeMap = new Map<string, MemoryEdge>()
+    rawEdges.forEach(edge => {
+      const key = [edge.source, edge.target].sort().join('_')
+      const existing = edgeMap.get(key)
+      if (!existing || edge.similarity_score > existing.similarity_score) {
+        edgeMap.set(key, edge)
+      }
+    })
+
+    let edges = Array.from(edgeMap.values()).filter(e => e.similarity_score >= similarityThreshold)
+
+    edges.sort((a, b) => b.similarity_score - a.similarity_score)
+
+    edges = meshCalculationService.pruneEdgesMutualKNN(edges, k, similarityThreshold)
+
+    // Ensure minimum degree by adding closest edges if needed
+    const idToNeighbors = new Map<string, MemoryEdge[]>(
+      nodes.map((n): [string, MemoryEdge[]] => [n.id, []])
+    )
+    edges.forEach(e => {
+      idToNeighbors.get(e.source)!.push(e)
+      idToNeighbors.get(e.target)!.push({ ...e, source: e.target, target: e.source })
+    })
+    nodes.forEach(n => {
+      const deg = (idToNeighbors.get(n.id) || []).length
+      if (deg >= minDegree || !latentCoords.has(n.id)) return
+      const nCoord = latentCoords.get(n.id)!
+      const currentlyConnected = new Set((idToNeighbors.get(n.id) || []).map(e => e.target))
+      const candidates = nodes
+        .filter(o => o.id !== n.id && latentCoords.has(o.id) && !currentlyConnected.has(o.id))
+        .map(o => {
+          const oCoord = latentCoords.get(o.id)!
+          const dx = nCoord.x - oCoord.x
+          const dy = nCoord.y - oCoord.y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          const baseSim = Math.max(0, 1 - distance / maxDistance)
+          return {
+            source: n.id,
+            target: o.id,
+            distance,
+            similarity_score: baseSim,
+            relationship_type: 'semantic',
+          }
+        })
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, minDegree - deg)
+        .filter(c => c.similarity_score > similarityThreshold)
+      candidates.forEach(c => edges.push(c))
+    })
+
+    const layoutNodes = nodes
+
+    // Create clusters based on density in latent space (DBSCAN-like)
+    const clusters: { [key: string]: string[] } = {}
+    const clusterAssignments = new Map<string, number>()
+    let nextClusterId = 0
+
+    const visited = new Set<string>()
+    const epsilon = 250
+    const minPoints = 2
+
+    layoutNodes.forEach(node => {
+      if (visited.has(node.id) || !latentCoords.has(node.id)) return
+
+      visited.add(node.id)
+      const nodeCoord = latentCoords.get(node.id)!
+
+      const neighbors: string[] = []
+      const gridX = Math.floor((nodeCoord.x + 1000) / gridCellSize)
+      const gridY = Math.floor((nodeCoord.y + 1000) / gridCellSize)
+
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const checkKey = `${gridX + dx},${gridY + dy}`
+          const cellNodes = spatialGrid.get(checkKey)
+          if (!cellNodes) continue
+
+          cellNodes.forEach(({ node: otherNode, coord: otherCoord }) => {
+            if (node.id === otherNode.id || visited.has(otherNode.id)) return
+
+            const dx = nodeCoord.x - otherCoord.x
+            const dy = nodeCoord.y - otherCoord.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+
+            if (distance <= epsilon) {
+              neighbors.push(otherNode.id)
+            }
+          })
+        }
+      }
+
+      if (neighbors.length >= minPoints) {
+        const clusterId = nextClusterId++
+        const clusterKey = `cluster_${clusterId}`
+        clusters[clusterKey] = [node.id, ...neighbors]
+
+        clusterAssignments.set(node.id, clusterId)
+        neighbors.forEach(nId => {
+          visited.add(nId)
+          clusterAssignments.set(nId, clusterId)
+        })
+      }
+    })
+
+    // Add cluster info to nodes
+    layoutNodes.forEach(node => {
+      if (clusterAssignments.has(node.id)) {
+        node.clusterId = clusterAssignments.get(node.id)
+      }
+    })
+
+    return {
+      nodes: layoutNodes.map(n => ({
+        id: n.id,
+        type: n.type,
+        label: n.label,
+        x: n.x,
+        y: n.y,
+        z: n.z,
+        memory_id: n.memory_id,
+        title: n.title,
+        url: n.url,
+        source: n.source,
+        preview: n.preview,
+        importance_score: n.importance_score,
+        hasEmbedding: n.hasEmbedding,
+        clusterId: n.clusterId,
+        layout: n.layout,
+      })),
+      edges,
+    }
+  }
+
   async getMemoryMesh(
     userId?: string,
     limit: number = 50,
@@ -643,6 +1053,7 @@ export class MemoryMeshService {
           user_id: boolean
           content: boolean
           page_metadata: boolean
+          canonical_text: boolean
         }
         orderBy: { created_at: 'desc' }
         take?: number
@@ -659,6 +1070,7 @@ export class MemoryMeshService {
           user_id: true,
           content: true,
           page_metadata: true,
+          canonical_text: true,
         },
         orderBy: { created_at: 'desc' },
       }
@@ -669,343 +1081,7 @@ export class MemoryMeshService {
 
       const memories = (await prisma.memory.findMany(queryOptions)) as MemoryWithMetadata[]
 
-      const latentCoords = await meshCalculationService.computeLatentSpaceProjection(memories)
-
-      const nodes = memories.map((memory, index: number) => {
-        let x, y, z
-
-        if (latentCoords.has(memory.id)) {
-          const coords = latentCoords.get(memory.id)!
-          x = coords.x
-          y = coords.y
-          z = coords.z ?? 0
-        } else {
-          const gridSize = Math.ceil(Math.sqrt(memories.length))
-          const row = Math.floor(index / gridSize)
-          const col = index % gridSize
-          const jitter = (seed: string, salt: string) => {
-            let h = 2166136261
-            const s = seed + '|' + salt
-            for (let i = 0; i < s.length; i++) {
-              h ^= s.charCodeAt(i)
-              h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)
-            }
-            return ((h >>> 0) % 1000) / 1000 - 0.5
-          }
-          const jx = jitter(memory.id, 'x')
-          const jy = jitter(memory.id, 'y')
-          x = (col - gridSize / 2) * 200 + jx * 100
-          y = (row - gridSize / 2) * 200 + jy * 100
-          const jz = jitter(memory.id, 'z')
-          z = jz * 300
-        }
-
-        const preview = buildContentPreview(
-          memory.canonical_text || memory.content || memory.title || ''
-        )
-
-        return {
-          id: memory.id,
-          type: memory.source || 'extension',
-          label: memory.title || preview.substring(0, 20) || 'Memory',
-          memory_id: memory.id,
-          title: memory.title,
-          preview,
-          url: memory.url,
-          source: memory.source || 'extension',
-          timestamp: memory.timestamp,
-          importance_score: memory.importance_score || 0.5,
-          x,
-          y,
-          hasEmbedding: latentCoords.has(memory.id),
-          z,
-          clusterId: undefined as number | undefined,
-          layout: {
-            isLatentSpace: latentCoords.has(memory.id),
-            cluster: memory.source || 'extension',
-            centrality: 0,
-          },
-        }
-      })
-
-      const rawEdges: MemoryEdge[] = []
-
-      const getDomain = (url?: string | null) => {
-        try {
-          if (!url) return null
-          const u = new URL(url)
-          return u.hostname.replace(/^www\./, '')
-        } catch {
-          return null
-        }
-      }
-
-      const nodeCount = nodes.length
-      const k = Math.min(15, Math.max(5, Math.floor(Math.sqrt(Math.max(1, nodeCount)))))
-      const minDegree = Math.min(5, Math.max(2, Math.floor(k / 2)))
-
-      const nodeIdToDomain = new Map<string, string | null>(
-        nodes.map(n => [n.id, getDomain(n.url)])
-      )
-      const nodeIdToSource = new Map<string, string | null>(
-        nodes.map(n => [n.id, n.source || null])
-      )
-      const nodeIdToTimestamp = new Map<string, number | null>(
-        nodes.map(n => [n.id, n.timestamp ? Number(n.timestamp) : null])
-      )
-
-      const nodesWithCoords = nodes.filter(n => latentCoords.has(n.id))
-      if (nodesWithCoords.length === 0) {
-        return {
-          nodes: nodes.map(n => ({
-            id: n.id,
-            x: n.x,
-            y: n.y,
-            z: n.z,
-            title: n.title,
-            url: n.url,
-          })),
-          edges: [],
-        }
-      }
-
-      const gridSize = Math.ceil(Math.sqrt(nodesWithCoords.length))
-      const gridCellSize = 2000 / gridSize
-      const spatialGrid = new Map<
-        string,
-        Array<{ node: (typeof nodes)[0]; coord: { x: number; y: number; z: number } }>
-      >()
-
-      nodesWithCoords.forEach(node => {
-        const coord = latentCoords.get(node.id)!
-        const gridX = Math.floor((coord.x + 1000) / gridCellSize)
-        const gridY = Math.floor((coord.y + 1000) / gridCellSize)
-        const gridKey = `${gridX},${gridY}`
-
-        if (!spatialGrid.has(gridKey)) {
-          spatialGrid.set(gridKey, [])
-        }
-        spatialGrid.get(gridKey)!.push({ node, coord })
-      })
-
-      const nodeDistancesMap = new Map<string, Array<{ targetId: string; distance: number }>>()
-      const allDistances: number[] = []
-      const searchRadius = 2
-
-      nodesWithCoords.forEach(node => {
-        const coord = latentCoords.get(node.id)!
-        const gridX = Math.floor((coord.x + 1000) / gridCellSize)
-        const gridY = Math.floor((coord.y + 1000) / gridCellSize)
-        const distances: Array<{ targetId: string; distance: number }> = []
-
-        for (let dx = -searchRadius; dx <= searchRadius; dx++) {
-          for (let dy = -searchRadius; dy <= searchRadius; dy++) {
-            const checkKey = `${gridX + dx},${gridY + dy}`
-            const cellNodes = spatialGrid.get(checkKey)
-            if (!cellNodes) continue
-
-            cellNodes.forEach(({ node: otherNode, coord: otherCoord }) => {
-              if (node.id === otherNode.id) return
-
-              const dx = coord.x - otherCoord.x
-              const dy = coord.y - otherCoord.y
-              const dz = (coord.z ?? 0) - (otherCoord.z ?? 0)
-              const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
-              distances.push({ targetId: otherNode.id, distance })
-              allDistances.push(distance)
-            })
-          }
-        }
-
-        distances.sort((a, b) => a.distance - b.distance)
-        nodeDistancesMap.set(node.id, distances)
-      })
-
-      allDistances.sort((a, b) => a - b)
-      const percentile95 = Math.floor(allDistances.length * 0.95)
-      const maxDistance =
-        allDistances[percentile95] || (allDistances.length > 0 ? Math.max(...allDistances) : 1)
-
-      // Second pass: calculate similarity scores
-      nodes.forEach(node => {
-        if (!latentCoords.has(node.id)) return
-
-        const distances = nodeDistancesMap.get(node.id)!
-        if (!distances) return
-
-        const nearest = distances.slice(0, k)
-        const chosen = nearest.length >= minDegree ? nearest : distances.slice(0, minDegree)
-
-        chosen.forEach(({ targetId, distance }) => {
-          // Use inverse distance with proper scaling - closer nodes get higher similarity
-          // Normalize to 0-1 range, then apply non-linear scaling for better distribution
-          const normalizedDist = Math.min(1, distance / maxDistance)
-          const baseSim = Math.pow(1 - normalizedDist, 1.5)
-
-          let boost = 0
-          const srcA = nodeIdToSource.get(node.id)
-          const srcB = nodeIdToSource.get(targetId)
-          if (srcA && srcB && srcA === srcB) boost += 0.02
-
-          const domA = nodeIdToDomain.get(node.id)
-          const domB = nodeIdToDomain.get(targetId)
-          if (domA && domB && domA === domB) boost += 0.03
-
-          const tsA = nodeIdToTimestamp.get(node.id)
-          const tsB = nodeIdToTimestamp.get(targetId)
-          if (tsA && tsB) {
-            const dt = Math.abs(tsA - tsB)
-            if (dt <= 60 * 60) boost += 0.02
-            else if (dt <= 24 * 60 * 60) boost += 0.015
-            else if (dt <= 7 * 24 * 60 * 60) boost += 0.01
-          }
-
-          const similarityScore = Math.max(0, Math.min(1, baseSim + boost))
-          if (similarityScore < similarityThreshold) return
-
-          rawEdges.push({
-            source: node.id,
-            target: targetId,
-            relationship_type: 'semantic',
-            similarity_score: similarityScore,
-          })
-        })
-      })
-
-      const edgeMap = new Map<string, MemoryEdge>()
-      rawEdges.forEach(edge => {
-        const key = [edge.source, edge.target].sort().join('_')
-        const existing = edgeMap.get(key)
-        if (!existing || edge.similarity_score > existing.similarity_score) {
-          edgeMap.set(key, edge)
-        }
-      })
-
-      let edges = Array.from(edgeMap.values()).filter(
-        e => e.similarity_score >= similarityThreshold
-      )
-
-      edges.sort((a, b) => b.similarity_score - a.similarity_score)
-
-      edges = meshCalculationService.pruneEdgesMutualKNN(edges, k, similarityThreshold)
-
-      // Ensure minimum degree by adding closest edges if needed
-      const idToNeighbors = new Map<string, MemoryEdge[]>(
-        nodes.map((n): [string, MemoryEdge[]] => [n.id, []])
-      )
-      edges.forEach(e => {
-        idToNeighbors.get(e.source)!.push(e)
-        idToNeighbors.get(e.target)!.push({ ...e, source: e.target, target: e.source })
-      })
-      nodes.forEach(n => {
-        const deg = (idToNeighbors.get(n.id) || []).length
-        if (deg >= minDegree || !latentCoords.has(n.id)) return
-        // find closest candidates not already connected
-        const nCoord = latentCoords.get(n.id)!
-        const currentlyConnected = new Set((idToNeighbors.get(n.id) || []).map(e => e.target))
-        const candidates = nodes
-          .filter(o => o.id !== n.id && latentCoords.has(o.id) && !currentlyConnected.has(o.id))
-          .map(o => {
-            const oCoord = latentCoords.get(o.id)!
-            const dx = nCoord.x - oCoord.x
-            const dy = nCoord.y - oCoord.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            const baseSim = Math.max(0, 1 - distance / maxDistance)
-            return {
-              source: n.id,
-              target: o.id,
-              distance,
-              similarity_score: baseSim,
-              relationship_type: 'semantic',
-            }
-          })
-          .sort((a, b) => a.distance - b.distance)
-          .slice(0, minDegree - deg)
-          .filter(c => c.similarity_score > similarityThreshold)
-        candidates.forEach(c => edges.push(c))
-      })
-
-      const layoutNodes = nodes
-
-      // Create clusters based on density in latent space (DBSCAN-like)
-      const clusters: { [key: string]: string[] } = {}
-      const clusterAssignments = new Map<string, number>()
-      let nextClusterId = 0
-
-      const visited = new Set<string>()
-      const epsilon = 250
-      const minPoints = 2
-
-      layoutNodes.forEach(node => {
-        if (visited.has(node.id) || !latentCoords.has(node.id)) return
-
-        visited.add(node.id)
-        const nodeCoord = latentCoords.get(node.id)!
-
-        const neighbors: string[] = []
-        const gridX = Math.floor((nodeCoord.x + 1000) / gridCellSize)
-        const gridY = Math.floor((nodeCoord.y + 1000) / gridCellSize)
-
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const checkKey = `${gridX + dx},${gridY + dy}`
-            const cellNodes = spatialGrid.get(checkKey)
-            if (!cellNodes) continue
-
-            cellNodes.forEach(({ node: otherNode, coord: otherCoord }) => {
-              if (node.id === otherNode.id || visited.has(otherNode.id)) return
-
-              const dx = nodeCoord.x - otherCoord.x
-              const dy = nodeCoord.y - otherCoord.y
-              const distance = Math.sqrt(dx * dx + dy * dy)
-
-              if (distance <= epsilon) {
-                neighbors.push(otherNode.id)
-              }
-            })
-          }
-        }
-
-        if (neighbors.length >= minPoints) {
-          const clusterId = nextClusterId++
-          const clusterKey = `cluster_${clusterId}`
-          clusters[clusterKey] = [node.id, ...neighbors]
-
-          clusterAssignments.set(node.id, clusterId)
-          neighbors.forEach(nId => {
-            visited.add(nId)
-            clusterAssignments.set(nId, clusterId)
-          })
-        }
-      })
-
-      // Add cluster info to nodes
-      layoutNodes.forEach(node => {
-        if (clusterAssignments.has(node.id)) {
-          node.clusterId = clusterAssignments.get(node.id)
-        }
-      })
-
-      return {
-        nodes: layoutNodes.map(n => ({
-          id: n.id,
-          type: n.type,
-          label: n.label,
-          x: n.x,
-          y: n.y,
-          z: n.z,
-          memory_id: n.memory_id,
-          title: n.title,
-          url: n.url,
-          source: n.source,
-          preview: n.preview,
-          importance_score: n.importance_score,
-          hasEmbedding: n.hasEmbedding,
-          clusterId: n.clusterId,
-          layout: n.layout,
-        })),
-        edges,
-      }
+      return this.buildMeshFromMemories(memories, similarityThreshold)
     } catch (error) {
       logger.error(`Error getting memory mesh for user ${userId}:`, error)
       throw error

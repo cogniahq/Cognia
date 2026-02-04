@@ -12,6 +12,15 @@ export default defineConfig({
         target: "http://localhost:3000",
         changeOrigin: true,
         secure: false,
+        // Required for SSE to work - disable response buffering
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq, req) => {
+            // Check if this is an SSE request
+            if (req.url?.includes("/stream")) {
+              proxyReq.setHeader("Accept", "text/event-stream")
+            }
+          })
+        },
       },
     },
   },

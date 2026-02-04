@@ -20,6 +20,7 @@ export class OrganizationAccessService {
             id: true,
             name: true,
             slug: true,
+            plan: true,
             // Security settings for middleware
             ip_allowlist: true,
             session_timeout: true,

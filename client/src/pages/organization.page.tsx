@@ -13,6 +13,15 @@ import { useOrganization } from "@/contexts/organization.context"
 import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
 import { MemoryMesh3D } from "@/components/memories/mesh"
 import { useAuth } from "@/contexts/auth.context"
+import { Loader2 } from "lucide-react"
+import {
+  getOrgIntegrationSettings,
+  updateOrgIntegrationSettings,
+  getOrgConnectedIntegrations,
+  syncOrgIntegration,
+  type OrgSyncSettings,
+} from "@/services/integration/integration.service"
+import type { ConnectedIntegration } from "@/types/integration"
 import type { MemoryMeshNode } from "@/types/memory"
 
 export function Organization() {
@@ -389,6 +398,103 @@ function OrganizationSettings() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState("")
 
+  // Integration settings state
+  const [syncSettings, setSyncSettings] = useState<OrgSyncSettings | null>(null)
+  const [connectedIntegrations, setConnectedIntegrations] = useState<ConnectedIntegration[]>([])
+  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(true)
+  const [isSavingSync, setIsSavingSync] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [selectedFrequency, setSelectedFrequency] = useState<string>("HOURLY")
+  const [customInterval, setCustomInterval] = useState<string>("")
+  const [useCustomInterval, setUseCustomInterval] = useState(false)
+  const [syncingProvider, setSyncingProvider] = useState<string | null>(null)
+
+  // Sync frequency options
+  const SYNC_FREQUENCIES = [
+    { value: "REALTIME", label: "Real-time", description: "~1 min polling" },
+    { value: "FIFTEEN_MIN", label: "Every 15 min", description: "Balanced" },
+    { value: "HOURLY", label: "Hourly", description: "Default" },
+    { value: "DAILY", label: "Daily", description: "Low frequency" },
+    { value: "MANUAL", label: "Manual only", description: "No auto-sync" },
+  ]
+
+  // Load integration settings
+  useEffect(() => {
+    if (currentOrganization?.slug) {
+      loadIntegrationSettings()
+    }
+  }, [currentOrganization?.slug])
+
+  const loadIntegrationSettings = async () => {
+    if (!currentOrganization?.slug) return
+    setIsLoadingIntegrations(true)
+    setSyncError(null)
+    try {
+      const [settings, integrations] = await Promise.all([
+        getOrgIntegrationSettings(currentOrganization.slug),
+        getOrgConnectedIntegrations(currentOrganization.slug),
+      ])
+      setSyncSettings(settings)
+      setConnectedIntegrations(integrations)
+      setSelectedFrequency(settings.defaultSyncFrequency)
+      if (settings.customSyncIntervalMin) {
+        setUseCustomInterval(true)
+        setCustomInterval(settings.customSyncIntervalMin.toString())
+      }
+    } catch (err: any) {
+      setSyncError(err.message || "Failed to load settings")
+    } finally {
+      setIsLoadingIntegrations(false)
+    }
+  }
+
+  const handleSaveSyncSettings = async () => {
+    if (!currentOrganization?.slug) return
+    setIsSavingSync(true)
+    setSyncError(null)
+    try {
+      const settings = useCustomInterval && customInterval
+        ? { customSyncIntervalMin: parseInt(customInterval, 10) }
+        : { defaultSyncFrequency: selectedFrequency, customSyncIntervalMin: null }
+
+      const updated = await updateOrgIntegrationSettings(currentOrganization.slug, settings)
+      setSyncSettings(updated)
+    } catch (err: any) {
+      setSyncError(err.message || "Failed to save settings")
+    } finally {
+      setIsSavingSync(false)
+    }
+  }
+
+  const handleSyncIntegration = async (provider: string) => {
+    if (!currentOrganization?.slug) return
+    setSyncingProvider(provider)
+    try {
+      await syncOrgIntegration(currentOrganization.slug, provider)
+      await loadIntegrationSettings()
+    } catch (err: any) {
+      setSyncError(err.message || "Failed to sync")
+    } finally {
+      setSyncingProvider(null)
+    }
+  }
+
+  const formatRelativeTime = (dateStr: string | null) => {
+    if (!dateStr) return "Never"
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return "Just now"
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
+
   const handleDelete = async () => {
     if (!currentOrganization || confirmDelete !== currentOrganization.name)
       return
@@ -437,6 +543,174 @@ function OrganizationSettings() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Integration Sync Settings */}
+      <div>
+        <div className="text-sm font-mono text-gray-600 mb-4 uppercase tracking-wide">
+          [INTEGRATION SYNC SETTINGS]
+        </div>
+
+        {syncError && (
+          <div className="mb-4 px-3 py-2 border border-gray-300 bg-gray-50 text-xs font-mono text-gray-700">
+            {syncError}
+          </div>
+        )}
+
+        {isLoadingIntegrations ? (
+          <div className="flex items-center gap-2 py-4">
+            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+            <span className="text-xs font-mono text-gray-500">Loading...</span>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Default Sync Frequency */}
+            <div className="max-w-md">
+              <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-2">
+                Default Sync Frequency
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                How often integrations should automatically sync new content
+              </p>
+
+              {/* Preset options */}
+              <div className="space-y-2 mb-4">
+                {SYNC_FREQUENCIES.map((freq) => (
+                  <label
+                    key={freq.value}
+                    className={`flex items-center gap-3 p-2 border cursor-pointer transition-colors ${
+                      !useCustomInterval && selectedFrequency === freq.value
+                        ? "border-gray-900 bg-gray-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="syncFrequency"
+                      value={freq.value}
+                      checked={!useCustomInterval && selectedFrequency === freq.value}
+                      onChange={() => {
+                        setSelectedFrequency(freq.value)
+                        setUseCustomInterval(false)
+                      }}
+                      className="sr-only"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm text-gray-900">{freq.label}</span>
+                      <span className="ml-2 text-xs text-gray-500">{freq.description}</span>
+                    </div>
+                    {!useCustomInterval && selectedFrequency === freq.value && (
+                      <span className="text-xs font-mono text-gray-900">Selected</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+
+              {/* Custom interval option */}
+              <label
+                className={`flex items-start gap-3 p-2 border cursor-pointer transition-colors ${
+                  useCustomInterval
+                    ? "border-gray-900 bg-gray-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="syncFrequency"
+                  checked={useCustomInterval}
+                  onChange={() => setUseCustomInterval(true)}
+                  className="sr-only"
+                />
+                <div className="flex-1">
+                  <span className="text-sm text-gray-900">Custom interval</span>
+                  {useCustomInterval && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={customInterval}
+                        onChange={(e) => setCustomInterval(e.target.value)}
+                        min={5}
+                        max={1440}
+                        placeholder="30"
+                        className="w-20 px-2 py-1 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900"
+                      />
+                      <span className="text-xs text-gray-500">minutes (5-1440)</span>
+                    </div>
+                  )}
+                </div>
+              </label>
+
+              {/* Save button */}
+              <button
+                onClick={handleSaveSyncSettings}
+                disabled={isSavingSync}
+                className="mt-4 px-4 py-2 text-xs font-mono bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingSync ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Saving...
+                  </span>
+                ) : (
+                  "Save Settings"
+                )}
+              </button>
+
+              {syncSettings && (
+                <div className="mt-3 text-xs text-gray-500">
+                  Current effective interval: <span className="font-mono">{syncSettings.effectiveIntervalMin}</span> minutes
+                  {syncSettings.effectiveIntervalMin === 0 && " (manual only)"}
+                </div>
+              )}
+            </div>
+
+            {/* Connected Integrations */}
+            {connectedIntegrations.length > 0 && (
+              <div>
+                <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-2">
+                  Connected Integrations
+                </label>
+                <div className="space-y-2 max-w-md">
+                  {connectedIntegrations.map((integration) => (
+                    <div
+                      key={integration.id}
+                      className="flex items-center justify-between p-3 border border-gray-200"
+                    >
+                      <div>
+                        <div className="text-sm text-gray-900 capitalize">
+                          {integration.provider.replace(/_/g, " ")}
+                        </div>
+                        <div className="text-xs font-mono text-gray-500">
+                          Synced: {formatRelativeTime(integration.last_sync_at)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleSyncIntegration(integration.provider)}
+                        disabled={syncingProvider === integration.provider}
+                        className="px-3 py-1 text-xs font-mono border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {syncingProvider === integration.provider ? (
+                          <span className="flex items-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Syncing
+                          </span>
+                        ) : (
+                          "Sync Now"
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {connectedIntegrations.length === 0 && (
+              <div className="text-xs text-gray-500 py-4 border border-dashed border-gray-300 text-center max-w-md">
+                No integrations connected yet
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Danger Zone */}

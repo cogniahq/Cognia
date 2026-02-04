@@ -387,13 +387,12 @@ export class OrganizationController {
         })
       }
 
-      // Build mesh from those memory IDs, filtering to only DOCUMENT source type
+      // Build mesh from those memory IDs (includes DOCUMENT and INTEGRATION source types)
       const mesh = await memoryMeshService.getMemoryMeshForMemoryIds(
         memoryIds,
         limit,
         threshold,
         {
-          sourceType: 'DOCUMENT',
           organizationId: req.organization!.id,
         }
       )

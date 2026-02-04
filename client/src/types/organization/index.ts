@@ -66,17 +66,21 @@ export interface OrganizationWithRole extends Organization {
 export interface Document {
   id: string
   organization_id: string
-  uploader_id: string
+  uploader_id: string | null
   original_name: string
-  storage_path: string
+  storage_path: string | null
   mime_type: string
   size_bytes: number
   status: DocumentStatus
-  error_message?: string
-  page_count?: number
+  error_message?: string | null
+  page_count?: number | null
   metadata?: Record<string, unknown>
   created_at: string
   updated_at: string
+  // Integration-specific fields
+  type?: "document" | "integration"
+  source?: string // e.g., "google_drive", "slack", etc.
+  url?: string | null
 }
 
 export interface DocumentChunk {
@@ -132,4 +136,5 @@ export interface OrganizationSearchResponse {
     memoryId: string
   }>
   totalResults: number
+  answerJobId?: string // Job ID for async answer generation
 }

@@ -9,6 +9,7 @@ export interface OrganizationRequest extends AuthenticatedRequest {
     id: string
     slug: string
     userRole: OrgRole
+    plan: string
     // Security settings
     ip_allowlist: string[]
     session_timeout: string
@@ -48,6 +49,7 @@ export async function requireOrganization(
       id: membership.organization.id,
       slug: membership.organization.slug,
       userRole: membership.role,
+      plan: membership.organization.plan,
       // Security settings
       ip_allowlist: membership.organization.ip_allowlist,
       session_timeout: membership.organization.session_timeout,

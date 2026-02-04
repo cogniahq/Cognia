@@ -351,7 +351,7 @@ export class OrganizationService {
   }
 
   /**
-   * Get all memories for an organization (from document chunks)
+   * Get all memories for an organization (from document chunks and direct organization memories)
    */
   async getOrganizationMemories(organizationId: string, limit: number = 10000) {
     // Get all document chunks with memory_ids for this organization
@@ -370,20 +370,21 @@ export class OrganizationService {
       distinct: ['memory_id'],
     })
 
-    const memoryIds = chunks
+    const chunkMemoryIds = chunks
       .map(c => c.memory_id)
       .filter((id): id is string => id !== null)
 
-    if (memoryIds.length === 0) {
-      return []
-    }
-
-    // Fetch the actual memories
+    // Fetch memories that either:
+    // 1. Are linked via document chunks, OR
+    // 2. Have organization_id set directly (e.g., from integrations)
     const memories = await prisma.memory.findMany({
       where: {
-        id: {
-          in: memoryIds,
-        },
+        OR: [
+          // Memories linked via document chunks
+          ...(chunkMemoryIds.length > 0 ? [{ id: { in: chunkMemoryIds } }] : []),
+          // Memories with direct organization_id (from integrations)
+          { organization_id: organizationId },
+        ],
       },
       include: {
         related_memories: {
@@ -406,6 +407,8 @@ export class OrganizationService {
     logger.log('[organization] memories_fetched', {
       organizationId,
       count: memories.length,
+      fromChunks: chunkMemoryIds.length,
+      fromDirect: memories.length - chunkMemoryIds.length,
     })
 
     return memories
@@ -415,7 +418,8 @@ export class OrganizationService {
    * Get organization memory count
    */
   async getOrganizationMemoryCount(organizationId: string): Promise<number> {
-    const result = await prisma.documentChunk.findMany({
+    // Count memories from document chunks
+    const chunkResult = await prisma.documentChunk.findMany({
       where: {
         document: {
           organization_id: organizationId,
@@ -430,13 +434,26 @@ export class OrganizationService {
       distinct: ['memory_id'],
     })
 
-    return result.length
+    const chunkMemoryIds = new Set(chunkResult.map(r => r.memory_id).filter(Boolean))
+
+    // Count memories with direct organization_id (excluding those already counted)
+    const directCount = await prisma.memory.count({
+      where: {
+        organization_id: organizationId,
+        id: {
+          notIn: Array.from(chunkMemoryIds) as string[],
+        },
+      },
+    })
+
+    return chunkMemoryIds.size + directCount
   }
 
   /**
    * Get memory IDs for an organization (for mesh visualization)
    */
   async getOrganizationMemoryIds(organizationId: string, limit: number = 10000): Promise<string[]> {
+    // Get memory IDs from document chunks
     const chunks = await prisma.documentChunk.findMany({
       where: {
         document: {
@@ -450,12 +467,31 @@ export class OrganizationService {
         memory_id: true,
       },
       distinct: ['memory_id'],
-      take: limit,
     })
 
-    return chunks
+    const chunkMemoryIds = chunks
       .map(c => c.memory_id)
       .filter((id): id is string => id !== null)
+
+    // Get memory IDs with direct organization_id (e.g., from integrations)
+    const directMemories = await prisma.memory.findMany({
+      where: {
+        organization_id: organizationId,
+        id: {
+          notIn: chunkMemoryIds.length > 0 ? chunkMemoryIds : undefined,
+        },
+      },
+      select: {
+        id: true,
+      },
+      take: limit - chunkMemoryIds.length,
+      orderBy: { created_at: 'desc' },
+    })
+
+    const directMemoryIds = directMemories.map(m => m.id)
+
+    // Combine and return up to limit
+    return [...chunkMemoryIds, ...directMemoryIds].slice(0, limit)
   }
 
   // ==========================================

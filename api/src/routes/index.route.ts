@@ -10,6 +10,9 @@ import adminRouter from './admin.route'
 import organizationRouter from './organization.route'
 import documentRouter from './document.route'
 import invitationRouter from './invitation.route'
+import integrationsRouter from './integrations.route'
+import orgIntegrationsRouter from './org-integrations.route'
+import webhooksRouter from './webhooks.route'
 
 export const routes = (app: Express) => {
   app.use('/api/memory', memoryRouter)
@@ -24,6 +27,12 @@ export const routes = (app: Express) => {
   app.use('/api/organizations', organizationRouter)
   // Document routes are mounted under /api/organizations/:slug/documents
   app.use('/api/organizations', documentRouter)
+  // Organization integration routes (admin configurable sync settings)
+  app.use('/api/organizations', orgIntegrationsRouter)
   // Public invitation routes (for accepting invitations)
   app.use('/api/invitations', invitationRouter)
+  // Integration routes
+  app.use('/api/integrations', integrationsRouter)
+  // Webhook routes (external services call these)
+  app.use('/api/webhooks', webhooksRouter)
 }

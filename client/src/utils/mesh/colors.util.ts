@@ -4,6 +4,12 @@ const nodeColors = {
   extension: "#3b82f6",
   reasoning: "#a855f7",
   ai: "#a855f7",
+  // Integration sources
+  integration: "#f59e0b", // amber
+  google_drive: "#f59e0b",
+  slack: "#f59e0b",
+  notion: "#f59e0b",
+  github: "#f59e0b",
 } as Record<string, string>
 
 export function resolveNodeColor(rawType?: string, url?: string): string {

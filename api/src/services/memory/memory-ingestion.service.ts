@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, SourceType } from '@prisma/client'
 import { prisma } from '../../lib/prisma.lib'
 import {
   normalizeText,
@@ -241,9 +241,22 @@ export class MemoryIngestionService {
         ? metadata.title.trim()
         : 'Untitled')
 
-    return {
+    // Determine source_type from metadata or infer from source
+    const sourceValue = (metadata.source as string | undefined) || payload.source || 'extension'
+    let sourceType: SourceType = SourceType.EXTENSION
+    if (metadata.source_type) {
+      sourceType = metadata.source_type as SourceType
+    } else if (['google_drive', 'slack', 'notion', 'github'].includes(sourceValue)) {
+      sourceType = SourceType.INTEGRATION
+    }
+
+    // Get organization_id from metadata if provided
+    const organizationId = metadata.organization_id as string | undefined
+
+    const result: Prisma.MemoryCreateInput = {
       user: { connect: { id: payload.userId } },
-      source: (metadata.source as string | undefined) || payload.source || 'extension',
+      source: sourceValue,
+      source_type: sourceType,
       url,
       title,
       content: sanitizedContent,
@@ -256,6 +269,13 @@ export class MemoryIngestionService {
       confidence_score: confidenceScore,
       memory_type: memoryType,
     }
+
+    // Add organization connection if provided
+    if (organizationId) {
+      result.organization = { connect: { id: organizationId } }
+    }
+
+    return result
   }
 }
 

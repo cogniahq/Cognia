@@ -9,6 +9,7 @@ const router = Router()
 router.post('/', authenticateToken, SearchController.postSearch)
 router.post('/context', authenticateToken, SearchController.getContext)
 router.get('/job/:id', SearchController.getSearchJobStatus)
+router.get('/job/:id/stream', SearchController.streamSearchJob)
 
 // Organization search endpoints
 router.post(

@@ -2,6 +2,19 @@ import React from "react"
 
 import type { MemorySearchResponse } from "../../../types/memory"
 
+// Format source names for display
+const formatSource = (source: string | null | undefined): string => {
+  if (!source) return "UNKNOWN"
+  // Handle integration sources
+  const sourceMap: Record<string, string> = {
+    google_drive: "Google Drive",
+    slack: "Slack",
+    notion: "Notion",
+    github: "GitHub",
+  }
+  return sourceMap[source] || source.replace(/_/g, " ").toUpperCase()
+}
+
 interface SpotlightSearchResultsProps {
   searchQuery: string
   searchResults: MemorySearchResponse | null
@@ -77,11 +90,16 @@ export const SpotlightSearchResults: React.FC<SpotlightSearchResultsProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] font-mono text-gray-500">
-                    {memory.created_at
-                      ? new Date(memory.created_at).toLocaleDateString()
-                      : "NO DATE"}{" "}
-                    • {memory.source || "UNKNOWN"}
+                  <div className="text-[10px] font-mono text-gray-500 flex items-center gap-1.5">
+                    <span>
+                      {memory.created_at
+                        ? new Date(memory.created_at).toLocaleDateString()
+                        : "NO DATE"}
+                    </span>
+                    <span>•</span>
+                    <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
+                      {formatSource(memory.source)}
+                    </span>
                   </div>
                 </div>
               </div>

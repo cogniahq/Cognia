@@ -4,7 +4,7 @@
   "description": "Cognia",
   "main": "App.ts",
   "scripts": {
-    "start": "nodemon src/App.ts",
+    "start": "nodemon",
     "start_cron": "node backupCron.js",
     "build": "tsc --build",
     "start:prod": "pm2 start App.ts --name 'servercode' && pm2 save",
@@ -59,6 +59,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.980.0",
     "@aws-sdk/s3-request-presigner": "^3.980.0",
+    "@cogniahq/integrations": "^0.4.2",
     "@google/genai": "^1.24.0",
     "@prisma/client": "^6.19.0",
     "@qdrant/js-client-rest": "^1.9.0",
@@ -72,6 +73,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "googleapis": "^131.0.0",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.11.0",

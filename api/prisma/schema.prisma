@@ -45,6 +45,36 @@ enum AccountType {
   ORGANIZATION
 }
 
+enum IntegrationStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  RATE_LIMITED
+  TOKEN_EXPIRED
+  DISCONNECTED
+}
+
+enum StorageStrategy {
+  METADATA_ONLY
+  FULL_CONTENT
+}
+
+enum SyncFrequency {
+  REALTIME
+  FIFTEEN_MIN
+  HOURLY
+  DAILY
+  MANUAL
+}
+
+enum SyncJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -72,6 +102,7 @@ model User {
   audit_logs               AuditLog[]
   organization_memberships OrganizationMember[]
   uploaded_documents       Document[]
+  integrations             UserIntegration[]
 
   @@map("users")
 }
@@ -112,6 +143,10 @@ model Organization {
   ip_allowlist     String[]          @default([])
   sso_enabled      Boolean           @default(false)
   sso_config       Json?
+
+  // Integration sync settings (org-wide defaults)
+  default_sync_frequency    SyncFrequency  @default(HOURLY)
+  custom_sync_interval_min  Int?           // Custom interval in minutes (overrides default_sync_frequency if set)
 
   // Setup tracking
   setup_completed_steps  String[]    @default([])
@@ -163,19 +198,106 @@ model OrganizationInvitation {
 }
 
 model OrganizationIntegration {
-  id              String       @id @default(uuid()) @db.Uuid
-  organization_id String       @db.Uuid
-  provider        String       // "slack", "google_drive", etc.
-  access_token    String       // Should be encrypted in production
-  refresh_token   String?
-  config          Json?
-  connected_by    String       @db.Uuid
-  connected_at    DateTime     @default(now())
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  id               String            @id @default(uuid()) @db.Uuid
+  organization_id  String            @db.Uuid
+  provider         String            // "slack", "google_drive", etc.
+  access_token     String            // Encrypted
+  refresh_token    String?           // Encrypted
+  token_expires_at DateTime?
+  config           Json?
+  status           IntegrationStatus @default(ACTIVE)
+  storage_strategy StorageStrategy   @default(FULL_CONTENT)
+  sync_frequency   SyncFrequency     @default(HOURLY)
+  last_sync_at     DateTime?
+  last_error       String?
+  webhook_id       String?           // External webhook registration ID
+  connected_by     String            @db.Uuid
+  connected_at     DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  organization     Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@unique([organization_id, provider])
   @@index([organization_id])
+  @@index([status])
   @@map("organization_integrations")
+}
+
+model UserIntegration {
+  id               String            @id @default(uuid()) @db.Uuid
+  user_id          String            @db.Uuid
+  provider         String            // "google_drive", "slack", etc.
+  access_token     String            // Encrypted
+  refresh_token    String?           // Encrypted
+  token_expires_at DateTime?
+  config           Json?             // User-specific settings
+  status           IntegrationStatus @default(ACTIVE)
+  storage_strategy StorageStrategy   @default(FULL_CONTENT)
+  sync_frequency   SyncFrequency     @default(HOURLY)
+  last_sync_at     DateTime?
+  last_error       String?
+  webhook_id       String?           // External webhook registration ID
+  connected_at     DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, provider])
+  @@index([user_id])
+  @@index([status])
+  @@map("user_integrations")
+}
+
+model IntegrationRegistry {
+  id            String   @id @default(uuid()) @db.Uuid
+  provider      String   @unique
+  enabled       Boolean  @default(true)
+  allowed_plans String[] @default([]) // Empty = all plans allowed
+  default_config Json    @default("{}")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("integration_registry")
+}
+
+model IntegrationSyncJob {
+  id               String        @id @default(uuid()) @db.Uuid
+  integration_id   String
+  integration_type String        // 'user' | 'organization'
+  provider         String
+  mode             String        // 'full' | 'incremental' | 'webhook'
+  status           SyncJobStatus @default(PENDING)
+  started_at       DateTime      @default(now())
+  completed_at     DateTime?
+  resources_found  Int           @default(0)
+  resources_synced Int           @default(0)
+  resources_failed Int           @default(0)
+  error_message    String?
+  error_details    Json?
+  cursor           String?       // For resumable syncs
+
+  @@index([integration_id, integration_type])
+  @@index([status])
+  @@index([started_at])
+  @@map("integration_sync_jobs")
+}
+
+model SyncedResource {
+  id               String   @id @default(uuid()) @db.Uuid
+  integration_id   String
+  integration_type String   // 'user' | 'organization'
+  external_id      String   // ID in the external system
+  resource_type    String   // 'file', 'message', 'page', etc.
+  content_hash     String   // For change detection
+  memory_id        String?  @db.Uuid // Link to created memory
+  last_synced_at   DateTime @default(now())
+  excluded         Boolean  @default(false) // If true, skip during resync
+  excluded_at      DateTime? // When it was excluded
+  excluded_by      String?  @db.Uuid // User who excluded it
+
+  @@unique([integration_id, integration_type, external_id])
+  @@index([integration_id, integration_type])
+  @@index([memory_id])
+  @@index([excluded])
+  @@map("synced_resources")
 }
 
 model Document {

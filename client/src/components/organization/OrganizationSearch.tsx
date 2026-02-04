@@ -1,8 +1,8 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { useOrganization } from "@/contexts/organization.context"
 import * as organizationService from "@/services/organization/organization.service"
 import type { OrganizationSearchResponse } from "@/types/organization"
-import type { DocumentPreviewData } from "@/services/organization/organization.service"
+import type { DocumentPreviewData, AnswerJobResult } from "@/services/organization/organization.service"
 import { DocumentPreviewModal } from "@/components/ui/document-preview-modal"
 
 export function OrganizationSearch() {
@@ -12,11 +12,54 @@ export function OrganizationSearch() {
   const [results, setResults] = useState<OrganizationSearchResponse | null>(null)
   const [error, setError] = useState("")
 
+  // Answer streaming state
+  const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
+  const [answerData, setAnswerData] = useState<AnswerJobResult | null>(null)
+  const [answerElapsed, setAnswerElapsed] = useState(0)
+  const cleanupRef = useRef<(() => void) | null>(null)
+
   // Document preview state
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [previewData, setPreviewData] = useState<DocumentPreviewData | null>(null)
+
+  // Clean up SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current()
+      }
+    }
+  }, [])
+
+  // Subscribe to answer job via SSE
+  const subscribeToAnswer = useCallback((jobId: string) => {
+    setIsLoadingAnswer(true)
+    setAnswerData(null)
+    setAnswerElapsed(0)
+
+    // Clean up any existing subscription
+    if (cleanupRef.current) {
+      cleanupRef.current()
+    }
+
+    cleanupRef.current = organizationService.subscribeToAnswerJob(jobId, {
+      onCompleted: (result) => {
+        setAnswerData(result)
+        setIsLoadingAnswer(false)
+        cleanupRef.current = null
+      },
+      onError: (errorMsg) => {
+        console.error("Answer generation error:", errorMsg)
+        setIsLoadingAnswer(false)
+        cleanupRef.current = null
+      },
+      onHeartbeat: (elapsed) => {
+        setAnswerElapsed(elapsed)
+      },
+    })
+  }, [])
 
   const handleSearch = useCallback(
     async (e: React.FormEvent) => {
@@ -26,6 +69,15 @@ export function OrganizationSearch() {
       setIsSearching(true)
       setError("")
       setResults(null)
+      setAnswerData(null)
+      setIsLoadingAnswer(false)
+      setAnswerElapsed(0)
+
+      // Clean up any existing subscription
+      if (cleanupRef.current) {
+        cleanupRef.current()
+        cleanupRef.current = null
+      }
 
       try {
         const searchResults = await organizationService.searchOrganization(
@@ -34,13 +86,18 @@ export function OrganizationSearch() {
           { limit: 20, includeAnswer: true }
         )
         setResults(searchResults)
+
+        // If there's a job ID, subscribe to SSE for the answer
+        if (searchResults.answerJobId) {
+          subscribeToAnswer(searchResults.answerJobId)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Search failed")
       } finally {
         setIsSearching(false)
       }
     },
-    [query, currentOrganization]
+    [query, currentOrganization, subscribeToAnswer]
   )
 
   const hasDocuments = documents.length > 0
@@ -76,35 +133,63 @@ export function OrganizationSearch() {
     setPreviewError(null)
   }, [])
 
+  // Get the current answer (from async job if available, otherwise from initial response)
+  const currentAnswer = answerData?.answer || results?.answer
+  const currentCitations = answerData?.citations || results?.citations
+
+  // Type for job result citation
+  type JobCitation = { label: number; memory_id: string; title: string | null; url: string | null }
+
   // Deduplicate citations by document name, keeping track of memoryIds for preview
   const uniqueCitations = useMemo(() => {
-    if (!results?.citations) return []
+    if (!currentCitations) return []
 
     const seen = new Map<string, { index: number; documentName: string; pageNumbers: number[]; memoryId: string }>()
 
-    for (const citation of results.citations) {
-      const key = citation.documentName || `memory-${citation.index}`
+    for (const citation of currentCitations) {
+      // Handle both formats: from initial response and from job result
+      let documentName: string | undefined
+      let pageNumber: number | undefined
+      let memoryId: string
+      let index: number
+
+      if ('documentName' in citation) {
+        // Citation from initial search response
+        documentName = citation.documentName
+        pageNumber = citation.pageNumber
+        memoryId = citation.memoryId
+        index = citation.index
+      } else {
+        // Citation from job result
+        const jobCitation = citation as JobCitation
+        documentName = jobCitation.title || undefined
+        pageNumber = undefined
+        memoryId = jobCitation.memory_id
+        index = jobCitation.label
+      }
+
+      const key = documentName || `memory-${index}`
 
       if (seen.has(key)) {
         // Add page number if it exists and isn't already in the list
-        if (citation.pageNumber) {
+        if (pageNumber) {
           const existing = seen.get(key)!
-          if (!existing.pageNumbers.includes(citation.pageNumber)) {
-            existing.pageNumbers.push(citation.pageNumber)
+          if (!existing.pageNumbers.includes(pageNumber)) {
+            existing.pageNumbers.push(pageNumber)
           }
         }
       } else {
         seen.set(key, {
-          index: citation.index,
-          documentName: citation.documentName || "Memory",
-          pageNumbers: citation.pageNumber ? [citation.pageNumber] : [],
-          memoryId: citation.memoryId,
+          index,
+          documentName: documentName || "Memory",
+          pageNumbers: pageNumber ? [pageNumber] : [],
+          memoryId,
         })
       }
     }
 
     return Array.from(seen.values())
-  }, [results?.citations])
+  }, [currentCitations])
 
   return (
     <div className="space-y-6">
@@ -143,97 +228,122 @@ export function OrganizationSearch() {
       {/* Results */}
       {results && (
         <div className="space-y-6">
-          {/* AI Answer */}
-          {results.answer && (
+          {/* AI Answer - show loading state or actual answer */}
+          {(isLoadingAnswer || currentAnswer) && (
             <div className="border border-gray-200 bg-gray-50">
               <div className="px-4 py-2 border-b border-gray-200">
                 <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
                   [AI ANSWER]
                 </span>
+                {isLoadingAnswer && (
+                  <span className="ml-2 text-xs font-mono text-blue-500 animate-pulse">
+                    Generating...
+                  </span>
+                )}
               </div>
               <div className="p-4">
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {results.answer}
-                </p>
-                {uniqueCitations.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
-                      Sources
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {uniqueCitations.map((citation, idx) => (
-                        <button
-                          key={`${citation.documentName}-${idx}`}
-                          onClick={() => handleCitationClick(citation.memoryId)}
-                          className="px-2 py-1 text-xs font-mono bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
-                        >
-                          {citation.documentName}
-                          {citation.pageNumbers.length > 0 && (
-                            <span className="text-gray-400">
-                              {" "}p.{citation.pageNumbers.sort((a, b) => a - b).join(", ")}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                {isLoadingAnswer && !currentAnswer ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full" />
+                    <span>
+                      Analyzing documents and generating answer...
+                      {answerElapsed > 0 && (
+                        <span className="text-gray-400 ml-1">({answerElapsed}s)</span>
+                      )}
+                    </span>
                   </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {currentAnswer}
+                    </p>
+                    {uniqueCitations.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
+                          Sources
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {uniqueCitations.map((citation, idx) => (
+                            <button
+                              key={`${citation.documentName}-${idx}`}
+                              onClick={() => handleCitationClick(citation.memoryId)}
+                              className="px-2 py-1 text-xs font-mono bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
+                            >
+                              {citation.documentName}
+                              {citation.pageNumbers.length > 0 && (
+                                <span className="text-gray-400">
+                                  {" "}p.{citation.pageNumbers.sort((a, b) => a - b).join(", ")}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
           )}
 
-          {/* Search Results */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-                [RELATED DOCUMENTS]
-              </span>
-              <span className="text-xs font-mono text-gray-400">
-                {results.totalResults} result{results.totalResults !== 1 && "s"}
-              </span>
-            </div>
+          {/* Cited Sources - only show documents that are cited in the AI answer */}
+          {uniqueCitations.length > 0 && (() => {
+            // Get cited memory IDs from the AI answer
+            const citedMemoryIds = new Set(uniqueCitations.map(c => c.memoryId))
 
-            {results.results.length > 0 ? (
-              <div className="border border-gray-200 divide-y divide-gray-100">
-                {results.results.map((result) => (
-                  <button
-                    key={result.memoryId}
-                    onClick={() => handleCitationClick(result.memoryId)}
-                    className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900">
-                            {result.documentName || result.title || "Document"}
-                          </span>
-                          {result.pageNumber && (
-                            <span className="text-xs font-mono text-gray-400">
-                              p.{result.pageNumber}
+            // Filter results to only show cited documents
+            const citedResults = results.results.filter(r => citedMemoryIds.has(r.memoryId))
+
+            if (citedResults.length === 0) return null
+
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+                    [CITED SOURCES]
+                  </span>
+                  <span className="text-xs font-mono text-gray-400">
+                    {citedResults.length} source{citedResults.length !== 1 && "s"}
+                  </span>
+                </div>
+
+                <div className="border border-gray-200 divide-y divide-gray-100">
+                  {citedResults.map((result) => (
+                    <button
+                      key={result.memoryId}
+                      onClick={() => handleCitationClick(result.memoryId)}
+                      className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-gray-900">
+                              {result.documentName || result.title || "Document"}
                             </span>
-                          )}
+                            {result.pageNumber && (
+                              <span className="text-xs font-mono text-gray-400">
+                                p.{result.pageNumber}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-600 line-clamp-2">
+                            {result.contentPreview}
+                          </p>
+                          <div className="flex items-center gap-3 mt-2 text-xs font-mono text-gray-400">
+                            <span>{result.sourceType}</span>
+                            <span>{Math.round(result.score * 100)}% match</span>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-600 line-clamp-2">
-                          {result.contentPreview}
-                        </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs font-mono text-gray-400">
-                          <span>{result.sourceType}</span>
-                          <span>{Math.round(result.score * 100)}% match</span>
-                        </div>
+                        <span className="text-xs font-mono text-gray-400">
+                          →
+                        </span>
                       </div>
-                      <span className="text-xs font-mono text-gray-400">
-                        →
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-xs font-mono text-gray-500">
-                No matching documents found
-              </div>
-            )}
-          </div>
+            )
+          })()}
         </div>
       )}
 

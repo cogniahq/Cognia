@@ -30,7 +30,7 @@ interface OrganizationContextType {
   documents: Document[]
   loadDocuments: () => Promise<void>
   uploadDocument: (file: File) => Promise<Document>
-  deleteDocument: (documentId: string) => Promise<void>
+  deleteDocument: (documentId: string, type?: "document" | "integration") => Promise<void>
   refreshDocumentStatus: (documentId: string) => Promise<Document>
 }
 
@@ -229,11 +229,12 @@ export function OrganizationProvider({
   )
 
   const deleteDocument = useCallback(
-    async (documentId: string) => {
+    async (documentId: string, type?: "document" | "integration") => {
       if (!currentOrganization) throw new Error("No organization selected")
       await organizationService.deleteDocument(
         currentOrganization.slug,
-        documentId
+        documentId,
+        type
       )
       setDocuments((prev) => prev.filter((d) => d.id !== documentId))
     },

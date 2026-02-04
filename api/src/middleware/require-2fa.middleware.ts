@@ -54,7 +54,8 @@ export async function enforce2FARequirement(
 
       return res.status(403).json({
         success: false,
-        message: 'This organization requires two-factor authentication. Please enable 2FA in your account settings.',
+        message:
+          'This organization requires two-factor authentication. Please enable 2FA in your account settings.',
         code: '2FA_REQUIRED',
         requiresSetup: true,
       })

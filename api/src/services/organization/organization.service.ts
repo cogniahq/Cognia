@@ -370,9 +370,7 @@ export class OrganizationService {
       distinct: ['memory_id'],
     })
 
-    const chunkMemoryIds = chunks
-      .map(c => c.memory_id)
-      .filter((id): id is string => id !== null)
+    const chunkMemoryIds = chunks.map(c => c.memory_id).filter((id): id is string => id !== null)
 
     // Fetch memories that either:
     // 1. Are linked via document chunks, OR
@@ -469,9 +467,7 @@ export class OrganizationService {
       distinct: ['memory_id'],
     })
 
-    const chunkMemoryIds = chunks
-      .map(c => c.memory_id)
-      .filter((id): id is string => id !== null)
+    const chunkMemoryIds = chunks.map(c => c.memory_id).filter((id): id is string => id !== null)
 
     // Get memory IDs with direct organization_id (e.g., from integrations)
     const directMemories = await prisma.memory.findMany({
@@ -723,11 +719,7 @@ export class OrganizationService {
   /**
    * Create an invitation to join the organization
    */
-  async createInvitation(
-    organizationId: string,
-    invitedBy: string,
-    input: CreateInvitationInput
-  ) {
+  async createInvitation(organizationId: string, invitedBy: string, input: CreateInvitationInput) {
     // Check if user already exists and is a member
     const existingUser = await prisma.user.findUnique({
       where: { email: input.email },

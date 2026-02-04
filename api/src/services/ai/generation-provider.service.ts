@@ -1,7 +1,11 @@
 import fetch from 'node-fetch'
 import { geminiService } from './gemini.service'
 import { tokenTracking } from '../core/token-tracking.service'
-import { retryWithBackoff, isRateLimitError, sleep, extractRetryDelayFromError } from '../../utils/core/retry.util'
+import {
+  retryWithBackoff,
+  isRateLimitError,
+  sleep,
+} from '../../utils/core/retry.util'
 import { logger } from '../../utils/core/logger.util'
 
 type Provider = 'gemini' | 'ollama' | 'hybrid'
@@ -42,7 +46,7 @@ export class GenerationProviderService {
           maxRetries: 4,
           baseDelayMs: 3000,
           maxDelayMs: 60000,
-          shouldRetry: (error) => {
+          shouldRetry: error => {
             if (isRateLimitError(error)) return true
             // Also retry on transient errors
             const status = (error as ApiError)?.status
@@ -51,10 +55,13 @@ export class GenerationProviderService {
           },
           onRetry: (error, attempt, delayMs) => {
             const status = (error as ApiError)?.status
-            logger.warn(`Gemini generation failed with status ${status}, retrying (attempt ${attempt})`, {
-              delayMs,
-              isSearchRequest,
-            })
+            logger.warn(
+              `Gemini generation failed with status ${status}, retrying (attempt ${attempt})`,
+              {
+                delayMs,
+                isSearchRequest,
+              }
+            )
           },
         }
       )

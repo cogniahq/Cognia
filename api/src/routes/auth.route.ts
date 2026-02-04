@@ -169,7 +169,10 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
           where: { id: user.id },
           data: { two_factor_backup_codes: updatedCodes },
         })
-        logger.log('[auth] Backup code used', { userId: user.id, remainingCodes: updatedCodes.length })
+        logger.log('[auth] Backup code used', {
+          userId: user.id,
+          remainingCodes: updatedCodes.length,
+        })
       }
     }
 
@@ -260,217 +263,201 @@ router.post(
 // ==========================================
 
 // Setup 2FA - generates secret and returns QR code URI
-router.post(
-  '/2fa/setup',
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        select: { id: true, email: true, two_factor_enabled: true },
-      })
+router.post('/2fa/setup', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, email: true, two_factor_enabled: true },
+    })
 
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' })
-      }
-
-      if (user.two_factor_enabled) {
-        return res.status(400).json({ message: '2FA is already enabled' })
-      }
-
-      // Generate new secret
-      const secret = generateSecret()
-      const uri = generateTOTPUri(secret, user.email || 'user', 'Cognia')
-
-      // Store secret temporarily (not enabled yet)
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { two_factor_secret: secret },
-      })
-
-      res.status(200).json({
-        success: true,
-        data: {
-          secret,
-          uri, // Can be used to generate QR code on frontend
-          message: 'Scan the QR code with your authenticator app, then verify with a code',
-        },
-      })
-    } catch (error) {
-      logger.error('2FA setup error:', error)
-      res.status(500).json({ message: 'Failed to setup 2FA' })
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
     }
+
+    if (user.two_factor_enabled) {
+      return res.status(400).json({ message: '2FA is already enabled' })
+    }
+
+    // Generate new secret
+    const secret = generateSecret()
+    const uri = generateTOTPUri(secret, user.email || 'user', 'Cognia')
+
+    // Store secret temporarily (not enabled yet)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { two_factor_secret: secret },
+    })
+
+    res.status(200).json({
+      success: true,
+      data: {
+        secret,
+        uri, // Can be used to generate QR code on frontend
+        message: 'Scan the QR code with your authenticator app, then verify with a code',
+      },
+    })
+  } catch (error) {
+    logger.error('2FA setup error:', error)
+    res.status(500).json({ message: 'Failed to setup 2FA' })
   }
-)
+})
 
 // Verify 2FA setup - confirms the setup with a code
-router.post(
-  '/2fa/verify',
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { code } = req.body || {}
+router.post('/2fa/verify', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { code } = req.body || {}
 
-      if (!code) {
-        return res.status(400).json({ message: 'Verification code is required' })
-      }
-
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        select: { id: true, two_factor_enabled: true, two_factor_secret: true },
-      })
-
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' })
-      }
-
-      if (user.two_factor_enabled) {
-        return res.status(400).json({ message: '2FA is already enabled' })
-      }
-
-      if (!user.two_factor_secret) {
-        return res.status(400).json({ message: 'Please setup 2FA first' })
-      }
-
-      // Verify the code
-      const isValid = verifyTOTP(user.two_factor_secret, code)
-      if (!isValid) {
-        return res.status(401).json({ message: 'Invalid verification code' })
-      }
-
-      // Generate backup codes
-      const backupCodes = generateBackupCodes()
-      const hashedBackupCodes = backupCodes.map(hashBackupCode)
-
-      // Enable 2FA
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          two_factor_enabled: true,
-          two_factor_backup_codes: hashedBackupCodes,
-        },
-      })
-
-      logger.log('[auth] 2FA enabled', { userId: user.id })
-
-      res.status(200).json({
-        success: true,
-        data: {
-          message: '2FA enabled successfully',
-          backupCodes, // Return plaintext backup codes only once
-          warning: 'Save these backup codes in a secure location. They cannot be shown again.',
-        },
-      })
-    } catch (error) {
-      logger.error('2FA verify error:', error)
-      res.status(500).json({ message: 'Failed to verify 2FA' })
+    if (!code) {
+      return res.status(400).json({ message: 'Verification code is required' })
     }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, two_factor_enabled: true, two_factor_secret: true },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    if (user.two_factor_enabled) {
+      return res.status(400).json({ message: '2FA is already enabled' })
+    }
+
+    if (!user.two_factor_secret) {
+      return res.status(400).json({ message: 'Please setup 2FA first' })
+    }
+
+    // Verify the code
+    const isValid = verifyTOTP(user.two_factor_secret, code)
+    if (!isValid) {
+      return res.status(401).json({ message: 'Invalid verification code' })
+    }
+
+    // Generate backup codes
+    const backupCodes = generateBackupCodes()
+    const hashedBackupCodes = backupCodes.map(hashBackupCode)
+
+    // Enable 2FA
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        two_factor_enabled: true,
+        two_factor_backup_codes: hashedBackupCodes,
+      },
+    })
+
+    logger.log('[auth] 2FA enabled', { userId: user.id })
+
+    res.status(200).json({
+      success: true,
+      data: {
+        message: '2FA enabled successfully',
+        backupCodes, // Return plaintext backup codes only once
+        warning: 'Save these backup codes in a secure location. They cannot be shown again.',
+      },
+    })
+  } catch (error) {
+    logger.error('2FA verify error:', error)
+    res.status(500).json({ message: 'Failed to verify 2FA' })
   }
-)
+})
 
 // Disable 2FA
-router.post(
-  '/2fa/disable',
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { code, password } = req.body || {}
+router.post('/2fa/disable', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { code, password } = req.body || {}
 
-      if (!password) {
-        return res.status(400).json({ message: 'Password is required to disable 2FA' })
-      }
-
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        select: {
-          id: true,
-          password_hash: true,
-          two_factor_enabled: true,
-          two_factor_secret: true,
-        },
-      })
-
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' })
-      }
-
-      if (!user.two_factor_enabled) {
-        return res.status(400).json({ message: '2FA is not enabled' })
-      }
-
-      // Verify password
-      if (!user.password_hash) {
-        return res.status(400).json({ message: 'Cannot disable 2FA for this account' })
-      }
-
-      const passwordValid = await comparePassword(password, user.password_hash)
-      if (!passwordValid) {
-        return res.status(401).json({ message: 'Invalid password' })
-      }
-
-      // Optionally verify 2FA code if provided
-      if (code && user.two_factor_secret) {
-        const isValid = verifyTOTP(user.two_factor_secret, code)
-        if (!isValid) {
-          return res.status(401).json({ message: 'Invalid 2FA code' })
-        }
-      }
-
-      // Disable 2FA
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          two_factor_enabled: false,
-          two_factor_secret: null,
-          two_factor_backup_codes: [],
-        },
-      })
-
-      logger.log('[auth] 2FA disabled', { userId: user.id })
-
-      res.status(200).json({
-        success: true,
-        message: '2FA disabled successfully',
-      })
-    } catch (error) {
-      logger.error('2FA disable error:', error)
-      res.status(500).json({ message: 'Failed to disable 2FA' })
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required to disable 2FA' })
     }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        password_hash: true,
+        two_factor_enabled: true,
+        two_factor_secret: true,
+      },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    if (!user.two_factor_enabled) {
+      return res.status(400).json({ message: '2FA is not enabled' })
+    }
+
+    // Verify password
+    if (!user.password_hash) {
+      return res.status(400).json({ message: 'Cannot disable 2FA for this account' })
+    }
+
+    const passwordValid = await comparePassword(password, user.password_hash)
+    if (!passwordValid) {
+      return res.status(401).json({ message: 'Invalid password' })
+    }
+
+    // Optionally verify 2FA code if provided
+    if (code && user.two_factor_secret) {
+      const isValid = verifyTOTP(user.two_factor_secret, code)
+      if (!isValid) {
+        return res.status(401).json({ message: 'Invalid 2FA code' })
+      }
+    }
+
+    // Disable 2FA
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        two_factor_enabled: false,
+        two_factor_secret: null,
+        two_factor_backup_codes: [],
+      },
+    })
+
+    logger.log('[auth] 2FA disabled', { userId: user.id })
+
+    res.status(200).json({
+      success: true,
+      message: '2FA disabled successfully',
+    })
+  } catch (error) {
+    logger.error('2FA disable error:', error)
+    res.status(500).json({ message: 'Failed to disable 2FA' })
   }
-)
+})
 
 // Get 2FA status
-router.get(
-  '/2fa/status',
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        select: {
-          id: true,
-          two_factor_enabled: true,
-          two_factor_backup_codes: true,
-        },
-      })
+router.get('/2fa/status', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        two_factor_enabled: true,
+        two_factor_backup_codes: true,
+      },
+    })
 
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' })
-      }
-
-      res.status(200).json({
-        success: true,
-        data: {
-          enabled: user.two_factor_enabled,
-          backupCodesRemaining: user.two_factor_backup_codes.length,
-        },
-      })
-    } catch (error) {
-      logger.error('2FA status error:', error)
-      res.status(500).json({ message: 'Failed to get 2FA status' })
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
     }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        enabled: user.two_factor_enabled,
+        backupCodesRemaining: user.two_factor_backup_codes.length,
+      },
+    })
+  } catch (error) {
+    logger.error('2FA status error:', error)
+    res.status(500).json({ message: 'Failed to get 2FA status' })
   }
-)
+})
 
 // Regenerate backup codes
 router.post(

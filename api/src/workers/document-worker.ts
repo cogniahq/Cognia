@@ -86,7 +86,10 @@ export const startDocumentWorker = () => {
                 logger.error('[document-worker] embedding error', {
                   documentId,
                   memoryId: memory.id,
-                  error: embeddingError instanceof Error ? embeddingError.message : String(embeddingError),
+                  error:
+                    embeddingError instanceof Error
+                      ? embeddingError.message
+                      : String(embeddingError),
                 })
               }
             })

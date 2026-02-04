@@ -104,7 +104,12 @@ export class GeminiService {
     mimeType: string,
     timeoutOverride?: number
   ): Promise<string> {
-    return this.generationService.generateContentWithImage(prompt, imageBase64, mimeType, timeoutOverride)
+    return this.generationService.generateContentWithImage(
+      prompt,
+      imageBase64,
+      mimeType,
+      timeoutOverride
+    )
   }
 }
 

@@ -312,16 +312,24 @@ class AdminService {
 
     // Build stats
     const byPlan: Record<string, number> = {}
-    orgsByPlan.forEach(g => { byPlan[g.plan] = g._count })
+    orgsByPlan.forEach(g => {
+      byPlan[g.plan] = g._count
+    })
 
     const byType: Record<string, number> = {}
-    memoriesGroupedByType.forEach(g => { byType[g.memory_type || 'unknown'] = g._count })
+    memoriesGroupedByType.forEach(g => {
+      byType[g.memory_type || 'unknown'] = g._count
+    })
 
     const bySource: Record<string, number> = {}
-    memoriesGroupedBySource.forEach(g => { bySource[g.source] = g._count })
+    memoriesGroupedBySource.forEach(g => {
+      bySource[g.source] = g._count
+    })
 
     const docByStatus: Record<string, number> = {}
-    documentsByStatus.forEach(g => { docByStatus[g.status] = g._count })
+    documentsByStatus.forEach(g => {
+      docByStatus[g.status] = g._count
+    })
 
     const totalInput = Number(tokenUsageTotal._sum.input_tokens || 0)
     const totalOutput = Number(tokenUsageTotal._sum.output_tokens || 0)
@@ -945,9 +953,10 @@ class AdminService {
     }
 
     // Calculate projections
-    const dailyGrowthRate = storageTrends.length >= 2
-      ? (storageTrends[storageTrends.length - 1].value - storageTrends[0].value) / days
-      : 0
+    const dailyGrowthRate =
+      storageTrends.length >= 2
+        ? (storageTrends[storageTrends.length - 1].value - storageTrends[0].value) / days
+        : 0
 
     const projectedStorage = {
       current: totalStorage,

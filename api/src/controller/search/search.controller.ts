@@ -182,7 +182,9 @@ export class SearchController {
         }
 
         if (job.status === 'failed') {
-          res.write(`event: failed\ndata: ${JSON.stringify({ error: 'Answer generation failed' })}\n\n`)
+          res.write(
+            `event: failed\ndata: ${JSON.stringify({ error: 'Answer generation failed' })}\n\n`
+          )
           clearInterval(checkInterval)
           res.end()
           return
@@ -190,12 +192,16 @@ export class SearchController {
 
         // Send heartbeat every 5 seconds to keep connection alive and show progress
         if (checkCount % 5 === 0) {
-          res.write(`event: heartbeat\ndata: ${JSON.stringify({ status: 'pending', elapsed: checkCount })}\n\n`)
+          res.write(
+            `event: heartbeat\ndata: ${JSON.stringify({ status: 'pending', elapsed: checkCount })}\n\n`
+          )
         }
 
         // Timeout after max checks
         if (checkCount >= maxChecks) {
-          res.write(`event: timeout\ndata: ${JSON.stringify({ error: 'Answer generation timed out' })}\n\n`)
+          res.write(
+            `event: timeout\ndata: ${JSON.stringify({ error: 'Answer generation timed out' })}\n\n`
+          )
           clearInterval(checkInterval)
           res.end()
           return
@@ -269,11 +275,7 @@ export class SearchController {
    * Search organization documents and memories
    * POST /api/search/organization/:slug
    */
-  static async searchOrganization(
-    req: OrganizationRequest,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async searchOrganization(req: OrganizationRequest, res: Response, next: NextFunction) {
     try {
       const { query, limit, sourceTypes, includeAnswer } = req.body || {}
 
@@ -289,8 +291,8 @@ export class SearchController {
       let parsedSourceTypes: SourceType[] | undefined
       if (sourceTypes) {
         if (Array.isArray(sourceTypes)) {
-          parsedSourceTypes = sourceTypes.filter(
-            (t): t is SourceType => Object.values(SourceType).includes(t)
+          parsedSourceTypes = sourceTypes.filter((t): t is SourceType =>
+            Object.values(SourceType).includes(t)
           )
         }
       }

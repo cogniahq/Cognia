@@ -132,7 +132,8 @@ export class UnifiedSearchService {
           chunkIndex: chunk?.chunk_index,
           pageNumber: chunk?.page_number ?? undefined,
           content: memory.content,
-          contentPreview: memory.content.substring(0, 300) + (memory.content.length > 300 ? '...' : ''),
+          contentPreview:
+            memory.content.substring(0, 300) + (memory.content.length > 300 ? '...' : ''),
           score,
           sourceType: memory.source_type || SourceType.EXTENSION,
           title: memory.title ?? undefined,
@@ -163,7 +164,10 @@ export class UnifiedSearchService {
 
         // Fire-and-forget: generate answer in background
         this.generateAnswerAsync(job.id, query, results.slice(0, 10)).catch(error => {
-          logger.error('[unified-search] background answer generation failed', { error, jobId: job.id })
+          logger.error('[unified-search] background answer generation failed', {
+            error,
+            jobId: job.id,
+          })
         })
       } catch (error) {
         logger.error('[unified-search] failed to create answer job', { error })
@@ -244,7 +248,10 @@ Answer:`
     query: string,
     results: UnifiedSearchResult['results']
   ): Promise<void> {
-    logger.log('[unified-search] starting answer generation', { jobId, query: query.substring(0, 50) })
+    logger.log('[unified-search] starting answer generation', {
+      jobId,
+      query: query.substring(0, 50),
+    })
     const startTime = Date.now()
 
     try {

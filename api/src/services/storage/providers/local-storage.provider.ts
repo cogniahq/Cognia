@@ -62,14 +62,16 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
-  async getSignedUrl(key: string, _expiresIn?: number): Promise<string> {
+  async getSignedUrl(key: string, expiresIn?: number): Promise<string> {
     // For local storage, return the file path
     // In production, you might want to generate a temporary token-based URL
+    void expiresIn
     return this.getFullPath(key)
   }
 
-  getPublicUrl(_key: string): string | null {
+  getPublicUrl(key: string): string | null {
     // Local storage doesn't have public URLs
+    void key
     return null
   }
 

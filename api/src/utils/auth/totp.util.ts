@@ -79,11 +79,7 @@ export function verifyTOTP(secret: string, code: string, window: number = 1): bo
 /**
  * Generate a QR code URI for authenticator apps
  */
-export function generateTOTPUri(
-  secret: string,
-  email: string,
-  issuer: string = 'Cognia'
-): string {
+export function generateTOTPUri(secret: string, email: string, issuer: string = 'Cognia'): string {
   const encodedIssuer = encodeURIComponent(issuer)
   const encodedEmail = encodeURIComponent(email)
 
@@ -116,10 +112,7 @@ export function hashBackupCode(code: string): string {
  */
 export function verifyBackupCode(code: string, hashedCodes: string[]): number {
   const normalizedCode = code.replace(/[-\s]/g, '').toUpperCase()
-  const hashedInput = crypto
-    .createHash('sha256')
-    .update(normalizedCode)
-    .digest('hex')
+  const hashedInput = crypto.createHash('sha256').update(normalizedCode).digest('hex')
 
   return hashedCodes.indexOf(hashedInput)
 }

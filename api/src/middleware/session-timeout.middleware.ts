@@ -26,11 +26,7 @@ function parseTimeout(timeout: string): number {
  *
  * Must be used after authenticateToken and requireOrganization middleware
  */
-export function enforceSessionTimeout(
-  req: OrganizationRequest,
-  res: Response,
-  next: NextFunction
-) {
+export function enforceSessionTimeout(req: OrganizationRequest, res: Response, next: NextFunction) {
   try {
     const org = req.organization
     const user = req.user

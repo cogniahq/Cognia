@@ -1,1 +1,1 @@
-export { IntegrationService, integrationService } from './integration.service';
+export { IntegrationService, integrationService } from './integration.service'

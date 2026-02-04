@@ -11,9 +11,7 @@ function getClientIp(req: OrganizationRequest): string {
   const forwardedFor = req.headers['x-forwarded-for']
   if (forwardedFor) {
     // X-Forwarded-For can be a comma-separated list, first IP is the client
-    const ips = Array.isArray(forwardedFor)
-      ? forwardedFor[0]
-      : forwardedFor.split(',')[0]
+    const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0]
     return ips.trim()
   }
 
@@ -76,13 +74,9 @@ function ipInCidr(ip: string, cidr: string): boolean {
     }
 
     // Convert to 32-bit integers
-    const ipNum =
-      (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]
+    const ipNum = (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]
     const rangeNum =
-      (rangeParts[0] << 24) |
-      (rangeParts[1] << 16) |
-      (rangeParts[2] << 8) |
-      rangeParts[3]
+      (rangeParts[0] << 24) | (rangeParts[1] << 16) | (rangeParts[2] << 8) | rangeParts[3]
 
     // Create mask
     const maskBits = ~((1 << (32 - mask)) - 1)
@@ -97,11 +91,7 @@ function ipInCidr(ip: string, cidr: string): boolean {
  * Middleware to enforce IP allowlist for organizations
  * Must be used after requireOrganization middleware
  */
-export function enforceIpAllowlist(
-  req: OrganizationRequest,
-  res: Response,
-  next: NextFunction
-) {
+export function enforceIpAllowlist(req: OrganizationRequest, res: Response, next: NextFunction) {
   try {
     const org = req.organization
 
@@ -113,9 +103,7 @@ export function enforceIpAllowlist(
     const clientIp = getClientIp(req)
 
     // Check if client IP matches any allowed pattern
-    const isAllowed = org.ip_allowlist.some((pattern) =>
-      ipMatchesPattern(clientIp, pattern)
-    )
+    const isAllowed = org.ip_allowlist.some(pattern => ipMatchesPattern(clientIp, pattern))
 
     if (!isAllowed) {
       logger.warn('[ip-allowlist] Access denied', {

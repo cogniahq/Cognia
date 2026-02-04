@@ -143,7 +143,11 @@ export class AdminController {
   /**
    * Get organization details
    */
-  static async getOrganizationDetails(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  static async getOrganizationDetails(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const { orgId } = req.params
       const org = await adminService.getOrganizationDetails(orgId)
@@ -166,7 +170,11 @@ export class AdminController {
   /**
    * Update organization plan
    */
-  static async updateOrganizationPlan(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  static async updateOrganizationPlan(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const { orgId } = req.params
       const { plan } = req.body
@@ -281,7 +289,11 @@ export class AdminController {
   /**
    * Get document download URL (admin access to any document)
    */
-  static async getDocumentDownloadUrl(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  static async getDocumentDownloadUrl(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const { documentId } = req.params
       const result = await adminService.getDocumentDownloadUrl(documentId)

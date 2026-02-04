@@ -14,7 +14,7 @@ export interface PasswordValidationResult {
   errors: string[]
 }
 
-const SPECIAL_CHARS = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/
+const SPECIAL_CHARS = /[-!@#$%^&*()_+=\\{};':"|,.<>/?\][]/
 
 /**
  * Validate password against a policy

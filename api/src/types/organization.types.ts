@@ -117,7 +117,7 @@ export interface OrganizationWithMembers {
   // Billing fields
   legal_name?: string | null
   billing_email?: string | null
-  billing_address?: any | null
+  billing_address?: Record<string, unknown> | null
   vat_tax_id?: string | null
   plan?: string
   // Security fields
@@ -128,7 +128,7 @@ export interface OrganizationWithMembers {
   audit_retention?: string
   ip_allowlist?: string[]
   sso_enabled?: boolean
-  sso_config?: any | null
+  sso_config?: Record<string, unknown> | null
   // Setup tracking
   setup_completed_steps?: string[]
   setup_started_at?: Date | null

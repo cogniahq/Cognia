@@ -9,6 +9,9 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout code
@@ -18,6 +21,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: https://npm.pkg.github.com
+          scope: '@cogniahq'
 
       - name: Get npm cache directory
         id: npm-cache-dir
@@ -35,6 +40,8 @@ jobs:
       - name: Install dependencies
         working-directory: api
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check formatting
         working-directory: api
@@ -47,4 +54,3 @@ jobs:
       - name: Build project
         working-directory: api
         run: npm run build
-

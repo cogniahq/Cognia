@@ -30,26 +30,26 @@ export class EmbeddingProviderService {
     if (embedProvider === 'gemini') {
       logger.log('[embedding-provider] Using Gemini for embeddings')
       // Use retry with exponential backoff for Gemini API calls
-      const response = await retryWithBackoff(
-        () => geminiService.generateEmbedding(text),
-        {
-          maxRetries: 4,
-          baseDelayMs: 3000,
-          maxDelayMs: 60000,
-          shouldRetry: (error) => {
-            if (isRateLimitError(error)) return true
-            const status = (error as ApiError)?.status
-            if (status === 503 || status === 502) return true
-            return false
-          },
-          onRetry: (error, attempt, delayMs) => {
-            const status = (error as ApiError)?.status
-            logger.warn(`Gemini embedding failed with status ${status}, retrying (attempt ${attempt})`, {
+      const response = await retryWithBackoff(() => geminiService.generateEmbedding(text), {
+        maxRetries: 4,
+        baseDelayMs: 3000,
+        maxDelayMs: 60000,
+        shouldRetry: error => {
+          if (isRateLimitError(error)) return true
+          const status = (error as ApiError)?.status
+          if (status === 503 || status === 502) return true
+          return false
+        },
+        onRetry: (error, attempt, delayMs) => {
+          const status = (error as ApiError)?.status
+          logger.warn(
+            `Gemini embedding failed with status ${status}, retrying (attempt ${attempt})`,
+            {
               delayMs,
-            })
-          },
-        }
-      )
+            }
+          )
+        },
+      })
       result = response.embedding
       modelUsed = response.modelUsed
     } else if (embedProvider === 'hybrid') {
@@ -177,10 +177,13 @@ export class EmbeddingProviderService {
 
         if (attempt < retries) {
           const delayMs = 1000 * Math.pow(2, attempt)
-          logger.warn(`[embedding-provider] Ollama embedding failed, retrying (attempt ${attempt + 1})`, {
-            error: lastError.message,
-            delayMs,
-          })
+          logger.warn(
+            `[embedding-provider] Ollama embedding failed, retrying (attempt ${attempt + 1})`,
+            {
+              error: lastError.message,
+              delayMs,
+            }
+          )
           await sleep(delayMs)
         }
       }

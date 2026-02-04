@@ -776,12 +776,8 @@ export class MemoryMeshService {
     const k = Math.min(15, Math.max(5, Math.floor(Math.sqrt(Math.max(1, nodeCount)))))
     const minDegree = Math.min(5, Math.max(2, Math.floor(k / 2)))
 
-    const nodeIdToDomain = new Map<string, string | null>(
-      nodes.map(n => [n.id, getDomain(n.url)])
-    )
-    const nodeIdToSource = new Map<string, string | null>(
-      nodes.map(n => [n.id, n.source || null])
-    )
+    const nodeIdToDomain = new Map<string, string | null>(nodes.map(n => [n.id, getDomain(n.url)]))
+    const nodeIdToSource = new Map<string, string | null>(nodes.map(n => [n.id, n.source || null]))
     const nodeIdToTimestamp = new Map<string, number | null>(
       nodes.map(n => [n.id, n.timestamp ? Number(n.timestamp) : null])
     )
@@ -911,9 +907,7 @@ export class MemoryMeshService {
       }
     })
 
-    let edges = Array.from(edgeMap.values()).filter(
-      e => e.similarity_score >= similarityThreshold
-    )
+    let edges = Array.from(edgeMap.values()).filter(e => e.similarity_score >= similarityThreshold)
 
     edges.sort((a, b) => b.similarity_score - a.similarity_score)
 

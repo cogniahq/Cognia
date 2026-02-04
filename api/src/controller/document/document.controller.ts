@@ -170,7 +170,7 @@ export class DocumentController {
           error_message: doc.error_message,
           page_count: doc.page_count,
           metadata: {
-            ...(doc.metadata as object || {}),
+            ...((doc.metadata as object) || {}),
             uploader_name: doc.uploader?.email?.split('@')[0] || null,
             uploader_role: uploaderRole || null,
           },
@@ -436,7 +436,10 @@ export class DocumentController {
         return next(new AppError('No document found for this memory', 404))
       }
 
-      const downloadUrl = await documentService.getDownloadUrl(result.document.id, req.organization!.id)
+      const downloadUrl = await documentService.getDownloadUrl(
+        result.document.id,
+        req.organization!.id
+      )
 
       res.status(200).json({
         success: true,

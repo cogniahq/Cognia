@@ -43,7 +43,9 @@ export class OrganizationController {
 
       // Validate slug format
       if (!/^[a-z0-9-]+$/.test(slug)) {
-        return next(new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400))
+        return next(
+          new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400)
+        )
       }
 
       const organization = await organizationService.createOrganization(userId, {
@@ -144,7 +146,9 @@ export class OrganizationController {
       const { name, slug } = req.body
 
       if (slug && !/^[a-z0-9-]+$/.test(slug)) {
-        return next(new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400))
+        return next(
+          new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400)
+        )
       }
 
       const organization = await organizationService.updateOrganization(req.organization!.id, {
@@ -208,11 +212,7 @@ export class OrganizationController {
 
       if (email) {
         // Add by email
-        member = await organizationService.addMemberByEmail(
-          req.organization!.id,
-          email,
-          role
-        )
+        member = await organizationService.addMemberByEmail(req.organization!.id, email, role)
       } else {
         // Add by userId
         member = await organizationService.addMember(req.organization!.id, {
@@ -378,7 +378,10 @@ export class OrganizationController {
       const threshold = parseFloat(req.query.threshold as string) || 0.3
 
       // Get memory IDs for this organization (from document chunks)
-      const memoryIds = await organizationService.getOrganizationMemoryIds(req.organization!.id, limit)
+      const memoryIds = await organizationService.getOrganizationMemoryIds(
+        req.organization!.id,
+        limit
+      )
 
       if (memoryIds.length === 0) {
         return res.status(200).json({
@@ -388,14 +391,9 @@ export class OrganizationController {
       }
 
       // Build mesh from those memory IDs (includes DOCUMENT and INTEGRATION source types)
-      const mesh = await memoryMeshService.getMemoryMeshForMemoryIds(
-        memoryIds,
-        limit,
-        threshold,
-        {
-          organizationId: req.organization!.id,
-        }
-      )
+      const mesh = await memoryMeshService.getMemoryMeshForMemoryIds(memoryIds, limit, threshold, {
+        organizationId: req.organization!.id,
+      })
 
       res.status(200).json({
         success: true,
@@ -423,7 +421,9 @@ export class OrganizationController {
       const { slug } = req.body
 
       if (slug && !/^[a-z0-9-]+$/.test(slug)) {
-        return next(new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400))
+        return next(
+          new AppError('Slug must contain only lowercase letters, numbers, and hyphens', 400)
+        )
       }
 
       const organization = await organizationService.updateProfile(req.organization!.id, req.body)
@@ -540,7 +540,11 @@ export class OrganizationController {
    * Mark security prompt as shown
    * POST /api/organizations/:slug/setup/security-prompt-shown
    */
-  static async markSecurityPromptShown(req: OrganizationRequest, res: Response, next: NextFunction) {
+  static async markSecurityPromptShown(
+    req: OrganizationRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       await organizationService.markSecurityPromptShown(req.organization!.id)
 
@@ -712,7 +716,11 @@ export class OrganizationController {
       })
 
       if (error instanceof Error) {
-        if (error.message.includes('Invalid') || error.message.includes('expired') || error.message.includes('already')) {
+        if (
+          error.message.includes('Invalid') ||
+          error.message.includes('expired') ||
+          error.message.includes('already')
+        ) {
           return next(new AppError(error.message, 400))
         }
       }

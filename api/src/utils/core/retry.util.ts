@@ -61,7 +61,7 @@ export function extractRetryDelayFromError(error: unknown): number | null {
  * Sleep for a given number of milliseconds
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**
@@ -138,7 +138,7 @@ export function createAIRetryOptions(operationName: string): RetryOptions {
     maxRetries: 4,
     baseDelayMs: 3000,
     maxDelayMs: 60000,
-    shouldRetry: (error) => {
+    shouldRetry: error => {
       // Retry on rate limit errors
       if (isRateLimitError(error)) return true
       // Also retry on certain other transient errors

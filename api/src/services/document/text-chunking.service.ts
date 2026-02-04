@@ -50,7 +50,10 @@ export class TextChunkingService {
       const paragraphWithSeparator = currentChunk ? '\n\n' + paragraph : paragraph
 
       // If adding this paragraph would exceed max, finalize current chunk
-      if (currentChunk.length + paragraphWithSeparator.length > maxChars && currentChunk.length > 0) {
+      if (
+        currentChunk.length + paragraphWithSeparator.length > maxChars &&
+        currentChunk.length > 0
+      ) {
         chunks.push({
           content: currentChunk.trim(),
           chunkIndex: chunks.length,
@@ -97,13 +100,18 @@ export class TextChunkingService {
     const finalChunks: TextChunk[] = []
     for (const chunk of chunks) {
       if (chunk.content.length > maxChars) {
-        const subChunks = this.splitLongParagraph(chunk.content, targetChars, maxChars, overlapChars)
+        const subChunks = this.splitLongParagraph(
+          chunk.content,
+          targetChars,
+          maxChars,
+          overlapChars
+        )
         for (let i = 0; i < subChunks.length; i++) {
           finalChunks.push({
             content: subChunks[i],
             chunkIndex: finalChunks.length,
-            charStart: chunk.charStart + (i * targetChars),
-            charEnd: chunk.charStart + ((i + 1) * targetChars),
+            charStart: chunk.charStart + i * targetChars,
+            charEnd: chunk.charStart + (i + 1) * targetChars,
           })
         }
       } else {

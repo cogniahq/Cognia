@@ -18,10 +18,7 @@ export class TextExtractionService {
       return this.extractFromPdf(buffer)
     }
 
-    if (
-      mimeType ===
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ) {
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       return this.extractFromDocx(buffer)
     }
 
@@ -103,7 +100,9 @@ export class TextExtractionService {
       }
     } catch (error) {
       logger.error('[text-extraction] image OCR failed', { error })
-      throw new Error(`Failed to extract text from image: ${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(
+        `Failed to extract text from image: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
   }
 

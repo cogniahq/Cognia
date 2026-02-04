@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 
 import { AreaChart, LineChart } from '@/components/charts'
@@ -12,11 +12,7 @@ export function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [days, setDays] = useState(30)
 
-  useEffect(() => {
-    loadAnalytics()
-  }, [days])
-
-  async function loadAnalytics() {
+  const loadAnalytics = useCallback(async () => {
     setIsLoading(true)
     try {
       const analytics = await getAnalytics(days)
@@ -26,7 +22,11 @@ export function AnalyticsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [days])
+
+  useEffect(() => {
+    loadAnalytics()
+  }, [loadAnalytics])
 
   if (isLoading || !data) {
     return (

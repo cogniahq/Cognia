@@ -80,6 +80,7 @@ export function DashboardPage() {
   function closePreview() {
     setPreviewFile(null)
     setPreviewUrl(null)
+    setIsPreviewLoading(false)
   }
 
   if (isLoading) {
@@ -424,6 +425,13 @@ export function DashboardPage() {
           </section>
         </div>
       </div>
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={closePreview}
+        file={previewFile}
+        downloadUrl={previewUrl}
+        isLoading={isPreviewLoading}
+      />
     </>
   )
 }

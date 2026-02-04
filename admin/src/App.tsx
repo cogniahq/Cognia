@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import { AdminLayout } from '@/components/layout/AdminLayout'
-import { AuthProvider } from '@/contexts/auth.context'
+import { AuthProvider } from '@/contexts/auth.provider'
 import { AnalyticsPage } from '@/pages/Analytics'
 import { DashboardPage } from '@/pages/Dashboard'
 import { DocumentsPage } from '@/pages/Documents'

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { FileText, RefreshCw } from 'lucide-react'
 
@@ -42,11 +42,7 @@ export function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | ''>('')
   const [reprocessingIds, setReprocessingIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    loadDocs()
-  }, [page, statusFilter])
-
-  async function loadDocs() {
+  const loadDocs = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await listDocuments(page, 20, statusFilter || undefined)
@@ -56,7 +52,11 @@ export function DocumentsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [page, statusFilter])
+
+  useEffect(() => {
+    loadDocs()
+  }, [loadDocs])
 
   async function handleReprocess(docId: string) {
     setReprocessingIds((prev) => new Set(prev).add(docId))

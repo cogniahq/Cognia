@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { RefreshCw } from 'lucide-react'
 
@@ -21,15 +21,7 @@ export function SystemPage() {
   const [isLoadingLogs, setIsLoadingLogs] = useState(true)
   const [logsPage, setLogsPage] = useState(1)
 
-  useEffect(() => {
-    loadStats()
-  }, [])
-
-  useEffect(() => {
-    loadAuditLogs()
-  }, [logsPage])
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     setIsLoadingStats(true)
     try {
       const data = await getDashboard()
@@ -39,9 +31,9 @@ export function SystemPage() {
     } finally {
       setIsLoadingStats(false)
     }
-  }
+  }, [])
 
-  async function loadAuditLogs() {
+  const loadAuditLogs = useCallback(async () => {
     setIsLoadingLogs(true)
     try {
       const data = await getAuditLogs(logsPage, 20)
@@ -51,7 +43,15 @@ export function SystemPage() {
     } finally {
       setIsLoadingLogs(false)
     }
-  }
+  }, [logsPage])
+
+  useEffect(() => {
+    loadStats()
+  }, [loadStats])
+
+  useEffect(() => {
+    loadAuditLogs()
+  }, [loadAuditLogs])
 
   const auditColumns = [
     {

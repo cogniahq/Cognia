@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Brain, FileText, Search, Trash2, Users } from 'lucide-react'
 
@@ -40,11 +40,7 @@ export function OrganizationsPage() {
   const [selectedOrg, setSelectedOrg] = useState<OrgDetails | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  useEffect(() => {
-    loadOrgs()
-  }, [page, search, planFilter])
-
-  async function loadOrgs() {
+  const loadOrgs = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await listOrganizations(
@@ -59,7 +55,11 @@ export function OrganizationsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [page, search, planFilter])
+
+  useEffect(() => {
+    loadOrgs()
+  }, [loadOrgs])
 
   async function handleRowClick(org: OrgListItem) {
     try {

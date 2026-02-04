@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Search, Shield, Trash2, User } from 'lucide-react'
 
@@ -28,11 +28,7 @@ export function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  useEffect(() => {
-    loadUsers()
-  }, [page, search, roleFilter])
-
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await listUsers(
@@ -47,7 +43,11 @@ export function UsersPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [page, search, roleFilter])
+
+  useEffect(() => {
+    loadUsers()
+  }, [loadUsers])
 
   async function handleRowClick(user: UserListItem) {
     try {

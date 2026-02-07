@@ -1,12 +1,108 @@
+x-common-build: &common-build
+  context: .
+  dockerfile: Dockerfile
+
+x-common-depends-on: &common-depends-on
+  postgres:
+    condition: service_healthy
+  qdrant:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
+x-common-healthcheck: &common-healthcheck
+  test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/health']
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+x-common-network: &common-network
+  - cognia_network
+
+x-common-environment: &common-environment
+  PORT: 3000
+  DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cognia}
+  REDIS_URL: redis://redis:6379
+  QDRANT_URL: http://qdrant:6333
+  QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+  EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-768}
+  GEMINI_EMBED_MODEL: ${GEMINI_EMBED_MODEL:-text-embedding-004}
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+  OLLAMA_GEN_MODEL: ${OLLAMA_GEN_MODEL:-llama3.1:8b}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+  COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.cognia.xyz}
+  SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-cognia_session}
+  EXTENSION_IDS: ${EXTENSION_IDS:-}
+  LOG_FILE_PATH: ${LOG_FILE_PATH:-./logs/app.log}
+  NO_COLOR: ${NO_COLOR:-0}
+
 services:
+  api:
+    build:
+      <<: *common-build
+      target: development
+    container_name: cognia_api
+    profiles:
+      - api
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    environment:
+      <<: *common-environment
+      NODE_ENV: ${NODE_ENV:-development}
+      EMBED_PROVIDER: ${EMBED_PROVIDER:-ollama}
+      GEN_PROVIDER: ${GEN_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      LOGGER_OUTPUT_MODE: ${LOGGER_OUTPUT_MODE:-print}
+      MORGAN_OUTPUT_MODE: ${MORGAN_OUTPUT_MODE:-print}
+    volumes:
+      - ./src:/app/src:ro
+      - ./prisma:/app/prisma:ro
+      - ./logs:/app/logs
+    depends_on: *common-depends-on
+    healthcheck: *common-healthcheck
+    networks: *common-network
+
+  api-prod:
+    build:
+      <<: *common-build
+      target: production
+    container_name: cognia_api_prod
+    restart: unless-stopped
+    profiles:
+      - production
+    ports:
+      - '${PORT:-3000}:3000'
+    environment:
+      <<: *common-environment
+      NODE_ENV: production
+      EMBED_PROVIDER: ${EMBED_PROVIDER:?EMBED_PROVIDER is required in production}
+      GEN_PROVIDER: ${GEN_PROVIDER:?GEN_PROVIDER is required in production}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY is required when using Gemini provider}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in production}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required in production}
+      LOGGER_OUTPUT_MODE: ${LOGGER_OUTPUT_MODE:-log}
+      MORGAN_OUTPUT_MODE: ${MORGAN_OUTPUT_MODE:-log}
+    volumes:
+      - ./logs:/app/logs
+    depends_on: *common-depends-on
+    healthcheck: *common-healthcheck
+    networks: *common-network
+
   postgres:
     image: postgres:15
     container_name: cognia_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cognia
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cognia}
       POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     ports:
       - '5432:5432'
@@ -14,7 +110,7 @@ services:
       - cognia_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d cognia']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cognia}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +119,10 @@ services:
       - cognia_network
 
   qdrant:
-    image: qdrant/qdrant:latest
+    build:
+      context: ./qdrant
+      dockerfile: Dockerfile
+    image: cognia_qdrant:local
     container_name: cognia_qdrant
     restart: unless-stopped
     ports:
@@ -32,10 +131,11 @@ services:
     volumes:
       - cognia_qdrant_data:/qdrant/storage
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:6333/health']
+      test: ['CMD-SHELL', 'curl -fsS http://127.0.0.1:6333/collections || exit 1']
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     networks:
       - cognia_network
 

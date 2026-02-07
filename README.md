@@ -13,16 +13,50 @@
 - Docker and Docker Compose
 - Gemini API key or Ollama (for AI)
 
-### 1. Start Databases
+### 1. Running backend + databases with Docker
+
+You can run the stack in one of three ways. The `api` service is opt-in (profile `api`) so `docker compose up` starts the database services only by default.
+
+Option 1 — Complete Docker (API + DB in containers)
+
+```bash
+cd api
+docker compose --profile api up -d
+```
+
+Starts `api`, `postgres`, `qdrant`, and `redis` from `api/docker-compose.yml` (development API image). Qdrant will be available at `http://localhost:6333` and `http://localhost:6334`.
+
+Option 2 — Database in Docker, run API locally (npm)
 
 ```bash
 cd api
 docker compose up -d
+
+# In another terminal (host):
+cp .env.example .env
+npm install
+npm run db:migrate
+npm start
 ```
 
-This starts PostgreSQL, Qdrant, and Redis. Qdrant will be available at `http://localhost:6333` (web UI) and `http://localhost:6334` (gRPC).
+This starts only the DB services (Postgres, Qdrant, Redis). Run the API on the host with `npm start` so you can iterate without rebuilding containers.
 
-The API will automatically create the `memory_embeddings` collection on startup with the configured embedding dimension and payload indexes.
+Option 3 — DB services only (explicit)
+
+```bash
+cd api
+docker compose up -d postgres qdrant redis
+```
+
+Start just the database/support services when you don't need the full stack.
+
+Troubleshooting & logs
+
+- Follow logs: `cd api && docker compose logs -f`
+- Inspect service status: `cd api && docker compose ps`
+- View a single container log: `docker logs -f <container-name>`
+
+The API will automatically create the `memory_embeddings` collection on startup when it can reach Qdrant.
 
 ### 2. API Setup
 

@@ -3,7 +3,7 @@ import { GeminiEmbeddingService } from './gemini-embedding.service'
 import { GeminiGenerationService } from './gemini-generation.service'
 import type { ContentMetadata } from '../../types/ai.types'
 
-export const GEMINI_EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'text-embedding-004'
+export const GEMINI_EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001'
 
 export class GeminiService {
   private ai: GoogleGenAI | null

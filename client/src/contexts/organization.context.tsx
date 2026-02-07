@@ -287,6 +287,14 @@ export function OrganizationProvider({
     }
   }, [loadOrganizations])
 
+  // Load documents and members when current organization changes
+  useEffect(() => {
+    if (currentOrganization) {
+      loadDocuments()
+      loadMembers()
+    }
+  }, [currentOrganization, loadDocuments, loadMembers])
+
   return (
     <OrganizationContext.Provider
       value={{

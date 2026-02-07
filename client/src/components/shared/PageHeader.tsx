@@ -14,6 +14,21 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   const navigate = useNavigate()
   const { accountType } = useAuth()
 
+  // Determine the dashboard path based on account type
+  const dashboardPath =
+    accountType === "ORGANIZATION" ? "/organization" : "/memories"
+
+  // Check if we're on the dashboard
+  const currentPageLower = pageName.toLowerCase()
+  const isDashboard =
+    currentPageLower === "memories" || currentPageLower === "workspace"
+
+  // Handle back navigation - go to dashboard instead of browser history
+  // This avoids issues with OAuth redirects polluting browser history
+  const handleBack = () => {
+    navigate(dashboardPath)
+  }
+
   // Show different nav buttons based on account type
   const allNavButtons =
     accountType === "ORGANIZATION"
@@ -29,7 +44,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           { label: "Profile", path: "/profile" },
         ]
 
-  const currentPageLower = pageName.toLowerCase()
   const navButtons = allNavButtons.filter(
     (btn) => !currentPageLower.includes(btn.label.toLowerCase())
   )
@@ -40,14 +54,18 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-6">
-              <button
-                onClick={() => navigate(-1)}
-                className="text-sm font-medium text-gray-700 hover:text-black transition-colors relative group"
-              >
-                <span className="relative z-10">← Back</span>
-                <div className="absolute inset-0 bg-gray-100 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left -z-10 rounded"></div>
-              </button>
-              <div className="h-4 w-px bg-gray-300"></div>
+              {!isDashboard && (
+                <>
+                  <button
+                    onClick={handleBack}
+                    className="text-sm font-medium text-gray-700 hover:text-black transition-colors relative group"
+                  >
+                    <span className="relative z-10">← Back</span>
+                    <div className="absolute inset-0 bg-gray-100 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left -z-10 rounded"></div>
+                  </button>
+                  <div className="h-4 w-px bg-gray-300"></div>
+                </>
+              )}
               <div className="flex items-center gap-3">
                 <img
                   src="/black-transparent.png"

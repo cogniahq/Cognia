@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
+import { useAuth } from "@/contexts/auth.context"
 
 const Landing = lazy(() =>
   import("@/pages/landing.page").then((module) => ({ default: module.Landing }))
@@ -40,6 +41,26 @@ const LoadingFallback = () => (
   </div>
 )
 
+// Redirect authenticated users to their respective dashboard
+const AuthRedirectLanding = () => {
+  const { isAuthenticated, isLoading, accountType } = useAuth()
+
+  if (isLoading) {
+    return <LoadingFallback />
+  }
+
+  if (isAuthenticated) {
+    // Redirect based on account type
+    if (accountType === "ORGANIZATION") {
+      return <Navigate to="/organization" replace />
+    }
+    // Default to memories for personal accounts
+    return <Navigate to="/memories" replace />
+  }
+
+  return <Landing />
+}
+
 const AppRoutes = () => {
   const enableInternalRoutes =
     import.meta.env.VITE_ENABLE_INTERNAL_ROUTES !== "false"
@@ -47,7 +68,7 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<AuthRedirectLanding />} />
         {enableInternalRoutes ? (
           <>
             <Route path="/login" element={<Login />} />
@@ -70,7 +91,7 @@ const AppRoutes = () => {
           </>
         )}
 
-        <Route path="*" element={<Landing />} />
+        <Route path="*" element={<AuthRedirectLanding />} />
       </Routes>
     </Suspense>
   )

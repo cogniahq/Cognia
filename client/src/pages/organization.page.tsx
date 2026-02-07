@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { useOrganization } from "@/contexts/organization.context"
 import {
-  getOrgConnectedIntegrations,
   getOrgIntegrationSettings,
-  syncOrgIntegration,
   updateOrgIntegrationSettings,
   type OrgSyncSettings,
 } from "@/services/integration/integration.service"
@@ -12,7 +10,6 @@ import { requireAuthToken } from "@/utils/auth"
 import { Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-import type { ConnectedIntegration } from "@/types/integration"
 import type { MemoryMeshNode } from "@/types/memory"
 import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
 import { MemoryMesh3D } from "@/components/memories/mesh"
@@ -330,7 +327,7 @@ export function Organization() {
 
           {/* Tab content */}
           <div
-            className={`bg-white border border-gray-200 ${activeTab === "mesh" ? "p-0" : "p-6"}`}
+            className={`bg-white border border-gray-200 min-h-[500px] ${activeTab === "mesh" ? "p-0" : "p-6"}`}
           >
             {activeTab === "search" && <OrganizationSearch />}
 
@@ -426,73 +423,52 @@ function OrganizationSettings() {
   const navigate = useNavigate()
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState("")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  // Integration settings state
+  // Sync settings state
   const [syncSettings, setSyncSettings] = useState<OrgSyncSettings | null>(null)
-  const [connectedIntegrations, setConnectedIntegrations] = useState<
-    ConnectedIntegration[]
-  >([])
-  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(true)
+  const [isLoadingSync, setIsLoadingSync] = useState(true)
   const [isSavingSync, setIsSavingSync] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [selectedFrequency, setSelectedFrequency] = useState<string>("HOURLY")
-  const [customInterval, setCustomInterval] = useState<string>("")
-  const [useCustomInterval, setUseCustomInterval] = useState(false)
-  const [syncingProvider, setSyncingProvider] = useState<string | null>(null)
 
   // Sync frequency options
   const SYNC_FREQUENCIES = [
-    { value: "REALTIME", label: "Real-time", description: "~1 min polling" },
-    { value: "FIFTEEN_MIN", label: "Every 15 min", description: "Balanced" },
-    { value: "HOURLY", label: "Hourly", description: "Default" },
-    { value: "DAILY", label: "Daily", description: "Low frequency" },
-    { value: "MANUAL", label: "Manual only", description: "No auto-sync" },
+    { value: "REALTIME", label: "Real-time" },
+    { value: "FIFTEEN_MIN", label: "15 min" },
+    { value: "HOURLY", label: "Hourly" },
+    { value: "DAILY", label: "Daily" },
+    { value: "MANUAL", label: "Manual" },
   ]
 
-  const loadIntegrationSettings = useCallback(async () => {
+  const loadSyncSettings = useCallback(async () => {
     if (!currentOrganization?.slug) return
-    setIsLoadingIntegrations(true)
+    setIsLoadingSync(true)
     setSyncError(null)
     try {
-      const [settings, integrations] = await Promise.all([
-        getOrgIntegrationSettings(currentOrganization.slug),
-        getOrgConnectedIntegrations(currentOrganization.slug),
-      ])
+      const settings = await getOrgIntegrationSettings(currentOrganization.slug)
       setSyncSettings(settings)
-      setConnectedIntegrations(integrations)
       setSelectedFrequency(settings.defaultSyncFrequency)
-      if (settings.customSyncIntervalMin) {
-        setUseCustomInterval(true)
-        setCustomInterval(settings.customSyncIntervalMin.toString())
-      }
     } catch (err) {
       setSyncError(getErrorMessage(err, "Failed to load settings"))
     } finally {
-      setIsLoadingIntegrations(false)
+      setIsLoadingSync(false)
     }
   }, [currentOrganization?.slug])
 
-  // Load integration settings
   useEffect(() => {
-    loadIntegrationSettings()
-  }, [loadIntegrationSettings])
+    loadSyncSettings()
+  }, [loadSyncSettings])
 
-  const handleSaveSyncSettings = async () => {
+  const handleSaveSyncSettings = async (frequency: string) => {
     if (!currentOrganization?.slug) return
+    setSelectedFrequency(frequency)
     setIsSavingSync(true)
     setSyncError(null)
     try {
-      const settings =
-        useCustomInterval && customInterval
-          ? { customSyncIntervalMin: parseInt(customInterval, 10) }
-          : {
-              defaultSyncFrequency: selectedFrequency,
-              customSyncIntervalMin: null,
-            }
-
       const updated = await updateOrgIntegrationSettings(
         currentOrganization.slug,
-        settings
+        { defaultSyncFrequency: frequency, customSyncIntervalMin: null }
       )
       setSyncSettings(updated)
     } catch (err) {
@@ -500,35 +476,6 @@ function OrganizationSettings() {
     } finally {
       setIsSavingSync(false)
     }
-  }
-
-  const handleSyncIntegration = async (provider: string) => {
-    if (!currentOrganization?.slug) return
-    setSyncingProvider(provider)
-    try {
-      await syncOrgIntegration(currentOrganization.slug, provider)
-      await loadIntegrationSettings()
-    } catch (err) {
-      setSyncError(getErrorMessage(err, "Failed to sync"))
-    } finally {
-      setSyncingProvider(null)
-    }
-  }
-
-  const formatRelativeTime = (dateStr: string | null) => {
-    if (!dateStr) return "Never"
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return "Just now"
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
   }
 
   const handleDelete = async () => {
@@ -550,41 +497,39 @@ function OrganizationSettings() {
 
   return (
     <div className="space-y-8">
-      {/* General Settings */}
+      {/* Workspace Info */}
       <div>
         <div className="text-sm font-mono text-gray-600 mb-4 uppercase tracking-wide">
-          [GENERAL SETTINGS]
+          [WORKSPACE INFO]
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-          <div>
-            <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-1">
-              Workspace Name
-            </label>
-            <input
-              type="text"
-              value={currentOrganization.name}
-              disabled
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 text-sm text-gray-500 font-mono"
-            />
+        <div className="border border-gray-200 divide-y divide-gray-100">
+          <div className="grid grid-cols-3 gap-4 px-4 py-3">
+            <div className="text-xs font-mono text-gray-500 uppercase">Name</div>
+            <div className="col-span-2 text-sm text-gray-900">
+              {currentOrganization.name}
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-1">
-              Workspace ID
-            </label>
-            <input
-              type="text"
-              value={currentOrganization.slug}
-              disabled
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 text-sm text-gray-500 font-mono"
-            />
+          <div className="grid grid-cols-3 gap-4 px-4 py-3">
+            <div className="text-xs font-mono text-gray-500 uppercase">ID</div>
+            <div className="col-span-2 text-sm font-mono text-gray-600">
+              {currentOrganization.slug}
+            </div>
           </div>
+          {currentOrganization.description && (
+            <div className="grid grid-cols-3 gap-4 px-4 py-3">
+              <div className="text-xs font-mono text-gray-500 uppercase">Description</div>
+              <div className="col-span-2 text-sm text-gray-600">
+                {currentOrganization.description}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Integration Sync Settings */}
+      {/* Sync Settings */}
       <div>
         <div className="text-sm font-mono text-gray-600 mb-4 uppercase tracking-wide">
-          [INTEGRATION SYNC SETTINGS]
+          [SYNC SETTINGS]
         </div>
 
         {syncError && (
@@ -593,207 +538,108 @@ function OrganizationSettings() {
           </div>
         )}
 
-        {isLoadingIntegrations ? (
+        {isLoadingSync ? (
           <div className="flex items-center gap-2 py-4">
             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
             <span className="text-xs font-mono text-gray-500">Loading...</span>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Default Sync Frequency */}
-            <div className="max-w-md">
-              <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-2">
-                Default Sync Frequency
-              </label>
-              <p className="text-xs text-gray-500 mb-3">
-                How often integrations should automatically sync new content
-              </p>
-
-              {/* Preset options */}
-              <div className="space-y-2 mb-4">
+            {/* Sync Frequency */}
+            <div>
+              <div className="text-xs text-gray-500 mb-3">
+                How often should integrations sync new content?
+              </div>
+              <div className="inline-flex border border-gray-200 divide-x divide-gray-200">
                 {SYNC_FREQUENCIES.map((freq) => (
-                  <label
+                  <button
                     key={freq.value}
-                    className={`flex items-center gap-3 p-2 border cursor-pointer transition-colors ${
-                      !useCustomInterval && selectedFrequency === freq.value
-                        ? "border-gray-900 bg-gray-50"
-                        : "border-gray-200 hover:border-gray-300"
+                    onClick={() => handleSaveSyncSettings(freq.value)}
+                    disabled={isSavingSync}
+                    className={`px-4 py-2 text-xs font-mono transition-colors ${
+                      selectedFrequency === freq.value
+                        ? "bg-gray-900 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                   >
-                    <input
-                      type="radio"
-                      name="syncFrequency"
-                      value={freq.value}
-                      checked={
-                        !useCustomInterval && selectedFrequency === freq.value
-                      }
-                      onChange={() => {
-                        setSelectedFrequency(freq.value)
-                        setUseCustomInterval(false)
-                      }}
-                      className="sr-only"
-                    />
-                    <div className="flex-1">
-                      <span className="text-sm text-gray-900">
-                        {freq.label}
-                      </span>
-                      <span className="ml-2 text-xs text-gray-500">
-                        {freq.description}
-                      </span>
-                    </div>
-                    {!useCustomInterval && selectedFrequency === freq.value && (
-                      <span className="text-xs font-mono text-gray-900">
-                        Selected
-                      </span>
-                    )}
-                  </label>
+                    {freq.label}
+                  </button>
                 ))}
               </div>
-
-              {/* Custom interval option */}
-              <label
-                className={`flex items-start gap-3 p-2 border cursor-pointer transition-colors ${
-                  useCustomInterval
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="syncFrequency"
-                  checked={useCustomInterval}
-                  onChange={() => setUseCustomInterval(true)}
-                  className="sr-only"
-                />
-                <div className="flex-1">
-                  <span className="text-sm text-gray-900">Custom interval</span>
-                  {useCustomInterval && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={customInterval}
-                        onChange={(e) => setCustomInterval(e.target.value)}
-                        min={5}
-                        max={1440}
-                        placeholder="30"
-                        className="w-20 px-2 py-1 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900"
-                      />
-                      <span className="text-xs text-gray-500">
-                        minutes (5-1440)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </label>
-
-              {/* Save button */}
-              <button
-                onClick={handleSaveSyncSettings}
-                disabled={isSavingSync}
-                className="mt-4 px-4 py-2 text-xs font-mono bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSavingSync ? (
-                  <span className="flex items-center gap-1.5">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Saving...
-                  </span>
-                ) : (
-                  "Save Settings"
-                )}
-              </button>
-
               {syncSettings && (
                 <div className="mt-3 text-xs text-gray-500">
-                  Current effective interval:{" "}
+                  Effective interval:{" "}
                   <span className="font-mono">
-                    {syncSettings.effectiveIntervalMin}
-                  </span>{" "}
-                  minutes
-                  {syncSettings.effectiveIntervalMin === 0 && " (manual only)"}
+                    {syncSettings.effectiveIntervalMin === 0
+                      ? "Manual only"
+                      : `${syncSettings.effectiveIntervalMin} min`}
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Connected Integrations */}
-            {connectedIntegrations.length > 0 && (
-              <div>
-                <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-2">
-                  Connected Integrations
-                </label>
-                <div className="space-y-2 max-w-md">
-                  {connectedIntegrations.map((integration) => (
-                    <div
-                      key={integration.id}
-                      className="flex items-center justify-between p-3 border border-gray-200"
-                    >
-                      <div>
-                        <div className="text-sm text-gray-900 capitalize">
-                          {integration.provider.replace(/_/g, " ")}
-                        </div>
-                        <div className="text-xs font-mono text-gray-500">
-                          Synced: {formatRelativeTime(integration.last_sync_at)}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() =>
-                          handleSyncIntegration(integration.provider)
-                        }
-                        disabled={syncingProvider === integration.provider}
-                        className="px-3 py-1 text-xs font-mono border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        {syncingProvider === integration.provider ? (
-                          <span className="flex items-center gap-1">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            Syncing
-                          </span>
-                        ) : (
-                          "Sync Now"
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {connectedIntegrations.length === 0 && (
-              <div className="text-xs text-gray-500 py-4 border border-dashed border-gray-300 text-center max-w-md">
-                No integrations connected yet
-              </div>
-            )}
           </div>
         )}
       </div>
 
       {/* Danger Zone */}
-      <div className="border border-red-200 bg-red-50 p-4">
-        <div className="text-sm font-mono text-red-700 mb-4 uppercase tracking-wide">
+      <div>
+        <div className="text-sm font-mono text-gray-600 mb-4 uppercase tracking-wide">
           [DANGER ZONE]
         </div>
-        <p className="text-xs text-red-600 mb-4">
-          Permanently delete this workspace and all its data. This cannot be
-          undone.
-        </p>
-        <div className="space-y-3 max-w-sm">
-          <div>
-            <label className="block text-xs font-mono text-gray-600 mb-1">
-              Type "{currentOrganization.name}" to confirm
-            </label>
-            <input
-              type="text"
-              value={confirmDelete}
-              onChange={(e) => setConfirmDelete(e.target.value)}
-              className="w-full px-3 py-2 border border-red-300 text-sm font-mono focus:outline-none focus:border-red-500"
-              placeholder="Enter workspace name"
-            />
-          </div>
-          <button
-            onClick={handleDelete}
-            disabled={confirmDelete !== currentOrganization.name || isDeleting}
-            className="px-4 py-2 text-xs font-mono bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isDeleting ? "Deleting..." : "Delete Workspace"}
-          </button>
+        <div className="border border-red-200 bg-red-50/50">
+          {!showDeleteConfirm ? (
+            <div className="flex items-center justify-between px-4 py-4">
+              <div>
+                <div className="text-sm text-gray-900">Delete this workspace</div>
+                <div className="text-xs text-gray-500">
+                  Permanently remove workspace and all associated data
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-4 py-2 text-xs font-mono text-red-600 border border-red-300 hover:bg-red-100 transition-colors"
+              >
+                Delete Workspace
+              </button>
+            </div>
+          ) : (
+            <div className="px-4 py-4 space-y-4">
+              <div className="text-xs text-red-700">
+                This action cannot be undone. All documents, members, and settings will be permanently deleted.
+              </div>
+              <div>
+                <label className="block text-xs font-mono text-gray-600 mb-1">
+                  Type "{currentOrganization.name}" to confirm
+                </label>
+                <input
+                  type="text"
+                  value={confirmDelete}
+                  onChange={(e) => setConfirmDelete(e.target.value)}
+                  className="w-full max-w-sm px-3 py-2 border border-red-300 text-sm font-mono focus:outline-none focus:border-red-500 bg-white"
+                  placeholder="Enter workspace name"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setConfirmDelete("")
+                  }}
+                  className="px-4 py-2 text-xs font-mono border border-gray-300 text-gray-600 hover:bg-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={confirmDelete !== currentOrganization.name || isDeleting}
+                  className="px-4 py-2 text-xs font-mono bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isDeleting ? "Deleting..." : "Delete Workspace"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

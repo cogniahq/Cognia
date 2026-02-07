@@ -504,7 +504,9 @@ function OrganizationSettings() {
         </div>
         <div className="border border-gray-200 divide-y divide-gray-100">
           <div className="grid grid-cols-3 gap-4 px-4 py-3">
-            <div className="text-xs font-mono text-gray-500 uppercase">Name</div>
+            <div className="text-xs font-mono text-gray-500 uppercase">
+              Name
+            </div>
             <div className="col-span-2 text-sm text-gray-900">
               {currentOrganization.name}
             </div>
@@ -517,7 +519,9 @@ function OrganizationSettings() {
           </div>
           {currentOrganization.description && (
             <div className="grid grid-cols-3 gap-4 px-4 py-3">
-              <div className="text-xs font-mono text-gray-500 uppercase">Description</div>
+              <div className="text-xs font-mono text-gray-500 uppercase">
+                Description
+              </div>
               <div className="col-span-2 text-sm text-gray-600">
                 {currentOrganization.description}
               </div>
@@ -577,7 +581,6 @@ function OrganizationSettings() {
                 </div>
               )}
             </div>
-
           </div>
         )}
       </div>
@@ -591,7 +594,9 @@ function OrganizationSettings() {
           {!showDeleteConfirm ? (
             <div className="flex items-center justify-between px-4 py-4">
               <div>
-                <div className="text-sm text-gray-900">Delete this workspace</div>
+                <div className="text-sm text-gray-900">
+                  Delete this workspace
+                </div>
                 <div className="text-xs text-gray-500">
                   Permanently remove workspace and all associated data
                 </div>
@@ -606,7 +611,8 @@ function OrganizationSettings() {
           ) : (
             <div className="px-4 py-4 space-y-4">
               <div className="text-xs text-red-700">
-                This action cannot be undone. All documents, members, and settings will be permanently deleted.
+                This action cannot be undone. All documents, members, and
+                settings will be permanently deleted.
               </div>
               <div>
                 <label className="block text-xs font-mono text-gray-600 mb-1">
@@ -632,7 +638,9 @@ function OrganizationSettings() {
                 </button>
                 <button
                   onClick={handleDelete}
-                  disabled={confirmDelete !== currentOrganization.name || isDeleting}
+                  disabled={
+                    confirmDelete !== currentOrganization.name || isDeleting
+                  }
                   className="px-4 py-2 text-xs font-mono bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isDeleting ? "Deleting..." : "Delete Workspace"}

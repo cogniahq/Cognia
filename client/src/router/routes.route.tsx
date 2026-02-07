@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react"
-import { Navigate, Route, Routes } from "react-router-dom"
 import { useAuth } from "@/contexts/auth.context"
+import { Navigate, Route, Routes } from "react-router-dom"
 
 const Landing = lazy(() =>
   import("@/pages/landing.page").then((module) => ({ default: module.Landing }))

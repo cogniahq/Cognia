@@ -235,7 +235,7 @@ Respond with ONLY a JSON object (no markdown, no explanation) with this exact st
         created_at: { gte: periodStart, lte: periodEnd },
       },
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, email: true } },
       },
       orderBy: { created_at: 'desc' },
     })
@@ -260,7 +260,7 @@ Respond with ONLY a JSON object (no markdown, no explanation) with this exact st
       const topics = (meta?.topics as string[]) || []
 
       const member = memberMap.get(m.user_id) || {
-        name: m.user?.name || m.user?.email || 'Unknown',
+        name: m.user?.email || 'Unknown',
         topics: new Set<string>(),
         memoryCount: 0,
       }

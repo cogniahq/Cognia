@@ -43,11 +43,11 @@ class BriefingService {
         period_start: data.periodStart,
         period_end: data.periodEnd,
         summary: data.summary,
-        topics: data.topics as any,
-        wow_facts: data.wowFacts as any,
-        knowledge_gaps: data.knowledgeGaps as any,
-        connections: data.connections as any,
-        expert_updates: data.expertUpdates as any,
+        topics: data.topics as object,
+        wow_facts: (data.wowFacts as object) ?? undefined,
+        knowledge_gaps: (data.knowledgeGaps as object) ?? undefined,
+        connections: (data.connections as object) ?? undefined,
+        expert_updates: (data.expertUpdates as object) ?? undefined,
       },
     })
 

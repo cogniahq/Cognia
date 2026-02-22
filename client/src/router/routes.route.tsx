@@ -34,6 +34,11 @@ const Integrations = lazy(() =>
     default: module.Integrations,
   }))
 )
+const Briefings = lazy(() =>
+  import("@/pages/briefings.page").then((module) => ({
+    default: module.Briefings,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -78,6 +83,7 @@ const AppRoutes = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/organization" element={<Organization />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/briefings" element={<Briefings />} />
           </>
         ) : (
           <>
@@ -88,6 +94,7 @@ const AppRoutes = () => {
             <Route path="/profile" element={<Navigate to="/" replace />} />
             <Route path="/organization" element={<Navigate to="/" replace />} />
             <Route path="/integrations" element={<Navigate to="/" replace />} />
+            <Route path="/briefings" element={<Navigate to="/" replace />} />
           </>
         )}
 

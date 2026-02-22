@@ -30,7 +30,7 @@ class OpenAIService {
   async generateContent(
     prompt: string,
     isSearchRequest: boolean = false,
-    timeoutOverride?: number
+    _timeoutOverride?: number
   ): Promise<{ text: string; modelUsed: string }> {
     const client = this.getClient()
     const startTime = Date.now()

@@ -102,9 +102,7 @@ export const startDocumentWorker = () => {
                 documentId,
                 memoryId: memory.id,
                 error:
-                  embeddingError instanceof Error
-                    ? embeddingError.message
-                    : String(embeddingError),
+                  embeddingError instanceof Error ? embeddingError.message : String(embeddingError),
               })
             }
 

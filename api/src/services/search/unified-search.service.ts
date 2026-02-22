@@ -11,6 +11,7 @@ export interface UnifiedSearchOptions {
   sourceTypes?: SourceType[]
   limit?: number
   includeAnswer?: boolean
+  userId?: string // Include user's personal extension data in search
 }
 
 export interface UnifiedSearchResult {
@@ -33,6 +34,8 @@ export interface UnifiedSearchResult {
     documentName?: string
     pageNumber?: number
     memoryId: string
+    url?: string
+    sourceType?: SourceType
   }>
   totalResults: number
   answerJobId?: string // Job ID for async answer generation
@@ -43,7 +46,7 @@ export class UnifiedSearchService {
    * Search across organization documents and memories
    */
   async search(options: UnifiedSearchOptions): Promise<UnifiedSearchResult> {
-    const { organizationId, query, sourceTypes, limit = 20, includeAnswer = true } = options
+    const { organizationId, query, sourceTypes, limit = 20, includeAnswer = true, userId } = options
 
     await ensureCollection()
 
@@ -60,28 +63,52 @@ export class UnifiedSearchService {
       throw new Error('Failed to process search query')
     }
 
-    // Build Qdrant filter
-    const filter: {
+    // Build Qdrant filter for organization content
+    const orgFilter: {
       must: Array<{ key: string; match: { value?: string; any?: string[] } }>
     } = {
       must: [{ key: 'organization_id', match: { value: organizationId } }],
     }
 
     if (sourceTypes && sourceTypes.length > 0) {
-      filter.must.push({
+      orgFilter.must.push({
         key: 'source_type',
         match: { any: sourceTypes },
       })
     }
 
-    // Search Qdrant
-    const searchResult = await qdrantClient.search(COLLECTION_NAME, {
+    // Search organization content
+    const orgSearchResult = await qdrantClient.search(COLLECTION_NAME, {
       vector: queryEmbedding,
-      filter,
-      limit: limit * 2, // Get more for deduplication
+      filter: orgFilter,
+      limit: limit * 2,
       with_payload: true,
       score_threshold: 0.2,
     })
+
+    // If userId provided, also search user's extension data
+    let userSearchResult: typeof orgSearchResult = []
+    if (userId) {
+      const userFilter: {
+        must: Array<{ key: string; match: { value?: string; any?: string[] } }>
+      } = {
+        must: [
+          { key: 'user_id', match: { value: userId } },
+          { key: 'source_type', match: { any: [SourceType.EXTENSION] } },
+        ],
+      }
+
+      userSearchResult = await qdrantClient.search(COLLECTION_NAME, {
+        vector: queryEmbedding,
+        filter: userFilter,
+        limit: Math.ceil(limit / 2), // Get some user results
+        with_payload: true,
+        score_threshold: 0.25, // Slightly higher threshold for user content
+      })
+    }
+
+    // Combine results
+    const searchResult = [...orgSearchResult, ...userSearchResult]
 
     if (!searchResult || searchResult.length === 0) {
       return {
@@ -232,9 +259,11 @@ Answer:`
       .filter(n => n > 0 && n <= results.length)
       .map(n => ({
         index: n,
-        documentName: results[n - 1].documentName,
+        documentName: results[n - 1].documentName || results[n - 1].title,
         pageNumber: results[n - 1].pageNumber,
         memoryId: results[n - 1].memoryId,
+        url: results[n - 1].url,
+        sourceType: results[n - 1].sourceType,
       }))
 
     return { answer: response, citations }
@@ -264,7 +293,8 @@ Answer:`
         label: c.index,
         memory_id: c.memoryId,
         title: c.documentName || null,
-        url: null as string | null,
+        url: c.url || null,
+        source_type: c.sourceType || null,
       }))
 
       await setSearchJobResult(jobId, {

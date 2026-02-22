@@ -15,8 +15,8 @@ import { SecurityErrorHandler } from "@/components/shared/SecurityErrorHandler"
 function AppContent() {
   useKeyboardShortcuts()
 
-  const isDevelopment = import.meta.env.VITE_ENABLE_INTERNAL_ROUTES === "true"
-
+  // const isDevelopment = import.meta.env.VITE_ENABLE_INTERNAL_ROUTES === "true"
+  const isDevelopment = false
   return (
     <>
       {isDevelopment && <CommandMenu />}

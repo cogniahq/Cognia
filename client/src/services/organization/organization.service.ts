@@ -259,6 +259,7 @@ export interface AnswerJobResult {
     memory_id: string
     title: string | null
     url: string | null
+    source_type: string | null
   }>
 }
 

@@ -1,10 +1,11 @@
 import { geminiService } from './gemini.service'
+import { openaiService } from './openai.service'
 import { tokenTracking } from '../core/token-tracking.service'
 import { logger } from '../../utils/core/logger.util'
 import { embeddingProviderService } from './embedding-provider.service'
 import { generationProviderService } from './generation-provider.service'
 
-type Provider = 'gemini' | 'ollama' | 'hybrid'
+type Provider = 'gemini' | 'ollama' | 'hybrid' | 'openai'
 
 const legacyProvider: Provider = (process.env.AI_PROVIDER as Provider) || 'hybrid'
 const embedProvider: Provider = (process.env.EMBED_PROVIDER as Provider) || legacyProvider
@@ -17,7 +18,17 @@ logger.log('AI Provider Configuration', {
 
 export const aiProvider = {
   get isInitialized(): boolean {
+    const needsOpenAI = embedProvider === 'openai' || genProvider === 'openai'
     const needsGemini = embedProvider === 'gemini' || genProvider === 'gemini'
+
+    if (needsOpenAI) {
+      const isInit = openaiService.isInitialized
+      if (!isInit) {
+        logger.warn('OpenAI service not initialized. Check OPENAI_API_KEY environment variable.')
+      }
+      return isInit
+    }
+
     if (needsGemini) {
       const isInit = geminiService.isInitialized
       if (!isInit) {

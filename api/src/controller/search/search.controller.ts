@@ -297,12 +297,16 @@ export class SearchController {
         }
       }
 
+      // Include user's extension data in search if user is authenticated
+      const userId = req.user?.id
+
       const result = await unifiedSearchService.search({
         organizationId: req.organization.id,
         query,
         sourceTypes: parsedSourceTypes,
         limit: limit || 20,
         includeAnswer: includeAnswer !== false,
+        userId, // Include user's personal browsing data
       })
 
       // Check if response was already sent (e.g., by timeout handler)

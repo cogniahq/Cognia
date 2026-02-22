@@ -1,15 +1,18 @@
 import fetch from 'node-fetch'
 import { geminiService } from './gemini.service'
+import { openaiService } from './openai.service'
 import { tokenTracking } from '../core/token-tracking.service'
 import { retryWithBackoff, isRateLimitError, sleep } from '../../utils/core/retry.util'
 import { logger } from '../../utils/core/logger.util'
 
-type Provider = 'gemini' | 'ollama' | 'hybrid'
+type Provider = 'gemini' | 'ollama' | 'hybrid' | 'openai'
 
 const genProvider: Provider =
   (process.env.GEN_PROVIDER as Provider) || (process.env.AI_PROVIDER as Provider) || 'hybrid'
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_GEN_MODEL = process.env.OLLAMA_GEN_MODEL || 'llama3.1:8b'
+
+logger.log('[generation-provider] initialized', { genProvider })
 
 interface ApiError {
   status?: number
@@ -27,7 +30,34 @@ export class GenerationProviderService {
     let result: string
     let modelUsed: string | undefined
 
-    if (genProvider === 'gemini') {
+    if (genProvider === 'openai') {
+      // Use OpenAI for generation (faster)
+      const response = await retryWithBackoff(
+        async () => {
+          return openaiService.generateContent(prompt, isSearchRequest, timeoutOverride)
+        },
+        {
+          maxRetries: 3,
+          baseDelayMs: 1000,
+          maxDelayMs: 10000,
+          shouldRetry: error => {
+            if (isRateLimitError(error)) return true
+            const status = (error as ApiError)?.status
+            if (status === 503 || status === 502 || status === 429) return true
+            return false
+          },
+          onRetry: (error, attempt, delayMs) => {
+            const status = (error as ApiError)?.status
+            logger.warn(
+              `OpenAI generation failed with status ${status}, retrying (attempt ${attempt})`,
+              { delayMs, isSearchRequest }
+            )
+          },
+        }
+      )
+      result = response.text
+      modelUsed = response.modelUsed
+    } else if (genProvider === 'gemini') {
       // Use retry with exponential backoff for Gemini API calls
       const response = await retryWithBackoff(
         async () => {

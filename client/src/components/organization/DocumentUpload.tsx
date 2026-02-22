@@ -26,12 +26,35 @@ const FILE_TYPE_LABELS: Record<string, string> = {
   "image/webp": "WEBP",
 }
 
+type ProcessingStage =
+  | "extracting_text"
+  | "chunking"
+  | "generating_embeddings"
+  | "indexing"
+  | "completed"
+
+interface ProcessingProgress {
+  current?: number
+  total?: number
+  summary?: string
+}
+
 interface UploadingFile {
   file: File
   progress: number
   status: "uploading" | "processing" | "completed" | "error"
   error?: string
   document?: Document
+  processingStage?: ProcessingStage
+  processingProgress?: ProcessingProgress
+}
+
+const STAGE_LABELS: Record<ProcessingStage, string> = {
+  extracting_text: "Extracting text",
+  chunking: "Chunking content",
+  generating_embeddings: "Generating embeddings",
+  indexing: "Indexing",
+  completed: "Completed",
 }
 
 export function DocumentUpload() {
@@ -90,16 +113,29 @@ export function DocumentUpload() {
           )
         )
 
-        // Poll for processing completion
+        // Poll for processing completion (faster polling for better UX)
         const pollInterval = setInterval(async () => {
           try {
             const updatedDoc = await refreshDocumentStatus(doc.id)
+
+            // Extract processing stage from metadata
+            const metadata = updatedDoc.metadata as {
+              processing_stage?: ProcessingStage
+              processing_progress?: ProcessingProgress
+            } | null
+
             if (updatedDoc.status === "COMPLETED") {
               clearInterval(pollInterval)
               setUploadingFiles((prev) =>
                 prev.map((f) =>
                   f.file === file
-                    ? { ...f, status: "completed", document: updatedDoc }
+                    ? {
+                        ...f,
+                        status: "completed",
+                        document: updatedDoc,
+                        processingStage: "completed",
+                        processingProgress: metadata?.processing_progress,
+                      }
                     : f
                 )
               )
@@ -116,11 +152,25 @@ export function DocumentUpload() {
                     : f
                 )
               )
+            } else if (updatedDoc.status === "PROCESSING" && metadata?.processing_stage) {
+              // Update with current processing stage
+              setUploadingFiles((prev) =>
+                prev.map((f) =>
+                  f.file === file
+                    ? {
+                        ...f,
+                        document: updatedDoc,
+                        processingStage: metadata.processing_stage,
+                        processingProgress: metadata.processing_progress,
+                      }
+                    : f
+                )
+              )
             }
           } catch {
             // Ignore polling errors
           }
-        }, 3000)
+        }, 1500) // Poll every 1.5 seconds for faster updates
 
         setTimeout(() => clearInterval(pollInterval), 300000)
       } catch (err) {
@@ -235,13 +285,38 @@ export function DocumentUpload() {
                   <span className="text-gray-500">Uploading...</span>
                 )}
                 {item.status === "processing" && (
-                  <span className="text-blue-600">Processing...</span>
+                  <div className="text-right">
+                    <span className="text-blue-600">
+                      {item.processingStage
+                        ? STAGE_LABELS[item.processingStage]
+                        : "Processing..."}
+                    </span>
+                    {item.processingProgress?.summary && (
+                      <div className="text-xs text-gray-500">
+                        {item.processingProgress.summary}
+                      </div>
+                    )}
+                    {item.processingProgress?.current !== undefined &&
+                      item.processingProgress?.total !== undefined && (
+                        <div className="text-xs text-gray-400">
+                          {item.processingProgress.current}/
+                          {item.processingProgress.total}
+                        </div>
+                      )}
+                  </div>
                 )}
                 {item.status === "completed" && (
-                  <span className="text-green-600">✓ Ready</span>
+                  <div className="text-right">
+                    <span className="text-green-600">Ready</span>
+                    {item.processingProgress?.summary && (
+                      <div className="text-xs text-gray-500">
+                        {item.processingProgress.summary}
+                      </div>
+                    )}
+                  </div>
                 )}
                 {item.status === "error" && (
-                  <span className="text-red-600">✗ {item.error}</span>
+                  <span className="text-red-600">{item.error}</span>
                 )}
                 <button
                   onClick={(e) => {

@@ -32,6 +32,9 @@ export const startDocumentWorker = () => {
         // Update status to processing
         await documentService.updateStatus(documentId, DocumentStatus.PROCESSING)
 
+        // Stage 1: Extracting text
+        await documentService.updateProcessingStage(documentId, 'extracting_text')
+
         // Download file from storage
         const fileBuffer = await storageService.download(storagePath)
 
@@ -42,7 +45,11 @@ export const startDocumentWorker = () => {
           throw new Error('No text could be extracted from document')
         }
 
-        // Chunk the text
+        // Stage 2: Chunking
+        await documentService.updateProcessingStage(documentId, 'chunking', {
+          summary: `Extracted ${extracted.text.length} characters${extracted.pageCount ? ` from ${extracted.pageCount} pages` : ''}`,
+        })
+
         const textChunks = textChunkingService.chunkText(extracted.text)
 
         logger.log('[document-worker] text extracted and chunked', {
@@ -51,6 +58,13 @@ export const startDocumentWorker = () => {
           textLength: extracted.text.length,
           chunkCount: textChunks.length,
           pageCount: extracted.pageCount,
+        })
+
+        // Stage 3: Creating memories and generating embeddings
+        await documentService.updateProcessingStage(documentId, 'generating_embeddings', {
+          current: 0,
+          total: textChunks.length,
+          summary: `Processing ${textChunks.length} chunks`,
         })
 
         // Create Memory entries for each chunk and get embeddings
@@ -63,7 +77,9 @@ export const startDocumentWorker = () => {
           memoryId?: string
         }> = []
 
-        for (const chunk of textChunks) {
+        // Process chunks with embeddings inline (not async) for reliability
+        for (let i = 0; i < textChunks.length; i++) {
+          const chunk = textChunks[i]
           try {
             // Create Memory entry with source_type=DOCUMENT
             const memory = await prisma.memory.create({
@@ -78,21 +94,19 @@ export const startDocumentWorker = () => {
               },
             })
 
-            // Generate embeddings and store in Qdrant (non-blocking)
-            setImmediate(async () => {
-              try {
-                await memoryMeshService.generateEmbeddingsForMemory(memory.id)
-              } catch (embeddingError) {
-                logger.error('[document-worker] embedding error', {
-                  documentId,
-                  memoryId: memory.id,
-                  error:
-                    embeddingError instanceof Error
-                      ? embeddingError.message
-                      : String(embeddingError),
-                })
-              }
-            })
+            // Generate embeddings synchronously for reliability
+            try {
+              await memoryMeshService.generateEmbeddingsForMemory(memory.id)
+            } catch (embeddingError) {
+              logger.error('[document-worker] embedding error', {
+                documentId,
+                memoryId: memory.id,
+                error:
+                  embeddingError instanceof Error
+                    ? embeddingError.message
+                    : String(embeddingError),
+              })
+            }
 
             chunksWithMemories.push({
               content: chunk.content,
@@ -102,6 +116,15 @@ export const startDocumentWorker = () => {
               charEnd: chunk.charEnd,
               memoryId: memory.id,
             })
+
+            // Update progress every 5 chunks
+            if ((i + 1) % 5 === 0 || i === textChunks.length - 1) {
+              await documentService.updateProcessingStage(documentId, 'generating_embeddings', {
+                current: i + 1,
+                total: textChunks.length,
+                summary: `Indexed ${i + 1} of ${textChunks.length} chunks`,
+              })
+            }
           } catch (chunkError) {
             logger.error('[document-worker] chunk processing error', {
               documentId,
@@ -120,13 +143,27 @@ export const startDocumentWorker = () => {
           }
         }
 
+        // Stage 4: Indexing
+        await documentService.updateProcessingStage(documentId, 'indexing', {
+          summary: `Saving ${chunksWithMemories.length} chunks to database`,
+        })
+
         // Create DocumentChunk records
         await documentService.createChunks(documentId, chunksWithMemories)
+
+        // Mark as completed
+        await documentService.updateProcessingStage(documentId, 'completed', {
+          summary: `${chunksWithMemories.length} chunks indexed`,
+        })
 
         // Update document with processing results
         await documentService.updateProcessingResults(documentId, {
           pageCount: extracted.pageCount,
-          metadata: extracted.metadata,
+          metadata: {
+            ...extracted.metadata,
+            chunk_count: chunksWithMemories.length,
+            memory_count: chunksWithMemories.filter(c => c.memoryId).length,
+          },
         })
 
         logger.log('[document-worker] processing completed', {

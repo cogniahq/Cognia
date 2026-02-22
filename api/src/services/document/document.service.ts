@@ -4,7 +4,6 @@ import { storageService, StorageService } from '../storage/storage.service'
 import { addDocumentJob } from '../../lib/document-queue.lib'
 import { DocumentStatus } from '@prisma/client'
 import type { DocumentUploadInput, DocumentInfo } from '../../types/organization.types'
-
 export class DocumentService {
   /**
    * Upload a new document and queue it for processing
@@ -175,6 +174,36 @@ export class DocumentService {
     })
 
     logger.log('[document] status updated', { documentId, status })
+  }
+
+  /**
+   * Update processing stage in metadata for granular status tracking
+   */
+  async updateProcessingStage(
+    documentId: string,
+    stage: 'extracting_text' | 'chunking' | 'generating_embeddings' | 'indexing' | 'completed',
+    progress?: { current?: number; total?: number; summary?: string }
+  ): Promise<void> {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId },
+      select: { metadata: true },
+    })
+
+    const existingMetadata = (document?.metadata as Record<string, unknown>) || {}
+
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        metadata: {
+          ...existingMetadata,
+          processing_stage: stage,
+          processing_progress: progress,
+          stage_updated_at: new Date().toISOString(),
+        },
+      },
+    })
+
+    logger.log('[document] processing stage updated', { documentId, stage, progress })
   }
 
   /**

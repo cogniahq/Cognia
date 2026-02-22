@@ -130,6 +130,8 @@ export interface OrganizationSearchResponse {
     documentName?: string
     pageNumber?: number
     memoryId: string
+    url?: string
+    sourceType?: string
   }>
   totalResults: number
   answerJobId?: string // Job ID for async answer generation

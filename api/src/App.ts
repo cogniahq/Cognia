@@ -19,6 +19,7 @@ import { prisma } from './lib/prisma.lib'
 import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
 import { startDocumentWorker } from './workers/document-worker'
+import { startBriefingWorker } from './workers/briefing-worker'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
@@ -287,6 +288,8 @@ server.listen(port, async () => {
   logger.log('[startup] profile_worker_started')
   startDocumentWorker()
   logger.log('[startup] document_worker_started')
+  startBriefingWorker()
+  logger.log('[startup] briefing_worker_started')
   try {
     await integrationService.initialize()
     logger.log('[startup] integration_service_ready')

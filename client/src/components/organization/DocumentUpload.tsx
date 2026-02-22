@@ -152,7 +152,10 @@ export function DocumentUpload() {
                     : f
                 )
               )
-            } else if (updatedDoc.status === "PROCESSING" && metadata?.processing_stage) {
+            } else if (
+              updatedDoc.status === "PROCESSING" &&
+              metadata?.processing_stage
+            ) {
               // Update with current processing stage
               setUploadingFiles((prev) =>
                 prev.map((f) =>

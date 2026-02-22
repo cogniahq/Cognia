@@ -393,7 +393,9 @@ export function OrganizationSearch() {
                             <div className="flex items-center gap-2 mb-1">
                               {(result.sourceType === "EXTENSION" ||
                                 result.sourceType === "INTEGRATION") && (
-                                <span className="text-blue-500 text-xs">↗</span>
+                                <span className="text-blue-500 text-xs">
+                                  ↗
+                                </span>
                               )}
                               <span className="text-sm font-medium text-gray-900">
                                 {result.documentName ||

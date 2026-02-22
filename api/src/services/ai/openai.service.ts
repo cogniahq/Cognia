@@ -30,7 +30,7 @@ class OpenAIService {
   async generateContent(
     prompt: string,
     isSearchRequest: boolean = false,
-    _timeoutOverride?: number
+    timeoutOverride?: number
   ): Promise<{ text: string; modelUsed: string }> {
     const client = this.getClient()
     const startTime = Date.now()
@@ -39,12 +39,15 @@ class OpenAIService {
       // Use faster model for search requests
       const model = isSearchRequest ? 'gpt-4o-mini' : CHAT_MODEL
 
-      const response = await client.chat.completions.create({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: isSearchRequest ? 1024 : 2048,
-        temperature: isSearchRequest ? 0.3 : 0.7,
-      })
+      const response = await client.chat.completions.create(
+        {
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: isSearchRequest ? 1024 : 2048,
+          temperature: isSearchRequest ? 0.3 : 0.7,
+        },
+        timeoutOverride ? { timeout: timeoutOverride } : undefined
+      )
 
       const text = response.choices[0]?.message?.content || ''
       const elapsed = Date.now() - startTime

@@ -13,6 +13,7 @@ import invitationRouter from './invitation.route'
 import integrationsRouter from './integrations.route'
 import orgIntegrationsRouter from './org-integrations.route'
 import webhooksRouter from './webhooks.route'
+import briefingRouter from './briefing.route'
 
 export const routes = (app: Express) => {
   app.use('/api/memory', memoryRouter)
@@ -35,4 +36,6 @@ export const routes = (app: Express) => {
   app.use('/api/integrations', integrationsRouter)
   // Webhook routes (external services call these)
   app.use('/api/webhooks', webhooksRouter)
+  // Briefing routes
+  app.use('/api/briefings', briefingRouter)
 }

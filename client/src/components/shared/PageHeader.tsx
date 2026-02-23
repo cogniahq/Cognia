@@ -2,6 +2,8 @@ import React from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { useNavigate } from "react-router-dom"
 
+import BriefingBadge from "@/components/briefing/BriefingBadge"
+
 interface PageHeaderProps {
   pageName: string
   rightActions?: React.ReactNode
@@ -35,12 +37,14 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       ? [
           { label: "Workspace", path: "/organization" },
           { label: "Integrations", path: "/integrations" },
+          { label: "Briefings", path: "/briefings" },
           { label: "Profile", path: "/profile" },
         ]
       : [
           { label: "Memories", path: "/memories" },
           { label: "Analytics", path: "/analytics" },
           { label: "Integrations", path: "/integrations" },
+          { label: "Briefings", path: "/briefings" },
           { label: "Profile", path: "/profile" },
         ]
 
@@ -83,9 +87,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 <button
                   key={btn.path}
                   onClick={() => (window.location.href = btn.path)}
-                  className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
+                  className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors flex items-center gap-1.5"
                 >
                   {btn.label}
+                  {btn.label === "Briefings" && <BriefingBadge />}
                 </button>
               ))}
             </div>

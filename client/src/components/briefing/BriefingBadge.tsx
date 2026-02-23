@@ -23,7 +23,7 @@ export default function BriefingBadge({ className = "" }: BriefingBadgeProps) {
 
   return (
     <span
-      className={`min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-xs flex items-center justify-center px-1 ${className}`}
+      className={`min-w-[18px] h-[18px] bg-gray-900 text-white text-xs font-mono flex items-center justify-center px-1 ${className}`}
     >
       {count}
     </span>

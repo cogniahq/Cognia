@@ -76,31 +76,31 @@ export default function BriefingFeed() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Intelligence Briefings
-        </h2>
+        <div className="text-sm font-mono text-gray-600 uppercase tracking-wide">
+          [INTELLIGENCE BRIEFINGS]
+        </div>
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors disabled:opacity-50"
         >
           {generating ? "Generating..." : "Generate Now"}
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-3 py-1.5 text-xs font-mono border transition-colors ${
               activeTab === tab.key
-                ? "border-blue-600 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                ? "bg-gray-900 text-white border-gray-900"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300"
             }`}
           >
             {tab.label}
@@ -110,27 +110,26 @@ export default function BriefingFeed() {
 
       {/* Content */}
       {loading && briefings.length === 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3 animate-pulse"
+              className="border border-gray-200 p-4 space-y-3 animate-pulse"
             >
               <div className="flex gap-2">
-                <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                <div className="h-5 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="h-5 w-16 bg-gray-200" />
+                <div className="h-5 w-12 bg-gray-200" />
               </div>
-              <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded" />
-              <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div className="h-4 w-full bg-gray-200" />
+              <div className="h-4 w-3/4 bg-gray-200" />
             </div>
           ))}
         </div>
       ) : briefings.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          <div className="text-4xl mb-3">💡</div>
-          <p className="text-sm">
+        <div className="text-center py-12 border border-gray-200 bg-white">
+          <p className="text-sm font-mono text-gray-500">
             No briefings yet. Keep browsing and Cognia will generate your first
-            daily digest!
+            daily digest.
           </p>
         </div>
       ) : (
@@ -142,7 +141,7 @@ export default function BriefingFeed() {
             <button
               onClick={handleLoadMore}
               disabled={loading}
-              className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+              className="w-full py-2 text-xs font-mono text-gray-500 hover:text-gray-900 border border-gray-300 hover:bg-gray-100 disabled:opacity-50 transition-colors"
             >
               {loading ? "Loading..." : "Load more"}
             </button>

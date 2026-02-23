@@ -21,21 +21,19 @@ interface ToggleRowProps {
 function ToggleRow({ label, checked, onChange }: ToggleRowProps) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+      <span className="text-sm font-mono text-gray-700">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative w-10 h-5 rounded-full transition-colors ${
-          checked ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
+        className={`px-3 py-1 text-xs font-mono border transition-colors ${
+          checked
+            ? "bg-gray-900 text-white border-gray-900"
+            : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
         }`}
       >
-        <span
-          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
+        {checked ? "ON" : "OFF"}
       </button>
     </div>
   )
@@ -84,7 +82,7 @@ export default function BriefingPreferences() {
     return (
       <div className="animate-pulse space-y-3 p-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div key={i} className="h-8 bg-gray-200" />
         ))}
       </div>
     )
@@ -93,19 +91,17 @@ export default function BriefingPreferences() {
   if (!preferences) return null
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <div className="bg-white border border-gray-200 p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Briefing Preferences
-        </h3>
+        <div className="text-xs font-mono text-gray-500 uppercase tracking-wide">
+          [PREFERENCES]
+        </div>
         {saved && (
-          <span className="text-xs text-green-600 dark:text-green-400">
-            Saved
-          </span>
+          <span className="text-xs font-mono text-gray-500">Saved</span>
         )}
       </div>
 
-      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+      <div className="divide-y divide-gray-100">
         <ToggleRow
           label="Daily Digest"
           checked={preferences.daily_digest}
@@ -130,13 +126,13 @@ export default function BriefingPreferences() {
 
       <div className="space-y-3 pt-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-2">
             Digest Hour
           </label>
           <select
             value={preferences.digest_hour}
             onChange={(e) => update({ digest_hour: Number(e.target.value) })}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300"
+            className="w-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-mono text-gray-700"
           >
             {Array.from({ length: 24 }, (_, i) => (
               <option key={i} value={i}>
@@ -147,7 +143,7 @@ export default function BriefingPreferences() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-mono text-gray-500 uppercase tracking-wide mb-2">
             Timezone
           </label>
           <input
@@ -155,7 +151,7 @@ export default function BriefingPreferences() {
             value={preferences.timezone}
             onChange={(e) => update({ timezone: e.target.value })}
             placeholder="UTC"
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300"
+            className="w-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-mono text-gray-700"
           />
         </div>
       </div>

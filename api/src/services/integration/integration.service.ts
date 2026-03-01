@@ -15,6 +15,8 @@ import {
   GoogleDrivePlugin,
   NotionPlugin,
   SlackPlugin,
+  MeetingsPlugin,
+  GoogleCalendarPlugin,
   type TokenSet,
   type PluginInfo,
   type ResourceContent,
@@ -144,8 +146,26 @@ export class IntegrationService {
       logger.log('Registered Box plugin')
     }
 
-    // Add more plugins here as they're implemented
-    // GitHub, etc.
+    // Meetings (bot service)
+    if (process.env.MEETING_BOT_SERVICE_URL) {
+      PluginRegistry.register(MeetingsPlugin, {
+        clientId: '',
+        clientSecret: '',
+        redirectUri: '',
+        botServiceUrl: process.env.MEETING_BOT_SERVICE_URL,
+      })
+      logger.log('Registered Meetings plugin')
+    }
+
+    // Google Calendar (reuses Google OAuth credentials)
+    if (process.env.GOOGLE_CALENDAR_CLIENT_ID && process.env.GOOGLE_CALENDAR_CLIENT_SECRET) {
+      PluginRegistry.register(GoogleCalendarPlugin, {
+        clientId: process.env.GOOGLE_CALENDAR_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_CALENDAR_REDIRECT_URI || '',
+      })
+      logger.log('Registered Google Calendar plugin')
+    }
   }
 
   /**
@@ -887,6 +907,24 @@ export class IntegrationService {
       return token
     }
     return tokenEncryptor.encrypt(token)
+  }
+
+  /**
+   * Get the queue manager instance for external use (e.g., meeting service).
+   */
+  getQueueManager(): IntegrationQueueManager | null {
+    return this.queueManager
+  }
+
+  /**
+   * Public wrapper for decrypting tokens from an integration record.
+   */
+  getDecryptedTokensPublic(integration: {
+    access_token: string
+    refresh_token: string | null
+    token_expires_at: Date | null
+  }): TokenSet {
+    return this.getDecryptedTokens(integration)
   }
 
   private decryptToken(encrypted: string): string {

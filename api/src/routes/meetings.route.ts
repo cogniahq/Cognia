@@ -19,9 +19,10 @@ router.post('/join', authenticateToken, async (req: AuthenticatedRequest, res: R
     }
 
     if (!meetingService.validateMeetingUrl(meetingUrl)) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Invalid meeting URL. Only Google Meet and Zoom are supported.' })
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid meeting URL. Only Google Meet and Zoom are supported.',
+      })
     }
 
     const meeting = await meetingService.startMeeting({
@@ -33,7 +34,9 @@ router.post('/join', authenticateToken, async (req: AuthenticatedRequest, res: R
 
     res.status(201).json({ success: true, data: meeting })
   } catch (error) {
-    res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to join meeting') })
+    res
+      .status(500)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to join meeting') })
   }
 })
 
@@ -50,7 +53,9 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Respon
 
     res.json({ success: true, data: result })
   } catch (error) {
-    res.status(500).json({ success: false, error: getErrorMessage(error, 'Failed to list meetings') })
+    res
+      .status(500)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to list meetings') })
   }
 })
 
@@ -65,7 +70,9 @@ router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Res
     res.json({ success: true, data: meeting })
   } catch (error) {
     const status = (error as Error).message === 'Meeting not found' ? 404 : 500
-    res.status(status).json({ success: false, error: getErrorMessage(error, 'Failed to get meeting') })
+    res
+      .status(status)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to get meeting') })
   }
 })
 
@@ -81,7 +88,9 @@ router.delete('/:id/stop', authenticateToken, async (req: AuthenticatedRequest, 
   } catch (error) {
     const msg = (error as Error).message
     const status = msg === 'Meeting not found' ? 404 : msg === 'Meeting already ended' ? 400 : 500
-    res.status(status).json({ success: false, error: getErrorMessage(error, 'Failed to stop meeting') })
+    res
+      .status(status)
+      .json({ success: false, error: getErrorMessage(error, 'Failed to stop meeting') })
   }
 })
 

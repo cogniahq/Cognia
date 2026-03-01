@@ -233,7 +233,7 @@ ${text.slice(0, 15000)}`,
     })
 
     if (data.organizationId) {
-      (memoryPayload as any).organization_id = data.organizationId
+      ;(memoryPayload as any).organization_id = data.organizationId
     }
 
     try {
@@ -245,7 +245,10 @@ ${text.slice(0, 15000)}`,
           await memoryMeshService.generateEmbeddingsForMemory(memory.id)
           await memoryMeshService.createMemoryRelations(memory.id, userId)
         } catch (err) {
-          logger.error(`[MeetingProcessing] Embedding generation failed for memory ${memory.id}:`, err)
+          logger.error(
+            `[MeetingProcessing] Embedding generation failed for memory ${memory.id}:`,
+            err
+          )
         }
       })
     } catch (err) {

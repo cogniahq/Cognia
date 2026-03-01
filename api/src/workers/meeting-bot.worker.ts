@@ -114,7 +114,9 @@ export const startMeetingBotWorker = () => {
         },
       })
 
-      logger.log(`[MeetingBotWorker] Meeting ${meetingId} ended, saved ${finalSession.transcript?.length ?? 0} transcript segments`)
+      logger.log(
+        `[MeetingBotWorker] Meeting ${meetingId} ended, saved ${finalSession.transcript?.length ?? 0} transcript segments`
+      )
 
       // Step 6: Enqueue the processing job
       const queueManager = integrationService.getQueueManager()
@@ -128,7 +130,9 @@ export const startMeetingBotWorker = () => {
         await queueManager.addMeetingProcessingJob(processingData)
         logger.log(`[MeetingBotWorker] Enqueued processing job for meeting ${meetingId}`)
       } else {
-        logger.error(`[MeetingBotWorker] Queue manager not available, cannot enqueue processing for ${meetingId}`)
+        logger.error(
+          `[MeetingBotWorker] Queue manager not available, cannot enqueue processing for ${meetingId}`
+        )
       }
 
       return { success: true, meetingId, segments: finalSession.transcript.length }

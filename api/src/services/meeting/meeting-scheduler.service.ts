@@ -107,7 +107,9 @@ class MeetingSchedulerService {
             title: event.summary,
           })
 
-          logger.log(`[MeetingScheduler] Auto-joined meeting for user ${integration.user_id}: ${event.summary}`)
+          logger.log(
+            `[MeetingScheduler] Auto-joined meeting for user ${integration.user_id}: ${event.summary}`
+          )
         }
       } catch (err) {
         logger.error(`[MeetingScheduler] Error for integration ${integration.id}:`, err)

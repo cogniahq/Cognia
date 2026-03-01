@@ -20,6 +20,9 @@ import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
 import { startDocumentWorker } from './workers/document-worker'
 import { startBriefingWorker } from './workers/briefing-worker'
+import { startMeetingWorker } from './workers/meeting.worker'
+import { startMeetingBotWorker } from './workers/meeting-bot.worker'
+import { meetingSchedulerService } from './services/meeting/meeting-scheduler.service'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
@@ -290,6 +293,12 @@ server.listen(port, async () => {
   logger.log('[startup] document_worker_started')
   startBriefingWorker()
   logger.log('[startup] briefing_worker_started')
+  startMeetingBotWorker()
+  logger.log('[startup] meeting_bot_worker_started')
+  startMeetingWorker()
+  logger.log('[startup] meeting_processing_worker_started')
+  meetingSchedulerService.start()
+  logger.log('[startup] meeting_scheduler_started')
   try {
     await integrationService.initialize()
     logger.log('[startup] integration_service_ready')
@@ -313,6 +322,8 @@ process.on('unhandledRejection', (err: Error) => {
 // Graceful shutdown handling for nodemon restarts
 const gracefulShutdown = (signal: string) => {
   logger.log(`[shutdown] ${signal} received, closing server...`)
+  meetingSchedulerService.stop()
+  logger.log('[shutdown] Meeting scheduler stopped')
   server.close(async () => {
     logger.log('[shutdown] HTTP server closed')
     try {

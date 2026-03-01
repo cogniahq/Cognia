@@ -75,6 +75,14 @@ enum SyncJobStatus {
   CANCELLED
 }
 
+enum MeetingStatus {
+  JOINING
+  IN_MEETING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum BriefingType {
   DAILY_DIGEST
   WEEKLY_SYNTHESIS
@@ -110,6 +118,7 @@ model User {
   organization_memberships OrganizationMember[]
   uploaded_documents       Document[]
   integrations             UserIntegration[]
+  meetings                 Meeting[]
   intelligence_briefings   IntelligenceBriefing[]
   notification_preferences NotificationPreferences?
 
@@ -170,6 +179,7 @@ model Organization {
   invitations  OrganizationInvitation[]
   integrations OrganizationIntegration[]
   intelligence_briefings IntelligenceBriefing[]
+  meetings     Meeting[]
 
   @@map("organizations")
 }
@@ -579,5 +589,34 @@ model NotificationPreferences {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+model Meeting {
+  id               String        @id @default(uuid()) @db.Uuid
+  user_id          String        @db.Uuid
+  organization_id  String?       @db.Uuid
+  meeting_url      String
+  platform         String        // 'google_meet' | 'zoom'
+  bot_session_id   String?
+  calendar_event_id String?      // Google Calendar event ID if auto-joined
+  status           MeetingStatus @default(JOINING)
+  title            String?
+  raw_transcript   Json?         // TranscriptSegment[]
+  summary          String?       @db.Text
+  action_items     Json?         // ActionItem[]
+  topics           Json?         // Topic[]
+  started_at       DateTime?
+  ended_at         DateTime?
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  user             User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization     Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([organization_id])
+  @@index([status])
+  @@index([calendar_event_id])
+  @@index([user_id, created_at])
+  @@map("meetings")
 }
 

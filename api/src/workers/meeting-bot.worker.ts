@@ -1,4 +1,5 @@
 import { Worker } from 'bullmq'
+import type { Prisma } from '@prisma/client'
 import { INTEGRATION_QUEUES, MeetingBotClient } from '@cogniahq/integrations'
 import type { MeetingBotJobData, MeetingProcessingJobData } from '@cogniahq/integrations'
 import { prisma } from '../lib/prisma.lib'
@@ -108,7 +109,7 @@ export const startMeetingBotWorker = () => {
       await prisma.meeting.update({
         where: { id: meetingId },
         data: {
-          raw_transcript: finalSession.transcript as any,
+          raw_transcript: finalSession.transcript as unknown as Prisma.InputJsonValue,
           status: 'PROCESSING',
           ended_at: finalSession.endedAt ? new Date(finalSession.endedAt) : new Date(),
         },

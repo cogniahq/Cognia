@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma.lib'
 import { aiProvider } from '../ai/ai-provider.service'
 import { memoryIngestionService } from '../memory/memory-ingestion.service'
@@ -77,8 +78,8 @@ class MeetingProcessingService {
         where: { id: meetingId },
         data: {
           summary,
-          action_items: actionItems as any,
-          topics: topics as any,
+          action_items: actionItems as unknown as Prisma.InputJsonValue,
+          topics: topics as unknown as Prisma.InputJsonValue,
           status: 'COMPLETED',
         },
       })
@@ -233,7 +234,7 @@ ${text.slice(0, 15000)}`,
     })
 
     if (data.organizationId) {
-      ;(memoryPayload as any).organization_id = data.organizationId
+      Object.assign(memoryPayload, { organization_id: data.organizationId })
     }
 
     try {

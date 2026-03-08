@@ -41,7 +41,9 @@ class MeetingSchedulerService {
 
   private runCheck(trigger: 'startup' | 'interval'): void {
     if (this.isChecking) {
-      logger.warn(`[MeetingScheduler] Skipping ${trigger} check because the previous run is still active`)
+      logger.warn(
+        `[MeetingScheduler] Skipping ${trigger} check because the previous run is still active`
+      )
       return
     }
 

@@ -26,8 +26,9 @@ interface Topic {
   endTime: number
 }
 
-const getTopicNames = (topics: Topic[]): string[] =>
-  [...new Set(topics.map(topic => topic.name.trim()).filter(Boolean))]
+const getTopicNames = (topics: Topic[]): string[] => [
+  ...new Set(topics.map(topic => topic.name.trim()).filter(Boolean)),
+]
 
 /**
  * Post-meeting AI processing:

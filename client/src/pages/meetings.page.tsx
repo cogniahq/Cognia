@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { useOrganization } from "@/contexts/organization.context"
+import {
+  getMeeting,
+  listMeetings,
+  startMeeting,
+  stopMeeting,
+} from "@/services/meeting.service"
 import { requireAuthToken } from "@/utils/auth"
-import { cn } from "@/lib/utils.lib"
-import { getMeeting, listMeetings, startMeeting, stopMeeting } from "@/services/meeting.service"
-import { useNavigate } from "react-router-dom"
 import {
   CalendarClock,
   ExternalLink,
@@ -13,6 +16,7 @@ import {
   Square,
   Video,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import type {
   MeetingActionItem,
@@ -21,7 +25,7 @@ import type {
   MeetingTopic,
   TranscriptSegment,
 } from "@/types/meeting"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { cn } from "@/lib/utils.lib"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,20 +36,22 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import {
   EmptyState,
   ErrorMessage,
   LoadingCard,
 } from "@/components/ui/loading-spinner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 const ACTIVE_STATUSES = new Set(["JOINING", "IN_MEETING"])
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
 
-const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+const asArray = <T,>(value: unknown): T[] =>
+  Array.isArray(value) ? (value as T[]) : []
 
 const formatSeconds = (seconds: number): string => {
   if (!Number.isFinite(seconds) || seconds < 0) return "00:00"
@@ -111,8 +117,12 @@ export const Meetings: React.FC = () => {
 
   const [isReady, setIsReady] = useState(false)
   const [meetings, setMeetings] = useState<MeetingSummary[]>([])
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null)
-  const [selectedMeeting, setSelectedMeeting] = useState<MeetingDetail | null>(null)
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(
+    null
+  )
+  const [selectedMeeting, setSelectedMeeting] = useState<MeetingDetail | null>(
+    null
+  )
   const [listLoading, setListLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -165,44 +175,50 @@ export const Meetings: React.FC = () => {
     }
   }, [])
 
-  const loadMeetings = useCallback(async (preferredMeetingId?: string | null) => {
-    const requestId = listRequestIdRef.current + 1
-    listRequestIdRef.current = requestId
+  const loadMeetings = useCallback(
+    async (preferredMeetingId?: string | null) => {
+      const requestId = listRequestIdRef.current + 1
+      listRequestIdRef.current = requestId
 
-    setListLoading(true)
-    setError(null)
+      setListLoading(true)
+      setError(null)
 
-    try {
-      const data = await listMeetings()
-      if (listRequestIdRef.current !== requestId) return
-      setMeetings(data.meetings)
-      setTotalMeetings(data.total)
+      try {
+        const data = await listMeetings()
+        if (listRequestIdRef.current !== requestId) return
+        setMeetings(data.meetings)
+        setTotalMeetings(data.total)
 
-      const resolvedMeetingId =
-        preferredMeetingId && data.meetings.some(meeting => meeting.id === preferredMeetingId)
-          ? preferredMeetingId
-          : selectedMeetingIdRef.current &&
-              data.meetings.some(meeting => meeting.id === selectedMeetingIdRef.current)
-            ? selectedMeetingIdRef.current
-            : data.meetings[0]?.id || null
+        const resolvedMeetingId =
+          preferredMeetingId &&
+          data.meetings.some((meeting) => meeting.id === preferredMeetingId)
+            ? preferredMeetingId
+            : selectedMeetingIdRef.current &&
+                data.meetings.some(
+                  (meeting) => meeting.id === selectedMeetingIdRef.current
+                )
+              ? selectedMeetingIdRef.current
+              : data.meetings[0]?.id || null
 
-      setSelectedMeetingId(resolvedMeetingId)
+        setSelectedMeetingId(resolvedMeetingId)
 
-      if (resolvedMeetingId) {
-        await loadMeetingDetail(resolvedMeetingId)
-      } else {
-        setSelectedMeeting(null)
-        setDetailError(null)
+        if (resolvedMeetingId) {
+          await loadMeetingDetail(resolvedMeetingId)
+        } else {
+          setSelectedMeeting(null)
+          setDetailError(null)
+        }
+      } catch (err) {
+        if (listRequestIdRef.current !== requestId) return
+        setError(getErrorMessage(err, "Failed to load meetings"))
+      } finally {
+        if (listRequestIdRef.current === requestId) {
+          setListLoading(false)
+        }
       }
-    } catch (err) {
-      if (listRequestIdRef.current !== requestId) return
-      setError(getErrorMessage(err, "Failed to load meetings"))
-    } finally {
-      if (listRequestIdRef.current === requestId) {
-        setListLoading(false)
-      }
-    }
-  }, [loadMeetingDetail])
+    },
+    [loadMeetingDetail]
+  )
 
   useEffect(() => {
     if (!isReady) return
@@ -212,11 +228,11 @@ export const Meetings: React.FC = () => {
   const transcript = asArray<TranscriptSegment>(selectedMeeting?.raw_transcript)
   const actionItems = asArray<MeetingActionItem>(selectedMeeting?.action_items)
   const topics = asArray<MeetingTopic>(selectedMeeting?.topics)
-  const activeMeetingCount = meetings.filter(meeting =>
+  const activeMeetingCount = meetings.filter((meeting) =>
     ACTIVE_STATUSES.has(meeting.status)
   ).length
   const completedMeetingCount = meetings.filter(
-    meeting => meeting.status === "COMPLETED"
+    (meeting) => meeting.status === "COMPLETED"
   ).length
 
   const handleSelectMeeting = async (meetingId: string) => {
@@ -338,8 +354,8 @@ export const Meetings: React.FC = () => {
                         id="meeting-url"
                         placeholder="https://meet.google.com/... or https://zoom.us/j/..."
                         value={formState.meetingUrl}
-                        onChange={event =>
-                          setFormState(current => ({
+                        onChange={(event) =>
+                          setFormState((current) => ({
                             ...current,
                             meetingUrl: event.target.value,
                           }))
@@ -359,8 +375,8 @@ export const Meetings: React.FC = () => {
                         id="meeting-title"
                         placeholder="Optional label for the meeting"
                         value={formState.title}
-                        onChange={event =>
-                          setFormState(current => ({
+                        onChange={(event) =>
+                          setFormState((current) => ({
                             ...current,
                             title: event.target.value,
                           }))
@@ -374,7 +390,8 @@ export const Meetings: React.FC = () => {
                       </div>
                       <div className="mt-1 text-xs text-gray-500">
                         {accountType === "ORGANIZATION"
-                          ? currentOrganization?.name || "No organization selected"
+                          ? currentOrganization?.name ||
+                            "No organization selected"
                           : "Personal memory graph"}
                       </div>
                     </div>
@@ -382,7 +399,9 @@ export const Meetings: React.FC = () => {
                     <Button
                       type="submit"
                       className="w-full gap-2"
-                      disabled={submitting || formState.meetingUrl.trim() === ""}
+                      disabled={
+                        submitting || formState.meetingUrl.trim() === ""
+                      }
                     >
                       {submitting ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -444,7 +463,7 @@ export const Meetings: React.FC = () => {
                       description="Start a meeting above or enable Google Calendar auto-join from Integrations."
                     />
                   ) : (
-                    meetings.map(meeting => (
+                    meetings.map((meeting) => (
                       <button
                         key={meeting.id}
                         type="button"
@@ -478,8 +497,16 @@ export const Meetings: React.FC = () => {
                           </Badge>
                         </div>
                         <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-                          <span>{meeting.platform === "google_meet" ? "Google Meet" : "Zoom"}</span>
-                          <span>{formatRelativeTime(meeting.started_at || meeting.created_at)}</span>
+                          <span>
+                            {meeting.platform === "google_meet"
+                              ? "Google Meet"
+                              : "Zoom"}
+                          </span>
+                          <span>
+                            {formatRelativeTime(
+                              meeting.started_at || meeting.created_at
+                            )}
+                          </span>
                         </div>
                       </button>
                     ))
@@ -506,7 +533,9 @@ export const Meetings: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge
                         variant="outline"
-                        className={getStatusBadgeClassName(selectedMeeting.status)}
+                        className={getStatusBadgeClassName(
+                          selectedMeeting.status
+                        )}
                       >
                         {selectedMeeting.status.replace(/_/g, " ")}
                       </Badge>
@@ -551,7 +580,10 @@ export const Meetings: React.FC = () => {
                           Started
                         </div>
                         <div className="mt-2 text-sm font-medium text-gray-900">
-                          {formatDateTime(selectedMeeting.started_at || selectedMeeting.created_at)}
+                          {formatDateTime(
+                            selectedMeeting.started_at ||
+                              selectedMeeting.created_at
+                          )}
                         </div>
                       </div>
                       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -587,7 +619,9 @@ export const Meetings: React.FC = () => {
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-sm text-gray-900">
                           <CalendarClock className="h-4 w-4 text-gray-500" />
-                          <span className="truncate">{selectedMeeting.meeting_url}</span>
+                          <span className="truncate">
+                            {selectedMeeting.meeting_url}
+                          </span>
                         </div>
                         {selectedMeeting.calendar_event_id ? (
                           <div className="mt-2 text-xs text-gray-500">
@@ -607,7 +641,11 @@ export const Meetings: React.FC = () => {
                       </a>
                     </div>
 
-                    <Tabs key={selectedMeeting.id} defaultValue="summary" className="w-full">
+                    <Tabs
+                      key={selectedMeeting.id}
+                      defaultValue="summary"
+                      className="w-full"
+                    >
                       <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="summary">Summary</TabsTrigger>
                         <TabsTrigger value="actions">Action Items</TabsTrigger>
@@ -702,7 +740,8 @@ export const Meetings: React.FC = () => {
                                         {topic.name}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        {formatSeconds(topic.startTime)} - {formatSeconds(topic.endTime)}
+                                        {formatSeconds(topic.startTime)} -{" "}
+                                        {formatSeconds(topic.endTime)}
                                       </div>
                                     </div>
                                     <div className="mt-2 text-sm leading-6 text-gray-600">
@@ -733,7 +772,8 @@ export const Meetings: React.FC = () => {
                                   >
                                     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                       <span className="font-mono">
-                                        {formatSeconds(segment.start)} - {formatSeconds(segment.end)}
+                                        {formatSeconds(segment.start)} -{" "}
+                                        {formatSeconds(segment.end)}
                                       </span>
                                       {segment.speaker ? (
                                         <Badge

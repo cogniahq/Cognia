@@ -7,8 +7,9 @@ import type {
   StartMeetingInput,
 } from "@/types/meeting"
 
-const getApiError = (response: { data?: { success?: boolean; error?: string } }) =>
-  response.data?.error || "Request failed"
+const getApiError = (response: {
+  data?: { success?: boolean; error?: string }
+}) => response.data?.error || "Request failed"
 
 export async function listMeetings(
   limit: number = 50,

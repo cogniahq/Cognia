@@ -116,7 +116,11 @@ export const startMeetingBotWorker = () => {
       // Step 4: Fetch final session with complete transcript
       let finalSession
       try {
-        finalSession = await getSessionWithRetries(botClient, session.id, FINAL_SESSION_RETRY_ATTEMPTS)
+        finalSession = await getSessionWithRetries(
+          botClient,
+          session.id,
+          FINAL_SESSION_RETRY_ATTEMPTS
+        )
       } catch (err) {
         logger.error(`[MeetingBotWorker] Failed to fetch final session ${session.id}:`, err)
         await prisma.meeting.update({

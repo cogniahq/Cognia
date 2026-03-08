@@ -40,9 +40,7 @@ router.post('/join', authenticateToken, async (req: AuthenticatedRequest, res: R
       message.includes('Meeting system unavailable') || message.includes('Meeting bot unavailable')
         ? 503
         : 500
-    res
-      .status(status)
-      .json({ success: false, error: message })
+    res.status(status).json({ success: false, error: message })
   }
 })
 

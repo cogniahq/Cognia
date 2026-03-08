@@ -37,6 +37,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       ? [
           { label: "Workspace", path: "/organization" },
           { label: "Integrations", path: "/integrations" },
+          { label: "Meetings", path: "/meetings" },
           { label: "Briefings", path: "/briefings" },
           { label: "Profile", path: "/profile" },
         ]
@@ -44,6 +45,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           { label: "Memories", path: "/memories" },
           { label: "Analytics", path: "/analytics" },
           { label: "Integrations", path: "/integrations" },
+          { label: "Meetings", path: "/meetings" },
           { label: "Briefings", path: "/briefings" },
           { label: "Profile", path: "/profile" },
         ]

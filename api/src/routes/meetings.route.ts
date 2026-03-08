@@ -13,12 +13,13 @@ const getErrorMessage = (error: unknown, fallback: string) =>
 router.post('/join', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { meetingUrl, title, organizationId } = req.body
+    const normalizedMeetingUrl = typeof meetingUrl === 'string' ? meetingUrl.trim() : ''
 
-    if (!meetingUrl || typeof meetingUrl !== 'string') {
+    if (!normalizedMeetingUrl) {
       return res.status(400).json({ success: false, error: 'meetingUrl is required' })
     }
 
-    if (!meetingService.validateMeetingUrl(meetingUrl)) {
+    if (!meetingService.validateMeetingUrl(normalizedMeetingUrl)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid meeting URL. Only Google Meet and Zoom are supported.',
@@ -27,16 +28,18 @@ router.post('/join', authenticateToken, async (req: AuthenticatedRequest, res: R
 
     const meeting = await meetingService.startMeeting({
       userId: req.user!.id,
-      meetingUrl,
+      meetingUrl: normalizedMeetingUrl,
       title,
       organizationId,
     })
 
     res.status(201).json({ success: true, data: meeting })
   } catch (error) {
+    const message = getErrorMessage(error, 'Failed to join meeting')
+    const status = message.includes('Meeting system unavailable') ? 503 : 500
     res
-      .status(500)
-      .json({ success: false, error: getErrorMessage(error, 'Failed to join meeting') })
+      .status(status)
+      .json({ success: false, error: message })
   }
 })
 

@@ -285,6 +285,14 @@ server.listen(port, async () => {
   }
   const aiReady = aiProvider.isInitialized
   logger.log('[startup] ai_provider', { initialized: aiReady })
+  let meetingSubsystemReady = false
+  try {
+    await integrationService.initialize()
+    meetingSubsystemReady = integrationService.getQueueManager() != null
+    logger.log('[startup] integration_service_ready', { queueManager: meetingSubsystemReady })
+  } catch (e) {
+    logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
+  }
   startContentWorker()
   logger.log('[startup] content_worker_started')
   startCyclicProfileWorker()
@@ -293,17 +301,15 @@ server.listen(port, async () => {
   logger.log('[startup] document_worker_started')
   startBriefingWorker()
   logger.log('[startup] briefing_worker_started')
-  startMeetingBotWorker()
-  logger.log('[startup] meeting_bot_worker_started')
-  startMeetingWorker()
-  logger.log('[startup] meeting_processing_worker_started')
-  meetingSchedulerService.start()
-  logger.log('[startup] meeting_scheduler_started')
-  try {
-    await integrationService.initialize()
-    logger.log('[startup] integration_service_ready')
-  } catch (e) {
-    logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
+  if (meetingSubsystemReady) {
+    startMeetingBotWorker()
+    logger.log('[startup] meeting_bot_worker_started')
+    startMeetingWorker()
+    logger.log('[startup] meeting_processing_worker_started')
+    meetingSchedulerService.start()
+    logger.log('[startup] meeting_scheduler_started')
+  } else {
+    logger.warn('[startup] meeting_subsystem_disabled', 'Integration queue manager unavailable')
   }
   logger.log('[startup] server_listening', { protocol, port })
 })

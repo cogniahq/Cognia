@@ -26,6 +26,9 @@ interface Topic {
   endTime: number
 }
 
+const getTopicNames = (topics: Topic[]): string[] =>
+  [...new Set(topics.map(topic => topic.name.trim()).filter(Boolean))]
+
 /**
  * Post-meeting AI processing:
  * 1. Summarize transcript
@@ -227,15 +230,13 @@ ${text.slice(0, 15000)}`,
         platform: data.platform,
         actionItemCount: data.actionItems.length,
         topicCount: data.topics.length,
+        topics: getTopicNames(data.topics),
         source_type: 'INTEGRATION',
+        ...(data.organizationId ? { organization_id: data.organizationId } : {}),
       },
       canonicalText: canonicalData.canonicalText,
       canonicalHash: canonicalData.canonicalHash,
     })
-
-    if (data.organizationId) {
-      Object.assign(memoryPayload, { organization_id: data.organizationId })
-    }
 
     try {
       const memory = await prisma.memory.create({ data: memoryPayload })

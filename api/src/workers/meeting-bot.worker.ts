@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma.lib'
 import { getRedisConnection } from '../utils/core/env.util'
 import { logger } from '../utils/core/logger.util'
 import { integrationService } from '../services/integration'
+import { meetingProcessingService } from '../services/meeting/meeting-processing.service'
 
 const BOT_SERVICE_URL = process.env.MEETING_BOT_SERVICE_URL || 'http://localhost:3100'
 const POLL_INTERVAL_MS = 10_000 // 10 seconds
@@ -46,35 +47,51 @@ export const startMeetingBotWorker = () => {
         throw err
       }
 
-      // Step 2: Save bot session ID to the meeting record
-      await prisma.meeting.update({
-        where: { id: meetingId },
+      // Step 2: Save bot session ID to the meeting record if the meeting
+      // has not already been stopped while the bot was joining.
+      const joinUpdate = await prisma.meeting.updateMany({
+        where: {
+          id: meetingId,
+          status: 'JOINING',
+        },
         data: {
           bot_session_id: session.id,
           status: 'IN_MEETING',
         },
       })
 
+      let stopRequested = joinUpdate.count === 0
+      let stopCommandIssued = false
+
+      if (stopRequested) {
+        logger.warn(
+          `[MeetingBotWorker] Meeting ${meetingId} was stopped before the bot finished joining; ending session ${session.id}`
+        )
+      }
+
       // Step 3: Poll the bot service until the meeting ends or is stopped
       const startTime = Date.now()
 
       while (Date.now() - startTime < MAX_MEETING_DURATION_MS) {
-        await sleep(POLL_INTERVAL_MS)
+        if (!stopRequested) {
+          // Check if the meeting was manually stopped via the API
+          const meeting = await prisma.meeting.findUnique({
+            where: { id: meetingId },
+            select: { status: true },
+          })
 
-        // Check if the meeting was manually stopped via the API
-        const meeting = await prisma.meeting.findUnique({
-          where: { id: meetingId },
-          select: { status: true },
-        })
+          if (!meeting || meeting.status === 'PROCESSING' || meeting.status === 'FAILED') {
+            stopRequested = true
+          }
+        }
 
-        if (!meeting || meeting.status === 'PROCESSING' || meeting.status === 'FAILED') {
-          // User stopped the meeting or it was cancelled — tell bot to leave
+        if (stopRequested && !stopCommandIssued) {
           try {
             await botClient.stopSession(session.id)
-          } catch {
-            // Bot may have already left
+            stopCommandIssued = true
+          } catch (err) {
+            logger.warn(`[MeetingBotWorker] Failed to stop session ${session.id}, retrying...`, err)
           }
-          break
         }
 
         // Check bot session status
@@ -90,6 +107,8 @@ export const startMeetingBotWorker = () => {
         if (currentSession.status === 'ended' || currentSession.status === 'error') {
           break
         }
+
+        await sleep(POLL_INTERVAL_MS)
       }
 
       // Step 4: Fetch final session with complete transcript
@@ -104,19 +123,20 @@ export const startMeetingBotWorker = () => {
         })
         throw err
       }
+      const transcript = finalSession.transcript ?? []
 
       // Step 5: Save raw transcript to the database
       await prisma.meeting.update({
         where: { id: meetingId },
         data: {
-          raw_transcript: finalSession.transcript as unknown as Prisma.InputJsonValue,
+          raw_transcript: transcript as unknown as Prisma.InputJsonValue,
           status: 'PROCESSING',
           ended_at: finalSession.endedAt ? new Date(finalSession.endedAt) : new Date(),
         },
       })
 
       logger.log(
-        `[MeetingBotWorker] Meeting ${meetingId} ended, saved ${finalSession.transcript?.length ?? 0} transcript segments`
+        `[MeetingBotWorker] Meeting ${meetingId} ended, saved ${transcript.length} transcript segments`
       )
 
       // Step 6: Enqueue the processing job
@@ -131,12 +151,14 @@ export const startMeetingBotWorker = () => {
         await queueManager.addMeetingProcessingJob(processingData)
         logger.log(`[MeetingBotWorker] Enqueued processing job for meeting ${meetingId}`)
       } else {
-        logger.error(
-          `[MeetingBotWorker] Queue manager not available, cannot enqueue processing for ${meetingId}`
+        logger.warn(
+          `[MeetingBotWorker] Queue manager unavailable, processing meeting ${meetingId} inline`
         )
+        await meetingProcessingService.processMeeting(meetingId)
+        logger.log(`[MeetingBotWorker] Completed inline processing for meeting ${meetingId}`)
       }
 
-      return { success: true, meetingId, segments: finalSession.transcript.length }
+      return { success: true, meetingId, segments: transcript.length }
     },
     {
       connection: getRedisConnection(true),

@@ -13,6 +13,7 @@ const MINUTES_AHEAD = 10
  */
 class MeetingSchedulerService {
   private intervalHandle: ReturnType<typeof setInterval> | null = null
+  private isChecking = false
 
   /**
    * Start the scheduler (called on app startup).
@@ -21,12 +22,11 @@ class MeetingSchedulerService {
     if (this.intervalHandle) return
 
     this.intervalHandle = setInterval(() => {
-      this.checkUpcomingMeetings().catch(err => {
-        logger.error('[MeetingScheduler] Error checking upcoming meetings:', err)
-      })
+      this.runCheck('interval')
     }, CHECK_INTERVAL_MS)
 
     logger.log('[MeetingScheduler] Started, checking every 5 minutes')
+    this.runCheck('startup')
   }
 
   /**
@@ -39,10 +39,33 @@ class MeetingSchedulerService {
     }
   }
 
+  private runCheck(trigger: 'startup' | 'interval'): void {
+    if (this.isChecking) {
+      logger.warn(`[MeetingScheduler] Skipping ${trigger} check because the previous run is still active`)
+      return
+    }
+
+    this.isChecking = true
+    this.checkUpcomingMeetings()
+      .catch(err => {
+        logger.error('[MeetingScheduler] Error checking upcoming meetings:', err)
+      })
+      .finally(() => {
+        this.isChecking = false
+      })
+  }
+
   /**
    * Check all users with google_calendar integration for upcoming meetings.
    */
   private async checkUpcomingMeetings(): Promise<void> {
+    if (!PluginRegistry.has('google_calendar')) {
+      logger.warn('[MeetingScheduler] Google Calendar plugin is not registered; skipping check')
+      return
+    }
+
+    const plugin = PluginRegistry.get('google_calendar') as GoogleCalendarPlugin
+
     // Find all active Google Calendar integrations
     const integrations = await prisma.userIntegration.findMany({
       where: {
@@ -67,10 +90,6 @@ class MeetingSchedulerService {
 
         // Get decrypted tokens
         const tokens = integrationService.getDecryptedTokensPublic(integration)
-
-        // Get the Google Calendar plugin
-        const plugin = PluginRegistry.get('google_calendar') as GoogleCalendarPlugin
-        if (!plugin) continue
 
         // Get upcoming meetings with meeting links
         const upcomingMeetings = await plugin.getUpcomingMeetings(tokens, MINUTES_AHEAD)

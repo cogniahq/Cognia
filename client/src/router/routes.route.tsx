@@ -34,6 +34,11 @@ const Integrations = lazy(() =>
     default: module.Integrations,
   }))
 )
+const Meetings = lazy(() =>
+  import("@/pages/meetings.page").then((module) => ({
+    default: module.Meetings,
+  }))
+)
 const Briefings = lazy(() =>
   import("@/pages/briefings.page").then((module) => ({
     default: module.Briefings,
@@ -83,6 +88,7 @@ const AppRoutes = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/organization" element={<Organization />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/meetings" element={<Meetings />} />
             <Route path="/briefings" element={<Briefings />} />
           </>
         ) : (
@@ -94,6 +100,7 @@ const AppRoutes = () => {
             <Route path="/profile" element={<Navigate to="/" replace />} />
             <Route path="/organization" element={<Navigate to="/" replace />} />
             <Route path="/integrations" element={<Navigate to="/" replace />} />
+            <Route path="/meetings" element={<Navigate to="/" replace />} />
             <Route path="/briefings" element={<Navigate to="/" replace />} />
           </>
         )}

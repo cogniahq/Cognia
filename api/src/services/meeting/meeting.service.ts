@@ -1,10 +1,39 @@
 import { prisma } from '../../lib/prisma.lib'
+import { Prisma } from '@prisma/client'
 import { integrationService } from '../integration'
 import { MeetingBotClient } from '@cogniahq/integrations'
 import { logger } from '../../utils/core/logger.util'
 import type { MeetingBotJobData } from '@cogniahq/integrations'
 
 const BOT_SERVICE_URL = process.env.MEETING_BOT_SERVICE_URL || 'http://localhost:3100'
+const GOOGLE_MEET_HOST = 'meet.google.com'
+const ZOOM_HOST_SUFFIXES = ['zoom.us', 'zoom.com']
+
+const normalizeMeetingUrl = (url: string) => url.trim()
+
+const isGoogleMeetHost = (hostname: string) => hostname === GOOGLE_MEET_HOST
+
+const isZoomHost = (hostname: string) =>
+  ZOOM_HOST_SUFFIXES.some(suffix => hostname === suffix || hostname.endsWith(`.${suffix}`))
+
+const parseMeetingPlatform = (url: string): 'google_meet' | 'zoom' => {
+  const hostname = new URL(url).hostname.toLowerCase()
+
+  if (isGoogleMeetHost(hostname)) return 'google_meet'
+  if (isZoomHost(hostname)) return 'zoom'
+
+  throw new Error('Unsupported meeting platform. Only Google Meet and Zoom are supported.')
+}
+
+const acquireMeetingStartLock = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  meetingUrl: string
+) => {
+  await tx.$executeRaw`
+    SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext(${meetingUrl}))
+  `
+}
 
 /**
  * Orchestrates the meeting lifecycle:
@@ -15,9 +44,7 @@ class MeetingService {
    * Detect platform from a meeting URL.
    */
   detectPlatform(url: string): 'google_meet' | 'zoom' {
-    if (url.includes('meet.google.com')) return 'google_meet'
-    if (url.includes('zoom.us') || url.includes('zoom.com')) return 'zoom'
-    throw new Error('Unsupported meeting platform. Only Google Meet and Zoom are supported.')
+    return parseMeetingPlatform(normalizeMeetingUrl(url))
   }
 
   /**
@@ -25,12 +52,8 @@ class MeetingService {
    */
   validateMeetingUrl(url: string): boolean {
     try {
-      const parsed = new URL(url)
-      return (
-        parsed.hostname.includes('meet.google.com') ||
-        parsed.hostname.includes('zoom.us') ||
-        parsed.hostname.includes('zoom.com')
-      )
+      parseMeetingPlatform(normalizeMeetingUrl(url))
+      return true
     } catch {
       return false
     }
@@ -46,50 +69,73 @@ class MeetingService {
     calendarEventId?: string
     title?: string
   }) {
-    const platform = this.detectPlatform(params.meetingUrl)
+    const normalizedMeetingUrl = normalizeMeetingUrl(params.meetingUrl)
+    const queueManager = integrationService.getQueueManager()
 
-    // Check for duplicate (same URL, not completed/failed)
-    const existing = await prisma.meeting.findFirst({
-      where: {
-        user_id: params.userId,
-        meeting_url: params.meetingUrl,
-        status: { in: ['JOINING', 'IN_MEETING'] },
-      },
-    })
-
-    if (existing) {
-      return existing
+    if (!queueManager) {
+      throw new Error('Meeting system unavailable: queue manager is not initialized')
     }
 
-    // Create meeting record
-    const meeting = await prisma.meeting.create({
-      data: {
-        user_id: params.userId,
-        organization_id: params.organizationId,
-        meeting_url: params.meetingUrl,
-        platform,
-        calendar_event_id: params.calendarEventId,
-        title: params.title,
-        status: 'JOINING',
-        started_at: new Date(),
+    const platform = this.detectPlatform(normalizedMeetingUrl)
+    const { meeting, wasExisting } = await prisma.$transaction(
+      async tx => {
+        await acquireMeetingStartLock(tx, params.userId, normalizedMeetingUrl)
+
+        // Check for duplicate (same URL, not completed/failed)
+        const existing = await tx.meeting.findFirst({
+          where: {
+            user_id: params.userId,
+            meeting_url: normalizedMeetingUrl,
+            status: { in: ['JOINING', 'IN_MEETING'] },
+          },
+        })
+
+        if (existing) {
+          return {
+            meeting: existing,
+            wasExisting: true,
+          }
+        }
+
+        const meeting = await tx.meeting.create({
+          data: {
+            user_id: params.userId,
+            organization_id: params.organizationId,
+            meeting_url: normalizedMeetingUrl,
+            platform,
+            calendar_event_id: params.calendarEventId,
+            title: params.title,
+            status: 'JOINING',
+            started_at: new Date(),
+          },
+        })
+
+        return {
+          meeting,
+          wasExisting: false,
+        }
       },
-    })
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      }
+    )
+
+    if (wasExisting) {
+      return meeting
+    }
 
     // Enqueue bot join job (fire-and-forget)
     try {
-      const queueManager = integrationService.getQueueManager()
-      if (queueManager) {
-        const jobData: MeetingBotJobData = {
-          meetingId: meeting.id,
-          meetingUrl: params.meetingUrl,
-          platform,
-          userId: params.userId,
-          organizationId: params.organizationId,
-          calendarEventId: params.calendarEventId,
-          botName: params.title ? `Cognia (${params.title})` : 'Cognia Notetaker',
-        }
-        await queueManager.addMeetingBotJob(jobData)
+      const jobData: MeetingBotJobData = {
+        meetingId: meeting.id,
+        meetingUrl: normalizedMeetingUrl,
+        platform,
+        userId: params.userId,
+        organizationId: params.organizationId,
+        calendarEventId: params.calendarEventId,
+        botName: params.title ? `Cognia (${params.title})` : 'Cognia Notetaker',
       }
+      await queueManager.addMeetingBotJob(jobData)
     } catch (err) {
       logger.error('[MeetingService] Failed to enqueue bot job:', err)
       await prisma.meeting.update({

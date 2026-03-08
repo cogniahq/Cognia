@@ -36,7 +36,10 @@ router.post('/join', authenticateToken, async (req: AuthenticatedRequest, res: R
     res.status(201).json({ success: true, data: meeting })
   } catch (error) {
     const message = getErrorMessage(error, 'Failed to join meeting')
-    const status = message.includes('Meeting system unavailable') ? 503 : 500
+    const status =
+      message.includes('Meeting system unavailable') || message.includes('Meeting bot unavailable')
+        ? 503
+        : 500
     res
       .status(status)
       .json({ success: false, error: message })

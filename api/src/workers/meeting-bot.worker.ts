@@ -11,6 +11,7 @@ import { meetingProcessingService } from '../services/meeting/meeting-processing
 const BOT_SERVICE_URL = process.env.MEETING_BOT_SERVICE_URL || 'http://localhost:3100'
 const POLL_INTERVAL_MS = 10_000 // 10 seconds
 const MAX_MEETING_DURATION_MS = 4 * 60 * 60 * 1000 // 4 hours
+const FINAL_SESSION_RETRY_ATTEMPTS = 6
 
 /**
  * BullMQ worker that:
@@ -101,6 +102,7 @@ export const startMeetingBotWorker = () => {
         } catch {
           // Bot service may be unavailable — retry
           logger.warn(`[MeetingBotWorker] Failed to poll session ${session.id}, retrying...`)
+          await sleep(POLL_INTERVAL_MS)
           continue
         }
 
@@ -114,7 +116,7 @@ export const startMeetingBotWorker = () => {
       // Step 4: Fetch final session with complete transcript
       let finalSession
       try {
-        finalSession = await botClient.getSession(session.id)
+        finalSession = await getSessionWithRetries(botClient, session.id, FINAL_SESSION_RETRY_ATTEMPTS)
       } catch (err) {
         logger.error(`[MeetingBotWorker] Failed to fetch final session ${session.id}:`, err)
         await prisma.meeting.update({
@@ -171,4 +173,31 @@ export const startMeetingBotWorker = () => {
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function getSessionWithRetries(
+  botClient: MeetingBotClient,
+  sessionId: string,
+  attempts: number
+): Promise<Awaited<ReturnType<MeetingBotClient['getSession']>>> {
+  let lastError: unknown
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await botClient.getSession(sessionId)
+    } catch (error) {
+      lastError = error
+      if (attempt === attempts) {
+        break
+      }
+
+      logger.warn(
+        `[MeetingBotWorker] Failed to fetch session ${sessionId} (attempt ${attempt}/${attempts}), retrying...`,
+        error
+      )
+      await sleep(POLL_INTERVAL_MS)
+    }
+  }
+
+  throw lastError
 }

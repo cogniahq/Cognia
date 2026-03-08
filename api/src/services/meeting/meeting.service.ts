@@ -8,6 +8,7 @@ import type { MeetingBotJobData } from '@cogniahq/integrations'
 const BOT_SERVICE_URL = process.env.MEETING_BOT_SERVICE_URL || 'http://localhost:3100'
 const GOOGLE_MEET_HOST = 'meet.google.com'
 const ZOOM_HOST_SUFFIXES = ['zoom.us', 'zoom.com']
+const BOT_HEALTH_CACHE_MS = Number(process.env.MEETING_BOT_HEALTH_CACHE_MS || 10000)
 
 const normalizeMeetingUrl = (url: string) => url.trim()
 
@@ -25,6 +26,13 @@ const parseMeetingPlatform = (url: string): 'google_meet' | 'zoom' => {
   throw new Error('Unsupported meeting platform. Only Google Meet and Zoom are supported.')
 }
 
+const formatMeetingBotError = (error: unknown): string => {
+  const message = error instanceof Error && error.message ? error.message : 'Unknown error'
+  return message.startsWith('Meeting bot unavailable:')
+    ? message
+    : `Meeting bot unavailable: ${message}`
+}
+
 const acquireMeetingStartLock = async (
   tx: Prisma.TransactionClient,
   userId: string,
@@ -40,6 +48,49 @@ const acquireMeetingStartLock = async (
  * create record → enqueue bot job → update status on callbacks.
  */
 class MeetingService {
+  private readonly botClient = new MeetingBotClient(BOT_SERVICE_URL)
+  private botHealthCheckedAt = 0
+  private lastBotHealthError: string | null = null
+  private botHealthCheckPromise: Promise<void> | null = null
+
+  private async ensureBotAvailable(): Promise<void> {
+    const now = Date.now()
+    const cacheAge = now - this.botHealthCheckedAt
+
+    if (this.botHealthCheckPromise) {
+      return this.botHealthCheckPromise
+    }
+
+    if (cacheAge < BOT_HEALTH_CACHE_MS) {
+      if (this.lastBotHealthError) {
+        throw new Error(this.lastBotHealthError)
+      }
+      return
+    }
+
+    this.botHealthCheckPromise = this.botClient
+      .health()
+      .then(health => {
+        if (health.status !== 'ok' && health.status !== 'degraded') {
+          throw new Error(`Bot service reported status "${health.status}"`)
+        }
+
+        this.lastBotHealthError = null
+        this.botHealthCheckedAt = Date.now()
+      })
+      .catch(error => {
+        const message = formatMeetingBotError(error)
+        this.lastBotHealthError = message
+        this.botHealthCheckedAt = Date.now()
+        throw new Error(message)
+      })
+      .finally(() => {
+        this.botHealthCheckPromise = null
+      })
+
+    return this.botHealthCheckPromise
+  }
+
   /**
    * Detect platform from a meeting URL.
    */
@@ -70,13 +121,27 @@ class MeetingService {
     title?: string
   }) {
     const normalizedMeetingUrl = normalizeMeetingUrl(params.meetingUrl)
-    const queueManager = integrationService.getQueueManager()
+    const platform = this.detectPlatform(normalizedMeetingUrl)
 
+    const existingMeeting = await prisma.meeting.findFirst({
+      where: {
+        user_id: params.userId,
+        meeting_url: normalizedMeetingUrl,
+        status: { in: ['JOINING', 'IN_MEETING'] },
+      },
+    })
+
+    if (existingMeeting) {
+      return existingMeeting
+    }
+
+    const queueManager = integrationService.getQueueManager()
     if (!queueManager) {
       throw new Error('Meeting system unavailable: queue manager is not initialized')
     }
 
-    const platform = this.detectPlatform(normalizedMeetingUrl)
+    await this.ensureBotAvailable()
+
     const { meeting, wasExisting } = await prisma.$transaction(
       async tx => {
         await acquireMeetingStartLock(tx, params.userId, normalizedMeetingUrl)
@@ -170,8 +235,7 @@ class MeetingService {
     // Tell the bot service to leave the meeting
     if (meeting.bot_session_id) {
       try {
-        const botClient = new MeetingBotClient(BOT_SERVICE_URL)
-        await botClient.stopSession(meeting.bot_session_id)
+        await this.botClient.stopSession(meeting.bot_session_id)
       } catch (err) {
         logger.warn(`[MeetingService] Failed to stop bot session ${meeting.bot_session_id}:`, err)
         // Continue anyway — the bot worker will handle cleanup

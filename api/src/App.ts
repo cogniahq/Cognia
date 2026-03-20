@@ -20,9 +20,6 @@ import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
 import { startDocumentWorker } from './workers/document-worker'
 import { startBriefingWorker } from './workers/briefing-worker'
-import { startMeetingWorker } from './workers/meeting.worker'
-import { startMeetingBotWorker } from './workers/meeting-bot.worker'
-import { meetingSchedulerService } from './services/meeting/meeting-scheduler.service'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
@@ -285,14 +282,6 @@ server.listen(port, async () => {
   }
   const aiReady = aiProvider.isInitialized
   logger.log('[startup] ai_provider', { initialized: aiReady })
-  let meetingSubsystemReady = false
-  try {
-    await integrationService.initialize()
-    meetingSubsystemReady = integrationService.getQueueManager() != null
-    logger.log('[startup] integration_service_ready', { queueManager: meetingSubsystemReady })
-  } catch (e) {
-    logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
-  }
   startContentWorker()
   logger.log('[startup] content_worker_started')
   startCyclicProfileWorker()
@@ -301,15 +290,11 @@ server.listen(port, async () => {
   logger.log('[startup] document_worker_started')
   startBriefingWorker()
   logger.log('[startup] briefing_worker_started')
-  if (meetingSubsystemReady) {
-    startMeetingBotWorker()
-    logger.log('[startup] meeting_bot_worker_started')
-    startMeetingWorker()
-    logger.log('[startup] meeting_processing_worker_started')
-    meetingSchedulerService.start()
-    logger.log('[startup] meeting_scheduler_started')
-  } else {
-    logger.warn('[startup] meeting_subsystem_disabled', 'Integration queue manager unavailable')
+  try {
+    await integrationService.initialize()
+    logger.log('[startup] integration_service_ready')
+  } catch (e) {
+    logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
   }
   logger.log('[startup] server_listening', { protocol, port })
 })
@@ -328,8 +313,6 @@ process.on('unhandledRejection', (err: Error) => {
 // Graceful shutdown handling for nodemon restarts
 const gracefulShutdown = (signal: string) => {
   logger.log(`[shutdown] ${signal} received, closing server...`)
-  meetingSchedulerService.stop()
-  logger.log('[shutdown] Meeting scheduler stopped')
   server.close(async () => {
     logger.log('[shutdown] HTTP server closed')
     try {

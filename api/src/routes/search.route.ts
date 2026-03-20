@@ -1,21 +1,30 @@
 import { Router } from 'express'
 import { SearchController } from '../controller/search/search.controller'
-import { authenticateToken } from '../middleware/auth.middleware'
+import {
+  authenticateToken,
+  authenticateTokenWithQuery,
+} from '../middleware/auth.middleware'
 import { requireOrganization, requireOrgViewer } from '../middleware/organization.middleware'
+import { enforceIpAllowlist } from '../middleware/ip-allowlist.middleware'
+import { enforceSessionTimeout } from '../middleware/session-timeout.middleware'
+import { enforce2FARequirement } from '../middleware/require-2fa.middleware'
 
 const router = Router()
 
 // Personal search endpoints
 router.post('/', authenticateToken, SearchController.postSearch)
 router.post('/context', authenticateToken, SearchController.getContext)
-router.get('/job/:id', SearchController.getSearchJobStatus)
-router.get('/job/:id/stream', SearchController.streamSearchJob)
+router.get('/job/:id', authenticateToken, SearchController.getSearchJobStatus)
+router.get('/job/:id/stream', authenticateTokenWithQuery, SearchController.streamSearchJob)
 
 // Organization search endpoints
 router.post(
   '/organization/:slug',
   authenticateToken,
   requireOrganization,
+  enforceIpAllowlist,
+  enforceSessionTimeout,
+  enforce2FARequirement,
   requireOrgViewer,
   SearchController.searchOrganization
 )
@@ -24,6 +33,9 @@ router.post(
   '/organization/:slug/documents',
   authenticateToken,
   requireOrganization,
+  enforceIpAllowlist,
+  enforceSessionTimeout,
+  enforce2FARequirement,
   requireOrgViewer,
   SearchController.searchOrganizationDocuments
 )

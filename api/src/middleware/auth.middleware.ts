@@ -14,18 +14,35 @@ export interface AuthenticatedRequest extends Request {
   }
 }
 
-export async function authenticateToken(
+function extractTokenFromRequest(
+  req: AuthenticatedRequest,
+  options?: { allowQueryToken?: boolean }
+): string | null {
+  let token = extractTokenFromHeader(req.headers.authorization)
+
+  if (!token) {
+    const cookieName = getSessionCookieName()
+    token = (req.cookies && req.cookies[cookieName]) || null
+  }
+
+  if (!token && options?.allowQueryToken) {
+    const tokenQueryParam = req.query.token
+    if (typeof tokenQueryParam === 'string' && tokenQueryParam.trim()) {
+      token = tokenQueryParam.trim()
+    }
+  }
+
+  return token
+}
+
+async function authenticateRequest(
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
+  options?: { allowQueryToken?: boolean }
 ): Promise<void> {
   try {
-    let token = extractTokenFromHeader(req.headers.authorization)
-
-    if (!token) {
-      const cookieName = getSessionCookieName()
-      token = (req.cookies && req.cookies[cookieName]) || null
-    }
+    const token = extractTokenFromRequest(req, options)
 
     if (!token) {
       res.status(401).json({ message: 'No token provided' })
@@ -60,13 +77,24 @@ export async function authenticateToken(
   }
 }
 
-export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
-  let token = extractTokenFromHeader(req.headers.authorization)
+export async function authenticateToken(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  return authenticateRequest(req, res, next)
+}
 
-  if (!token) {
-    const cookieName = getSessionCookieName()
-    token = (req.cookies && req.cookies[cookieName]) || null
-  }
+export async function authenticateTokenWithQuery(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  return authenticateRequest(req, res, next, { allowQueryToken: true })
+}
+
+export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  const token = extractTokenFromRequest(req)
 
   if (!token) {
     next()

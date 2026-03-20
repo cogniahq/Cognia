@@ -23,7 +23,8 @@ import { startBriefingWorker } from './workers/briefing-worker'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { logger } from './utils/core/logger.util'
-import { getMorganOutputMode } from './utils/core/env.util'
+import { getAllowedOrigins, getMorganOutputMode } from './utils/core/env.util'
+import { validateRequestSize } from './utils/validation/validation.util'
 import { integrationService } from './services/integration'
 
 dotenv.config()
@@ -193,10 +194,14 @@ if (morganOutputMode === 'print' || morganOutputMode === 'both') {
 if (morganOutputMode === 'log' || morganOutputMode === 'both') {
   app.use(morgan(plainMorganFormat, { stream: morganFileStream }))
 }
-app.use(express.urlencoded({ extended: false, limit: '10mb' }))
-app.use(express.json({ limit: '10mb' }))
-import { getAllowedOrigins } from './utils/core/env.util'
-import { validateRequestSize } from './utils/validation/validation.util'
+
+const captureRawBody = (req: Request, _res: Response, buf: Buffer) => {
+  const requestWithRawBody = req as Request & { rawBody?: string }
+  requestWithRawBody.rawBody = buf.toString('utf8')
+}
+
+app.use(express.urlencoded({ extended: false, limit: '10mb', verify: captureRawBody }))
+app.use(express.json({ limit: '10mb', verify: captureRawBody }))
 
 app.use(validateRequestSize(10 * 1024 * 1024)) // 10MB limit
 

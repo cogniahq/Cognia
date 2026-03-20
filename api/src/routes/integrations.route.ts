@@ -2,6 +2,8 @@ import { Router, Response } from 'express'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
 import { integrationService } from '../services/integration'
 import { SyncFrequency, StorageStrategy } from '@prisma/client'
+import { createOAuthState, parseOAuthState } from '../utils/auth/oauth-state.util'
+import { prisma } from '../lib/prisma.lib'
 
 const router = Router()
 const getErrorMessage = (error: unknown, fallback: string) =>
@@ -9,11 +11,13 @@ const getErrorMessage = (error: unknown, fallback: string) =>
 
 /**
  * Get the redirect URI for a provider
- * Uses provider-specific env var if set, otherwise falls back to API_BASE_URL
+ * Uses integration-type-specific env var if set, then legacy provider env var,
+ * otherwise falls back to the shared callback endpoint.
  */
-function getRedirectUri(provider: string): string {
+function getRedirectUri(provider: string, integrationType: 'user' | 'organization'): string {
+  const typeSpecificEnvKey = `${integrationType.toUpperCase()}_${provider.toUpperCase()}_REDIRECT_URI`
   const providerEnvKey = `${provider.toUpperCase()}_REDIRECT_URI`
-  const specificUri = process.env[providerEnvKey]
+  const specificUri = process.env[typeSpecificEnvKey] || process.env[providerEnvKey]
   if (specificUri) {
     return specificUri
   }
@@ -67,16 +71,15 @@ router.post(
       const { provider } = req.params
 
       // Use consistent redirect URI from env or default
-      const redirectUri = getRedirectUri(provider)
+      const redirectUri = getRedirectUri(provider, 'user')
 
       // Generate state with user context
-      const state = Buffer.from(
-        JSON.stringify({
-          userId: req.user!.id,
-          provider,
-          timestamp: Date.now(),
-        })
-      ).toString('base64url')
+      const state = createOAuthState({
+        integrationType: 'user',
+        userId: req.user!.id,
+        provider,
+        timestamp: Date.now(),
+      })
 
       const authUrl = integrationService.getAuthUrl(provider, state, redirectUri)
 
@@ -95,6 +98,17 @@ router.post(
  */
 router.get('/:provider/callback', async (req, res: Response) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  let organizationSlug: string | null = null
+  const redirectToIntegrations = (
+    message: string,
+    isError: boolean = true,
+    slug?: string | null
+  ) => {
+    const basePath = slug ? `/o/${slug}/settings/integrations` : '/integrations'
+    return res.redirect(
+      `${frontendUrl}${basePath}?${isError ? 'error' : 'connected'}=${encodeURIComponent(message)}`
+    )
+  }
 
   try {
     const { provider } = req.params
@@ -102,69 +116,83 @@ router.get('/:provider/callback', async (req, res: Response) => {
 
     // Handle OAuth errors
     if (oauthError) {
-      return res.redirect(
-        `${frontendUrl}/integrations?error=${encodeURIComponent(oauthError as string)}`
-      )
+      if (typeof state === 'string') {
+        try {
+          organizationSlug = parseOAuthState(state).organizationSlug || null
+        } catch {
+          organizationSlug = null
+        }
+      }
+      return redirectToIntegrations(oauthError as string, true, organizationSlug)
     }
 
-    if (!code || !state) {
-      return res.redirect(
-        `${frontendUrl}/integrations?error=${encodeURIComponent('Missing code or state')}`
-      )
+    if (typeof code !== 'string' || typeof state !== 'string') {
+      return redirectToIntegrations('Missing code or state')
     }
 
-    // Parse state to get user ID
-    let stateData
-    try {
-      stateData = JSON.parse(Buffer.from(state as string, 'base64url').toString('utf8'))
-    } catch {
-      return res.redirect(
-        `${frontendUrl}/integrations?error=${encodeURIComponent('Invalid state')}`
-      )
-    }
-
-    // Validate state has required fields
-    if (!stateData.userId || !stateData.provider) {
-      return res.redirect(
-        `${frontendUrl}/integrations?error=${encodeURIComponent('Invalid state data')}`
-      )
-    }
+    const stateData = parseOAuthState(state)
+    organizationSlug = stateData.organizationSlug || null
 
     // Verify provider matches
     if (stateData.provider !== provider) {
-      return res.redirect(
-        `${frontendUrl}/integrations?error=${encodeURIComponent('Provider mismatch')}`
-      )
+      return redirectToIntegrations('Provider mismatch', true, organizationSlug)
     }
 
-    // Check state isn't too old (15 minute expiry)
-    const stateAge = Date.now() - stateData.timestamp
-    if (stateAge > 15 * 60 * 1000) {
+    if (stateData.integrationType === 'organization') {
+      if (!stateData.organizationId || !stateData.organizationSlug) {
+        return redirectToIntegrations('Invalid state data')
+      }
+
+      const org = await prisma.organization.findUnique({
+        where: { id: stateData.organizationId },
+        select: {
+          slug: true,
+          default_sync_frequency: true,
+        },
+      })
+
+      if (!org || org.slug !== stateData.organizationSlug) {
+        return redirectToIntegrations('Organization not found', true, stateData.organizationSlug)
+      }
+
+      const redirectUri = getRedirectUri(provider, 'organization')
+
+      await integrationService.connectOrgIntegration(
+        {
+          userId: stateData.userId,
+          organizationId: stateData.organizationId,
+        },
+        {
+          provider,
+          code,
+          redirectUri,
+          syncFrequency: org.default_sync_frequency || SyncFrequency.HOURLY,
+        }
+      )
+
       return res.redirect(
-        `${frontendUrl}/integrations?error=${encodeURIComponent('Authorization expired, please try again')}`
+        `${frontendUrl}/o/${stateData.organizationSlug}/settings/integrations?connected=${encodeURIComponent(provider)}`
       )
     }
 
     // Get redirect URI (must match what was sent to OAuth provider)
-    const redirectUri = getRedirectUri(provider)
+    const redirectUri = getRedirectUri(provider, 'user')
 
     // Connect the integration using userId from state
     await integrationService.connectUserIntegration(
       { userId: stateData.userId },
       {
         provider,
-        code: code as string,
+        code,
         redirectUri,
       }
     )
 
     // Redirect to frontend success page
-    res.redirect(`${frontendUrl}/integrations?connected=${provider}`)
+    return redirectToIntegrations(provider, false)
   } catch (error) {
     console.error('OAuth callback error:', error)
-    res.redirect(
-      `${frontendUrl}/integrations?error=${encodeURIComponent(getErrorMessage(error, 'Connection failed'))}`
-    )
+    return redirectToIntegrations(getErrorMessage(error, 'Connection failed'), true, organizationSlug)
   }
 })
 

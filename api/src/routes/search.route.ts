@@ -1,9 +1,6 @@
 import { Router } from 'express'
 import { SearchController } from '../controller/search/search.controller'
-import {
-  authenticateToken,
-  authenticateTokenWithQuery,
-} from '../middleware/auth.middleware'
+import { authenticateToken, authenticateTokenWithQuery } from '../middleware/auth.middleware'
 import { requireOrganization, requireOrgViewer } from '../middleware/organization.middleware'
 import { enforceIpAllowlist } from '../middleware/ip-allowlist.middleware'
 import { enforceSessionTimeout } from '../middleware/session-timeout.middleware'

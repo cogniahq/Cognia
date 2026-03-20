@@ -111,11 +111,7 @@ export class SearchController {
     }
   }
 
-  static async getSearchJobStatus(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async getSearchJobStatus(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user) return next(new AppError('User not authenticated', 401))
 

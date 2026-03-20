@@ -192,7 +192,11 @@ router.get('/:provider/callback', async (req, res: Response) => {
     return redirectToIntegrations(provider, false)
   } catch (error) {
     console.error('OAuth callback error:', error)
-    return redirectToIntegrations(getErrorMessage(error, 'Connection failed'), true, organizationSlug)
+    return redirectToIntegrations(
+      getErrorMessage(error, 'Connection failed'),
+      true,
+      organizationSlug
+    )
   }
 })
 

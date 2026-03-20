@@ -12,6 +12,7 @@ import { enforce2FARequirement } from '../middleware/require-2fa.middleware'
 import { integrationService } from '../services/integration'
 import { prisma } from '../lib/prisma.lib'
 import { SyncFrequency, StorageStrategy } from '@prisma/client'
+import { createOAuthState, parseOAuthState } from '../utils/auth/oauth-state.util'
 
 const router = Router()
 const getErrorMessage = (error: unknown, fallback: string) =>
@@ -186,18 +187,17 @@ router.post(
     try {
       const { provider } = req.params
 
-      const redirectUri = getRedirectUri(provider)
+      const redirectUri = getRedirectUri(provider, 'organization')
 
       // Generate state with organization context
-      const state = Buffer.from(
-        JSON.stringify({
-          userId: req.user!.id,
-          organizationId: req.organization!.id,
-          organizationSlug: req.organization!.slug,
-          provider,
-          timestamp: Date.now(),
-        })
-      ).toString('base64url')
+      const state = createOAuthState({
+        integrationType: 'organization',
+        userId: req.user!.id,
+        organizationId: req.organization!.id,
+        organizationSlug: req.organization!.slug,
+        provider,
+        timestamp: Date.now(),
+      })
 
       const authUrl = integrationService.getAuthUrl(provider, state, redirectUri)
 
@@ -227,39 +227,34 @@ router.get('/:slug/integrations/:provider/callback', async (req, res: Response) 
       return res.redirect(`${errorRedirect}?error=${encodeURIComponent(oauthError as string)}`)
     }
 
-    if (!code || !state) {
+    if (typeof code !== 'string' || typeof state !== 'string') {
       return res.redirect(`${errorRedirect}?error=${encodeURIComponent('Missing code or state')}`)
     }
 
-    let stateData
-    try {
-      stateData = JSON.parse(Buffer.from(state as string, 'base64url').toString('utf8'))
-    } catch {
-      return res.redirect(`${errorRedirect}?error=${encodeURIComponent('Invalid state')}`)
-    }
+    const stateData = parseOAuthState(state)
 
-    if (!stateData.userId || !stateData.organizationId || !stateData.provider) {
-      return res.redirect(`${errorRedirect}?error=${encodeURIComponent('Invalid state data')}`)
-    }
-
-    if (stateData.provider !== provider) {
+    if (
+      stateData.integrationType !== 'organization' ||
+      stateData.organizationSlug !== slug ||
+      stateData.provider !== provider
+    ) {
       return res.redirect(`${errorRedirect}?error=${encodeURIComponent('Provider mismatch')}`)
-    }
-
-    const stateAge = Date.now() - stateData.timestamp
-    if (stateAge > 15 * 60 * 1000) {
-      return res.redirect(`${errorRedirect}?error=${encodeURIComponent('Authorization expired')}`)
     }
 
     // Get org's default sync settings
     const org = await prisma.organization.findUnique({
       where: { id: stateData.organizationId },
       select: {
+        slug: true,
         default_sync_frequency: true,
       },
     })
 
-    const redirectUri = getRedirectUri(provider)
+    if (!org || org.slug !== stateData.organizationSlug) {
+      return res.redirect(`${errorRedirect}?error=${encodeURIComponent('Organization not found')}`)
+    }
+
+    const redirectUri = getRedirectUri(provider, 'organization')
 
     await integrationService.connectOrgIntegration(
       {
@@ -268,7 +263,7 @@ router.get('/:slug/integrations/:provider/callback', async (req, res: Response) 
       },
       {
         provider,
-        code: code as string,
+        code,
         redirectUri,
         syncFrequency: org?.default_sync_frequency || SyncFrequency.HOURLY,
       }
@@ -385,9 +380,10 @@ router.delete(
 
 // Helper functions
 
-function getRedirectUri(provider: string): string {
+function getRedirectUri(provider: string, integrationType: 'user' | 'organization'): string {
+  const typeSpecificEnvKey = `${integrationType.toUpperCase()}_${provider.toUpperCase()}_REDIRECT_URI`
   const providerEnvKey = `${provider.toUpperCase()}_REDIRECT_URI`
-  const specificUri = process.env[providerEnvKey]
+  const specificUri = process.env[typeSpecificEnvKey] || process.env[providerEnvKey]
   if (specificUri) {
     return specificUri
   }

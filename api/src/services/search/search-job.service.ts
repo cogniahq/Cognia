@@ -8,12 +8,14 @@ export type { SearchJobStatus, SearchJob }
 const JOB_PREFIX = 'search_job:'
 const JOB_TTL = 15 * 60 // 15 minutes in seconds
 
-export async function createSearchJob(): Promise<SearchJob> {
+export async function createSearchJob(userId: string): Promise<SearchJob> {
   const id = crypto.randomUUID()
   const job: SearchJob = {
     id,
+    user_id: userId,
     status: 'pending',
     created_at: new Date(),
+    updated_at: new Date(),
     expires_at: Date.now() + JOB_TTL * 1000,
   }
 
@@ -60,6 +62,7 @@ export async function setSearchJobResult(
     if (data.answer !== undefined) job.answer = data.answer
     if (data.citations !== undefined) job.citations = data.citations
     if (data.results !== undefined) job.results = data.results
+    job.updated_at = new Date()
     job.expires_at = Date.now() + JOB_TTL * 1000
 
     await client.setex(key, JOB_TTL, JSON.stringify(job))

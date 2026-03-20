@@ -183,10 +183,10 @@ export class UnifiedSearchService {
     // Generate AI answer asynchronously to prevent blocking search results
     let answerJobId: string | undefined
 
-    if (includeAnswer && results.length > 0) {
+    if (includeAnswer && results.length > 0 && userId) {
       try {
         // Create a job for answer generation (await to ensure it's stored before returning)
-        const job = await createSearchJob()
+        const job = await createSearchJob(userId)
         answerJobId = job.id
 
         // Fire-and-forget: generate answer in background
@@ -200,6 +200,10 @@ export class UnifiedSearchService {
         logger.error('[unified-search] failed to create answer job', { error })
         // Continue without answer job
       }
+    } else if (includeAnswer && results.length > 0 && !userId) {
+      logger.warn('[unified-search] skipping answer job because no user context was provided', {
+        organizationId,
+      })
     }
 
     logger.log('[unified-search] completed', {

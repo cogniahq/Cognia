@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import { AuthenticatedRequest } from '../../middleware/auth.middleware'
 import { OrganizationRequest } from '../../middleware/organization.middleware'
 import AppError from '../../utils/http/app-error.util'
@@ -58,7 +58,7 @@ export class SearchController {
 
       if (!contextOnly && !embeddingOnly && !data.answer) {
         try {
-          job = await createSearchJob()
+          job = await createSearchJob(userId)
         } catch (jobError) {
           job = null
           logger.warn('[search/controller] createSearchJob_failed', {
@@ -111,12 +111,16 @@ export class SearchController {
     }
   }
 
-  static async getSearchJobStatus(req: Request, res: Response, next: NextFunction) {
+  static async getSearchJobStatus(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
+      if (!req.user) return next(new AppError('User not authenticated', 401))
+
       const { id } = req.params as { id: string }
       if (!id) return next(new AppError('job id required', 400))
       const job = await getSearchJob(id)
-      if (!job) return next(new AppError('job not found', 404))
+      if (!job || !job.user_id || job.user_id !== req.user.id) {
+        return next(new AppError('job not found', 404))
+      }
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
       res.set('Pragma', 'no-cache')
       res.set('Expires', '0')
@@ -133,7 +137,12 @@ export class SearchController {
    * GET /api/search/job/:id/stream
    * Note: Auth token passed as query param since EventSource doesn't support headers
    */
-  static async streamSearchJob(req: Request, res: Response) {
+  static async streamSearchJob(req: AuthenticatedRequest, res: Response) {
+    if (!req.user) {
+      res.status(401).json({ error: 'User not authenticated' })
+      return
+    }
+
     const { id } = req.params as { id: string }
 
     if (!id) {
@@ -141,12 +150,13 @@ export class SearchController {
       return
     }
 
-    logger.log('[search] SSE stream requested', { jobId: id })
+    const initialJob = await getSearchJob(id)
+    if (!initialJob || !initialJob.user_id || initialJob.user_id !== req.user.id) {
+      res.status(404).json({ error: 'Job not found' })
+      return
+    }
 
-    // Set CORS headers for direct browser connection
-    const origin = req.headers.origin || 'http://localhost:5173'
-    res.setHeader('Access-Control-Allow-Origin', origin)
-    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    logger.log('[search] SSE stream requested', { jobId: id })
 
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream')
@@ -167,7 +177,7 @@ export class SearchController {
       try {
         const job = await getSearchJob(id)
 
-        if (!job) {
+        if (!job || !job.user_id || job.user_id !== req.user.id) {
           res.write(`event: error\ndata: ${JSON.stringify({ error: 'Job not found' })}\n\n`)
           clearInterval(checkInterval)
           res.end()

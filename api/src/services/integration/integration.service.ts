@@ -205,6 +205,15 @@ export class IntegrationService {
     context: IntegrationContext,
     options: ConnectOptions
   ): Promise<{ id: string }> {
+    const user = await prisma.user.findUnique({
+      where: { id: context.userId },
+      select: { id: true },
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
     const plugin = PluginRegistry.get(options.provider)
 
     // Exchange code for tokens
@@ -293,6 +302,20 @@ export class IntegrationService {
   ): Promise<{ id: string }> {
     if (!context.organizationId) {
       throw new Error('Organization ID required')
+    }
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organization_id_user_id: {
+          organization_id: context.organizationId,
+          user_id: context.userId,
+        },
+      },
+      select: { role: true },
+    })
+
+    if (!membership || membership.role !== 'ADMIN') {
+      throw new Error('Organization admin access required')
     }
 
     const plugin = PluginRegistry.get(options.provider)

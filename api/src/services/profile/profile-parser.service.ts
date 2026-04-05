@@ -171,6 +171,8 @@ export class ProfileParserService {
       return match
     })
 
+    fixed = this.insertMissingCommasBetweenProperties(fixed)
+
     return fixed
   }
 
@@ -187,8 +189,13 @@ export class ProfileParserService {
     }
 
     fixed = this.escapeUnescapedQuotesInStrings(fixed)
+    fixed = this.insertMissingCommasBetweenProperties(fixed)
 
     return fixed
+  }
+
+  private insertMissingCommasBetweenProperties(jsonStr: string): string {
+    return jsonStr.replace(/(["}\]])(\s*)("[a-zA-Z_][a-zA-Z0-9_]*"\s*:)/g, '$1,$2$3')
   }
 
   private escapeUnescapedQuotesInStrings(jsonStr: string): string {

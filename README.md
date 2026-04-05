@@ -11,7 +11,7 @@
 ### Prerequisites
 - Node.js 18+
 - Docker and Docker Compose
-- Gemini API key or Ollama (for AI)
+- OpenAI API key (required for AI)
 
 ### 1. Start Databases
 
@@ -99,7 +99,7 @@ npm run build
 - **Multi-Source**: Extension or web client
 
 ### 2. AI-Powered Processing
-- **Hybrid AI**: Gemini (cloud) → Ollama (local) → Deterministic fallback
+- **OpenAI-First AI**: OpenAI handles generation, embeddings, and vision by default
 - **Summarization**: Concise, actionable summaries (≤200 words)
 - **Metadata Extraction**: Topics, categories, sentiment, importance
 - **Vector Embeddings**: 768-dimensional semantic representations
@@ -168,8 +168,8 @@ npm run build
 - Redis for job queue
 
 ### AI/ML
-- Google Gemini API (text-embedding-004)
-- Ollama (local alternative)
+- OpenAI API (`gpt-4o-mini`, `gpt-4o`, `text-embedding-3-small` by default)
+- Optional alternative providers if explicitly configured
 - Deterministic fallback embeddings
 
 ### Tools
@@ -266,7 +266,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 
 **Authentication failed**: Verify credentials, check JWT_SECRET is set, ensure cookies are enabled, and review CORS configuration.
 
-**AI processing slow**: Gemini API may be rate-limited. Try switching to Ollama (local) or check network connection.
+**AI processing slow**: OpenAI requests may be rate-limited. Check your API limits, retry later, or reduce model load.
 
 **Database/Qdrant connection failed**: Verify services are running, check connection URLs, and review service logs. For Qdrant, check `http://localhost:6333/health`.
 

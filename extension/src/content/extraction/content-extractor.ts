@@ -1,6 +1,7 @@
 import { sanitizeText, sanitizeContextData } from '@/utils/text'
 import type { ContextData } from '@/types/content.types'
 import { extractMeaningfulContent, extractFullContent } from './text-extractor'
+import { extractEmailContext } from '../email/email-context'
 import {
   extractContentSummary,
   extractContentType,
@@ -14,10 +15,65 @@ import {
   extractUserActivity,
 } from './structure-extractor'
 
+function captureEmailContextData(url: string, fallbackTitle: string): ContextData | null {
+  const emailContext = extractEmailContext()
+  if (!emailContext?.threadText) {
+    return null
+  }
+
+  const participants = emailContext.participants.map(participant => sanitizeText(participant))
+  const subject = sanitizeText(emailContext.subject || fallbackTitle || 'Email thread')
+  const meaningfulContent = sanitizeText(
+    [
+      `Subject: ${subject}`,
+      participants.length > 0 ? `Participants: ${participants.join(', ')}` : '',
+      emailContext.threadText,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+  )
+  const contentSummary = sanitizeText(
+    [subject, meaningfulContent.slice(0, 220)].filter(Boolean).join(' | ')
+  )
+
+  return {
+    source: 'extension',
+    url,
+    title: subject,
+    content_snippet: meaningfulContent.substring(0, 500),
+    timestamp: Date.now(),
+    full_content: meaningfulContent,
+    meaningful_content: meaningfulContent,
+    content_summary: contentSummary,
+    content_type: 'email_thread',
+    key_topics: participants.slice(0, 8),
+    reading_time: Math.max(1, Math.ceil(meaningfulContent.split(/\s+/).length / 220)),
+    page_metadata: {
+      email_provider: emailContext.provider,
+      subject,
+      participants,
+      language: document.documentElement.lang || '',
+      canonical_url: url,
+    },
+    page_structure: {
+      headings: subject ? [subject] : [],
+      links: [],
+      images: [],
+      forms: [],
+    },
+    user_activity: extractUserActivity(),
+    content_quality: extractContentQuality(),
+  }
+}
+
 export function captureContext(): ContextData {
   try {
     const url = window.location.href
     const title = sanitizeText(document.title || '')
+    const emailContextData = captureEmailContextData(url, title)
+    if (emailContextData) {
+      return sanitizeContextData(emailContextData) as ContextData
+    }
     const meaningfulContent = extractMeaningfulContent()
     const content_snippet = meaningfulContent.substring(0, 500)
     const contextData = {

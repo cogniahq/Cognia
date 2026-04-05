@@ -37,22 +37,28 @@ export class TextExtractionService {
    * Extract text from PDF using pdf-parse
    */
   private async extractFromPdf(buffer: Buffer): Promise<ExtractedText> {
-    // Dynamic import to avoid issues if pdf-parse isn't installed yet
+    // pdf-parse v2 exposes a parser class instead of the old v1 function API.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse')
-    const data = await pdfParse(buffer)
+    const { PDFParse } = require('pdf-parse')
+    const parser = new PDFParse({ data: buffer })
+    let data: { text: string; total: number; pages?: unknown[] }
+
+    try {
+      data = await parser.getText()
+    } finally {
+      await parser.destroy()
+    }
 
     logger.log('[text-extraction] pdf extracted', {
-      pages: data.numpages,
+      pages: data.total,
       textLength: data.text.length,
     })
 
     return {
       text: data.text,
-      pageCount: data.numpages,
+      pageCount: data.total,
       metadata: {
-        info: data.info,
-        version: data.version,
+        pages: data.pages,
       },
     }
   }
@@ -78,7 +84,7 @@ export class TextExtractionService {
   }
 
   /**
-   * Extract text from images using Gemini Vision API for OCR
+   * Extract text from images using the configured vision model for OCR
    */
   private async extractFromImage(buffer: Buffer, mimeType: string): Promise<ExtractedText> {
     const base64 = buffer.toString('base64')
@@ -95,7 +101,7 @@ export class TextExtractionService {
       return {
         text: response,
         metadata: {
-          extractionMethod: 'gemini-vision',
+          extractionMethod: 'openai-vision',
         },
       }
     } catch (error) {

@@ -234,7 +234,7 @@ export async function searchOrganization(
     `/search/organization/${slug}`,
     {
       query,
-      limit: options?.limit || 20,
+      limit: options?.limit,
       sourceTypes: options?.sourceTypes,
       includeAnswer: options?.includeAnswer !== false,
     },

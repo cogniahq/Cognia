@@ -1,0 +1,32 @@
+APERTURE CLOUD SSO AND SCIM SETUP GUIDE
+Enterprise Administrator Guide
+
+Overview
+Enterprise workspaces support SAML 2.0 for single sign-on and SCIM for lifecycle provisioning.
+
+Prerequisites
+- Enterprise subscription
+- Identity provider administrator
+- Customer domain verification
+
+SAML setup
+1. Create a new SAML application in your identity provider.
+2. Enter the Aperture Cloud ACS URL and Entity ID.
+3. Map NameID to user email.
+4. Upload IdP metadata in the Aperture Cloud admin console.
+5. Test sign-in with a non-admin pilot user before enforcement.
+
+SCIM setup
+1. Generate a SCIM bearer token from the admin console.
+2. Configure the SCIM base URL in your identity provider.
+3. Enable create, update, and deactivate actions.
+4. Test a pilot group before broad rollout.
+
+Recommended rollout for regulated customers
+- Validate SSO in a sandbox workspace.
+- Enable SCIM for a pilot group.
+- Review audit logs after the first provisioning cycle.
+- Do not enforce SSO in production until security sign-off is complete.
+
+Northstar Bank note
+During the Northstar Bank implementation, the identity workshop is scheduled for June 12, 2026, SSO and SCIM configuration are targeted for completion by June 19, 2026, and production enforcement should wait until after the June 26 security sign-off meeting.

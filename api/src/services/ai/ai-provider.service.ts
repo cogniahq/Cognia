@@ -4,38 +4,27 @@ import { tokenTracking } from '../core/token-tracking.service'
 import { logger } from '../../utils/core/logger.util'
 import { embeddingProviderService } from './embedding-provider.service'
 import { generationProviderService } from './generation-provider.service'
-
-type Provider = 'gemini' | 'ollama' | 'hybrid' | 'openai'
-
-const legacyProvider: Provider = (process.env.AI_PROVIDER as Provider) || 'hybrid'
-const embedProvider: Provider = (process.env.EMBED_PROVIDER as Provider) || legacyProvider
-const genProvider: Provider = (process.env.GEN_PROVIDER as Provider) || legacyProvider
+import { AIProvider, getEmbedProvider, getGenerationProvider } from './ai-config'
 
 logger.log('AI Provider Configuration', {
-  embedProvider,
-  genProvider,
+  embedProvider: getEmbedProvider(),
+  genProvider: getGenerationProvider(),
 })
 
 export const aiProvider = {
   get isInitialized(): boolean {
-    const needsOpenAI = embedProvider === 'openai' || genProvider === 'openai'
-    const needsGemini = embedProvider === 'gemini' || genProvider === 'gemini'
+    const providers = new Set<AIProvider>([getEmbedProvider(), getGenerationProvider()])
 
-    if (needsOpenAI) {
-      const isInit = openaiService.isInitialized
-      if (!isInit) {
-        logger.warn('OpenAI service not initialized. Check OPENAI_API_KEY environment variable.')
-      }
-      return isInit
+    if (providers.has('openai') && !openaiService.isInitialized) {
+      logger.warn('OpenAI service not initialized. Check OPENAI_API_KEY environment variable.')
+      return false
     }
 
-    if (needsGemini) {
-      const isInit = geminiService.isInitialized
-      if (!isInit) {
-        logger.warn('Gemini service not initialized. Check GEMINI_API_KEY environment variable.')
-      }
-      return isInit
+    if (providers.has('gemini') && !geminiService.isInitialized) {
+      logger.warn('Gemini service not initialized. Check GEMINI_API_KEY environment variable.')
+      return false
     }
+
     return true
   },
 
@@ -89,6 +78,7 @@ export const aiProvider = {
       contextRelevance: string[]
     }
     let modelUsed: string | undefined
+    const genProvider = getGenerationProvider()
 
     if (genProvider === 'gemini') {
       const response = await geminiService.extractContentMetadata(
@@ -185,8 +175,11 @@ JSON ONLY:`
     mimeType: string,
     timeoutOverride?: number
   ): Promise<string> {
-    // Image processing requires Gemini (vision models)
-    return geminiService.generateContentWithImage(prompt, imageBase64, mimeType, timeoutOverride)
+    if (getGenerationProvider() === 'gemini') {
+      return geminiService.generateContentWithImage(prompt, imageBase64, mimeType, timeoutOverride)
+    }
+
+    return openaiService.generateContentWithImage(prompt, imageBase64, mimeType)
   },
 
   generateFallbackMetadata(

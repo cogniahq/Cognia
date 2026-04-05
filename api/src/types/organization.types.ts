@@ -156,12 +156,23 @@ export interface OrganizationContext {
 export interface DocumentUploadInput {
   organizationId: string
   uploaderId: string
+  metadata?: Record<string, unknown>
   file: {
     buffer: Buffer
     originalname: string
     mimetype: string
     size: number
   }
+}
+
+export interface StoredDocumentInput {
+  organizationId: string
+  uploaderId: string
+  storagePath: string
+  originalname: string
+  mimetype: string
+  size: number
+  metadata?: Record<string, unknown>
 }
 
 export interface DocumentInfo {

@@ -1,26 +1,31 @@
 import OpenAI from 'openai'
 import { logger } from '../../utils/core/logger.util'
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
-
-// Models for different use cases
-const CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini' // Fast and cheap for general use
-const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
+import {
+  getOpenAIApiKey,
+  getOpenAIChatModel,
+  getOpenAIEmbeddingModel,
+  getOpenAIVisionModel,
+} from './ai-config'
 
 class OpenAIService {
   private client: OpenAI | null = null
+  private activeApiKey: string | null = null
 
   get isInitialized(): boolean {
-    return !!OPENAI_API_KEY
+    return !!getOpenAIApiKey()
   }
 
   private getClient(): OpenAI {
-    if (!this.client) {
-      if (!OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY environment variable is not set')
-      }
-      this.client = new OpenAI({ apiKey: OPENAI_API_KEY })
+    const apiKey = getOpenAIApiKey()
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set')
     }
+
+    if (!this.client || this.activeApiKey !== apiKey) {
+      this.client = new OpenAI({ apiKey })
+      this.activeApiKey = apiKey
+    }
+
     return this.client
   }
 
@@ -36,8 +41,7 @@ class OpenAIService {
     const startTime = Date.now()
 
     try {
-      // Use faster model for search requests
-      const model = isSearchRequest ? 'gpt-4o-mini' : CHAT_MODEL
+      const model = getOpenAIChatModel()
 
       const response = await client.chat.completions.create(
         {
@@ -80,9 +84,10 @@ class OpenAIService {
     try {
       // Truncate text if too long (OpenAI has token limits)
       const truncatedText = text.length > 8000 ? text.substring(0, 8000) : text
+      const embeddingModel = getOpenAIEmbeddingModel()
 
       const response = await client.embeddings.create({
-        model: EMBEDDING_MODEL,
+        model: embeddingModel,
         input: truncatedText,
       })
 
@@ -90,13 +95,13 @@ class OpenAIService {
       const elapsed = Date.now() - startTime
 
       logger.log('[openai] embedding generated', {
-        model: EMBEDDING_MODEL,
+        model: embeddingModel,
         textLength: truncatedText.length,
         embeddingDimensions: embedding.length,
         elapsedMs: elapsed,
       })
 
-      return { embedding, modelUsed: EMBEDDING_MODEL }
+      return { embedding, modelUsed: embeddingModel }
     } catch (error) {
       logger.error('[openai] embedding failed', {
         error: error instanceof Error ? error.message : String(error),
@@ -118,8 +123,10 @@ class OpenAIService {
     const startTime = Date.now()
 
     try {
+      const visionModel = getOpenAIVisionModel()
+
       const response = await client.chat.completions.create({
-        model: 'gpt-4o', // Vision model
+        model: visionModel,
         messages: [
           {
             role: 'user',
@@ -141,7 +148,7 @@ class OpenAIService {
       const elapsed = Date.now() - startTime
 
       logger.log('[openai] vision content generated', {
-        model: 'gpt-4o',
+        model: visionModel,
         promptLength: prompt.length,
         responseLength: text.length,
         elapsedMs: elapsed,

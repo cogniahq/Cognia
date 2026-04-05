@@ -1,6 +1,9 @@
 import { lazy, Suspense } from "react"
+import { AnimatePresence } from "framer-motion"
 import { useAuth } from "@/contexts/auth.context"
-import { Navigate, Route, Routes } from "react-router-dom"
+import { Navigate, Route, Routes, useLocation } from "react-router-dom"
+
+import { AnimatedPage } from "@/components/shared/site-motion"
 
 const Landing = lazy(() =>
   import("@/pages/landing.page").then((module) => ({ default: module.Landing }))
@@ -39,6 +42,11 @@ const Briefings = lazy(() =>
     default: module.Briefings,
   }))
 )
+const MeshShowcase = lazy(() =>
+  import("@/pages/mesh-showcase.page").then((module) => ({
+    default: module.MeshShowcase,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -69,37 +77,44 @@ const AuthRedirectLanding = () => {
 const AppRoutes = () => {
   const enableInternalRoutes =
     import.meta.env.VITE_ENABLE_INTERNAL_ROUTES !== "false"
+  const location = useLocation()
 
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        <Route path="/" element={<AuthRedirectLanding />} />
-        {enableInternalRoutes ? (
-          <>
-            <Route path="/login" element={<Login />} />
-            <Route path="/memories" element={<Memories />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/organization" element={<Organization />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/briefings" element={<Briefings />} />
-          </>
-        ) : (
-          <>
-            <Route path="/login" element={<Navigate to="/" replace />} />
-            <Route path="/memories" element={<Navigate to="/" replace />} />
-            <Route path="/docs" element={<Navigate to="/" replace />} />
-            <Route path="/analytics" element={<Navigate to="/" replace />} />
-            <Route path="/profile" element={<Navigate to="/" replace />} />
-            <Route path="/organization" element={<Navigate to="/" replace />} />
-            <Route path="/integrations" element={<Navigate to="/" replace />} />
-            <Route path="/briefings" element={<Navigate to="/" replace />} />
-          </>
-        )}
+      <AnimatePresence mode="wait" initial={false}>
+        <AnimatedPage key={location.pathname}>
+          <Routes location={location}>
+            <Route path="/" element={<AuthRedirectLanding />} />
+            {enableInternalRoutes ? (
+              <>
+                <Route path="/login" element={<Login />} />
+                <Route path="/memories" element={<Memories />} />
+                <Route path="/docs" element={<Docs />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/organization" element={<Organization />} />
+                <Route path="/integrations" element={<Integrations />} />
+                <Route path="/briefings" element={<Briefings />} />
+                <Route path="/mesh-showcase" element={<MeshShowcase />} />
+              </>
+            ) : (
+              <>
+                <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route path="/memories" element={<Navigate to="/" replace />} />
+                <Route path="/docs" element={<Navigate to="/" replace />} />
+                <Route path="/analytics" element={<Navigate to="/" replace />} />
+                <Route path="/profile" element={<Navigate to="/" replace />} />
+                <Route path="/organization" element={<Navigate to="/" replace />} />
+                <Route path="/integrations" element={<Navigate to="/" replace />} />
+                <Route path="/briefings" element={<Navigate to="/" replace />} />
+                <Route path="/mesh-showcase" element={<Navigate to="/" replace />} />
+              </>
+            )}
 
-        <Route path="*" element={<AuthRedirectLanding />} />
-      </Routes>
+            <Route path="*" element={<AuthRedirectLanding />} />
+          </Routes>
+        </AnimatedPage>
+      </AnimatePresence>
     </Suspense>
   )
 }

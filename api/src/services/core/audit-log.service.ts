@@ -155,6 +155,26 @@ export class AuditLogService {
       userAgent: options?.userAgent,
     })
   }
+
+  async logPlatformEvent(
+    userId: string,
+    eventType:
+      | 'platform_tenant_sync'
+      | 'platform_user_sync'
+      | 'platform_membership_sync'
+      | 'platform_document_upload'
+      | 'platform_search',
+    action: string,
+    metadata?: Record<string, unknown>
+  ) {
+    await this.logEvent({
+      userId,
+      eventType,
+      eventCategory: 'platform',
+      action,
+      metadata,
+    })
+  }
 }
 
 export const auditLogService = new AuditLogService()

@@ -1,10 +1,17 @@
 import React from "react"
+import { motion } from "framer-motion"
 
+import { fadeUpVariants } from "@/components/shared/site-motion"
 import { Navbar } from "./Navbar"
 
 export const Header: React.FC = () => {
   return (
-    <header className="fixed top-0 inset-x-0 z-40 py-3 sm:py-4 lg:py-5 relative">
+    <motion.header
+      className="fixed top-0 inset-x-0 z-40 py-3 sm:py-4 lg:py-5 relative"
+      initial="initial"
+      animate="animate"
+      variants={fadeUpVariants}
+    >
       {/* Gradient blur overlays for header */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
         {[
@@ -23,13 +30,22 @@ export const Header: React.FC = () => {
             opacity: 0.2,
           },
         ].map((b, i) => (
-          <div
+          <motion.div
             key={i}
             className={`${b.className} rounded-full blur-3xl`}
             style={{
               backgroundImage: `linear-gradient(135deg, ${b.from}, ${b.via}, ${b.to})`,
               opacity: b.opacity as number,
               filter: "blur(64px)",
+            }}
+            animate={{
+              x: i === 0 ? [0, 16, -10, 0] : [0, -14, 8, 0],
+              y: i === 0 ? [0, 10, -6, 0] : [0, -8, 6, 0],
+            }}
+            transition={{
+              duration: 12 + i * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -54,6 +70,6 @@ export const Header: React.FC = () => {
           <Navbar />
         </div>
       </div>
-    </header>
+    </motion.header>
   )
 }

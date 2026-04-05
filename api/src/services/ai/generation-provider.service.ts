@@ -4,15 +4,7 @@ import { openaiService } from './openai.service'
 import { tokenTracking } from '../core/token-tracking.service'
 import { retryWithBackoff, isRateLimitError, sleep } from '../../utils/core/retry.util'
 import { logger } from '../../utils/core/logger.util'
-
-type Provider = 'gemini' | 'ollama' | 'hybrid' | 'openai'
-
-const genProvider: Provider =
-  (process.env.GEN_PROVIDER as Provider) || (process.env.AI_PROVIDER as Provider) || 'hybrid'
-const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
-const OLLAMA_GEN_MODEL = process.env.OLLAMA_GEN_MODEL || 'llama3.1:8b'
-
-logger.log('[generation-provider] initialized', { genProvider })
+import { getGenerationProvider, getOllamaBaseUrl, getOllamaGenerationModel } from './ai-config'
 
 interface ApiError {
   status?: number
@@ -29,34 +21,46 @@ export class GenerationProviderService {
   ): Promise<string> {
     let result: string
     let modelUsed: string | undefined
+    const genProvider = getGenerationProvider()
 
-    if (genProvider === 'openai') {
-      // Use OpenAI for generation (faster)
-      const response = await retryWithBackoff(
-        async () => {
-          return openaiService.generateContent(prompt, isSearchRequest, timeoutOverride)
-        },
-        {
-          maxRetries: 3,
-          baseDelayMs: 1000,
-          maxDelayMs: 10000,
-          shouldRetry: error => {
-            if (isRateLimitError(error)) return true
-            const status = (error as ApiError)?.status
-            if (status === 503 || status === 502 || status === 429) return true
-            return false
+    if (genProvider === 'openai' || genProvider === 'hybrid') {
+      try {
+        const response = await retryWithBackoff(
+          async () => {
+            return openaiService.generateContent(prompt, isSearchRequest, timeoutOverride)
           },
-          onRetry: (error, attempt, delayMs) => {
-            const status = (error as ApiError)?.status
-            logger.warn(
-              `OpenAI generation failed with status ${status}, retrying (attempt ${attempt})`,
-              { delayMs, isSearchRequest }
-            )
-          },
+          {
+            maxRetries: 3,
+            baseDelayMs: 1000,
+            maxDelayMs: 10000,
+            shouldRetry: error => {
+              if (isRateLimitError(error)) return true
+              const status = (error as ApiError)?.status
+              if (status === 503 || status === 502 || status === 429) return true
+              return false
+            },
+            onRetry: (error, attempt, delayMs) => {
+              const status = (error as ApiError)?.status
+              logger.warn(
+                `OpenAI generation failed with status ${status}, retrying (attempt ${attempt})`,
+                { delayMs, isSearchRequest }
+              )
+            },
+          }
+        )
+        result = response.text
+        modelUsed = response.modelUsed
+      } catch (error) {
+        if (genProvider !== 'hybrid') {
+          throw error
         }
-      )
-      result = response.text
-      modelUsed = response.modelUsed
+
+        logger.warn('[generation-provider] OpenAI generation failed in hybrid mode, falling back', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+        result = await this.generateWithOllama(prompt)
+        modelUsed = getOllamaGenerationModel()
+      }
     } else if (genProvider === 'gemini') {
       // Use retry with exponential backoff for Gemini API calls
       const response = await retryWithBackoff(
@@ -96,7 +100,7 @@ export class GenerationProviderService {
     } else {
       // Ollama with basic retry
       result = await this.generateWithOllama(prompt)
-      modelUsed = OLLAMA_GEN_MODEL
+      modelUsed = getOllamaGenerationModel()
     }
 
     if (userId) {
@@ -116,14 +120,16 @@ export class GenerationProviderService {
 
   private async generateWithOllama(prompt: string, retries = 2): Promise<string> {
     let lastError: Error | null = null
+    const ollamaBase = getOllamaBaseUrl()
+    const ollamaModel = getOllamaGenerationModel()
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
+        const res = await fetch(`${ollamaBase}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: OLLAMA_GEN_MODEL,
+            model: ollamaModel,
             prompt,
             stream: false,
             options: { num_predict: 128, temperature: 0.3 },

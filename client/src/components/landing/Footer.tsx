@@ -1,8 +1,17 @@
 import React from "react"
+import { motion } from "framer-motion"
+
+import { fadeUpVariants } from "@/components/shared/site-motion"
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-white/80 backdrop-blur border-t border-gray-200/50">
+    <motion.footer
+      className="bg-white/80 backdrop-blur border-t border-gray-200/50"
+      initial="initial"
+      whileInView="animate"
+      viewport={{ once: true, amount: 0.2 }}
+      variants={fadeUpVariants}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-8">
           {/* Left: Brand */}
@@ -24,11 +33,13 @@ export const Footer: React.FC = () => {
 
           {/* Right: Links */}
           <div className="flex items-center gap-4 sm:gap-6">
-            <button
+            <motion.button
               onClick={() =>
                 window.open("https://github.com/cogniahq/Cognia", "_blank")
               }
               className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors group"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
               <svg
                 className="w-4 h-4 group-hover:scale-110 transition-transform"
@@ -42,10 +53,12 @@ export const Footer: React.FC = () => {
                 />
               </svg>
               <span>GitHub</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => window.open("https://x.com/cogniahq", "_blank")}
               className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors group"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
               <svg
                 className="w-4 h-4 group-hover:scale-110 transition-transform"
@@ -54,7 +67,7 @@ export const Footer: React.FC = () => {
               >
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -70,6 +83,6 @@ export const Footer: React.FC = () => {
           </div>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   )
 }

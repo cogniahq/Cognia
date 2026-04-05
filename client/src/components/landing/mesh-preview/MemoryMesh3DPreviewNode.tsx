@@ -9,6 +9,7 @@ interface MemoryMesh3DPreviewNodeProps {
   color: string
   importance?: number
   label?: string
+  showLabel?: boolean
   isHighlighted?: boolean
   pulseIntensity?: number
 }
@@ -20,6 +21,7 @@ export const MemoryMesh3DPreviewNode: React.FC<
   color,
   importance = 0.5,
   label,
+  showLabel = true,
   isHighlighted = false,
   pulseIntensity = 0,
 }) => {
@@ -72,7 +74,7 @@ export const MemoryMesh3DPreviewNode: React.FC<
           emissiveIntensity={isHighlighted ? 0.6 : hovered ? 0.4 : 0.2}
         />
       </mesh>
-      {label && (
+      {showLabel && label && (
         <group ref={textRef}>
           <Text
             position={[0, size * 12, 0]}

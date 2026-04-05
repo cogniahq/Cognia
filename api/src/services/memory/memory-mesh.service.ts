@@ -9,11 +9,15 @@ import {
 } from '../../lib/qdrant.lib'
 import { randomUUID } from 'crypto'
 import { logger } from '../../utils/core/logger.util'
-import { GEMINI_EMBED_MODEL } from '../ai/gemini.service'
+import { getActiveEmbeddingModelName } from '../ai/ai-config'
 import { buildContentPreview } from '../../utils/text/text.util'
 import { meshCalculationService } from './mesh-calculation.service'
 import { meshRelationsService } from './mesh-relations.service'
 import { meshClusteringService } from './mesh-clustering.service'
+import {
+  buildMemoryRetrievalText,
+  normalizePageMetadata,
+} from './memory-structure.service'
 import type {
   MemoryWithMetadata,
   MemoryRelation,
@@ -40,10 +44,15 @@ export class MemoryMeshService {
 
       const embeddingPromises = []
 
-      const canonicalContent = memory.canonical_text || memory.content
-      if (canonicalContent) {
+      const retrievalText = buildMemoryRetrievalText({
+        title: memory.title,
+        content: memory.content || memory.canonical_text,
+        pageMetadata: normalizePageMetadata(memory.page_metadata),
+      })
+
+      if (retrievalText) {
         embeddingPromises.push(
-          this.createEmbedding(memoryId, memory.user_id, canonicalContent, 'content')
+          this.createEmbedding(memoryId, memory.user_id, retrievalText, 'content')
         )
       }
 
@@ -72,8 +81,28 @@ export class MemoryMeshService {
       // Fetch memory to get organization_id and source_type
       const memory = await prisma.memory.findUnique({
         where: { id: memoryId },
-        select: { organization_id: true, source_type: true },
+        select: {
+          organization_id: true,
+          source_type: true,
+          page_metadata: true,
+          document_chunks: {
+            select: {
+              document_id: true,
+            },
+            take: 1,
+          },
+        },
       })
+
+      const metadata = (memory?.page_metadata as Record<string, unknown> | null) || {}
+      const matterIds = Array.isArray(metadata.matterIds)
+        ? metadata.matterIds.filter((value): value is string => typeof value === 'string')
+        : typeof metadata.matterId === 'string'
+          ? [metadata.matterId]
+          : []
+      const securityTags = Array.isArray(metadata.securityTags)
+        ? metadata.securityTags.filter((value): value is string => typeof value === 'string')
+        : []
 
       const embeddingResult = await aiProvider.generateEmbedding(text)
       const embedding: number[] =
@@ -92,11 +121,21 @@ export class MemoryMeshService {
               memory_id: memoryId,
               user_id: userId,
               embedding_type: type,
-              model_name: GEMINI_EMBED_MODEL,
+              model_name: getActiveEmbeddingModelName(),
               created_at: new Date().toISOString(),
               // Document intelligence fields
               organization_id: memory?.organization_id || null,
               source_type: memory?.source_type || 'EXTENSION',
+              document_id:
+                memory?.document_chunks[0]?.document_id ||
+                (typeof metadata.documentId === 'string' ? metadata.documentId : null),
+              matter_id: typeof metadata.matterId === 'string' ? metadata.matterId : null,
+              matter_ids: matterIds,
+              client_id: typeof metadata.clientId === 'string' ? metadata.clientId : null,
+              privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
+              security_tags: securityTags,
+              external_document_id:
+                typeof metadata.externalDocumentId === 'string' ? metadata.externalDocumentId : null,
             },
           },
         ],

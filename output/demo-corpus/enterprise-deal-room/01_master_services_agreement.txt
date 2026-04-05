@@ -1,0 +1,42 @@
+MASTER SERVICES AGREEMENT
+Between Northstar Bank plc and Aperture Cloud, Inc.
+Effective date: June 1, 2026
+
+1. Parties
+Northstar Bank plc is the customer. Aperture Cloud, Inc. is the provider of the Aperture Cloud Workspace platform.
+
+2. Subscription services
+Aperture Cloud will provide a hosted collaboration, document intelligence, and workflow platform for enterprise teams. The service will be used by Northstar Bank procurement, legal operations, and information security teams during the initial deployment.
+
+3. Term
+The initial term is twelve months beginning June 1, 2026. The agreement renews automatically for successive one-year periods unless either party gives written notice of non-renewal at least sixty days before the end of the then-current term.
+
+4. Fees and payment terms
+Fees are described in the Order Form. Invoices are due net thirty days from the invoice date. Undisputed late amounts may accrue interest at one percent per month or the maximum amount permitted by law, whichever is lower.
+
+5. Confidentiality
+Each party will protect confidential information using reasonable care and at least the same care it uses for its own confidential information. Confidential information may only be used to perform obligations or exercise rights under this agreement.
+
+6. Security obligations
+Provider will maintain administrative, technical, and physical safeguards appropriate to the nature of customer data. Provider will maintain audit logs for administrative access, logical access controls, encryption in transit using TLS 1.2 or higher, and encryption at rest using AES-256 or an equivalent standard.
+
+7. Security incident notification
+Provider will notify Customer without undue delay and no later than twenty-four hours after confirming a Security Incident affecting Customer Data. Provider will include the nature of the incident, the known systems affected, the categories of data implicated, containment steps taken, and planned remediation actions.
+
+8. Subprocessors
+Provider may use subprocessors to deliver the service. Provider will maintain a current list of subprocessors and will give at least fifteen days' advance notice before adding a new subprocessor that processes Customer Data.
+
+9. Limitation of liability
+Except for liability arising from fraud, willful misconduct, breach of confidentiality, or either party's indemnification obligations, each party's aggregate liability under this agreement will not exceed the fees paid or payable by Customer under the Order Form during the twelve months preceding the event giving rise to the claim. For this transaction, the rolling fee cap is expected to be based on the annual subscription amount stated in the Order Form.
+
+10. Indemnity
+Provider will defend Customer against third-party claims that the service infringes a third-party intellectual property right. Customer will defend Provider against third-party claims arising from Customer's unlawful use of the service or Customer-supplied materials.
+
+11. Data return and deletion
+Upon termination or expiration, Customer may request export of Customer Data for thirty days. Provider will delete Customer Data from production systems within thirty days after the end of the export window, unless retention is required by law. Backup media will age out under standard rotation procedures within ninety days.
+
+12. Audit rights
+No more than once annually, Customer may request Provider's most recent SOC 2 Type II report, penetration testing summary, and relevant security policies under confidentiality obligations. On reasonable notice, the parties may discuss remediation items and evidence of closure.
+
+13. Governing law
+This agreement is governed by the laws of England and Wales.

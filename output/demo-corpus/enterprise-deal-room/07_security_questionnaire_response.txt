@@ -1,0 +1,29 @@
+SECURITY QUESTIONNAIRE RESPONSE
+Submitted by Aperture Cloud Security Team
+
+Q: Is customer data encrypted in transit and at rest?
+A: Yes. TLS 1.2 or higher is enforced for data in transit. AES-256 is used for encryption at rest.
+
+Q: What is the breach notification commitment?
+A: Aperture Cloud will notify Northstar Bank without undue delay and no later than twenty-four hours after confirmation of a security incident affecting customer data.
+
+Q: Does the service support SSO?
+A: Yes. SAML 2.0 is supported for enterprise customers. SCIM user provisioning is also available.
+
+Q: Where will Northstar Bank production data reside?
+A: The production environment for Northstar Bank is proposed in the European Union region.
+
+Q: Are subprocessors used?
+A: Yes. Aperture Cloud uses subprocessors for infrastructure, email delivery, and monitoring. New subprocessors are announced in advance.
+
+Q: How long are audit logs retained?
+A: Standard enterprise audit log retention is thirteen months.
+
+Q: What are the disaster recovery objectives?
+A: RTO is four hours and RPO is fifteen minutes.
+
+Q: Is penetration testing performed?
+A: Yes. Independent penetration testing is performed annually and material findings are tracked to closure.
+
+Q: Does support personnel access customer data?
+A: Access is restricted to authorized personnel on a need-to-know basis and is logged. Access from outside the approved support region requires a ticket and manager approval.

@@ -75,6 +75,15 @@ enum SyncJobStatus {
   CANCELLED
 }
 
+enum PlatformUploadStatus {
+  PENDING
+  UPLOADING
+  UPLOADED
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
 enum BriefingType {
   DAILY_DIGEST
   WEEKLY_SYNTHESIS
@@ -112,6 +121,8 @@ model User {
   integrations             UserIntegration[]
   intelligence_briefings   IntelligenceBriefing[]
   notification_preferences NotificationPreferences?
+  platform_user_links      PlatformUserLink[]
+  platform_upload_sessions PlatformUploadSession[] @relation("PlatformUploadSessionUploader")
 
   @@map("users")
 }
@@ -170,8 +181,100 @@ model Organization {
   invitations  OrganizationInvitation[]
   integrations OrganizationIntegration[]
   intelligence_briefings IntelligenceBriefing[]
+  platform_tenant_links PlatformTenantLink[]
+  platform_upload_sessions PlatformUploadSession[] @relation("PlatformUploadSessionOrganization")
 
   @@map("organizations")
+}
+
+model TrustedPlatformApp {
+  id               String                  @id @default(uuid()) @db.Uuid
+  app_id           String                  @unique
+  name             String
+  secret_hash      String
+  active           Boolean                 @default(true)
+  created_at       DateTime                @default(now())
+  updated_at       DateTime                @updatedAt
+  tenant_links     PlatformTenantLink[]
+  user_links       PlatformUserLink[]
+  upload_sessions  PlatformUploadSession[]
+
+  @@map("trusted_platform_apps")
+}
+
+model PlatformTenantLink {
+  id               String             @id @default(uuid()) @db.Uuid
+  trusted_app_id   String             @db.Uuid
+  external_id      String
+  organization_id  String             @db.Uuid
+  active           Boolean            @default(true)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  trusted_app      TrustedPlatformApp @relation(fields: [trusted_app_id], references: [id], onDelete: Cascade)
+  organization     Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  upload_sessions  PlatformUploadSession[]
+
+  @@unique([trusted_app_id, external_id])
+  @@unique([trusted_app_id, organization_id])
+  @@index([trusted_app_id])
+  @@index([organization_id])
+  @@index([active])
+  @@map("platform_tenant_links")
+}
+
+model PlatformUserLink {
+  id               String             @id @default(uuid()) @db.Uuid
+  trusted_app_id   String             @db.Uuid
+  external_id      String
+  user_id          String             @db.Uuid
+  active           Boolean            @default(true)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  trusted_app      TrustedPlatformApp @relation(fields: [trusted_app_id], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  upload_sessions  PlatformUploadSession[]
+
+  @@unique([trusted_app_id, external_id])
+  @@unique([trusted_app_id, user_id])
+  @@index([trusted_app_id])
+  @@index([user_id])
+  @@index([active])
+  @@map("platform_user_links")
+}
+
+model PlatformUploadSession {
+  id                    String               @id @default(uuid()) @db.Uuid
+  trusted_app_id        String               @db.Uuid
+  platform_tenant_link_id String             @db.Uuid
+  platform_user_link_id String               @db.Uuid
+  organization_id       String               @db.Uuid
+  uploader_id           String               @db.Uuid
+  storage_key           String               @unique
+  original_name         String
+  mime_type             String
+  file_size             Int
+  metadata              Json?
+  status                PlatformUploadStatus @default(PENDING)
+  uploaded_at           DateTime?
+  completed_at          DateTime?
+  expires_at            DateTime
+  error_message         String?
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+  trusted_app           TrustedPlatformApp   @relation(fields: [trusted_app_id], references: [id], onDelete: Cascade)
+  tenant_link           PlatformTenantLink   @relation(fields: [platform_tenant_link_id], references: [id], onDelete: Cascade)
+  user_link             PlatformUserLink     @relation(fields: [platform_user_link_id], references: [id], onDelete: Cascade)
+  organization          Organization         @relation("PlatformUploadSessionOrganization", fields: [organization_id], references: [id], onDelete: Cascade)
+  uploader              User                 @relation("PlatformUploadSessionUploader", fields: [uploader_id], references: [id], onDelete: Cascade)
+
+  @@index([trusted_app_id])
+  @@index([platform_tenant_link_id])
+  @@index([platform_user_link_id])
+  @@index([organization_id])
+  @@index([uploader_id])
+  @@index([status])
+  @@index([expires_at])
+  @@map("platform_upload_sessions")
 }
 
 model OrganizationMember {
@@ -580,4 +683,3 @@ model NotificationPreferences {
 
   @@map("notification_preferences")
 }
-

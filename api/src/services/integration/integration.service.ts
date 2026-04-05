@@ -26,6 +26,11 @@ import { addContentJob } from '../../lib/queue.lib'
 import { memoryIngestionService } from '../memory/memory-ingestion.service'
 import { memoryMeshService } from '../memory/memory-mesh.service'
 import { getRedisConnection } from '../../utils/core/env.util'
+import { prepareIntegrationContentForSync } from './integration-content.service'
+import {
+  normalizeUnixTimestampSeconds,
+  normalizeUnixTimestampSecondsNumber,
+} from '../../utils/core/timestamp.util'
 
 // Token encryption key from environment
 const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || ''
@@ -654,14 +659,12 @@ export class IntegrationService {
 
           // Fetch full content
           logger.log(`  [fetch] ${resource.name}...`)
-          const content = await plugin.fetchResource(tokens, resource.externalId)
+          const fetchedContent = await plugin.fetchResource(tokens, resource.externalId)
+          const preparedContent = await prepareIntegrationContentForSync(fetchedContent)
+          const content = preparedContent.content
 
           // Skip if no usable content
-          if (
-            !content.content ||
-            content.content.startsWith('[Unsupported') ||
-            content.content.startsWith('[Binary')
-          ) {
+          if (!content.content || preparedContent.shouldSkip) {
             logger.log(`  [skip] ${resource.name} (unsupported type)`)
             skipped++
             continue
@@ -769,6 +772,10 @@ export class IntegrationService {
     }
   ): Promise<void> {
     const { userId, organizationId, provider } = context
+    const normalizedTimestamp = normalizeUnixTimestampSeconds(content.updatedAt ?? Date.now())
+    const normalizedTimestampNumber = normalizeUnixTimestampSecondsNumber(
+      content.updatedAt ?? Date.now()
+    )
 
     // Canonicalize content for deduplication
     const { canonicalText, canonicalHash } = memoryIngestionService.canonicalizeContent(
@@ -782,6 +789,8 @@ export class IntegrationService {
       canonicalHash,
       canonicalText,
       url: content.url,
+      title: content.title,
+      source: provider,
     })
 
     if (duplicate) {
@@ -800,7 +809,7 @@ export class IntegrationService {
           source: provider,
           source_type: 'INTEGRATION',
           organization_id: organizationId || undefined,
-          timestamp: content.updatedAt?.getTime() || Date.now(),
+          timestamp: normalizedTimestampNumber,
         },
       })
       logger.log(`    (queued for processing)`)
@@ -814,17 +823,24 @@ export class IntegrationService {
       }
       const memory = await prisma.memory.create({
         data: {
-          user_id: userId,
-          organization_id: organizationId || undefined,
-          source: provider,
+          ...memoryIngestionService.buildMemoryCreatePayload({
+            userId,
+            title: content.title,
+            url: content.url,
+            source: provider,
+            content: content.content,
+            metadata: {
+              ...(pageMetadata as Record<string, unknown>),
+              source_type: SourceType.INTEGRATION,
+              organization_id: organizationId || undefined,
+              timestamp: normalizedTimestampNumber,
+            },
+            canonicalText,
+            canonicalHash,
+          }),
           source_type: SourceType.INTEGRATION,
-          url: content.url,
-          title: content.title,
-          content: content.content,
-          canonical_text: canonicalText,
-          canonical_hash: canonicalHash,
-          timestamp: BigInt(content.updatedAt?.getTime() || Date.now()),
-          page_metadata: pageMetadata,
+          organization: organizationId ? { connect: { id: organizationId } } : undefined,
+          timestamp: normalizedTimestamp,
         },
       })
 

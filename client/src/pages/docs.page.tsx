@@ -100,7 +100,7 @@ export const Docs = () => {
     {
       question: "What AI models do you use?",
       answer:
-        "We use Google Gemini for embeddings and summarization by default. The system includes fallback mechanisms and supports local AI processing for complete privacy.",
+        "We use OpenAI models for embeddings, summarization, search answers, and image OCR by default. Optional fallback providers can still be configured if needed.",
     },
     {
       question: "How does the ChatGPT integration work?",
@@ -715,16 +715,16 @@ export const Docs = () => {
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-gray-700">
                   <li>
-                    <strong>Google Gemini:</strong> The default option, great
-                    quality and fast
+                    <strong>OpenAI:</strong> The default option for generation,
+                    embeddings, and vision
                   </li>
                   <li>
-                    <strong>Ollama:</strong> Run AI locally on your computer for
-                    complete privacy
+                    <strong>Alternative providers:</strong> Gemini or Ollama
+                    can still be configured if you need them
                   </li>
                   <li>
-                    <strong>Automatic fallback:</strong> If one option isn't
-                    available, it automatically tries another
+                    <strong>Fallback behavior:</strong> Search and embedding
+                    flows still keep deterministic fallbacks for resilience
                   </li>
                 </ul>
 

@@ -199,6 +199,33 @@ export async function sendToBackend(data: ContextData): Promise<void> {
         timestamp: data.timestamp,
         content_type: data.content_type || 'web_page',
         content_summary: data.content_summary,
+        key_topics: Array.isArray(data.key_topics) ? data.key_topics : undefined,
+        reading_time: typeof data.reading_time === 'number' ? data.reading_time : undefined,
+        page_metadata:
+          data.page_metadata && typeof data.page_metadata === 'object'
+            ? data.page_metadata
+            : undefined,
+        page_structure:
+          data.page_structure && typeof data.page_structure === 'object'
+            ? data.page_structure
+            : undefined,
+        user_activity:
+          data.user_activity && typeof data.user_activity === 'object'
+            ? data.user_activity
+            : undefined,
+        content_quality:
+          data.content_quality && typeof data.content_quality === 'object'
+            ? data.content_quality
+            : undefined,
+        participants:
+          Array.isArray((data.page_metadata as { participants?: unknown } | undefined)?.participants)
+            ? ((data.page_metadata as { participants?: string[] }).participants || [])
+            : undefined,
+        email_provider:
+          typeof (data.page_metadata as { email_provider?: unknown } | undefined)?.email_provider ===
+          'string'
+            ? ((data.page_metadata as { email_provider?: string }).email_provider as string)
+            : undefined,
         privacy_extension_conflicts: hasPrivacyConflicts,
         privacy_extension_type: privacyInfo?.type || 'none',
         compatibility_mode: privacyInfo?.compatibility_mode || false,

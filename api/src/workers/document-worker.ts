@@ -6,6 +6,7 @@ import { textExtractionService } from '../services/document/text-extraction.serv
 import { textChunkingService } from '../services/document/text-chunking.service'
 import { documentService } from '../services/document/document.service'
 import { memoryMeshService } from '../services/memory/memory-mesh.service'
+import { memoryStructureService } from '../services/memory/memory-structure.service'
 import { logger } from '../utils/core/logger.util'
 import {
   getQueueConcurrency,
@@ -14,6 +15,7 @@ import {
   getQueueStalledInterval,
   getQueueMaxStalledCount,
 } from '../utils/core/env.util'
+import { normalizeUnixTimestampSeconds } from '../utils/core/timestamp.util'
 import type { DocumentProcessingJob } from '../types/organization.types'
 
 export const startDocumentWorker = () => {
@@ -31,6 +33,15 @@ export const startDocumentWorker = () => {
       try {
         // Update status to processing
         await documentService.updateStatus(documentId, DocumentStatus.PROCESSING)
+
+        const documentRecord = await prisma.document.findUnique({
+          where: { id: documentId },
+          select: {
+            metadata: true,
+          },
+        })
+
+        const documentMetadata = (documentRecord?.metadata as Record<string, unknown> | null) || {}
 
         // Stage 1: Extracting text
         await documentService.updateProcessingStage(documentId, 'extracting_text')
@@ -81,6 +92,12 @@ export const startDocumentWorker = () => {
         for (let i = 0; i < textChunks.length; i++) {
           const chunk = textChunks[i]
           try {
+            const structuredMetadata = memoryStructureService.extract({
+              title: `${filename} - Chunk ${chunk.chunkIndex + 1}`,
+              content: chunk.content,
+              metadata: documentMetadata as Record<string, unknown>,
+              source: 'document',
+            })
             // Create Memory entry with source_type=DOCUMENT
             const memory = await prisma.memory.create({
               data: {
@@ -88,9 +105,30 @@ export const startDocumentWorker = () => {
                 source: 'document',
                 title: `${filename} - Chunk ${chunk.chunkIndex + 1}`,
                 content: chunk.content,
-                timestamp: BigInt(Date.now()),
+                timestamp: normalizeUnixTimestampSeconds(
+                  documentMetadata.timestamp ?? documentMetadata.created_at
+                ),
                 source_type: SourceType.DOCUMENT,
                 organization_id: organizationId,
+                page_metadata: {
+                  ...documentMetadata,
+                  content_type: structuredMetadata.contentType,
+                  structuredSummary: structuredMetadata.structuredSummary,
+                  representativeExcerpt: structuredMetadata.representativeExcerpt,
+                  keyFacts: structuredMetadata.keyFacts,
+                  topics: structuredMetadata.topics,
+                  categories: structuredMetadata.categories,
+                  searchableTerms: structuredMetadata.searchableTerms,
+                  extractedEntities: structuredMetadata.extractedEntities,
+                  retrievalText: structuredMetadata.retrievalText,
+                  ingestionVersion: structuredMetadata.ingestionVersion,
+                  ...(structuredMetadata.commerce
+                    ? { commerce: structuredMetadata.commerce }
+                    : {}),
+                  documentId,
+                  chunkIndex: chunk.chunkIndex,
+                  pageNumber: chunk.pageNumber,
+                },
               },
             })
 

@@ -1,5 +1,6 @@
 import { MemoryType } from '@prisma/client'
 import { buildContentPreview } from '../../utils/text/text.util'
+import { calculateSimilarity, normalizeText, normalizeUrl } from '../../utils/text/text.util'
 import { DynamicSearchParams, QueryAnalysis } from './query-processor.service'
 import {
   applyPolicyScore,
@@ -9,6 +10,11 @@ import {
 import { rerankingService } from './reranking.service'
 import { logger } from '../../utils/core/logger.util'
 import type { SearchResult } from '../../types/search.types'
+import {
+  buildMemoryPreviewText,
+  buildMemoryRetrievalText,
+  normalizePageMetadata,
+} from '../memory/memory-structure.service'
 
 export type { SearchResult }
 
@@ -24,6 +30,7 @@ type MemoryRow = {
   importance_score: number | null
   source: string | null
   created_at: Date
+  page_metadata: Record<string, unknown>
 }
 
 type ScoredRow = MemoryRow & {
@@ -34,6 +41,87 @@ type ScoredRow = MemoryRow & {
 }
 
 const MS_IN_DAY = 1000 * 60 * 60 * 24
+const EXTENSION_SEARCH_DUPLICATE_SIMILARITY = 0.55
+
+type DeduplicatedSearchRow = {
+  id: string
+  title: string | null
+  url: string | null
+  content: string | null
+  content_preview: string
+  source: string | null
+  created_at: Date
+  score: number
+  final_score?: number
+}
+
+function isExtensionSearchRow(row: Pick<DeduplicatedSearchRow, 'source'>): boolean {
+  return normalizeText(row.source || '') === 'extension'
+}
+
+function buildSearchDeduplicationKey(
+  row: Pick<DeduplicatedSearchRow, 'source' | 'title' | 'url'>
+): string | null {
+  if (!isExtensionSearchRow(row) || !row.title || !row.url) {
+    return null
+  }
+
+  const normalizedTitle = normalizeText(row.title)
+  const normalizedUrl = normalizeUrl(row.url)
+
+  if (!normalizedTitle || !normalizedUrl) {
+    return null
+  }
+
+  return `${normalizedTitle}::${normalizedUrl}`
+}
+
+function getSearchRowRankingScore(row: DeduplicatedSearchRow): number {
+  return typeof row.final_score === 'number' ? row.final_score : row.score
+}
+
+function getSearchRowContent(row: DeduplicatedSearchRow): string {
+  return normalizeText(row.content || row.content_preview || '')
+}
+
+export function deduplicateSearchRows<T extends DeduplicatedSearchRow>(rows: T[]): T[] {
+  const deduplicated: T[] = []
+  const keptRowsByKey = new Map<string, T[]>()
+
+  const rankedRows = [...rows].sort((left, right) => {
+    const scoreDelta = getSearchRowRankingScore(right) - getSearchRowRankingScore(left)
+    if (Math.abs(scoreDelta) > 0.0001) {
+      return scoreDelta
+    }
+
+    return right.created_at.getTime() - left.created_at.getTime()
+  })
+
+  for (const row of rankedRows) {
+    const deduplicationKey = buildSearchDeduplicationKey(row)
+    if (!deduplicationKey) {
+      deduplicated.push(row)
+      continue
+    }
+
+    const keptRows = keptRowsByKey.get(deduplicationKey) || []
+    const rowContent = getSearchRowContent(row)
+    const isDuplicate = keptRows.some(existingRow => {
+      const similarity = calculateSimilarity(rowContent, getSearchRowContent(existingRow))
+      return similarity >= EXTENSION_SEARCH_DUPLICATE_SIMILARITY
+    })
+
+    if (isDuplicate) {
+      continue
+    }
+
+    keptRows.push(row)
+    keptRowsByKey.set(deduplicationKey, keptRows)
+    deduplicated.push(row)
+  }
+
+  return deduplicated
+}
 
 export function scoreSearchResults(
   rows: MemoryRow[],
@@ -234,6 +322,7 @@ export function buildMemoryRows(
     timestamp: bigint | number | null
     content: string | null
     canonical_text: string | null
+    page_metadata?: unknown | null
     memory_type: MemoryType | null
     importance_score: number | null
     source: string | null
@@ -245,19 +334,30 @@ export function buildMemoryRows(
     .map(([memoryId, semanticScore]) => {
       const memory = memories.find(m => m.id === memoryId)
       if (!memory) return null
-      const previewSource = memory.content || memory.canonical_text || memory.title || ''
+      const pageMetadata = normalizePageMetadata(memory.page_metadata)
+      const previewSource = buildMemoryPreviewText({
+        title: memory.title,
+        content: memory.content || memory.canonical_text || '',
+        pageMetadata,
+      })
+      const retrievalText = buildMemoryRetrievalText({
+        title: memory.title,
+        content: memory.content || memory.canonical_text || '',
+        pageMetadata,
+      })
       return {
         id: memory.id,
         title: memory.title,
         url: memory.url,
         timestamp: memory.timestamp,
-        content: memory.content,
+        content: retrievalText,
         content_preview: buildContentPreview(previewSource),
         score: semanticScore,
         memory_type: memory.memory_type,
         importance_score: memory.importance_score,
         source: memory.source,
         created_at: memory.created_at,
+        page_metadata: pageMetadata,
       }
     })
     .filter((row): row is MemoryRow => row !== null)

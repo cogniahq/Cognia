@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { LayoutGroup, motion } from "framer-motion"
 import { useAuth } from "@/contexts/auth.context"
 import { useOrganization } from "@/contexts/organization.context"
 import {
@@ -21,6 +22,7 @@ import { OrganizationSearch } from "@/components/organization/OrganizationSearch
 import { OrganizationSelector } from "@/components/organization/OrganizationSelector"
 import { SetupChecklist } from "@/components/organization/setup"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { fadeUpVariants } from "@/components/shared/site-motion"
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
@@ -301,8 +303,14 @@ export function Organization() {
           )}
 
           {/* Tabs */}
-          <div className="flex gap-1 border-b border-gray-200">
-            {[
+          <LayoutGroup id="organization-workspace-tabs">
+            <motion.div
+              className="flex gap-1 border-b border-gray-200"
+              initial="initial"
+              animate="animate"
+              variants={fadeUpVariants}
+            >
+              {[
               { id: "search" as const, label: "Search" },
               { id: "mesh" as const, label: "Mesh" },
               { id: "documents" as const, label: "Documents" },
@@ -310,24 +318,42 @@ export function Organization() {
               ...(isAdmin
                 ? [{ id: "settings" as const, label: "Settings" }]
                 : []),
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-xs font-mono transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+              ].map((tab) => {
+                const isActive = activeTab === tab.id
+
+                return (
+                  <motion.button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative overflow-hidden px-4 py-2 text-xs font-mono transition-colors ${
+                      isActive
+                        ? "text-white"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="organization-workspace-active-tab"
+                        className="absolute inset-0 bg-gray-900"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">{tab.label}</span>
+                  </motion.button>
+                )
+              })}
+            </motion.div>
+          </LayoutGroup>
 
           {/* Tab content */}
-          <div
+          <motion.div
             className={`bg-white border border-gray-200 min-h-[500px] ${activeTab === "mesh" ? "p-0" : "p-6"}`}
+            initial="initial"
+            animate="animate"
+            variants={fadeUpVariants}
+            key={activeTab}
           >
             {activeTab === "search" && <OrganizationSearch />}
 
@@ -411,7 +437,7 @@ export function Organization() {
             {activeTab === "members" && <MemberManagement />}
 
             {activeTab === "settings" && isAdmin && <OrganizationSettings />}
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express, { Request, Response, NextFunction } from 'express'
 
 import morgan from 'morgan'
@@ -9,8 +10,6 @@ import compression from 'compression'
 import cookieParser from 'cookie-parser'
 
 import http from 'http'
-
-import dotenv from 'dotenv'
 
 import globalErrorHandler from './controller/utils/global-error.controller'
 
@@ -26,8 +25,6 @@ import { logger } from './utils/core/logger.util'
 import { getAllowedOrigins, getMorganOutputMode } from './utils/core/env.util'
 import { validateRequestSize } from './utils/validation/validation.util'
 import { integrationService } from './services/integration'
-
-dotenv.config()
 
 const app = express()
 app.set('trust proxy', 1)

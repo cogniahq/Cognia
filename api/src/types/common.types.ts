@@ -47,8 +47,13 @@ export type AuditEventType =
   | 'memory_update'
   | 'export_data'
   | 'import_data'
+  | 'platform_tenant_sync'
+  | 'platform_user_sync'
+  | 'platform_membership_sync'
+  | 'platform_document_upload'
+  | 'platform_search'
 
-export type AuditEventCategory = 'capture' | 'search' | 'data_management'
+export type AuditEventCategory = 'capture' | 'search' | 'data_management' | 'platform'
 
 export type ExportBundle = {
   version: string

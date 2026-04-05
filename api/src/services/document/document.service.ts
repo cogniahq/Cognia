@@ -3,13 +3,17 @@ import { logger } from '../../utils/core/logger.util'
 import { storageService, StorageService } from '../storage/storage.service'
 import { addDocumentJob } from '../../lib/document-queue.lib'
 import { DocumentStatus } from '@prisma/client'
-import type { DocumentUploadInput, DocumentInfo } from '../../types/organization.types'
+import type {
+  DocumentUploadInput,
+  DocumentInfo,
+  StoredDocumentInput,
+} from '../../types/organization.types'
 export class DocumentService {
   /**
    * Upload a new document and queue it for processing
    */
   async uploadDocument(input: DocumentUploadInput): Promise<DocumentInfo> {
-    const { organizationId, uploaderId, file } = input
+    const { organizationId, uploaderId, file, metadata } = input
 
     // Generate unique storage key
     const storageKey = StorageService.generateDocumentKey(organizationId, file.originalname)
@@ -17,18 +21,34 @@ export class DocumentService {
     // Upload to storage
     await storageService.upload(file.buffer, storageKey, file.mimetype)
 
+    return this.createDocumentFromStoredUpload({
+      organizationId,
+      uploaderId,
+      storagePath: storageKey,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      metadata,
+    })
+  }
+
+  async createDocumentFromStoredUpload(input: StoredDocumentInput): Promise<DocumentInfo> {
+    const { organizationId, uploaderId, storagePath, originalname, mimetype, size, metadata } =
+      input
+
     // Create document record
     const document = await prisma.document.create({
       data: {
         organization_id: organizationId,
         uploader_id: uploaderId,
-        filename: storageKey.split('/').pop() || file.originalname,
-        original_name: file.originalname,
-        mime_type: file.mimetype,
-        file_size: file.size,
-        storage_path: storageKey,
+        filename: storagePath.split('/').pop() || originalname,
+        original_name: originalname,
+        mime_type: mimetype,
+        file_size: size,
+        storage_path: storagePath,
         storage_provider: storageService.name,
         status: DocumentStatus.PENDING,
+        metadata: metadata as object | undefined,
       },
     })
 
@@ -37,15 +57,15 @@ export class DocumentService {
       documentId: document.id,
       organizationId,
       uploaderId,
-      storagePath: storageKey,
-      mimeType: file.mimetype,
-      filename: file.originalname,
+      storagePath,
+      mimeType: mimetype,
+      filename: originalname,
     })
 
     logger.log('[document] uploaded and queued', {
       documentId: document.id,
       organizationId,
-      filename: file.originalname,
+      filename: originalname,
     })
 
     return document
@@ -266,6 +286,50 @@ export class DocumentService {
       where: { document_id: documentId },
       orderBy: { chunk_index: 'asc' },
     })
+  }
+
+  async getDocumentContent(documentId: string, organizationId: string) {
+    const document = await prisma.document.findFirst({
+      where: {
+        id: documentId,
+        organization_id: organizationId,
+      },
+      select: {
+        id: true,
+        original_name: true,
+        metadata: true,
+      },
+    })
+
+    if (!document) {
+      throw new Error('Document not found')
+    }
+
+    const chunks = await prisma.documentChunk.findMany({
+      where: {
+        document_id: documentId,
+      },
+      orderBy: {
+        chunk_index: 'asc',
+      },
+      select: {
+        id: true,
+        chunk_index: true,
+        page_number: true,
+        content: true,
+      },
+    })
+
+    return {
+      document,
+      content: chunks.map(chunk => chunk.content).join('\n\n'),
+      chunks: chunks.map(chunk => ({
+        id: chunk.id,
+        chunkIndex: chunk.chunk_index,
+        pageNumber: chunk.page_number,
+        content: chunk.content,
+      })),
+    }
   }
 
   /**

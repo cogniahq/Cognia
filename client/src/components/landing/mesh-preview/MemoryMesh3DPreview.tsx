@@ -11,6 +11,9 @@ interface MemoryMesh3DPreviewProps {
   meshData: MemoryMesh
   highlightedNodes?: Set<string>
   pulseIntensity?: number
+  showLabels?: boolean
+  interactive?: boolean
+  rotationSpeed?: number
 }
 
 const ControlsUpdater: React.FC<{
@@ -28,6 +31,9 @@ export const MemoryMesh3DPreview: React.FC<MemoryMesh3DPreviewProps> = ({
   meshData,
   highlightedNodes = new Set(),
   pulseIntensity = 0,
+  showLabels = true,
+  interactive = true,
+  rotationSpeed = 0.1,
 }) => {
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
@@ -47,12 +53,14 @@ export const MemoryMesh3DPreview: React.FC<MemoryMesh3DPreviewProps> = ({
         meshData={meshData}
         highlightedNodes={highlightedNodes}
         pulseIntensity={pulseIntensity}
+        showLabels={showLabels}
+        rotationSpeed={rotationSpeed}
       />
       <OrbitControls
         ref={controlsRef}
-        enablePan={true}
+        enablePan={interactive}
         enableZoom={false}
-        enableRotate={true}
+        enableRotate={interactive}
         zoomToCursor={true}
         minDistance={2}
         maxDistance={8}

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
+import { motion } from "framer-motion"
 
 import { Section } from "../components/landing"
 import { AnalyticsDemo } from "../components/landing/AnalyticsDemo"
@@ -13,8 +14,6 @@ import { MemoryMeshDemo } from "../components/landing/MemoryMeshDemo"
 import { SecuritySection } from "../components/landing/SecuritySection"
 
 export const Landing = () => {
-  const [isVisible, setIsVisible] = useState(false)
-
   useEffect(() => {
     // Prevent browser from restoring previous scroll position and ensure top on load
     if (typeof window !== "undefined" && typeof history !== "undefined") {
@@ -30,8 +29,6 @@ export const Landing = () => {
       }
       window.scrollTo({ top: 0, left: 0, behavior: "auto" })
     }
-
-    setIsVisible(true)
   }, [])
 
   return (
@@ -63,13 +60,23 @@ export const Landing = () => {
             opacity: 0.55,
           },
         ].map((b, i) => (
-          <div
+          <motion.div
             key={i}
             className={`${b.className} rounded-full blur-3xl`}
             style={{
               backgroundImage: `linear-gradient(135deg, ${b.from}, ${b.via}, ${b.to})`,
               opacity: b.opacity as number,
               filter: "blur(64px)",
+            }}
+            animate={{
+              x: i === 0 ? [0, 30, -18, 0] : [0, -24, 16, 0],
+              y: i === 0 ? [0, 18, -12, 0] : [0, -20, 12, 0],
+              scale: [1, 1.05, 0.98, 1],
+            }}
+            transition={{
+              duration: 18 + i * 4,
+              repeat: Infinity,
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -102,9 +109,9 @@ export const Landing = () => {
       {/* spacer to offset fixed header height */}
       <div className="h-16 sm:h-20 lg:h-24" aria-hidden="true" />
 
-      <HeroSection isVisible={isVisible} />
+      <HeroSection />
 
-      <FlowSection isVisible={isVisible} />
+      <FlowSection />
 
       <IntegrationsDemo />
 

@@ -1,0 +1,29 @@
+SERVICE LEVEL AGREEMENT
+Aperture Cloud Enterprise
+
+1. Availability commitment
+Provider will make the production service available 99.95 percent of the time in each calendar month, excluding scheduled maintenance, emergency maintenance, and customer-caused outages.
+
+2. Scheduled maintenance
+Scheduled maintenance windows will generally occur on Sundays between 01:00 and 03:00 UTC. Provider will attempt to give at least five days' notice for scheduled maintenance expected to affect customer access.
+
+3. Support severity definitions
+Severity 1 means a production outage or material loss of core functionality with no workaround.
+Severity 2 means severe degradation of service with a viable workaround.
+Severity 3 means a non-critical defect or general support request.
+
+4. Response targets
+- Severity 1: fifteen-minute acknowledgement, hourly updates
+- Severity 2: one-hour acknowledgement
+- Severity 3: one business day acknowledgement
+
+5. Service credits
+If monthly uptime falls below 99.95 percent but remains at or above 99.0 percent, Customer receives a 5 percent service credit.
+If monthly uptime falls below 99.0 percent but remains at or above 98.0 percent, Customer receives a 10 percent service credit.
+If monthly uptime falls below 98.0 percent, Customer receives a 25 percent service credit.
+
+6. Disaster recovery commitments
+Provider targets an RTO of four hours and an RPO of fifteen minutes for the primary production environment.
+
+7. Exclusions
+This SLA does not apply to beta features, unsupported configurations, third-party network outages beyond Provider control, or issues caused by Customer systems or identity provider misconfiguration.

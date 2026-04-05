@@ -5,6 +5,7 @@ import { prisma } from '../../lib/prisma.lib'
 import AppError from '../../utils/http/app-error.util'
 import { logger } from '../../utils/core/logger.util'
 import { buildContentPreview } from '../../utils/text/text.util'
+import { MemoryProcessingController } from '../memory/memory-processing.controller'
 
 export class ContentController {
   static async submitContent(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -37,12 +38,29 @@ export class ContentController {
         },
       }
 
-      await addContentJob(jobData)
+      try {
+        await addContentJob(jobData)
 
-      res.status(202).json({
-        success: true,
-        message: 'Content submitted for processing',
-      })
+        res.status(202).json({
+          success: true,
+          message: 'Content submitted for processing',
+        })
+      } catch (error) {
+        logger.warn('[content] queue submission failed, falling back to synchronous processing', {
+          userId: user_id,
+          error: error instanceof Error ? error.message : String(error),
+        })
+
+        req.body = {
+          ...req.body,
+          content: raw_text.trim(),
+          ...(metadata ? { metadata } : {}),
+          ...(url ? { url } : {}),
+          ...(title ? { title } : {}),
+        }
+
+        return MemoryProcessingController.processRawContent(req, res)
+      }
     } catch (err) {
       next(err)
     }

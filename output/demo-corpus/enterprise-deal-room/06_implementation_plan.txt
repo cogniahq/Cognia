@@ -1,0 +1,32 @@
+IMPLEMENTATION PLAN
+Northstar Bank x Aperture Cloud
+Prepared by Solution Delivery
+
+Project objective
+Launch the Northstar Bank production workspace for procurement and legal operations with SSO, SCIM, document migration for the pilot corpus, and baseline governance controls.
+
+Key dates
+- Project kickoff: June 10, 2026
+- Identity workshop: June 12, 2026
+- SSO and SCIM configuration complete: June 19, 2026
+- Pilot document migration complete: June 24, 2026
+- Security sign-off meeting: June 26, 2026
+- UAT start: June 29, 2026
+- Go-live readiness review: July 8, 2026
+- Production go-live target: July 15, 2026
+
+Milestones
+Milestone 1: Kickoff and stakeholder alignment
+Milestone 2: SAML SSO configured in test and production tenants
+Milestone 3: SCIM provisioning validated with the bank identity team
+Milestone 4: Pilot corpus uploaded and access model confirmed
+Milestone 5: Security and legal approvals complete
+Milestone 6: End-user enablement and go-live
+
+Dependencies
+- Northstar Bank must provide IdP metadata by June 13, 2026.
+- Northstar Bank must approve the subprocessor list before production cutover.
+- Provider must share SOC 2 Type II report and penetration testing executive summary before the security sign-off meeting.
+
+Go-live gate
+Production go-live requires written approval from the bank's information security lead, the procurement workstream lead, and the executive sponsor. No go-live will occur before SSO is validated and the security sign-off meeting is complete.

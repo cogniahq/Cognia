@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { buildOrganizationSearchHighlights } from "@/components/organization/organization-search-highlighting"
 import type { DocumentPreviewData } from "@/services/organization/organization.service"
 import { ChevronRight, Download, File, FileText, Image, X } from "lucide-react"
 
@@ -8,6 +9,7 @@ interface DocumentPreviewModalProps {
   documentData: DocumentPreviewData | null
   isLoading: boolean
   error: string | null
+  highlightQuery?: string
 }
 
 function formatBytes(bytes: number): string {
@@ -24,6 +26,7 @@ export function DocumentPreviewModal({
   documentData,
   isLoading,
   error,
+  highlightQuery,
 }: DocumentPreviewModalProps) {
   const [iframeError, setIframeError] = useState(false)
 
@@ -49,6 +52,11 @@ export function DocumentPreviewModal({
   const isPdf = mimeType === "application/pdf"
   const isText = mimeType.startsWith("text/") || mimeType === "application/json"
   const canPreview = isImage || isPdf || isText
+  const excerptSegments = buildOrganizationSearchHighlights(
+    documentData?.chunkContent,
+    highlightQuery
+  )
+  const hasExcerpt = excerptSegments.length > 0
 
   function getFileIcon() {
     if (isImage) return <Image className="w-5 h-5" />
@@ -130,61 +138,72 @@ export function DocumentPreviewModal({
                 No document data
               </div>
             </div>
-          ) : !canPreview || iframeError ? (
-            <div className="flex flex-col h-full">
-              {/* Chunk content preview */}
-              {documentData.chunkContent && (
-                <div className="flex-1 overflow-auto p-6">
-                  <div className="max-w-3xl mx-auto">
-                    <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
+          ) : (
+            <div className="flex h-full flex-col">
+              {hasExcerpt && (
+                <div className="shrink-0 border-b border-gray-200 bg-white/95 p-6">
+                  <div className="mx-auto max-w-3xl">
+                    <div className="mb-3 text-xs font-mono uppercase tracking-wider text-gray-500">
                       Relevant excerpt
                       {documentData.pageNumber &&
                         ` (Page ${documentData.pageNumber})`}
                     </div>
-                    <div className="bg-white border border-gray-200 p-4">
-                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {documentData.chunkContent}
+                    <div className="border border-amber-200 bg-amber-50/50 p-4">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
+                        {excerptSegments.map((segment, index) =>
+                          segment.isMatch ? (
+                            <mark
+                              key={`excerpt-${index}`}
+                              className="rounded bg-amber-200 px-0.5 text-gray-900"
+                            >
+                              {segment.text}
+                            </mark>
+                          ) : (
+                            <span key={`excerpt-${index}`}>{segment.text}</span>
+                          )
+                        )}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Download fallback */}
-              <div className="p-6 border-t border-gray-200 bg-white">
-                <div className="flex flex-col items-center gap-3">
-                  <p className="text-xs text-gray-500 font-mono">
-                    Full preview not available for {mimeType}
-                  </p>
-                  <a
-                    href={documentData.downloadUrl}
-                    download={documentData.document.original_name}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-mono hover:bg-gray-800 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Full Document
-                  </a>
-                </div>
+              <div className="min-h-0 flex-1">
+                {!canPreview || iframeError ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 bg-white p-6">
+                    <p className="text-xs text-gray-500 font-mono">
+                      Full preview not available for {mimeType}
+                    </p>
+                    <a
+                      href={documentData.downloadUrl}
+                      download={documentData.document.original_name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-mono hover:bg-gray-800 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Full Document
+                    </a>
+                  </div>
+                ) : isImage ? (
+                  <div className="flex h-full items-center justify-center p-4">
+                    <img
+                      src={documentData.downloadUrl}
+                      alt={documentData.document.original_name}
+                      className="max-w-full max-h-full object-contain"
+                      onError={() => setIframeError(true)}
+                    />
+                  </div>
+                ) : (
+                  <iframe
+                    src={documentData.downloadUrl}
+                    className="w-full h-full border-0"
+                    title={documentData.document.original_name}
+                    onError={() => setIframeError(true)}
+                  />
+                )}
               </div>
             </div>
-          ) : isImage ? (
-            <div className="flex items-center justify-center h-full p-4">
-              <img
-                src={documentData.downloadUrl}
-                alt={documentData.document.original_name}
-                className="max-w-full max-h-full object-contain"
-                onError={() => setIframeError(true)}
-              />
-            </div>
-          ) : (
-            <iframe
-              src={documentData.downloadUrl}
-              className="w-full h-full border-0"
-              title={documentData.document.original_name}
-              onError={() => setIframeError(true)}
-            />
           )}
         </div>
       </div>

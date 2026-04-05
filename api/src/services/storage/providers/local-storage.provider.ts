@@ -2,17 +2,33 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import type { StorageProvider, StorageResult, StorageMetadata } from '../storage-provider.interface'
 import { logger } from '../../../utils/core/logger.util'
+import { createLocalStorageSignedUrl } from './local-storage-url.util'
+
+function getLocalStorageBasePath(basePath?: string): string {
+  return path.resolve(basePath || process.env.LOCAL_STORAGE_PATH || './uploads')
+}
+
+export function resolveLocalStoragePath(key: string, basePath?: string): string {
+  const rootPath = getLocalStorageBasePath(basePath)
+  const resolvedPath = path.resolve(rootPath, key)
+
+  if (resolvedPath !== rootPath && !resolvedPath.startsWith(`${rootPath}${path.sep}`)) {
+    throw new Error('Invalid local storage path')
+  }
+
+  return resolvedPath
+}
 
 export class LocalStorageProvider implements StorageProvider {
   readonly name = 'local'
   private basePath: string
 
   constructor(basePath?: string) {
-    this.basePath = basePath || process.env.LOCAL_STORAGE_PATH || './uploads'
+    this.basePath = getLocalStorageBasePath(basePath)
   }
 
   private getFullPath(key: string): string {
-    return path.join(this.basePath, key)
+    return resolveLocalStoragePath(key, this.basePath)
   }
 
   async upload(file: Buffer, key: string, contentType: string): Promise<StorageResult> {
@@ -63,10 +79,7 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   async getSignedUrl(key: string, expiresIn?: number): Promise<string> {
-    // For local storage, return the file path
-    // In production, you might want to generate a temporary token-based URL
-    void expiresIn
-    return this.getFullPath(key)
+    return createLocalStorageSignedUrl(key, expiresIn)
   }
 
   getPublicUrl(key: string): string | null {

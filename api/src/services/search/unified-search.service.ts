@@ -4,6 +4,16 @@ import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
 import { SourceType } from '@prisma/client'
 import { createSearchJob, setSearchJobResult } from './search-job.service'
+import {
+  buildMemoryPreviewText,
+  buildMemoryRetrievalText,
+  normalizePageMetadata,
+} from '../memory/memory-structure.service'
+import { generateQueryEmbedding } from './embedding-search.service'
+import { tokenizeQuery } from './query-processor.service'
+
+const ANSWER_CONTEXT_CHARS = 1400
+const ANSWER_CONTEXT_LEAD_CHARS = 220
 
 export interface UnifiedSearchOptions {
   organizationId: string
@@ -42,26 +52,111 @@ export interface UnifiedSearchResult {
 }
 
 export class UnifiedSearchService {
+  private buildAnswerContextSnippet(
+    query: string,
+    result: UnifiedSearchResult['results'][number]
+  ): string {
+    const normalizedContent = result.content.replace(/\s+/g, ' ').trim()
+    const normalizedPreview = result.contentPreview.replace(/\s+/g, ' ').trim()
+
+    if (!normalizedContent) {
+      return normalizedPreview
+    }
+
+    const queryTokens = tokenizeQuery(query)
+    const lowerContent = normalizedContent.toLowerCase()
+    const firstMatchIndex = queryTokens.reduce((closestIndex, token) => {
+      const matchIndex = lowerContent.indexOf(token)
+      if (matchIndex === -1) {
+        return closestIndex
+      }
+
+      if (closestIndex === -1) {
+        return matchIndex
+      }
+
+      return Math.min(closestIndex, matchIndex)
+    }, -1)
+
+    if (firstMatchIndex === -1) {
+      if (normalizedContent.length <= ANSWER_CONTEXT_CHARS) {
+        return normalizedContent
+      }
+
+      return `${normalizedContent.slice(0, ANSWER_CONTEXT_CHARS).trim()}...`
+    }
+
+    const start = Math.max(firstMatchIndex - ANSWER_CONTEXT_LEAD_CHARS, 0)
+    const end = Math.min(start + ANSWER_CONTEXT_CHARS, normalizedContent.length)
+    const excerpt = normalizedContent.slice(start, end).trim()
+
+    return `${start > 0 ? '...' : ''}${excerpt}${end < normalizedContent.length ? '...' : ''}`
+  }
+
+  private async resolveResultLimits(options: {
+    organizationId: string
+    sourceTypes?: SourceType[]
+    requestedLimit?: number
+    userId?: string
+  }): Promise<{
+    finalLimit: number
+    organizationSearchLimit: number
+    userSearchLimit: number
+  }> {
+    const { organizationId, sourceTypes, requestedLimit, userId } = options
+
+    if (typeof requestedLimit === 'number' && Number.isFinite(requestedLimit) && requestedLimit > 0) {
+      const finalLimit = Math.floor(requestedLimit)
+      return {
+        finalLimit,
+        organizationSearchLimit: Math.max(finalLimit * 2, 1),
+        userSearchLimit: Math.max(Math.ceil(finalLimit / 2), 1),
+      }
+    }
+
+    const [organizationResultCount, userResultCount] = await Promise.all([
+      prisma.memory.count({
+        where: {
+          organization_id: organizationId,
+          ...(sourceTypes && sourceTypes.length > 0 ? { source_type: { in: sourceTypes } } : {}),
+        },
+      }),
+      userId
+        ? prisma.memory.count({
+            where: {
+              user_id: userId,
+              source_type: SourceType.EXTENSION,
+            },
+          })
+        : Promise.resolve(0),
+    ])
+
+    return {
+      finalLimit: Math.max(organizationResultCount + userResultCount, 1),
+      organizationSearchLimit: Math.max(organizationResultCount, 1),
+      userSearchLimit: Math.max(userResultCount, 1),
+    }
+  }
+
   /**
    * Search across organization documents and memories
    */
   async search(options: UnifiedSearchOptions): Promise<UnifiedSearchResult> {
-    const { organizationId, query, sourceTypes, limit = 20, includeAnswer = true, userId } = options
+    const { organizationId, query, sourceTypes, limit, includeAnswer = true, userId } = options
 
     await ensureCollection()
 
-    // Generate query embedding
-    let queryEmbedding: number[]
-    try {
-      const embeddingResult = await aiProvider.generateEmbedding(query)
-      queryEmbedding =
-        typeof embeddingResult === 'object' && 'embedding' in embeddingResult
-          ? (embeddingResult as { embedding: number[] }).embedding
-          : (embeddingResult as number[])
-    } catch (error) {
-      logger.error('[unified-search] embedding generation failed', { error })
-      throw new Error('Failed to process search query')
-    }
+    const queryEmbedding = await generateQueryEmbedding(query)
+    const {
+      finalLimit,
+      organizationSearchLimit,
+      userSearchLimit,
+    } = await this.resolveResultLimits({
+      organizationId,
+      sourceTypes,
+      requestedLimit: limit,
+      userId,
+    })
 
     // Build Qdrant filter for organization content
     const orgFilter: {
@@ -81,7 +176,7 @@ export class UnifiedSearchService {
     const orgSearchResult = await qdrantClient.search(COLLECTION_NAME, {
       vector: queryEmbedding,
       filter: orgFilter,
-      limit: limit * 2,
+      limit: organizationSearchLimit,
       with_payload: true,
       score_threshold: 0.2,
     })
@@ -101,7 +196,7 @@ export class UnifiedSearchService {
       userSearchResult = await qdrantClient.search(COLLECTION_NAME, {
         vector: queryEmbedding,
         filter: userFilter,
-        limit: Math.ceil(limit / 2), // Get some user results
+        limit: userSearchLimit,
         with_payload: true,
         score_threshold: 0.25, // Slightly higher threshold for user content
       })
@@ -151,6 +246,17 @@ export class UnifiedSearchService {
       .map(memory => {
         const chunk = memory.document_chunks[0]
         const score = memoryScores.get(memory.id) || 0
+        const pageMetadata = normalizePageMetadata(memory.page_metadata)
+        const contentPreview = buildMemoryPreviewText({
+          title: memory.title,
+          content: memory.content,
+          pageMetadata,
+        })
+        const retrievalText = buildMemoryRetrievalText({
+          title: memory.title,
+          content: memory.content,
+          pageMetadata,
+        })
 
         return {
           memoryId: memory.id,
@@ -158,9 +264,9 @@ export class UnifiedSearchService {
           documentName: chunk?.document?.original_name,
           chunkIndex: chunk?.chunk_index,
           pageNumber: chunk?.page_number ?? undefined,
-          content: memory.content,
+          content: retrievalText,
           contentPreview:
-            memory.content.substring(0, 300) + (memory.content.length > 300 ? '...' : ''),
+            contentPreview || memory.content.substring(0, 300) + (memory.content.length > 300 ? '...' : ''),
           score,
           sourceType: memory.source_type || SourceType.EXTENSION,
           title: memory.title ?? undefined,
@@ -168,7 +274,7 @@ export class UnifiedSearchService {
         }
       })
       .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
+      .slice(0, finalLimit)
 
     // Group by document for better context
     const documentGroups = new Map<string, typeof results>()
@@ -190,7 +296,7 @@ export class UnifiedSearchService {
         answerJobId = job.id
 
         // Fire-and-forget: generate answer in background
-        this.generateAnswerAsync(job.id, query, results.slice(0, 10)).catch(error => {
+        this.generateAnswerAsync(job.id, query, results).catch(error => {
           logger.error('[unified-search] background answer generation failed', {
             error,
             jobId: job.id,
@@ -232,7 +338,7 @@ export class UnifiedSearchService {
       const source = result.documentName
         ? `[${index + 1}] Document: ${result.documentName}${result.pageNumber ? ` (Page ${result.pageNumber})` : ''}`
         : `[${index + 1}] ${result.title || 'Memory'}`
-      return `${source}\n${result.contentPreview}`
+      return `${source}\n${this.buildAnswerContextSnippet(query, result)}`
     })
 
     const context = contextParts.join('\n\n')

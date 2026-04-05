@@ -1,5 +1,6 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
 import { logger } from '../utils/core/logger.util'
+import { getConfiguredEmbeddingDimension } from '../services/ai/ai-config'
 
 const globalForQdrant = globalThis as unknown as {
   qdrant: QdrantClient | undefined
@@ -7,7 +8,7 @@ const globalForQdrant = globalThis as unknown as {
 
 const QDRANT_URL = process.env.QDRANT_URL || 'http://localhost:6333'
 const QDRANT_API_KEY = process.env.QDRANT_API_KEY
-const EMBEDDING_DIMENSION = Number(process.env.EMBEDDING_DIMENSION || 768)
+const EMBEDDING_DIMENSION = getConfiguredEmbeddingDimension()
 const COLLECTION_NAME = 'memory_embeddings'
 
 interface QdrantClientOptions {
@@ -60,6 +61,15 @@ export async function ensureCollection(): Promise<void> {
 
     try {
       const collectionInfo = await qdrantClient.getCollection(COLLECTION_NAME)
+      const vectorConfig = collectionInfo.config?.params?.vectors as { size?: number } | undefined
+      const collectionVectorSize =
+        typeof vectorConfig?.size === 'number' ? vectorConfig.size : undefined
+
+      if (collectionVectorSize && collectionVectorSize !== EMBEDDING_DIMENSION) {
+        throw new Error(
+          `Qdrant collection '${COLLECTION_NAME}' uses ${collectionVectorSize}-dim vectors, but Cognia is configured for ${EMBEDDING_DIMENSION}. Update EMBEDDING_DIMENSION or recreate the collection with 'npm run clean:qdrant'.`
+        )
+      }
 
       const payloadIndexes = collectionInfo.payload_schema || {}
       const needsMemoryIdIndex = !payloadIndexes.memory_id
@@ -91,6 +101,10 @@ export async function ensureCollection(): Promise<void> {
       const needsOrgIdIndex = !payloadIndexes.organization_id
       const needsSourceTypeIndex = !payloadIndexes.source_type
       const needsDocumentIdIndex = !payloadIndexes.document_id
+      const needsMatterIdIndex = !payloadIndexes.matter_id
+      const needsMatterIdsIndex = !payloadIndexes.matter_ids
+      const needsClientIdIndex = !payloadIndexes.client_id
+      const needsExternalDocumentIdIndex = !payloadIndexes.external_document_id
 
       if (needsOrgIdIndex) {
         await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
@@ -109,6 +123,34 @@ export async function ensureCollection(): Promise<void> {
       if (needsDocumentIdIndex) {
         await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
           field_name: 'document_id',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsMatterIdIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'matter_id',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsMatterIdsIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'matter_ids',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsClientIdIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'client_id',
+          field_schema: 'keyword',
+        })
+      }
+
+      if (needsExternalDocumentIdIndex) {
+        await qdrantClient.createPayloadIndex(COLLECTION_NAME, {
+          field_name: 'external_document_id',
           field_schema: 'keyword',
         })
       }

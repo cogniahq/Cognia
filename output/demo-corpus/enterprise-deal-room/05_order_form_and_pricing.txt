@@ -1,0 +1,34 @@
+ORDER FORM
+Customer: Northstar Bank plc
+Provider: Aperture Cloud, Inc.
+Order date: May 22, 2026
+
+Subscription term
+- Initial term: June 1, 2026 through May 31, 2027
+
+Products
+1. Aperture Cloud Enterprise Platform
+   - 150 named users
+   - EU production region
+   - SAML SSO included
+   - SCIM provisioning included
+   - Premium support tier included
+
+Commercials
+- Annual platform fee: USD 72,000
+- One-time implementation fee: USD 18,000
+- Optional data migration package: USD 9,500
+- Total contracted first-year value excluding optional migration: USD 90,000
+
+Billing
+- Annual platform fee invoiced annually in advance
+- Implementation fee invoiced upon project kickoff
+- Payment terms: net thirty
+
+Special terms
+- Northstar Bank requires production data residency in the EU.
+- Premium support includes named success manager, quarterly service reviews, and Severity 1 response in fifteen minutes.
+- Optional migration package is not included unless separately approved in writing.
+
+Signature notes
+The parties intend the Order Form to be governed by the Master Services Agreement effective June 1, 2026.

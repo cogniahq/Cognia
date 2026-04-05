@@ -1,7 +1,7 @@
 import { qdrantClient, COLLECTION_NAME, ensureCollection } from '../../lib/qdrant.lib'
 import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
-import { GEMINI_EMBED_MODEL } from '../ai/gemini.service'
+import { getActiveEmbeddingModelName } from '../ai/ai-config'
 import { sha256Hex } from './query-processor.service'
 import { DynamicSearchParams } from './query-processor.service'
 
@@ -23,8 +23,8 @@ export async function generateQueryEmbedding(
   timeoutMs: number = 30000
 ): Promise<number[]> {
   if (!aiProvider.isInitialized) {
-    logger.error('AI Provider not initialized. Check GEMINI_API_KEY or AI_PROVIDER configuration.')
-    throw new Error('AI Provider not configured. Set GEMINI_API_KEY or configure AI_PROVIDER.')
+    logger.error('AI provider not initialized. Check OPENAI_API_KEY or provider configuration.')
+    throw new Error('AI provider not configured. Set OPENAI_API_KEY or adjust provider settings.')
   }
 
   try {
@@ -60,7 +60,11 @@ export async function generateQueryEmbedding(
 export function getEmbeddingHash(embedding: number[]): string {
   const salt = process.env.SEARCH_EMBED_SALT || 'cognia'
   return sha256Hex(
-    JSON.stringify({ model: GEMINI_EMBED_MODEL, values: embedding.slice(0, 64), salt })
+    JSON.stringify({
+      model: getActiveEmbeddingModelName(),
+      values: embedding.slice(0, 64),
+      salt,
+    })
   )
 }
 

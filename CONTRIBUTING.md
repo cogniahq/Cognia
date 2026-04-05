@@ -4,7 +4,7 @@
 
 ### Prerequisites
 - Node.js 18+, Docker, Docker Compose
-- Gemini API key or Ollama
+- OpenAI API key
 
 ### Quick Start
 

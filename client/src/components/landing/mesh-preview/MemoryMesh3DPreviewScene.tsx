@@ -11,11 +11,19 @@ interface MemoryMesh3DPreviewSceneProps {
   meshData: MemoryMesh
   highlightedNodes?: Set<string>
   pulseIntensity?: number
+  showLabels?: boolean
+  rotationSpeed?: number
 }
 
 export const MemoryMesh3DPreviewScene: React.FC<
   MemoryMesh3DPreviewSceneProps
-> = ({ meshData, highlightedNodes = new Set(), pulseIntensity = 0 }) => {
+> = ({
+  meshData,
+  highlightedNodes = new Set(),
+  pulseIntensity = 0,
+  showLabels = true,
+  rotationSpeed = 0.1,
+}) => {
   const { camera } = useThree()
   const groupRef = useRef<THREE.Group>(null)
 
@@ -26,7 +34,7 @@ export const MemoryMesh3DPreviewScene: React.FC<
 
   useFrame((_, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.1
+      groupRef.current.rotation.y += delta * rotationSpeed
     }
   })
 
@@ -161,6 +169,7 @@ export const MemoryMesh3DPreviewScene: React.FC<
             color={node.color}
             importance={node.importance}
             label={node.label}
+            showLabel={showLabels}
             isHighlighted={highlightedNodes.has(node.id)}
             pulseIntensity={highlightedNodes.has(node.id) ? pulseIntensity : 0}
           />

@@ -81,6 +81,8 @@ export const startContentWorker = () => {
                   canonicalHash: canonicalData.canonicalHash,
                   canonicalText: canonicalData.canonicalText,
                   url: baseUrl,
+                  title: memoryTitle,
+                  source: (metadata?.source as string | undefined) || undefined,
                 })
               : Promise.resolve(null),
           ])
@@ -88,7 +90,13 @@ export const startContentWorker = () => {
           if (duplicateCheck) {
             const merged = await memoryIngestionService.mergeDuplicateMemory(
               duplicateCheck.memory,
-              metadata
+              metadata,
+              {
+                title: memoryTitle,
+                url: baseUrl,
+                source: (metadata?.source as string | undefined) || undefined,
+                content: raw_text,
+              }
             )
             logger.log(`[Redis Worker] Duplicate detected, skipping processing`, {
               jobId: job.id,
@@ -114,7 +122,12 @@ export const startContentWorker = () => {
         }
 
         if (metadata?.memory_id) {
-          const pageMetadata = memoryIngestionService.buildPageMetadata(metadata)
+          const pageMetadata = memoryIngestionService.buildPageMetadata(metadata, {
+            title: memoryTitle,
+            url: baseUrl,
+            source: (metadata?.source as string | undefined) || undefined,
+            content: raw_text,
+          })
           const [existingMemory] = await Promise.all([
             prisma.memory.findUnique({
               where: { id: metadata.memory_id },

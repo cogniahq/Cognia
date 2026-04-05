@@ -4,15 +4,12 @@ import { openaiService } from './openai.service'
 import { tokenTracking } from '../core/token-tracking.service'
 import { logger } from '../../utils/core/logger.util'
 import { retryWithBackoff, isRateLimitError, sleep } from '../../utils/core/retry.util'
-
-type Provider = 'gemini' | 'ollama' | 'hybrid' | 'openai'
-
-const embedProvider: Provider =
-  (process.env.EMBED_PROVIDER as Provider) || (process.env.AI_PROVIDER as Provider) || 'hybrid'
-const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
-const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text:latest'
-
-logger.log('[embedding-provider] initialized', { embedProvider })
+import {
+  getConfiguredEmbeddingDimension,
+  getEmbedProvider,
+  getOllamaBaseUrl,
+  getOllamaEmbeddingModel,
+} from './ai-config'
 
 interface ApiError {
   status?: number
@@ -23,6 +20,7 @@ export class EmbeddingProviderService {
   async generateEmbedding(text: string, userId?: string): Promise<number[]> {
     let result: number[]
     let modelUsed: string | undefined
+    const embedProvider = getEmbedProvider()
 
     logger.log('[embedding-provider] generateEmbedding called', {
       embedProvider,
@@ -79,17 +77,41 @@ export class EmbeddingProviderService {
       modelUsed = response.modelUsed
     } else if (embedProvider === 'hybrid') {
       logger.log('[embedding-provider] Using hybrid mode for embeddings')
-      result = await this.generateHybridEmbedding(text)
+      if (openaiService.isInitialized) {
+        try {
+          const response = await retryWithBackoff(() => openaiService.generateEmbedding(text), {
+            maxRetries: 3,
+            baseDelayMs: 1000,
+            maxDelayMs: 10000,
+            shouldRetry: error => {
+              if (isRateLimitError(error)) return true
+              const status = (error as ApiError)?.status
+              if (status === 503 || status === 502 || status === 429) return true
+              return false
+            },
+          })
+          result = response.embedding
+          modelUsed = response.modelUsed
+        } catch (error) {
+          logger.warn('[embedding-provider] OpenAI embedding failed in hybrid mode, falling back', {
+            error: error instanceof Error ? error.message : String(error),
+          })
+          result = await this.generateHybridEmbedding(text)
+        }
+      } else {
+        result = await this.generateHybridEmbedding(text)
+      }
     } else {
+      const ollamaEmbedModel = getOllamaEmbeddingModel()
       logger.log('[embedding-provider] Using Ollama for embeddings', {
-        model: OLLAMA_EMBED_MODEL,
-        baseUrl: OLLAMA_BASE,
+        model: ollamaEmbedModel,
+        baseUrl: getOllamaBaseUrl(),
       })
       try {
-        result = await this.tryOllamaEmbedding(text, OLLAMA_EMBED_MODEL)
-        modelUsed = OLLAMA_EMBED_MODEL
+        result = await this.tryOllamaEmbedding(text, ollamaEmbedModel)
+        modelUsed = ollamaEmbedModel
         logger.log('[embedding-provider] Ollama embedding successful', {
-          model: OLLAMA_EMBED_MODEL,
+          model: ollamaEmbedModel,
           embeddingLength: result.length,
         })
       } catch (error) {
@@ -147,7 +169,7 @@ export class EmbeddingProviderService {
   }
 
   async tryOllamaEmbedding(text: string, model: string, retries = 2): Promise<number[]> {
-    const url = `${OLLAMA_BASE}/api/embeddings`
+    const url = `${getOllamaBaseUrl()}/api/embeddings`
     let lastError: Error | null = null
 
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -222,7 +244,8 @@ export class EmbeddingProviderService {
       .toLowerCase()
       .split(/\s+/)
       .filter(w => w.length > 2)
-    const embedding = new Array(768).fill(0)
+    const embeddingDimension = getConfiguredEmbeddingDimension()
+    const embedding = new Array(embeddingDimension).fill(0)
 
     const wordHashes = words.map(word => this.simpleHash(word))
     const textHash = this.simpleHash(text)
@@ -233,22 +256,25 @@ export class EmbeddingProviderService {
       wordFreq.set(word, (wordFreq.get(word) || 0) + 1)
     })
 
-    for (let i = 0; i < 768; i++) {
+    const lexicalBoundary = Math.min(256, embeddingDimension)
+    const semanticBoundary = Math.min(512, embeddingDimension)
+
+    for (let i = 0; i < embeddingDimension; i++) {
       let value = 0
 
-      if (i < 256 && wordHashes.length > 0) {
+      if (i < lexicalBoundary && wordHashes.length > 0) {
         const wordIndex = i % wordHashes.length
         const word = words[wordIndex]
         const freq = wordFreq.get(word) || 1
         value += Math.sin(wordHashes[wordIndex] + i) * 0.1 * Math.log(freq + 1)
       }
 
-      if (i >= 256 && i < 512) {
-        const clusterIndex = (i - 256) % semanticClusters.length
+      if (i >= lexicalBoundary && i < semanticBoundary) {
+        const clusterIndex = (i - lexicalBoundary) % semanticClusters.length
         value += Math.sin(semanticClusters[clusterIndex] + i) * 0.2
       }
 
-      if (i >= 512) {
+      if (i >= semanticBoundary) {
         const charCode = text.charCodeAt(i % text.length) || 0
         value += Math.sin(charCode + i) * 0.08
       }
@@ -260,7 +286,7 @@ export class EmbeddingProviderService {
 
     const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0))
     if (magnitude > 0) {
-      for (let i = 0; i < 768; i++) {
+      for (let i = 0; i < embeddingDimension; i++) {
         embedding[i] = embedding[i] / magnitude
       }
     }

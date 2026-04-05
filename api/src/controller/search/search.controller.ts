@@ -309,12 +309,14 @@ export class SearchController {
 
       // Include user's extension data in search if user is authenticated
       const userId = req.user?.id
+      const parsedLimit =
+        typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : undefined
 
       const result = await unifiedSearchService.search({
         organizationId: req.organization.id,
         query,
         sourceTypes: parsedSourceTypes,
-        limit: limit || 20,
+        limit: parsedLimit,
         includeAnswer: includeAnswer !== false,
         userId, // Include user's personal browsing data
       })

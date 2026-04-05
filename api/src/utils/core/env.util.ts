@@ -86,8 +86,21 @@ export function getRedisConnection(forBullMQ: boolean = false): RedisConnectionO
   return connectionOptions
 }
 
+function isOpenAIBackedQueue(): boolean {
+  const providers = [
+    process.env.GEN_PROVIDER,
+    process.env.EMBED_PROVIDER,
+    process.env.AI_PROVIDER,
+  ]
+    .map(value => value?.trim().toLowerCase())
+    .filter((value): value is string => Boolean(value))
+
+  return providers.some(provider => provider === 'openai' || provider === 'hybrid')
+}
+
 export function getQueueLimiter() {
-  const max = Number(process.env.QUEUE_RATE_MAX || 10)
+  const defaultMax = isOpenAIBackedQueue() ? 1 : 10
+  const max = Number(process.env.QUEUE_RATE_MAX || defaultMax)
   const duration = Number(process.env.QUEUE_RATE_DURATION_MS || 60000)
   return { max, duration } as const
 }

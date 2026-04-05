@@ -1,8 +1,10 @@
 import React from "react"
+import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/auth.context"
 import { useNavigate } from "react-router-dom"
 
 import BriefingBadge from "@/components/briefing/BriefingBadge"
+import { fadeUpVariants } from "@/components/shared/site-motion"
 
 interface PageHeaderProps {
   pageName: string
@@ -54,19 +56,26 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+      <motion.header
+        className="fixed top-0 inset-x-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200"
+        initial="initial"
+        animate="animate"
+        variants={fadeUpVariants}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-6">
               {!isDashboard && (
                 <>
-                  <button
+                  <motion.button
                     onClick={handleBack}
                     className="text-sm font-medium text-gray-700 hover:text-black transition-colors relative group"
+                    whileHover={{ x: -2 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <span className="relative z-10">← Back</span>
                     <div className="absolute inset-0 bg-gray-100 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left -z-10 rounded"></div>
-                  </button>
+                  </motion.button>
                   <div className="h-4 w-px bg-gray-300"></div>
                 </>
               )}
@@ -84,19 +93,21 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <div className="flex items-center space-x-3">
               {rightActions}
               {navButtons.map((btn) => (
-                <button
+                <motion.button
                   key={btn.path}
                   onClick={() => (window.location.href = btn.path)}
                   className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors flex items-center gap-1.5"
+                  whileHover={{ y: -2, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   {btn.label}
                   {btn.label === "Briefings" && <BriefingBadge />}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
       <div className="h-14" aria-hidden="true" />
     </>
   )

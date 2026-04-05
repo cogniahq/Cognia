@@ -1,33 +1,22 @@
 import React from "react"
+import { motion } from "framer-motion"
 
+import {
+  AnimatedStagger,
+  fadeUpVariants,
+} from "@/components/shared/site-motion"
 import { Section } from "./Section"
 import { WaitlistForm } from "./WaitlistForm"
 
-interface HeroSectionProps {
-  isVisible: boolean
-}
-
-export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
+export const HeroSection: React.FC = () => {
   return (
     <Section className="min-h-screen bg-transparent relative overflow-hidden py-12 sm:py-16 lg:py-20 xl:py-28">
-      <style>{`
-        @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInScale {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 h-full flex items-center">
-        <div className="w-full text-center space-y-6 sm:space-y-8 lg:space-y-10 mx-auto">
-          <div className="overflow-hidden">
-            <h1
+        <AnimatedStagger className="w-full text-center space-y-6 sm:space-y-8 lg:space-y-10 mx-auto">
+          <motion.div className="overflow-hidden" variants={fadeUpVariants}>
+            <motion.h1
               className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-light leading-[1.1] sm:leading-tight font-editorial tracking-tight"
-              style={{
-                animation: isVisible ? "slideInUp 1s ease-out" : "none",
-              }}
+              variants={fadeUpVariants}
             >
               <span className="block text-black">
                 <span className="align-baseline">Remember</span>{" "}
@@ -38,27 +27,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
                   seen, written, or shared
                 </span>
               </span>
-            </h1>
-          </div>
+            </motion.h1>
+          </motion.div>
 
           {/* Concise value proposition */}
-          <p
+          <motion.p
             className="mx-auto max-w-2xl text-base sm:text-lg lg:text-xl text-gray-800 leading-relaxed font-primary font-medium px-2 sm:px-0"
-            style={{
-              animation: isVisible ? "slideInUp 1s ease-out 0.6s both" : "none",
-            }}
+            variants={fadeUpVariants}
           >
             Cognia is your photographic memory for the web, capturing text,
             links and context as you browse so you can find it in seconds.
-          </p>
+          </motion.p>
 
           {/* Waitlist Form and Self-Host Option */}
-          <div
-            className="mt-6 sm:mt-8 lg:mt-10"
-            style={{
-              animation: isVisible ? "slideInUp 1s ease-out 0.8s both" : "none",
-            }}
-          >
+          <motion.div className="mt-6 sm:mt-8 lg:mt-10" variants={fadeUpVariants}>
             <div className="max-w-md mx-auto space-y-3 sm:space-y-4 px-2 sm:px-0">
               <WaitlistForm compact />
               <div className="flex items-center gap-3 sm:gap-4">
@@ -91,8 +73,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
                 <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </AnimatedStagger>
       </div>
     </Section>
   )

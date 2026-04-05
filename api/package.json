@@ -5,6 +5,7 @@
   "main": "App.ts",
   "scripts": {
     "start": "nodemon",
+    "test": "node --require ts-node/register/transpile-only --test $(find src -name '*.test.ts' -print)",
     "start_cron": "node backupCron.js",
     "build": "tsc --build",
     "start:prod": "pm2 start App.ts --name 'servercode' && pm2 save",
@@ -35,6 +36,7 @@
     "eval:memory": "node -r ts-node/register src/scripts/memory-eval.script.ts",
     "admin:stats": "node -r ts-node/register src/scripts/admin-stats.script.ts",
     "queue:status": "node -r ts-node/register src/scripts/queue-status.script.ts",
+    "platform:create-app": "node -r ts-node/register src/scripts/create-platform-app.script.ts",
     "check": "npm run lint:fix && npm run format && npm run build"
   },
   "keywords": [

@@ -1,6 +1,6 @@
 import React from "react"
 
-import { useScrollAnimation } from "../../hooks/use-scroll-animation"
+import { AnimatedSection } from "@/components/shared/site-motion"
 
 interface SectionProps {
   children: React.ReactNode
@@ -13,18 +13,14 @@ export const Section: React.FC<SectionProps> = ({
   className = "",
   animate = true,
 }) => {
-  const { ref, isVisible } = useScrollAnimation(0.1)
-
   return (
-    <section
-      ref={ref}
-      className={`py-16 transition-all duration-1000 ${
-        animate && isVisible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-8"
-      } ${className}`}
+    <AnimatedSection
+      className={`py-16 ${className}`}
+      initial={animate ? "initial" : false}
+      whileInView={animate ? "animate" : undefined}
+      viewport={animate ? { once: true, amount: 0.16 } : undefined}
     >
       <div className="max-w-7xl mx-auto px-8">{children}</div>
-    </section>
+    </AnimatedSection>
   )
 }

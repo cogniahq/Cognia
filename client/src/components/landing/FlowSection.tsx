@@ -1,12 +1,13 @@
 import React, { useMemo } from "react"
+import { motion } from "framer-motion"
 
+import {
+  AnimatedStagger,
+  fadeUpVariants,
+} from "@/components/shared/site-motion"
 import { Section } from "./Section"
 
-interface FlowSectionProps {
-  isVisible: boolean
-}
-
-export const FlowSection: React.FC<FlowSectionProps> = ({ isVisible }) => {
+export const FlowSection: React.FC = () => {
   const flowMoments = useMemo(
     () => [
       {
@@ -43,21 +44,16 @@ export const FlowSection: React.FC<FlowSectionProps> = ({ isVisible }) => {
   return (
     <Section className="bg-transparent py-8 sm:py-12 md:py-16 lg:py-20 xl:py-24">
       <style>{`
-        @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
         @keyframes flowLineMove {
           0% { background-position: 0 0; }
           100% { background-position: 200% 0; }
         }
-        @keyframes flowOrbMove {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(calc(100% - 24px)); }
-        }
       `}</style>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 md:mb-16">
+      <AnimatedStagger className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 md:mb-16"
+          variants={fadeUpVariants}
+        >
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-300/60 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-gray-600 mb-3 sm:mb-4">
             Flow
             <span className="w-1 h-1 rounded-full bg-gray-500" />
@@ -70,7 +66,7 @@ export const FlowSection: React.FC<FlowSectionProps> = ({ isVisible }) => {
             A soft animation runs behind every tab: first capture, then weave,
             and finally a memory that answers you back.
           </p>
-        </div>
+        </motion.div>
 
         <div className="relative mt-8 sm:mt-12 md:mt-16 overflow-hidden rounded-[32px]">
           <div
@@ -82,12 +78,16 @@ export const FlowSection: React.FC<FlowSectionProps> = ({ isVisible }) => {
           />
           <div className="hidden 2xl:block absolute top-1/2 left-10 right-10 pointer-events-none z-0">
             <div className="relative h-0">
-              <div
+              <motion.div
                 className="absolute -top-3 left-0 w-6 h-6 rounded-full bg-gradient-to-r from-gray-900 to-gray-600 shadow-lg shadow-gray-400/40"
-                style={{
-                  animation: isVisible
-                    ? "flowOrbMove 7s ease-in-out infinite"
-                    : "none",
+                animate={{
+                  x: [0, 880, 0],
+                  scale: [1, 1.08, 1],
+                }}
+                transition={{
+                  duration: 9,
+                  repeat: Infinity,
+                  ease: "easeInOut",
                 }}
               />
             </div>
@@ -95,18 +95,15 @@ export const FlowSection: React.FC<FlowSectionProps> = ({ isVisible }) => {
 
           <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 z-10">
             {flowMoments.map((moment, index) => (
-              <div
+              <motion.div
                 key={moment.id}
                 className={`relative text-center lg:text-left pb-8 sm:pb-10 2xl:pb-0 z-10 ${
                   moment.position === "top"
                     ? "2xl:pb-16"
                     : "2xl:pt-16 2xl:mt-16"
                 }`}
-                style={{
-                  animation: isVisible
-                    ? `slideInUp 0.8s ease-out ${0.2 + index * 0.2}s both`
-                    : "none",
-                }}
+                variants={fadeUpVariants}
+                transition={{ delay: index * 0.12 }}
               >
                 <div
                   className={`hidden 2xl:block absolute left-1/2 -translate-x-1/2 w-px h-14 bg-gradient-to-b from-gray-300 via-gray-200 to-transparent z-0 ${
@@ -135,11 +132,11 @@ export const FlowSection: React.FC<FlowSectionProps> = ({ isVisible }) => {
                 <p className="text-xs sm:text-sm text-gray-500 italic px-2 sm:px-0">
                   {moment.caption}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </AnimatedStagger>
     </Section>
   )
 }

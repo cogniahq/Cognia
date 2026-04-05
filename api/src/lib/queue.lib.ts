@@ -17,6 +17,7 @@ export interface ContentJobData {
     url?: string
     timestamp?: number
     tags?: string[]
+    key_topics?: string[]
     memory_id?: string
     source?: string
     source_type?: 'EXTENSION' | 'BROWSER' | 'MANUAL' | 'REASONING' | 'INTEGRATION'
@@ -24,6 +25,13 @@ export interface ContentJobData {
     title?: string
     content_type?: string
     content_summary?: string
+    reading_time?: number
+    page_metadata?: Record<string, unknown>
+    page_structure?: Record<string, unknown>
+    user_activity?: Record<string, unknown>
+    content_quality?: Record<string, unknown>
+    participants?: string[]
+    email_provider?: string
   }
 }
 

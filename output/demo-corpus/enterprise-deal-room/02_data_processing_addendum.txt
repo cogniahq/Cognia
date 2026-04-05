@@ -1,0 +1,36 @@
+DATA PROCESSING ADDENDUM
+Northstar Bank plc and Aperture Cloud, Inc.
+Version 2026-05
+
+1. Scope
+This Data Processing Addendum applies when Aperture Cloud processes personal data on behalf of Northstar Bank in connection with the Aperture Cloud Workspace services.
+
+2. Roles
+Northstar Bank acts as controller. Aperture Cloud acts as processor.
+
+3. Processing details
+Subject matter: hosted document intelligence and workflow tooling.
+Duration: the term of the Master Services Agreement plus the deletion window described below.
+Categories of data subjects: employees, contractors, customer support contacts, and prospective vendor stakeholders uploaded by Customer.
+Categories of personal data: name, business email, business phone number, role title, document content, uploaded attachments, and authentication metadata.
+
+4. International transfers and data residency
+Customer's production workspace for the Northstar Bank deployment will be hosted in the European Union region. Provider will not transfer production customer content outside the EU region except where required for support escalation approved by Customer or where otherwise permitted under the DPA and applicable transfer mechanisms.
+
+5. Subprocessors
+Provider will maintain a subprocessor list and provide advance notice before appointing a new subprocessor. Customer may object on reasonable data protection grounds within ten business days of the notice.
+
+6. Security measures
+Provider will implement role-based access control, MFA for administrative access, encryption in transit, encryption at rest, centralized logging, and vulnerability management. Annual penetration testing will be performed by an independent third party.
+
+7. Security incident handling
+Provider will notify Customer without undue delay and in any event within twenty-four hours after confirmation of a personal data breach affecting Customer Data. Provider will provide updated incident reports as material facts become available.
+
+8. Assistance
+Provider will assist Customer with data subject rights requests, DPIAs, and regulator inquiries to the extent required by applicable law, taking into account the nature of processing and information available to Provider.
+
+9. Deletion and return
+At the end of the services, Provider will return or delete personal data at Customer's option. Unless the Customer requests an earlier export, Provider will preserve export access for thirty days after termination and then delete Customer Data from production systems within thirty days. Disaster recovery backups may persist for up to ninety days before automatic overwrite.
+
+10. Audit information
+Upon request, Provider will make available information reasonably necessary to demonstrate compliance with this Addendum, including the latest SOC 2 Type II report, the penetration testing executive summary, and security policy excerpts relevant to Customer controls.

@@ -27,6 +27,7 @@ import {
   applyReranking,
   formatSearchResults,
   buildMemoryRows,
+  deduplicateSearchRows,
 } from '../search/result-formatter.service'
 import type { SearchResult } from '../../types/search.types'
 
@@ -183,8 +184,8 @@ export async function searchMemories(params: {
   }
 
   if (!aiProvider.isInitialized) {
-    logger.error('AI Provider not initialized. Check GEMINI_API_KEY or AI_PROVIDER configuration.')
-    throw new Error('AI Provider not configured. Set GEMINI_API_KEY or configure AI_PROVIDER.')
+    logger.error('AI provider not initialized. Check OPENAI_API_KEY or provider configuration.')
+    throw new Error('AI provider not configured. Set OPENAI_API_KEY or adjust provider settings.')
   }
 
   let embedding: number[]
@@ -268,7 +269,7 @@ export async function searchMemories(params: {
   const rows = buildMemoryRows(memories, scoreMap)
   const scoredRows = scoreSearchResults(rows, queryTokens, searchParams, queryAnalysis)
   const policyScoredRows = applyPolicyScoring(scoredRows, retrievalPolicy)
-  const finalScoredRows = await applyReranking(
+  const rerankedRows = await applyReranking(
     policyScoredRows,
     normalized,
     user.id,
@@ -276,12 +277,14 @@ export async function searchMemories(params: {
     embeddingOnly,
     shouldGenerateAnswer
   )
+  const finalScoredRows = deduplicateSearchRows(rerankedRows)
 
   logger.log('[search] results filtered and sorted', {
     ts: new Date().toISOString(),
     userId,
     filteredCount: finalScoredRows.length,
     totalScored: scoredRows.length,
+    deduplicatedCount: rerankedRows.length - finalScoredRows.length,
     searchStrategy: searchParams.searchStrategy,
     thresholds: {
       semantic: searchParams.semanticThreshold,

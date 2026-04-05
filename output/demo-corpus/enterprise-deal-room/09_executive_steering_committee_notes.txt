@@ -1,0 +1,25 @@
+EXECUTIVE STEERING COMMITTEE NOTES
+Meeting date: June 18, 2026
+
+Attendees
+- Priya Raman, Northstar Bank executive sponsor
+- Maya Singh, Procurement lead
+- Elena Brooks, Information Security
+- Daniel Cole, Aperture Cloud account executive
+- Laura Kent, Aperture Cloud delivery lead
+
+Discussion summary
+The steering committee reviewed commercial, legal, and implementation readiness. Procurement confirmed the annual subscription fee of USD 72,000 and the one-time implementation fee of USD 18,000. The optional migration package remains out of scope unless a later change order is approved.
+
+InfoSec confirmed that three control items remain open:
+- receipt of the independent penetration testing executive summary
+- review of the current subprocessor list
+- final confirmation that all production customer data remains in the EU region
+
+Delivery reviewed the milestone plan. Go-live readiness is scheduled for July 8, 2026, with the target production launch on July 15, 2026. The executive sponsor reiterated that no production go-live may occur without written approval from InfoSec and the procurement lead.
+
+Action items
+- Aperture Cloud to send pen test summary by June 22
+- Aperture Cloud to send subprocessor list by June 22
+- Northstar Bank identity team to deliver final IdP metadata by June 13
+- Delivery team to confirm SCIM provisioning test results in the June 19 workshop

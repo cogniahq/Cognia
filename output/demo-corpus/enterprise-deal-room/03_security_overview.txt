@@ -1,0 +1,38 @@
+APERTURE CLOUD SECURITY OVERVIEW
+Prepared for Northstar Bank vendor diligence
+
+Summary
+Aperture Cloud provides a multi-tenant SaaS platform with regional deployment controls, SSO, SCIM, and audit logging. The Northstar Bank pilot is proposed in the EU region.
+
+Identity and access
+- SAML 2.0 single sign-on is supported for enterprise workspaces.
+- SCIM provisioning is available on the Enterprise plan.
+- Administrative users must enroll in MFA.
+- Break-glass accounts are restricted, monitored, and reviewed quarterly.
+
+Logging and monitoring
+- Administrative actions are logged.
+- Authentication events are logged.
+- Audit logs are retained for thirteen months in the standard enterprise configuration.
+- High-risk events trigger pager notifications to the security on-call rotation.
+
+Encryption
+- TLS 1.2 or higher is required in transit.
+- Customer content is encrypted at rest using AES-256.
+
+Application security
+- External penetration testing is performed annually.
+- Critical vulnerabilities are targeted for remediation within seven calendar days.
+- High severity vulnerabilities are targeted for remediation within fourteen calendar days.
+
+Business continuity
+- Service backups are encrypted.
+- Production databases are replicated across availability zones.
+- The target recovery time objective is four hours.
+- The target recovery point objective is fifteen minutes.
+
+Data location
+For Northstar Bank, the recommended production deployment is the EU region. Support access from outside the EU requires ticketed approval and is limited to exceptional troubleshooting cases.
+
+Third-party services
+Key subprocessors include cloud infrastructure, email delivery, and monitoring vendors. Changes to subprocessors are announced in advance through the customer trust portal.

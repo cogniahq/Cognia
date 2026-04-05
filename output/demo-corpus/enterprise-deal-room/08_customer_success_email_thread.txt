@@ -1,0 +1,31 @@
+EMAIL THREAD
+Subject: Re: Northstar Bank pilot timeline and approvals
+
+From: Maya Singh, Northstar Bank Procurement
+To: Daniel Cole, Aperture Cloud
+Date: June 3, 2026
+
+Daniel,
+Before we lock the pilot plan, our InfoSec team needs confirmation on three items:
+1. SAML SSO is included in the contracted package.
+2. Production data for our workspace stays in the EU.
+3. We receive breach notification within twenty-four hours of confirmation.
+
+From: Daniel Cole, Aperture Cloud
+To: Maya Singh, Northstar Bank Procurement
+Date: June 3, 2026
+
+Maya,
+Confirmed on all three points. SAML SSO and SCIM are included in the Enterprise package on your Order Form. The Northstar Bank production workspace is scoped to the EU region. Our contractual security incident notification commitment is within twenty-four hours after confirmation.
+
+From: Elena Brooks, Northstar Bank InfoSec
+To: Daniel Cole, Aperture Cloud
+Date: June 4, 2026
+
+Thanks. We also need the latest pen test executive summary, a current subprocessor list, and confirmation that administrative audit logs are retained for at least twelve months.
+
+From: Daniel Cole, Aperture Cloud
+To: Elena Brooks, Northstar Bank InfoSec
+Date: June 4, 2026
+
+Understood. We will provide the most recent penetration testing summary, SOC 2 Type II report, and subprocessor list before the June 26 security sign-off. Administrative audit logs are retained for thirteen months under the standard enterprise configuration.

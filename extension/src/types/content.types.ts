@@ -19,6 +19,10 @@ export interface ContextData {
     published_date?: string
     modified_date?: string
     canonical_url?: string
+    email_provider?: string
+    subject?: string
+    participants?: string[]
+    [key: string]: unknown
   }
   page_structure?: {
     headings: string[]

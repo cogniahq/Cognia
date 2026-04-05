@@ -60,12 +60,20 @@ export class MemoryProcessingController {
         canonicalHash: canonicalData.canonicalHash,
         canonicalText: canonicalData.canonicalText,
         url,
+        title,
+        source: (metadataPayload?.source as string | undefined) || undefined,
       })
 
       if (duplicateCheck) {
         const merged = await memoryIngestionService.mergeDuplicateMemory(
           duplicateCheck.memory,
-          metadataPayload
+          metadataPayload,
+          {
+            title,
+            url,
+            source: (metadataPayload?.source as string | undefined) || undefined,
+            content,
+          }
         )
         const serializedExisting = {
           ...merged,

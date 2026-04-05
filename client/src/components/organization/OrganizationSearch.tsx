@@ -1,28 +1,51 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 import { useOrganization } from "@/contexts/organization.context"
 import * as organizationService from "@/services/organization/organization.service"
-import type {
-  AnswerJobResult,
-  DocumentPreviewData,
-} from "@/services/organization/organization.service"
+import type { DocumentPreviewData } from "@/services/organization/organization.service"
 
 import type { OrganizationSearchResponse } from "@/types/organization"
 import { DocumentPreviewModal } from "@/components/ui/document-preview-modal"
+import { getOrganizationAnswerState } from "@/components/organization/organization-answer-state"
+import {
+  getOrganizationSearchFilterLabel,
+  getOrganizationSearchFilters,
+  getOrganizationSearchSourceTypes,
+} from "@/components/organization/organization-search-filters"
+import { buildOrganizationSearchHighlights } from "@/components/organization/organization-search-highlighting"
+import { getOrganizationSearchSectionOrder } from "@/components/organization/organization-search-layout"
+import { getOrganizationSearchLoadingState } from "@/components/organization/organization-search-loading"
+import { getVisibleOrganizationSearchResults } from "@/components/organization/organization-search-results"
+import { getOrganizationSearchState } from "@/components/organization/organization-search-state"
+import {
+  fadeUpVariants,
+  staggerContainerVariants,
+} from "@/components/shared/site-motion"
+
+function mapAnswerJobCitations(
+  citations: organizationService.AnswerJobResult["citations"]
+): OrganizationSearchResponse["citations"] {
+  return citations?.map((citation) => ({
+    index: citation.label,
+    documentName: citation.title || undefined,
+    memoryId: citation.memory_id,
+    url: citation.url || undefined,
+    sourceType: citation.source_type || undefined,
+  }))
+}
 
 export function OrganizationSearch() {
   const { currentOrganization, documents } = useOrganization()
   const [query, setQuery] = useState("")
+  const [submittedQuery, setSubmittedQuery] = useState("")
+  const [activeFilterId, setActiveFilterId] = useState("ALL")
   const [isSearching, setIsSearching] = useState(false)
   const [results, setResults] = useState<OrganizationSearchResponse | null>(
     null
   )
   const [error, setError] = useState("")
-
-  // Answer streaming state
-  const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
-  const [answerData, setAnswerData] = useState<AnswerJobResult | null>(null)
-  const [answerElapsed, setAnswerElapsed] = useState(0)
-  const cleanupRef = useRef<(() => void) | null>(null)
+  const [summaryError, setSummaryError] = useState("")
+  const [summaryLoadingPhase, setSummaryLoadingPhase] = useState(0)
 
   // Document preview state
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -31,84 +54,70 @@ export function OrganizationSearch() {
   const [previewData, setPreviewData] = useState<DocumentPreviewData | null>(
     null
   )
+  const searchFilters = getOrganizationSearchFilters()
+  const activeFilterLabel = getOrganizationSearchFilterLabel(activeFilterId)
 
-  // Clean up SSE on unmount
-  useEffect(() => {
-    return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current()
-      }
-    }
-  }, [])
-
-  // Subscribe to answer job via SSE
-  const subscribeToAnswer = useCallback((jobId: string) => {
-    setIsLoadingAnswer(true)
-    setAnswerData(null)
-    setAnswerElapsed(0)
-
-    // Clean up any existing subscription
-    if (cleanupRef.current) {
-      cleanupRef.current()
-    }
-
-    cleanupRef.current = organizationService.subscribeToAnswerJob(jobId, {
-      onCompleted: (result) => {
-        setAnswerData(result)
-        setIsLoadingAnswer(false)
-        cleanupRef.current = null
-      },
-      onError: (errorMsg) => {
-        console.error("Answer generation error:", errorMsg)
-        setIsLoadingAnswer(false)
-        cleanupRef.current = null
-      },
-      onHeartbeat: (elapsed) => {
-        setAnswerElapsed(elapsed)
-      },
-    })
-  }, [])
-
-  const handleSearch = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault()
-      if (!query.trim() || !currentOrganization) return
+  const runSearch = useCallback(
+    async (trimmedQuery: string, filterId: string) => {
+      if (!currentOrganization) return
 
       setIsSearching(true)
       setError("")
+      setSummaryError("")
+      setSummaryLoadingPhase(0)
       setResults(null)
-      setAnswerData(null)
-      setIsLoadingAnswer(false)
-      setAnswerElapsed(0)
-
-      // Clean up any existing subscription
-      if (cleanupRef.current) {
-        cleanupRef.current()
-        cleanupRef.current = null
-      }
 
       try {
         const searchResults = await organizationService.searchOrganization(
           currentOrganization.slug,
-          query.trim(),
-          { limit: 20, includeAnswer: true }
+          trimmedQuery,
+          {
+            includeAnswer: true,
+            sourceTypes: getOrganizationSearchSourceTypes(filterId),
+          }
         )
         setResults(searchResults)
-
-        // If there's a job ID, subscribe to SSE for the answer
-        if (searchResults.answerJobId) {
-          subscribeToAnswer(searchResults.answerJobId)
-        }
+        setSubmittedQuery(trimmedQuery)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Search failed")
       } finally {
         setIsSearching(false)
       }
     },
-    [query, currentOrganization, subscribeToAnswer]
+    [currentOrganization]
   )
 
-  const hasDocuments = documents.length > 0
+  const handleSearch = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (!query.trim() || !currentOrganization) return
+      const trimmedQuery = query.trim()
+      await runSearch(trimmedQuery, activeFilterId)
+    },
+    [activeFilterId, currentOrganization, query, runSearch]
+  )
+
+  const handleFilterChange = useCallback(
+    (nextFilterId: string) => {
+      if (nextFilterId === activeFilterId) {
+        return
+      }
+
+      setActiveFilterId(nextFilterId)
+
+      const rerunQuery = submittedQuery || query.trim()
+      if (!rerunQuery || !currentOrganization) {
+        return
+      }
+
+      void runSearch(rerunQuery, nextFilterId)
+    },
+    [activeFilterId, currentOrganization, query, runSearch, submittedQuery]
+  )
+
+  const searchState = getOrganizationSearchState({
+    documentCount: documents.length,
+  })
 
   // Handle clicking on a citation to preview the document or open URL
   const handleCitationClick = useCallback(
@@ -155,114 +164,209 @@ export function OrganizationSearch() {
     setPreviewError(null)
   }, [])
 
-  // Get the current answer (from async job if available, otherwise from initial response)
-  const currentAnswer = answerData?.answer || results?.answer
-  const currentCitations = answerData?.citations || results?.citations
+  const visibleResults = getVisibleOrganizationSearchResults({
+    results: results?.results,
+    citations: results?.citations,
+    answerJobId: results?.answerJobId,
+  })
+  const summaryLoadingState = getOrganizationSearchLoadingState({
+    query: submittedQuery || query.trim(),
+    filterLabel: activeFilterLabel,
+    phaseIndex: summaryLoadingPhase,
+    results: results?.results,
+  })
+  const hasFetchedResults = Boolean(results?.results?.length)
+  const answerState = getOrganizationAnswerState({
+    answerJobId: results?.answerJobId,
+    answer: results?.answer,
+  })
+  const hasSummarySection =
+    hasFetchedResults &&
+    (answerState.shouldPoll ||
+      Boolean(answerState.renderableAnswer) ||
+      Boolean(summaryError))
+  const sectionOrder = getOrganizationSearchSectionOrder({
+    hasSummary: hasSummarySection,
+    hasResults: visibleResults.length > 0,
+  })
 
-  // Type for job result citation
-  type JobCitation = {
-    label: number
-    memory_id: string
-    title: string | null
-    url: string | null
-    source_type: string | null
-  }
+  useEffect(() => {
+    const jobId = results?.answerJobId
 
-  // Deduplicate citations by document name, keeping track of memoryIds for preview
-  const uniqueCitations = useMemo(() => {
-    if (!currentCitations) return []
+    if (!jobId || !answerState.shouldPoll) {
+      return
+    }
 
-    const seen = new Map<
-      string,
-      {
-        index: number
-        documentName: string
-        pageNumbers: number[]
-        memoryId: string
-        url?: string
-        sourceType?: string
-      }
-    >()
+    let isCancelled = false
+    let timeoutId: number | undefined
 
-    for (const citation of currentCitations) {
-      // Handle both formats: from initial response and from job result
-      let documentName: string | undefined
-      let pageNumber: number | undefined
-      let memoryId: string
-      let index: number
-      let url: string | undefined
-      let sourceType: string | undefined
-
-      if ("documentName" in citation) {
-        // Citation from initial search response
-        documentName = citation.documentName
-        pageNumber = citation.pageNumber
-        memoryId = citation.memoryId
-        index = citation.index
-        url = citation.url
-        sourceType = citation.sourceType
-      } else {
-        // Citation from job result
-        const jobCitation = citation as JobCitation
-        documentName = jobCitation.title || undefined
-        pageNumber = undefined
-        memoryId = jobCitation.memory_id
-        index = jobCitation.label
-        url = jobCitation.url || undefined
-        sourceType = jobCitation.source_type || undefined
-      }
-
-      const key = documentName || `memory-${index}`
-
-      if (seen.has(key)) {
-        // Add page number if it exists and isn't already in the list
-        if (pageNumber) {
-          const existing = seen.get(key)!
-          if (!existing.pageNumbers.includes(pageNumber)) {
-            existing.pageNumbers.push(pageNumber)
-          }
-        }
-      } else {
-        seen.set(key, {
-          index,
-          documentName: documentName || "Memory",
-          pageNumbers: pageNumber ? [pageNumber] : [],
-          memoryId,
-          url,
-          sourceType,
-        })
+    const stopPolling = () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId)
       }
     }
 
-    return Array.from(seen.values())
-  }, [currentCitations])
+    const updateCompletedAnswer = (job: organizationService.AnswerJobResult) => {
+      setSummaryError("")
+      setResults((currentResults) => {
+        if (!currentResults || currentResults.answerJobId !== jobId) {
+          return currentResults
+        }
+
+        return {
+          ...currentResults,
+          answer: job.answer,
+          citations: mapAnswerJobCitations(job.citations),
+          answerJobId: undefined,
+        }
+      })
+    }
+
+    const markSummaryUnavailable = (message: string) => {
+      setSummaryError(message)
+      setResults((currentResults) => {
+        if (!currentResults || currentResults.answerJobId !== jobId) {
+          return currentResults
+        }
+
+        return {
+          ...currentResults,
+          answerJobId: undefined,
+        }
+      })
+    }
+
+    const pollAnswerJob = async () => {
+      try {
+        const job = await organizationService.getAnswerJobStatus(jobId)
+
+        if (isCancelled) {
+          return
+        }
+
+        if (job.status === "completed") {
+          updateCompletedAnswer(job)
+          return
+        }
+
+        if (job.status === "failed") {
+          markSummaryUnavailable("Summary generation failed.")
+          return
+        }
+
+        timeoutId = window.setTimeout(pollAnswerJob, 1500)
+      } catch (err) {
+        if (isCancelled) {
+          return
+        }
+
+        markSummaryUnavailable(
+          err instanceof Error ? err.message : "Summary generation failed."
+        )
+      }
+    }
+
+    pollAnswerJob()
+
+    return () => {
+      isCancelled = true
+      stopPolling()
+    }
+  }, [answerState.shouldPoll, results?.answerJobId])
+
+  useEffect(() => {
+    if (!answerState.shouldPoll) {
+      setSummaryLoadingPhase(0)
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setSummaryLoadingPhase((currentPhase) => currentPhase + 1)
+    }, 1400)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [answerState.shouldPoll])
 
   return (
     <div className="space-y-6">
       {/* Search form */}
-      <form onSubmit={handleSearch}>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder={
-              hasDocuments
-                ? "Ask anything about your documents..."
-                : "Upload documents to start searching"
-            }
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            disabled={!hasDocuments}
-            className="flex-1 px-4 py-3 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-400"
-          />
-          <button
-            type="submit"
-            disabled={isSearching || !query.trim() || !hasDocuments}
-            className="px-6 py-3 text-sm font-mono bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      <motion.div
+        initial="initial"
+        animate="animate"
+        variants={fadeUpVariants}
+        className="space-y-3"
+      >
+        <LayoutGroup id="organization-search-filters">
+          <motion.div
+            className="flex flex-wrap gap-2"
+            initial="initial"
+            animate="animate"
+            variants={staggerContainerVariants}
           >
-            {isSearching ? "Searching..." : "Search"}
-          </button>
-        </div>
-      </form>
+            {searchFilters.map((filter) => {
+              const isActive = activeFilterId === filter.id
+
+              return (
+                <motion.button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => handleFilterChange(filter.id)}
+                  className={`relative overflow-hidden rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
+                    isActive
+                      ? "border-gray-900 text-white"
+                      : "border-gray-300 text-gray-600 hover:border-gray-500 hover:text-gray-900"
+                  }`}
+                  variants={fadeUpVariants}
+                  whileHover={{ y: -2, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="organization-search-filter-pill"
+                      className="absolute inset-0 bg-gray-900"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{filter.label}</span>
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        </LayoutGroup>
+
+        <motion.form onSubmit={handleSearch} layout className="space-y-2">
+          <div className="flex gap-2">
+            <motion.input
+              type="text"
+              placeholder={searchState.placeholder}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={searchState.isDisabled}
+              className="flex-1 px-4 py-3 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-400"
+              whileFocus={{ scale: 1.003 }}
+            />
+            <motion.button
+              type="submit"
+              disabled={isSearching || !query.trim() || searchState.isDisabled}
+              className="px-6 py-3 text-sm font-mono bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ y: -2, scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isSearching ? "Searching..." : "Search"}
+            </motion.button>
+          </div>
+        </motion.form>
+
+        <motion.div
+          className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-gray-500"
+          layout
+        >
+          <span>[FILTER] {activeFilterLabel}</span>
+          {submittedQuery && <span>Applied to "{submittedQuery}"</span>}
+        </motion.div>
+      </motion.div>
 
       {/* Error */}
       {error && (
@@ -274,110 +378,304 @@ export function OrganizationSearch() {
       {/* Results */}
       {results && (
         <div className="space-y-6">
-          {/* AI Answer - show loading state or actual answer */}
-          {(isLoadingAnswer || currentAnswer) && (
-            <div className="border border-gray-200 bg-gray-50">
-              <div className="px-4 py-2 border-b border-gray-200">
-                <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-                  [ANSWER]
-                </span>
-                {isLoadingAnswer && (
-                  <span className="ml-2 text-xs font-mono text-blue-500 animate-pulse">
-                    Collecting...
-                  </span>
-                )}
-              </div>
-              <div className="p-4">
-                {isLoadingAnswer && !currentAnswer ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full" />
-                    <span>
-                      Analyzing documents and generating answer...
-                      {answerElapsed > 0 && (
-                        <span className="text-gray-400 ml-1">
-                          ({answerElapsed}s)
-                        </span>
-                      )}
+          {sectionOrder.map((section) => {
+            if (section === "summary") {
+              return (
+                <motion.div
+                  key="summary"
+                  initial="initial"
+                  animate="animate"
+                  variants={fadeUpVariants}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+                      [SUMMARY]
+                    </span>
+                    <span className="text-xs font-mono text-gray-400">
+                      {answerState.shouldPoll
+                        ? "Synthesizing..."
+                        : answerState.renderableAnswer
+                          ? "Ready"
+                          : "Unavailable"}
                     </span>
                   </div>
-                ) : (
-                  <>
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {currentAnswer}
-                    </p>
-                    {uniqueCitations.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
-                          Sources
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {uniqueCitations.map((citation, idx) => (
-                            <button
-                              key={`${citation.documentName}-${idx}`}
-                              onClick={() =>
-                                handleCitationClick(
-                                  citation.memoryId,
-                                  citation.url,
-                                  citation.sourceType
-                                )
-                              }
-                              className="px-2 py-1 text-xs font-mono bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
-                            >
-                              {citation.sourceType === "EXTENSION" ||
-                              citation.sourceType === "INTEGRATION" ? (
-                                <span className="text-blue-500">↗</span>
-                              ) : null}{" "}
-                              {citation.documentName}
-                              {citation.pageNumbers.length > 0 && (
-                                <span className="text-gray-400">
-                                  {" "}
-                                  p.
-                                  {citation.pageNumbers
-                                    .sort((a, b) => a - b)
-                                    .join(", ")}
+
+                  <div
+                    className={
+                      answerState.shouldPoll
+                        ? ""
+                        : "border border-gray-200 bg-white p-4"
+                    }
+                  >
+                    {answerState.renderableAnswer ? (
+                      <>
+                        <motion.p
+                          className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {answerState.renderableAnswer}
+                        </motion.p>
+
+                        {results?.citations && results.citations.length > 0 && (
+                          <motion.div
+                            className="mt-4 flex flex-wrap gap-2"
+                            initial="initial"
+                            animate="animate"
+                            variants={staggerContainerVariants}
+                          >
+                            {results.citations.map((citation) => (
+                              <motion.button
+                                key={`${citation.memoryId}-${citation.index}`}
+                                onClick={() =>
+                                  handleCitationClick(
+                                    citation.memoryId,
+                                    citation.url,
+                                    citation.sourceType
+                                  )
+                                }
+                                className="rounded border border-gray-200 px-2 py-1 text-xs font-mono text-gray-600 transition-colors hover:border-gray-900 hover:text-gray-900"
+                                variants={fadeUpVariants}
+                                whileHover={{ y: -2, scale: 1.01 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                [{citation.index}]{" "}
+                                {citation.documentName || "Source"}
+                              </motion.button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </>
+                    ) : answerState.shouldPoll ? (
+                      <div className="relative overflow-hidden border border-gray-200 bg-gradient-to-br from-white via-stone-50 to-gray-50 p-4 sm:p-5">
+                        <motion.div
+                          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gray-900 to-transparent"
+                          animate={{
+                            opacity: [0.2, 0.75, 0.2],
+                            scaleX: [0.75, 1, 0.75],
+                          }}
+                          transition={{
+                            duration: 1.8,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-gray-500">
+                              <span>Summary Pipeline</span>
+                              {summaryLoadingState.queryLabel && (
+                                <span className="rounded-full border border-gray-200 bg-white px-2 py-1 normal-case tracking-normal text-gray-600">
+                                  {summaryLoadingState.queryLabel}
                                 </span>
                               )}
-                            </button>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                              <motion.div
+                                key={`${summaryLoadingState.activeStepIndex}-${summaryLoadingState.activeStep.label}`}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.24 }}
+                                className="mt-3"
+                              >
+                                <p className="text-lg font-medium text-gray-900">
+                                  {summaryLoadingState.activeStep.label}
+                                </p>
+                                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-600">
+                                  {summaryLoadingState.activeStep.description}
+                                </p>
+                              </motion.div>
+                            </AnimatePresence>
+                          </div>
+
+                          <motion.div
+                            className="flex min-w-[88px] flex-col items-end gap-2"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <span className="text-xs font-mono text-gray-400">
+                              {summaryLoadingState.progressLabel}
+                            </span>
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200">
+                              <motion.div
+                                className="h-full rounded-full bg-gray-900"
+                                animate={{
+                                  width: `${summaryLoadingState.progressValue * 100}%`,
+                                }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 220,
+                                  damping: 24,
+                                }}
+                              />
+                            </div>
+                          </motion.div>
+                        </div>
+
+                        <motion.div
+                          className="mt-5 grid gap-3 sm:grid-cols-3"
+                          initial="initial"
+                          animate="animate"
+                          variants={staggerContainerVariants}
+                        >
+                          {summaryLoadingState.metrics.map((metric) => (
+                            <motion.div
+                              key={metric.label}
+                              className="rounded-xl border border-gray-200 bg-white/90 px-3 py-3"
+                              variants={fadeUpVariants}
+                            >
+                              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
+                                {metric.label}
+                              </div>
+                              <div className="mt-1 text-sm font-medium text-gray-800">
+                                {metric.value}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+
+                        {summaryLoadingState.sourceLabels.length > 0 && (
+                          <div className="mt-5">
+                            <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
+                              Active Evidence
+                            </div>
+                            <motion.div
+                              className="mt-2 flex flex-wrap gap-2"
+                              initial="initial"
+                              animate="animate"
+                              variants={staggerContainerVariants}
+                            >
+                              {summaryLoadingState.sourceLabels.map((label) => (
+                                <motion.span
+                                  key={label}
+                                  className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono text-gray-600"
+                                  variants={fadeUpVariants}
+                                  animate={{
+                                    y: [0, -2, 0],
+                                  }}
+                                  transition={{
+                                    duration: 2.2,
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                  }}
+                                >
+                                  {label}
+                                </motion.span>
+                              ))}
+                              {summaryLoadingState.remainingSourceCount > 0 && (
+                                <motion.span
+                                  className="rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-xs font-mono text-gray-500"
+                                  variants={fadeUpVariants}
+                                >
+                                  +{summaryLoadingState.remainingSourceCount} more
+                                </motion.span>
+                              )}
+                            </motion.div>
+                          </div>
+                        )}
+
+                        <div className="mt-5 space-y-2">
+                          {summaryLoadingState.steps.map((step) => (
+                            <div
+                              key={step.label}
+                              className="flex items-center gap-3 text-sm text-gray-500"
+                            >
+                              <motion.span
+                                className={`h-2.5 w-2.5 rounded-full ${
+                                  step.isActive
+                                    ? "bg-gray-900"
+                                    : step.isComplete
+                                      ? "bg-gray-500"
+                                      : "bg-gray-300"
+                                }`}
+                                animate={
+                                  step.isActive
+                                    ? { scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }
+                                    : { scale: 1, opacity: 1 }
+                                }
+                                transition={{
+                                  duration: 1.2,
+                                  repeat: step.isActive ? Infinity : 0,
+                                  ease: "easeInOut",
+                                }}
+                              />
+                              <span className="font-medium text-gray-700">
+                                {step.label}
+                              </span>
+                              <span className="hidden text-gray-400 sm:inline">
+                                {step.description}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-5 space-y-2">
+                          {summaryLoadingState.skeletonWidths.map((width, index) => (
+                            <motion.div
+                              key={width}
+                              className="h-2 rounded-full bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                              animate={{
+                                opacity: [0.45, 0.95, 0.45],
+                                x: [0, 6, 0],
+                              }}
+                              transition={{
+                                duration: 1.4,
+                                delay: index * 0.12,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                              }}
+                              style={{ width }}
+                            />
                           ))}
                         </div>
                       </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        {summaryError || "Summary unavailable."}
+                      </p>
                     )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Cited Sources - only show documents that are cited in the AI answer */}
-          {uniqueCitations.length > 0 &&
-            (() => {
-              // Get cited memory IDs from the AI answer
-              const citedMemoryIds = new Set(
-                uniqueCitations.map((c) => c.memoryId)
-              )
-
-              // Filter results to only show cited documents
-              const citedResults = results.results.filter((r) =>
-                citedMemoryIds.has(r.memoryId)
-              )
-
-              if (citedResults.length === 0) return null
-
-              return (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-                      [CITED SOURCES]
-                    </span>
-                    <span className="text-xs font-mono text-gray-400">
-                      {citedResults.length} source
-                      {citedResults.length !== 1 && "s"}
-                    </span>
                   </div>
+                </motion.div>
+              )
+            }
 
-                  <div className="border border-gray-200 divide-y divide-gray-100">
-                    {citedResults.map((result) => (
-                      <button
+            return (
+              <motion.div
+                key="results"
+                initial="initial"
+                animate="animate"
+                variants={fadeUpVariants}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+                    [FETCHED RESULTS]
+                  </span>
+                  <span className="text-xs font-mono text-gray-400">
+                    {visibleResults.length} result
+                    {visibleResults.length !== 1 && "s"}
+                  </span>
+                </div>
+
+                <motion.div
+                  className="border border-gray-200 divide-y divide-gray-100"
+                  initial="initial"
+                  animate="animate"
+                  variants={staggerContainerVariants}
+                >
+                  {visibleResults.map((result) => {
+                    const content = result.content || result.contentPreview
+                    const highlightedSegments = buildOrganizationSearchHighlights(
+                      content,
+                      submittedQuery
+                    )
+
+                    return (
+                      <motion.button
                         key={result.memoryId}
                         onClick={() =>
                           handleCitationClick(
@@ -387,20 +685,19 @@ export function OrganizationSearch() {
                           )
                         }
                         className="w-full p-4 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+                        variants={fadeUpVariants}
+                        whileHover={{ y: -2, backgroundColor: "#f9fafb" }}
+                        whileTap={{ scale: 0.995 }}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               {(result.sourceType === "EXTENSION" ||
                                 result.sourceType === "INTEGRATION") && (
-                                <span className="text-blue-500 text-xs">
-                                  ↗
-                                </span>
+                                <span className="text-blue-500 text-xs">↗</span>
                               )}
                               <span className="text-sm font-medium text-gray-900">
-                                {result.documentName ||
-                                  result.title ||
-                                  "Document"}
+                                {result.documentName || result.title || "Document"}
                               </span>
                               {result.pageNumber && (
                                 <span className="text-xs font-mono text-gray-400">
@@ -408,67 +705,77 @@ export function OrganizationSearch() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-600 line-clamp-2">
-                              {result.contentPreview}
+                            <p className="max-h-32 overflow-y-auto text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                              {highlightedSegments.map((segment, index) =>
+                                segment.isMatch ? (
+                                  <mark
+                                    key={`${result.memoryId}-${index}`}
+                                    className="rounded bg-amber-200 px-0.5 text-gray-900"
+                                  >
+                                    {segment.text}
+                                  </mark>
+                                ) : (
+                                  <span key={`${result.memoryId}-${index}`}>
+                                    {segment.text}
+                                  </span>
+                                )
+                              )}
                             </p>
                             <div className="flex items-center gap-3 mt-2 text-xs font-mono text-gray-400">
                               <span>{result.sourceType}</span>
-                              <span>
-                                {Math.round(result.score * 100)}% match
-                              </span>
+                              <span>{Math.round(result.score * 100)}% match</span>
                             </div>
                           </div>
                           <span className="text-xs font-mono text-gray-400">
                             →
                           </span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
+                      </motion.button>
+                    )
+                  })}
+                </motion.div>
+              </motion.div>
+            )
+          })}
+
+          {results.results.length === 0 && (
+            <div className="border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">
+              No matching documents or browsing memories were found for this
+              search.
+            </div>
+          )}
         </div>
       )}
 
       {/* Empty state */}
       {!results && !isSearching && !error && (
         <div className="text-center py-12">
-          {hasDocuments ? (
-            <>
-              <div className="text-sm font-mono text-gray-600 mb-2">
-                Search Your Documents
-              </div>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto mb-6">
-                Ask questions in natural language and get AI-powered answers
-                with citations.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {[
-                  "What are the key findings?",
-                  "Summarize the main points",
-                  "Find all mentions of...",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setQuery(suggestion)}
-                    className="px-3 py-1.5 text-xs font-mono text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-sm font-mono text-gray-600 mb-2">
-                No Documents Yet
-              </div>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                Upload documents in the Documents tab to start searching.
-              </p>
-            </>
-          )}
+          <>
+            <div className="text-sm font-mono text-gray-600 mb-2">
+              {documents.length > 0
+                ? "Search Your Documents and Memories"
+                : "Search Your Browsing Memories"}
+            </div>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto mb-6">
+              Ask questions in natural language and review the fetched
+              document content directly.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {[
+                "What are the key findings?",
+                "Show the fetched passages about this topic",
+                "Find all mentions of...",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setQuery(suggestion)}
+                  className="px-3 py-1.5 text-xs font-mono text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </>
         </div>
       )}
 
@@ -479,6 +786,7 @@ export function OrganizationSearch() {
         documentData={previewData}
         isLoading={previewLoading}
         error={previewError}
+        highlightQuery={submittedQuery}
       />
     </div>
   )

@@ -14,8 +14,11 @@ import integrationsRouter from './integrations.route'
 import orgIntegrationsRouter from './org-integrations.route'
 import webhooksRouter from './webhooks.route'
 import briefingRouter from './briefing.route'
+import platformRouter from './platform.route'
+import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
+  app.get('/api/storage/local', LocalStorageController.serveSignedFile)
   app.use('/api/memory', memoryRouter)
   app.use('/api/content', contentRouter)
 
@@ -26,6 +29,7 @@ export const routes = (app: Express) => {
   app.use('/api/privacy', privacyRouter)
   app.use('/api/admin', adminRouter)
   app.use('/api/organizations', organizationRouter)
+  app.use('/api/platform', platformRouter)
   // Document routes are mounted under /api/organizations/:slug/documents
   app.use('/api/organizations', documentRouter)
   // Organization integration routes (admin configurable sync settings)

@@ -134,8 +134,7 @@ export class PlatformSearchService {
           title: memory.title ?? undefined,
           url: memory.url ?? undefined,
           sourceType: memory.source_type || SourceType.DOCUMENT,
-          contentPreview:
-            memory.content.slice(0, 320) + (memory.content.length > 320 ? '...' : ''),
+          contentPreview: memory.content.slice(0, 320) + (memory.content.length > 320 ? '...' : ''),
           metadata,
           matterIds,
         }
@@ -221,7 +220,9 @@ Instructions:
 `
 
     const answer = await aiProvider.generateContent(prompt)
-    const citationNumbers = [...new Set((answer.match(/\[(\d+)\]/g) || []).map(token => Number(token.slice(1, -1))))]
+    const citationNumbers = [
+      ...new Set((answer.match(/\[(\d+)\]/g) || []).map(token => Number(token.slice(1, -1)))),
+    ]
 
     return {
       answer,

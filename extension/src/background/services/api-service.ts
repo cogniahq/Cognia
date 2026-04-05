@@ -217,13 +217,14 @@ export async function sendToBackend(data: ContextData): Promise<void> {
           data.content_quality && typeof data.content_quality === 'object'
             ? data.content_quality
             : undefined,
-        participants:
-          Array.isArray((data.page_metadata as { participants?: unknown } | undefined)?.participants)
-            ? ((data.page_metadata as { participants?: string[] }).participants || [])
-            : undefined,
+        participants: Array.isArray(
+          (data.page_metadata as { participants?: unknown } | undefined)?.participants
+        )
+          ? (data.page_metadata as { participants?: string[] }).participants || []
+          : undefined,
         email_provider:
-          typeof (data.page_metadata as { email_provider?: unknown } | undefined)?.email_provider ===
-          'string'
+          typeof (data.page_metadata as { email_provider?: unknown } | undefined)
+            ?.email_provider === 'string'
             ? ((data.page_metadata as { email_provider?: string }).email_provider as string)
             : undefined,
         privacy_extension_conflicts: hasPrivacyConflicts,

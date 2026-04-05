@@ -15,10 +15,7 @@ function getExpiryTimestamp(expiresInSeconds: number): number {
 }
 
 function signLocalStorageKey(key: string, expiresAt: number): string {
-  return crypto
-    .createHmac('sha256', getSigningSecret())
-    .update(`${key}:${expiresAt}`)
-    .digest('hex')
+  return crypto.createHmac('sha256', getSigningSecret()).update(`${key}:${expiresAt}`).digest('hex')
 }
 
 export function createLocalStorageSignedUrl(key: string, expiresInSeconds: number = 3600): string {
@@ -32,9 +29,7 @@ export function createLocalStorageSignedUrl(key: string, expiresInSeconds: numbe
   return `${LOCAL_STORAGE_ROUTE_PATH}?${params.toString()}`
 }
 
-export function isValidLocalStorageSignedUrl(
-  params: Pick<URLSearchParams, 'get'>
-): boolean {
+export function isValidLocalStorageSignedUrl(params: Pick<URLSearchParams, 'get'>): boolean {
   const key = params.get('key')
   const expiresRaw = params.get('expires')
   const signature = params.get('sig')

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { buildOrganizationSearchHighlights } from "@/components/organization/organization-search-highlighting"
 import type { DocumentPreviewData } from "@/services/organization/organization.service"
 import { ChevronRight, Download, File, FileText, Image, X } from "lucide-react"
+
+import { buildOrganizationSearchHighlights } from "@/components/organization/organization-search-highlighting"
 
 interface DocumentPreviewModalProps {
   isOpen: boolean

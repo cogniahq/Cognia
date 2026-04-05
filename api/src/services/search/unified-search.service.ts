@@ -112,7 +112,11 @@ export class UnifiedSearchService {
   }> {
     const { organizationId, sourceTypes, requestedLimit, userId } = options
 
-    if (typeof requestedLimit === 'number' && Number.isFinite(requestedLimit) && requestedLimit > 0) {
+    if (
+      typeof requestedLimit === 'number' &&
+      Number.isFinite(requestedLimit) &&
+      requestedLimit > 0
+    ) {
       const finalLimit = Math.floor(requestedLimit)
       return {
         finalLimit,
@@ -154,16 +158,14 @@ export class UnifiedSearchService {
     await ensureCollection()
 
     const queryEmbedding = await generateQueryEmbedding(query)
-    const {
-      finalLimit,
-      organizationSearchLimit,
-      userSearchLimit,
-    } = await this.resolveResultLimits({
-      organizationId,
-      sourceTypes,
-      requestedLimit: limit,
-      userId,
-    })
+    const { finalLimit, organizationSearchLimit, userSearchLimit } = await this.resolveResultLimits(
+      {
+        organizationId,
+        sourceTypes,
+        requestedLimit: limit,
+        userId,
+      }
+    )
 
     // Build Qdrant filter for organization content
     const orgFilter: {

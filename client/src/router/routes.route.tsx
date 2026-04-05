@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react"
-import { AnimatePresence } from "framer-motion"
 import { useAuth } from "@/contexts/auth.context"
+import { AnimatePresence } from "framer-motion"
 import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 
 import { AnimatedPage } from "@/components/shared/site-motion"
@@ -102,12 +102,27 @@ const AppRoutes = () => {
                 <Route path="/login" element={<Navigate to="/" replace />} />
                 <Route path="/memories" element={<Navigate to="/" replace />} />
                 <Route path="/docs" element={<Navigate to="/" replace />} />
-                <Route path="/analytics" element={<Navigate to="/" replace />} />
+                <Route
+                  path="/analytics"
+                  element={<Navigate to="/" replace />}
+                />
                 <Route path="/profile" element={<Navigate to="/" replace />} />
-                <Route path="/organization" element={<Navigate to="/" replace />} />
-                <Route path="/integrations" element={<Navigate to="/" replace />} />
-                <Route path="/briefings" element={<Navigate to="/" replace />} />
-                <Route path="/mesh-showcase" element={<Navigate to="/" replace />} />
+                <Route
+                  path="/organization"
+                  element={<Navigate to="/" replace />}
+                />
+                <Route
+                  path="/integrations"
+                  element={<Navigate to="/" replace />}
+                />
+                <Route
+                  path="/briefings"
+                  element={<Navigate to="/" replace />}
+                />
+                <Route
+                  path="/mesh-showcase"
+                  element={<Navigate to="/" replace />}
+                />
               </>
             )}
 

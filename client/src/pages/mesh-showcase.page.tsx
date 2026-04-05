@@ -1,5 +1,6 @@
-import { MemoryMesh3DPreview } from "@/components/landing/mesh-preview/MemoryMesh3DPreview"
 import { mockMeshData } from "@/data/mock"
+
+import { MemoryMesh3DPreview } from "@/components/landing/mesh-preview/MemoryMesh3DPreview"
 
 export function MeshShowcase() {
   return (

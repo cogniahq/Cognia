@@ -137,11 +137,7 @@ export async function searchMemories(params: {
 
   // Analyze query to determine dynamic search parameters
   const queryAnalysis = analyzeQuery(normalized, userMemoryCount)
-  const searchParams = calculateDynamicSearchParams(
-    queryAnalysis,
-    userMemoryCount,
-    effectiveLimit
-  )
+  const searchParams = calculateDynamicSearchParams(queryAnalysis, userMemoryCount, effectiveLimit)
 
   logger.log('[search] processing started', {
     ts: new Date().toISOString(),

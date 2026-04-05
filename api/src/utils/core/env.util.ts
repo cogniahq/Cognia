@@ -87,11 +87,7 @@ export function getRedisConnection(forBullMQ: boolean = false): RedisConnectionO
 }
 
 function isOpenAIBackedQueue(): boolean {
-  const providers = [
-    process.env.GEN_PROVIDER,
-    process.env.EMBED_PROVIDER,
-    process.env.AI_PROVIDER,
-  ]
+  const providers = [process.env.GEN_PROVIDER, process.env.EMBED_PROVIDER, process.env.AI_PROVIDER]
     .map(value => value?.trim().toLowerCase())
     .filter((value): value is string => Boolean(value))
 

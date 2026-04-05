@@ -41,11 +41,7 @@ export class PlatformController {
     })
   }
 
-  static async upsertTenant(
-    req: PlatformAuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ) {
+  static async upsertTenant(req: PlatformAuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const tenant = req.body?.tenant as PlatformTenantRef | undefined
 
@@ -91,7 +87,9 @@ export class PlatformController {
         data: { tenantLink: link },
       })
     } catch (error) {
-      next(new AppError(error instanceof Error ? error.message : 'Failed to deactivate tenant', 500))
+      next(
+        new AppError(error instanceof Error ? error.message : 'Failed to deactivate tenant', 500)
+      )
     }
   }
 
@@ -183,9 +181,7 @@ export class PlatformController {
         },
       })
     } catch (error) {
-      next(
-        new AppError(error instanceof Error ? error.message : 'Failed to sync memberships', 500)
-      )
+      next(new AppError(error instanceof Error ? error.message : 'Failed to sync memberships', 500))
     }
   }
 
@@ -213,10 +209,15 @@ export class PlatformController {
         metadata: (metadata || {}) as PlatformDocumentMetadata,
       })
 
-      await PlatformController.logEventIfPossible(req, 'platform_document_upload', 'session_created', {
-        uploadSessionId: session.id,
-        originalName,
-      })
+      await PlatformController.logEventIfPossible(
+        req,
+        'platform_document_upload',
+        'session_created',
+        {
+          uploadSessionId: session.id,
+          originalName,
+        }
+      )
 
       res.status(201).json({
         success: true,
@@ -263,9 +264,14 @@ export class PlatformController {
         size: file.size,
       })
 
-      await PlatformController.logEventIfPossible(req, 'platform_document_upload', 'content_uploaded', {
-        uploadSessionId: session.id,
-      })
+      await PlatformController.logEventIfPossible(
+        req,
+        'platform_document_upload',
+        'content_uploaded',
+        {
+          uploadSessionId: session.id,
+        }
+      )
 
       res.status(200).json({
         success: true,
@@ -407,7 +413,10 @@ export class PlatformController {
       })
     } catch (error) {
       next(
-        new AppError(error instanceof Error ? error.message : 'Failed to fetch citation source', 500)
+        new AppError(
+          error instanceof Error ? error.message : 'Failed to fetch citation source',
+          500
+        )
       )
     }
   }
@@ -424,7 +433,10 @@ export class PlatformController {
         return next(new AppError('tenantExternalId does not match actor context', 403))
       }
 
-      const result = await platformSearchService.query(req.platform!.tenantLink!.organization_id, body)
+      const result = await platformSearchService.query(
+        req.platform!.tenantLink!.organization_id,
+        body
+      )
 
       await PlatformController.logEventIfPossible(req, 'platform_search', 'queried', {
         mode: body.mode,

@@ -1,4 +1,5 @@
-const SEARCH_PLACEHOLDER = 'Ask anything about your documents and browsing memories...'
+const SEARCH_PLACEHOLDER =
+  "Ask anything about your documents and browsing memories..."
 
 export function getOrganizationSearchState(_input) {
   return {

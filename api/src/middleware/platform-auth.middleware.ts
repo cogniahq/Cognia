@@ -111,10 +111,7 @@ export async function requirePlatformActorAccess(
     next()
   } catch (error) {
     next(
-      new AppError(
-        error instanceof Error ? error.message : 'Failed to resolve platform actor',
-        403
-      )
+      new AppError(error instanceof Error ? error.message : 'Failed to resolve platform actor', 403)
     )
   }
 }

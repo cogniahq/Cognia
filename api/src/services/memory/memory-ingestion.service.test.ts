@@ -51,7 +51,7 @@ test('extension ingestion deduplicates repeated captures of the same page even w
           }
         }
       | undefined
-  ): Promise<typeof existingMemory[]> => {
+  ): Promise<(typeof existingMemory)[]> => {
     const createdAt = args?.where && 'created_at' in args.where ? args.where.created_at : undefined
     const gte =
       createdAt &&

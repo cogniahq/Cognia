@@ -58,8 +58,7 @@ const MAX_TOPICS = 8
 const TITLE_SPLITTER = /\s*[-|:]\s*/
 const EMAIL_REGEX = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi
 const URL_REGEX = /\bhttps?:\/\/[^\s)]+/gi
-const PHONE_REGEX =
-  /\b(?:\+?\d{1,2}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}\b/g
+const PHONE_REGEX = /\b(?:\+?\d{1,2}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}\b/g
 const MONEY_REGEX =
   /(?:USD|EUR|GBP|INR|CAD|AUD)\s?\d[\d,]*(?:\.\d{2})?|(?:\$|€|£|₹)\s?\d[\d,]*(?:\.\d{2})?|\d[\d,]*(?:\.\d{2})?\s?(?:USD|EUR|GBP|INR|CAD|AUD)/gi
 const DATE_REGEX =
@@ -273,7 +272,11 @@ function extractDomains(urls: string[]): string[] {
   return uniqueStrings(domains)
 }
 
-function inferMerchant(title: string, domain: string | null, participants: string[]): string | undefined {
+function inferMerchant(
+  title: string,
+  domain: string | null,
+  participants: string[]
+): string | undefined {
   const cleanedTitle = title
     .split(TITLE_SPLITTER)[0]
     ?.replace(/\b(?:gmail|outlook|mail)\b/gi, '')
@@ -610,9 +613,12 @@ export function extractStructuredMemoryData(input: StructuredMemoryInput): Struc
   const urls = uniqueStrings([
     url,
     ...extractPatternMatches(content, URL_REGEX),
-    ...extractPatternMatches(typeof flattenedMetadata.content_summary === 'string'
-      ? flattenedMetadata.content_summary
-      : '', URL_REGEX),
+    ...extractPatternMatches(
+      typeof flattenedMetadata.content_summary === 'string'
+        ? flattenedMetadata.content_summary
+        : '',
+      URL_REGEX
+    ),
   ])
   const domains = extractDomains(urls)
   const participants = Array.isArray(flattenedMetadata.participants)
@@ -721,8 +727,7 @@ export function buildMemoryRetrievalText(input: RetrievalTextInput): string {
   const searchableTerms = Array.isArray(metadata.searchableTerms)
     ? metadata.searchableTerms.filter((term): term is string => typeof term === 'string')
     : []
-  const retrievalText =
-    typeof metadata.retrievalText === 'string' ? metadata.retrievalText : ''
+  const retrievalText = typeof metadata.retrievalText === 'string' ? metadata.retrievalText : ''
 
   if (retrievalText) {
     return retrievalText

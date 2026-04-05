@@ -719,8 +719,8 @@ export const Docs = () => {
                     embeddings, and vision
                   </li>
                   <li>
-                    <strong>Alternative providers:</strong> Gemini or Ollama
-                    can still be configured if you need them
+                    <strong>Alternative providers:</strong> Gemini or Ollama can
+                    still be configured if you need them
                   </li>
                   <li>
                     <strong>Fallback behavior:</strong> Search and embedding

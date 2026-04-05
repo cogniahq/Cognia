@@ -1,10 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import {
-  createLocalStorageSignedUrl,
-  isValidLocalStorageSignedUrl,
-} from './local-storage-url.util'
+import { createLocalStorageSignedUrl, isValidLocalStorageSignedUrl } from './local-storage-url.util'
 import { resolveLocalStoragePath } from './local-storage.provider'
 
 test('creates a browser-safe signed URL for local storage files', () => {

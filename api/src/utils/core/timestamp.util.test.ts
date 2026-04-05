@@ -13,10 +13,7 @@ test('normalizes millisecond timestamps to Unix seconds', () => {
 
 test('preserves second-based timestamps', () => {
   assert.equal(normalizeUnixTimestampSeconds(1_711_987_200), BigInt(1_711_987_200))
-  assert.equal(
-    normalizeUnixTimestampSeconds(BigInt(1_711_987_200)),
-    BigInt(1_711_987_200)
-  )
+  assert.equal(normalizeUnixTimestampSeconds(BigInt(1_711_987_200)), BigInt(1_711_987_200))
 })
 
 test('converts Date inputs to Unix seconds', () => {

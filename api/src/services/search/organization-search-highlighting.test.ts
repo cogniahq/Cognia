@@ -29,10 +29,7 @@ test('organization search highlights matched query terms within fetched file con
 
   const highlights = JSON.parse(output) as Array<{ text: string; isMatch: boolean }>
 
-  assert.equal(
-    highlights.map(segment => segment.text).join(''),
-    payload.text
-  )
+  assert.equal(highlights.map(segment => segment.text).join(''), payload.text)
   assert.deepEqual(
     highlights.filter(segment => segment.isMatch).map(segment => segment.text),
     ['EU', 'region', 'SAML']

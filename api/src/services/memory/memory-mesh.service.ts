@@ -14,10 +14,7 @@ import { buildContentPreview } from '../../utils/text/text.util'
 import { meshCalculationService } from './mesh-calculation.service'
 import { meshRelationsService } from './mesh-relations.service'
 import { meshClusteringService } from './mesh-clustering.service'
-import {
-  buildMemoryRetrievalText,
-  normalizePageMetadata,
-} from './memory-structure.service'
+import { buildMemoryRetrievalText, normalizePageMetadata } from './memory-structure.service'
 import type {
   MemoryWithMetadata,
   MemoryRelation,
@@ -69,9 +66,7 @@ export class MemoryMeshService {
       })
 
       if (retrievalText) {
-        embeddingPromises.push(
-          this.createEmbedding(memory, retrievalText, 'content')
-        )
+        embeddingPromises.push(this.createEmbedding(memory, retrievalText, 'content'))
       }
 
       if (memory.title) {
@@ -141,7 +136,9 @@ export class MemoryMeshService {
               privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
               security_tags: securityTags,
               external_document_id:
-                typeof metadata.externalDocumentId === 'string' ? metadata.externalDocumentId : null,
+                typeof metadata.externalDocumentId === 'string'
+                  ? metadata.externalDocumentId
+                  : null,
             },
           },
         ],

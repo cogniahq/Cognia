@@ -2,10 +2,7 @@ import { createHash } from 'node:crypto'
 import type { ResourceContent } from '@cogniahq/integrations'
 
 import { logger } from '../../utils/core/logger.util'
-import {
-  textExtractionService,
-  type ExtractedText,
-} from '../document/text-extraction.service'
+import { textExtractionService, type ExtractedText } from '../document/text-extraction.service'
 
 const PLACEHOLDER_PREFIXES = ['[Unsupported', '[Binary']
 
@@ -39,7 +36,11 @@ export async function prepareIntegrationContentForSync(
   }
 
   try {
-    const extracted = await extractor.extractText(content.rawContent, content.mimeType, content.title)
+    const extracted = await extractor.extractText(
+      content.rawContent,
+      content.mimeType,
+      content.title
+    )
     const normalizedText = extracted.text.trim()
 
     if (!normalizedText) {

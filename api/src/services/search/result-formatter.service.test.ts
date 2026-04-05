@@ -10,7 +10,8 @@ test('search collapses duplicate extension captures from the same page into the 
       title: 'StatsTerminal',
       url: 'https://www.statsterminal.com/dashboard?session=alpha',
       timestamp: 1712200000,
-      content: 'StatsTerminal dashboard with positions, pnl, market breadth, sector map, alerts, and option chain.',
+      content:
+        'StatsTerminal dashboard with positions, pnl, market breadth, sector map, alerts, and option chain.',
       content_preview: 'Positions, pnl, breadth, and alerts.',
       score: 0.93,
       final_score: 0.93,

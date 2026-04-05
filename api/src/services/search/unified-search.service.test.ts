@@ -97,7 +97,9 @@ test('organization search returns every matching result when no limit is provide
   const memoryIds = Array.from({ length: totalMatches }, (_, index) => `memory-${index + 1}`)
   let observedLimit: number | null = null
 
-  aiProvider.generateEmbedding = (async () => [0.1, 0.2, 0.3]) as typeof aiProvider.generateEmbedding
+  aiProvider.generateEmbedding = (async () => [
+    0.1, 0.2, 0.3,
+  ]) as typeof aiProvider.generateEmbedding
 
   qdrantClient.getCollections = (async () => ({
     collections: [{ name: COLLECTION_NAME }],
@@ -122,10 +124,7 @@ test('organization search returns every matching result when no limit is provide
     },
   })) as unknown as typeof qdrantClient.getCollection
 
-  qdrantClient.search = (async (
-    _collectionName: unknown,
-    options: { limit?: number }
-  ) => {
+  qdrantClient.search = (async (_collectionName: unknown, options: { limit?: number }) => {
     observedLimit = options.limit as number
     return memoryIds.map((memoryId, index) => ({
       id: memoryId,

@@ -42,7 +42,9 @@ export function OrganizationSummaryMarkdown({
             {children}
           </ol>
         ),
-        li: ({ children }) => <li className="pl-1 leading-relaxed">{children}</li>,
+        li: ({ children }) => (
+          <li className="pl-1 leading-relaxed">{children}</li>
+        ),
         strong: ({ children }) => (
           <strong className="font-semibold text-gray-900">{children}</strong>
         ),

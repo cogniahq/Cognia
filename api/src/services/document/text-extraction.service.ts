@@ -5,11 +5,7 @@ import path from 'node:path'
 import { tmpdir } from 'node:os'
 import { promisify } from 'node:util'
 
-import {
-  getGenerationProvider,
-  getGeminiVisionModel,
-  getOpenAIVisionModel,
-} from '../ai/ai-config'
+import { getGenerationProvider, getGeminiVisionModel, getOpenAIVisionModel } from '../ai/ai-config'
 import { aiProvider } from '../ai/ai-provider.service'
 
 const execFileAsync = promisify(execFile)
@@ -254,7 +250,10 @@ If there is no readable text, respond exactly with ${OCR_EMPTY_SENTINEL} and not
       return ''
     }
 
-    const normalized = trimmed.replace(/```(?:text)?\n?/gi, '').replace(/```/g, '').trim()
+    const normalized = trimmed
+      .replace(/```(?:text)?\n?/gi, '')
+      .replace(/```/g, '')
+      .trim()
     if (
       normalized.toUpperCase() === OCR_EMPTY_SENTINEL ||
       normalized.toUpperCase() === `${OCR_EMPTY_SENTINEL}.` ||

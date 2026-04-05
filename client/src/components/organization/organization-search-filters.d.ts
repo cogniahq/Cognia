@@ -10,4 +10,6 @@ export function getOrganizationSearchSourceTypes(
   filterId?: string | null
 ): string[] | undefined
 
-export function getOrganizationSearchFilterLabel(filterId?: string | null): string
+export function getOrganizationSearchFilterLabel(
+  filterId?: string | null
+): string

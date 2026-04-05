@@ -96,10 +96,17 @@ export class PlatformAuthService {
       headers['x-platform-actor-external-user-id'],
       'x-platform-actor-external-user-id'
     )
-    const actorEmail = this.requireSingleHeader(headers['x-platform-actor-email'], 'x-platform-actor-email')
-    const actorRole = this.requireSingleHeader(headers['x-platform-actor-role'], 'x-platform-actor-role')
+    const actorEmail = this.requireSingleHeader(
+      headers['x-platform-actor-email'],
+      'x-platform-actor-email'
+    )
+    const actorRole = this.requireSingleHeader(
+      headers['x-platform-actor-role'],
+      'x-platform-actor-role'
+    )
     const requestId =
-      this.getSingleHeader(headers['x-platform-request-id']) || `req_${randomUUID().replace(/-/g, '')}`
+      this.getSingleHeader(headers['x-platform-request-id']) ||
+      `req_${randomUUID().replace(/-/g, '')}`
 
     return {
       tenantExternalId,

@@ -245,7 +245,8 @@ export class MemoryIngestionService {
         context.title ||
         (typeof flattenedMetadata.title === 'string' ? flattenedMetadata.title : undefined),
       url:
-        context.url || (typeof flattenedMetadata.url === 'string' ? flattenedMetadata.url : undefined),
+        context.url ||
+        (typeof flattenedMetadata.url === 'string' ? flattenedMetadata.url : undefined),
       source:
         context.source ||
         (typeof flattenedMetadata.source === 'string' ? flattenedMetadata.source : undefined),

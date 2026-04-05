@@ -6,13 +6,11 @@ const SUMMARY_LOADING_STEPS = [
   },
   {
     label: "Linking citations",
-    description:
-      "Matching each claim back to the exact files that support it.",
+    description: "Matching each claim back to the exact files that support it.",
   },
   {
     label: "Drafting summary",
-    description:
-      "Assembling a concise answer from the retrieved evidence.",
+    description: "Assembling a concise answer from the retrieved evidence.",
   },
 ]
 
@@ -51,7 +49,11 @@ export function getOrganizationSearchLoadingState(input) {
   const queryLabel = normalizeLabel(input?.query)
   const filterLabel = normalizeLabel(input?.filterLabel) || "All Sources"
   const uniqueSourceMix = Array.from(
-    new Set(results.map((result) => getSourceTypeLabel(result?.sourceType)).filter(Boolean))
+    new Set(
+      results
+        .map((result) => getSourceTypeLabel(result?.sourceType))
+        .filter(Boolean)
+    )
   )
   const uniqueSourceLabels = Array.from(
     new Set(results.map((result) => getSourceLabel(result)).filter(Boolean))

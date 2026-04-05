@@ -41,11 +41,14 @@ export class PlatformDocumentService {
     })
   }
 
-  async uploadSessionContent(sessionId: string, file: {
-    buffer: Buffer
-    mimetype: string
-    size: number
-  }) {
+  async uploadSessionContent(
+    sessionId: string,
+    file: {
+      buffer: Buffer
+      mimetype: string
+      size: number
+    }
+  ) {
     const session = await prisma.platformUploadSession.findUnique({
       where: { id: sessionId },
     })

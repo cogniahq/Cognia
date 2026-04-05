@@ -30,8 +30,7 @@ export function getVisibleOrganizationSearchCitations(input) {
     if (!existing) {
       const groupedCitation = {
         ...citation,
-        indices:
-          typeof citation?.index === "number" ? [citation.index] : [],
+        indices: typeof citation?.index === "number" ? [citation.index] : [],
       }
       citationMap.set(key, groupedCitation)
       deduplicated.push(groupedCitation)

@@ -26,11 +26,15 @@ export function getOrganizationSearchFilters() {
 }
 
 export function getOrganizationSearchSourceTypes(filterId) {
-  const filter = ORGANIZATION_SEARCH_FILTERS.find((entry) => entry.id === filterId)
+  const filter = ORGANIZATION_SEARCH_FILTERS.find(
+    (entry) => entry.id === filterId
+  )
   return filter?.sourceTypes
 }
 
 export function getOrganizationSearchFilterLabel(filterId) {
-  const filter = ORGANIZATION_SEARCH_FILTERS.find((entry) => entry.id === filterId)
+  const filter = ORGANIZATION_SEARCH_FILTERS.find(
+    (entry) => entry.id === filterId
+  )
   return filter?.label || ORGANIZATION_SEARCH_FILTERS[0].label
 }

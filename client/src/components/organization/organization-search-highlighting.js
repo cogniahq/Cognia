@@ -59,8 +59,7 @@ export function getOrganizationSearchHighlightTerms(query) {
     return []
   }
 
-  const tokens =
-    query.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*/g) || []
+  const tokens = query.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*/g) || []
   const seen = new Set()
   const terms = []
 
@@ -94,9 +93,7 @@ export function buildOrganizationSearchHighlights(text, query) {
     return [{ text, isMatch: false }]
   }
 
-  const pattern = terms
-    .map(term => `\\b${escapeRegex(term)}\\b`)
-    .join("|")
+  const pattern = terms.map((term) => `\\b${escapeRegex(term)}\\b`).join("|")
   const regex = new RegExp(pattern, "gi")
   const segments = []
 

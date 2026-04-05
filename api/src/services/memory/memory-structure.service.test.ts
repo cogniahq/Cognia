@@ -106,8 +106,5 @@ test('memory ingestion normalizes source timestamps to Unix seconds', () => {
   })
 
   assert.equal(memory.timestamp, BigInt(1_711_987_200))
-  assert.equal(
-    (memory.page_metadata as { timestamp?: number }).timestamp,
-    1_711_987_200
-  )
+  assert.equal((memory.page_metadata as { timestamp?: number }).timestamp, 1_711_987_200)
 })

@@ -1,5 +1,5 @@
 export function getRenderableOrganizationAnswer(answer) {
-  if (typeof answer !== 'string') {
+  if (typeof answer !== "string") {
     return null
   }
 

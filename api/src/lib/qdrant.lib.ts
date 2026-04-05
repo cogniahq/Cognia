@@ -73,9 +73,7 @@ export async function ensureCollection(): Promise<void> {
 
       try {
         const collectionInfo = await qdrantClient.getCollection(COLLECTION_NAME)
-        const vectorConfig = collectionInfo.config?.params?.vectors as
-          | { size?: number }
-          | undefined
+        const vectorConfig = collectionInfo.config?.params?.vectors as { size?: number } | undefined
         const collectionVectorSize =
           typeof vectorConfig?.size === 'number' ? vectorConfig.size : undefined
 

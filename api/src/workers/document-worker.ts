@@ -122,9 +122,7 @@ export const startDocumentWorker = () => {
                   extractedEntities: structuredMetadata.extractedEntities,
                   retrievalText: structuredMetadata.retrievalText,
                   ingestionVersion: structuredMetadata.ingestionVersion,
-                  ...(structuredMetadata.commerce
-                    ? { commerce: structuredMetadata.commerce }
-                    : {}),
+                  ...(structuredMetadata.commerce ? { commerce: structuredMetadata.commerce } : {}),
                   documentId,
                   chunkIndex: chunk.chunkIndex,
                   pageNumber: chunk.pageNumber,

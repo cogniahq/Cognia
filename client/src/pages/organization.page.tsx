@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 import { useAuth } from "@/contexts/auth.context"
 import { useOrganization } from "@/contexts/organization.context"
 import {
@@ -8,6 +7,7 @@ import {
   type OrgSyncSettings,
 } from "@/services/integration/integration.service"
 import { requireAuthToken } from "@/utils/auth"
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 import { Loader2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
@@ -26,7 +26,7 @@ import {
   fadeUpVariants,
   staggerContainerVariants,
   tabContentVariants,
-} from "@/components/shared/site-motion"
+} from "@/components/shared/site-motion-variants"
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
@@ -545,9 +545,7 @@ export function Organization() {
 
               {activeTab === "members" && <MemberManagement />}
 
-              {activeTab === "settings" && isAdmin && (
-                <OrganizationSettings />
-              )}
+              {activeTab === "settings" && isAdmin && <OrganizationSettings />}
             </motion.div>
           </AnimatePresence>
         </motion.div>

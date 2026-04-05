@@ -1,10 +1,9 @@
 import React, { useMemo } from "react"
 import { motion } from "framer-motion"
 
-import {
-  AnimatedStagger,
-  fadeUpVariants,
-} from "@/components/shared/site-motion"
+import { AnimatedStagger } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
+
 import { Section } from "./Section"
 
 export const FlowSection: React.FC = () => {

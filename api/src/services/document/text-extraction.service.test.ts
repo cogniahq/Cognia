@@ -48,7 +48,7 @@ function mockVisionResponse(response: string): { restore: () => void; prompts: s
   const prompts: string[] = []
   const original = aiProvider.generateContentWithImage
 
-  aiProvider.generateContentWithImage = async (prompt, _imageBase64, _mimeType) => {
+  aiProvider.generateContentWithImage = async prompt => {
     prompts.push(prompt)
     return response
   }

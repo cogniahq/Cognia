@@ -1,10 +1,9 @@
 import React from "react"
 import { motion } from "framer-motion"
 
-import {
-  AnimatedStagger,
-  fadeUpVariants,
-} from "@/components/shared/site-motion"
+import { AnimatedStagger } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
+
 import { Section } from "./Section"
 import { WaitlistForm } from "./WaitlistForm"
 
@@ -40,7 +39,10 @@ export const HeroSection: React.FC = () => {
           </motion.p>
 
           {/* Waitlist Form and Self-Host Option */}
-          <motion.div className="mt-6 sm:mt-8 lg:mt-10" variants={fadeUpVariants}>
+          <motion.div
+            className="mt-6 sm:mt-8 lg:mt-10"
+            variants={fadeUpVariants}
+          >
             <div className="max-w-md mx-auto space-y-3 sm:space-y-4 px-2 sm:px-0">
               <WaitlistForm compact />
               <div className="flex items-center gap-3 sm:gap-4">

@@ -1,7 +1,7 @@
 import React from "react"
 import { motion } from "framer-motion"
 
-import { fadeUpVariants } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
 export const Footer: React.FC = () => {
   return (

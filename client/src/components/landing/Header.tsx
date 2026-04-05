@@ -1,7 +1,8 @@
 import React from "react"
 import { motion } from "framer-motion"
 
-import { fadeUpVariants } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
+
 import { Navbar } from "./Navbar"
 
 export const Header: React.FC = () => {

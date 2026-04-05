@@ -1,4 +1,4 @@
-import { AccountType, OrgRole, Prisma } from '@prisma/client'
+import { AccountType } from '@prisma/client'
 
 import { prisma } from '../../lib/prisma.lib'
 import type {
@@ -17,27 +17,35 @@ function slugify(input: string): string {
 }
 
 export class PlatformSyncService {
-  private async buildUniqueOrganizationSlug(baseInput: string, organizationId?: string): Promise<string> {
+  private async buildUniqueOrganizationSlug(
+    baseInput: string,
+    organizationId?: string
+  ): Promise<string> {
     const base = slugify(baseInput) || 'platform-tenant'
     let candidate = base
-    let suffix = 1
+    let suffix = 2
+    let existing = await prisma.organization.findFirst({
+      where: {
+        slug: candidate,
+        ...(organizationId ? { NOT: { id: organizationId } } : {}),
+      },
+      select: { id: true },
+    })
 
-    while (true) {
-      const existing = await prisma.organization.findFirst({
+    while (existing) {
+      candidate = `${base}-${suffix}`
+      suffix += 1
+
+      existing = await prisma.organization.findFirst({
         where: {
           slug: candidate,
           ...(organizationId ? { NOT: { id: organizationId } } : {}),
         },
         select: { id: true },
       })
-
-      if (!existing) {
-        return candidate
-      }
-
-      suffix += 1
-      candidate = `${base}-${suffix}`
     }
+
+    return candidate
   }
 
   async upsertTenant(appId: string, tenant: PlatformTenantRef) {

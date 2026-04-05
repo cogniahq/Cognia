@@ -1,28 +1,28 @@
 import { useCallback, useEffect, useState } from "react"
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 import { useOrganization } from "@/contexts/organization.context"
 import * as organizationService from "@/services/organization/organization.service"
 import type { DocumentPreviewData } from "@/services/organization/organization.service"
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 
 import type { OrganizationSearchResponse } from "@/types/organization"
 import { DocumentPreviewModal } from "@/components/ui/document-preview-modal"
-import { getOrganizationAnswerState } from "@/components/organization/organization-answer-state"
 import { getOrganizationAnswerDeliveryMode } from "@/components/organization/organization-answer-delivery"
-import { OrganizationSummaryMarkdown } from "@/components/organization/OrganizationSummaryMarkdown"
+import { getOrganizationAnswerState } from "@/components/organization/organization-answer-state"
+import { getVisibleOrganizationSearchCitations } from "@/components/organization/organization-search-citations"
 import {
   getOrganizationSearchFilterLabel,
   getOrganizationSearchFilters,
   getOrganizationSearchSourceTypes,
 } from "@/components/organization/organization-search-filters"
 import { getOrganizationSearchSectionOrder } from "@/components/organization/organization-search-layout"
-import { getVisibleOrganizationSearchCitations } from "@/components/organization/organization-search-citations"
 import { getOrganizationSearchLoadingState } from "@/components/organization/organization-search-loading"
 import { getVisibleOrganizationSearchResults } from "@/components/organization/organization-search-results"
 import { getOrganizationSearchState } from "@/components/organization/organization-search-state"
+import { OrganizationSummaryMarkdown } from "@/components/organization/OrganizationSummaryMarkdown"
 import {
   fadeUpVariants,
   staggerContainerVariants,
-} from "@/components/shared/site-motion"
+} from "@/components/shared/site-motion-variants"
 
 function mapAnswerJobCitations(
   citations: organizationService.AnswerJobResult["citations"]
@@ -212,7 +212,9 @@ export function OrganizationSearch() {
       }
     }
 
-    const updateCompletedAnswer = (job: organizationService.AnswerJobResult) => {
+    const updateCompletedAnswer = (
+      job: organizationService.AnswerJobResult
+    ) => {
       setSummaryError("")
       setResults((currentResults) => {
         if (!currentResults || currentResults.answerJobId !== jobId) {
@@ -358,7 +360,11 @@ export function OrganizationSearch() {
                     <motion.span
                       layoutId="organization-search-filter-pill"
                       className="absolute inset-0 bg-gray-900"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
                   )}
                   <span className="relative z-10">{filter.label}</span>
@@ -482,174 +488,178 @@ export function OrganizationSearch() {
                       )}
                     </>
                   ) : answerState.shouldPoll ? (
-                      <div className="relative overflow-hidden border border-gray-200 bg-gradient-to-br from-white via-stone-50 to-gray-50 p-4 sm:p-5">
-                        <motion.div
-                          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gray-900 to-transparent"
-                          animate={{
-                            opacity: [0.2, 0.75, 0.2],
-                            scaleX: [0.75, 1, 0.75],
-                          }}
-                          transition={{
-                            duration: 1.8,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                          }}
-                        />
+                    <div className="relative overflow-hidden border border-gray-200 bg-gradient-to-br from-white via-stone-50 to-gray-50 p-4 sm:p-5">
+                      <motion.div
+                        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gray-900 to-transparent"
+                        animate={{
+                          opacity: [0.2, 0.75, 0.2],
+                          scaleX: [0.75, 1, 0.75],
+                        }}
+                        transition={{
+                          duration: 1.8,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      />
 
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-gray-500">
-                              <span>Summary Pipeline</span>
-                              {summaryLoadingState.queryLabel && (
-                                <span className="rounded-full border border-gray-200 bg-white px-2 py-1 normal-case tracking-normal text-gray-600">
-                                  {summaryLoadingState.queryLabel}
-                                </span>
-                              )}
-                            </div>
-
-                            <AnimatePresence mode="wait">
-                              <motion.div
-                                key={`${summaryLoadingState.activeStepIndex}-${summaryLoadingState.activeStep.label}`}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.24 }}
-                                className="mt-3"
-                              >
-                                <p className="text-lg font-medium text-gray-900">
-                                  {summaryLoadingState.activeStep.label}
-                                </p>
-                                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-600">
-                                  {summaryLoadingState.activeStep.description}
-                                </p>
-                              </motion.div>
-                            </AnimatePresence>
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-gray-500">
+                            <span>Summary Pipeline</span>
+                            {summaryLoadingState.queryLabel && (
+                              <span className="rounded-full border border-gray-200 bg-white px-2 py-1 normal-case tracking-normal text-gray-600">
+                                {summaryLoadingState.queryLabel}
+                              </span>
+                            )}
                           </div>
 
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${summaryLoadingState.activeStepIndex}-${summaryLoadingState.activeStep.label}`}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -8 }}
+                              transition={{ duration: 0.24 }}
+                              className="mt-3"
+                            >
+                              <p className="text-lg font-medium text-gray-900">
+                                {summaryLoadingState.activeStep.label}
+                              </p>
+                              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-600">
+                                {summaryLoadingState.activeStep.description}
+                              </p>
+                            </motion.div>
+                          </AnimatePresence>
+                        </div>
+
+                        <motion.div
+                          className="flex min-w-[88px] flex-col items-end gap-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <span className="text-xs font-mono text-gray-400">
+                            {summaryLoadingState.progressLabel}
+                          </span>
+                          <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200">
+                            <motion.div
+                              className="h-full rounded-full bg-gray-900"
+                              animate={{
+                                width: `${summaryLoadingState.progressValue * 100}%`,
+                              }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 220,
+                                damping: 24,
+                              }}
+                            />
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      <motion.div
+                        className="mt-5 grid gap-3 sm:grid-cols-3"
+                        initial="initial"
+                        animate="animate"
+                        variants={staggerContainerVariants}
+                      >
+                        {summaryLoadingState.metrics.map((metric) => (
                           <motion.div
-                            className="flex min-w-[88px] flex-col items-end gap-2"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
+                            key={metric.label}
+                            className="rounded-xl border border-gray-200 bg-white/90 px-3 py-3"
+                            variants={fadeUpVariants}
                           >
-                            <span className="text-xs font-mono text-gray-400">
-                              {summaryLoadingState.progressLabel}
-                            </span>
-                            <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200">
-                              <motion.div
-                                className="h-full rounded-full bg-gray-900"
-                                animate={{
-                                  width: `${summaryLoadingState.progressValue * 100}%`,
-                                }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 220,
-                                  damping: 24,
-                                }}
-                              />
+                            <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
+                              {metric.label}
+                            </div>
+                            <div className="mt-1 text-sm font-medium text-gray-800">
+                              {metric.value}
                             </div>
                           </motion.div>
-                        </div>
+                        ))}
+                      </motion.div>
 
-                        <motion.div
-                          className="mt-5 grid gap-3 sm:grid-cols-3"
-                          initial="initial"
-                          animate="animate"
-                          variants={staggerContainerVariants}
-                        >
-                          {summaryLoadingState.metrics.map((metric) => (
-                            <motion.div
-                              key={metric.label}
-                              className="rounded-xl border border-gray-200 bg-white/90 px-3 py-3"
-                              variants={fadeUpVariants}
-                            >
-                              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
-                                {metric.label}
-                              </div>
-                              <div className="mt-1 text-sm font-medium text-gray-800">
-                                {metric.value}
-                              </div>
-                            </motion.div>
-                          ))}
-                        </motion.div>
-
-                        {summaryLoadingState.sourceLabels.length > 0 && (
-                          <div className="mt-5">
-                            <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
-                              Active Evidence
-                            </div>
-                            <motion.div
-                              className="mt-2 flex flex-wrap gap-2"
-                              initial="initial"
-                              animate="animate"
-                              variants={staggerContainerVariants}
-                            >
-                              {summaryLoadingState.sourceLabels.map((label) => (
-                                <motion.span
-                                  key={label}
-                                  className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono text-gray-600"
-                                  variants={fadeUpVariants}
-                                  animate={{
-                                    y: [0, -2, 0],
-                                  }}
-                                  transition={{
-                                    duration: 2.2,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
-                                  }}
-                                >
-                                  {label}
-                                </motion.span>
-                              ))}
-                              {summaryLoadingState.remainingSourceCount > 0 && (
-                                <motion.span
-                                  className="rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-xs font-mono text-gray-500"
-                                  variants={fadeUpVariants}
-                                >
-                                  +{summaryLoadingState.remainingSourceCount} more
-                                </motion.span>
-                              )}
-                            </motion.div>
+                      {summaryLoadingState.sourceLabels.length > 0 && (
+                        <div className="mt-5">
+                          <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
+                            Active Evidence
                           </div>
-                        )}
-
-                        <div className="mt-5 space-y-2">
-                          {summaryLoadingState.steps.map((step) => (
-                            <div
-                              key={step.label}
-                              className="flex items-center gap-3 text-sm text-gray-500"
-                            >
+                          <motion.div
+                            className="mt-2 flex flex-wrap gap-2"
+                            initial="initial"
+                            animate="animate"
+                            variants={staggerContainerVariants}
+                          >
+                            {summaryLoadingState.sourceLabels.map((label) => (
                               <motion.span
-                                className={`h-2.5 w-2.5 rounded-full ${
-                                  step.isActive
-                                    ? "bg-gray-900"
-                                    : step.isComplete
-                                      ? "bg-gray-500"
-                                      : "bg-gray-300"
-                                }`}
-                                animate={
-                                  step.isActive
-                                    ? { scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }
-                                    : { scale: 1, opacity: 1 }
-                                }
+                                key={label}
+                                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono text-gray-600"
+                                variants={fadeUpVariants}
+                                animate={{
+                                  y: [0, -2, 0],
+                                }}
                                 transition={{
-                                  duration: 1.2,
-                                  repeat: step.isActive ? Infinity : 0,
+                                  duration: 2.2,
+                                  repeat: Infinity,
                                   ease: "easeInOut",
                                 }}
-                              />
-                              <span className="font-medium text-gray-700">
-                                {step.label}
-                              </span>
-                              <span className="hidden text-gray-400 sm:inline">
-                                {step.description}
-                              </span>
-                            </div>
-                          ))}
+                              >
+                                {label}
+                              </motion.span>
+                            ))}
+                            {summaryLoadingState.remainingSourceCount > 0 && (
+                              <motion.span
+                                className="rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-xs font-mono text-gray-500"
+                                variants={fadeUpVariants}
+                              >
+                                +{summaryLoadingState.remainingSourceCount} more
+                              </motion.span>
+                            )}
+                          </motion.div>
                         </div>
+                      )}
 
-                        <div className="mt-5 space-y-2">
-                          {summaryLoadingState.skeletonWidths.map((width, index) => (
+                      <div className="mt-5 space-y-2">
+                        {summaryLoadingState.steps.map((step) => (
+                          <div
+                            key={step.label}
+                            className="flex items-center gap-3 text-sm text-gray-500"
+                          >
+                            <motion.span
+                              className={`h-2.5 w-2.5 rounded-full ${
+                                step.isActive
+                                  ? "bg-gray-900"
+                                  : step.isComplete
+                                    ? "bg-gray-500"
+                                    : "bg-gray-300"
+                              }`}
+                              animate={
+                                step.isActive
+                                  ? {
+                                      scale: [1, 1.35, 1],
+                                      opacity: [0.7, 1, 0.7],
+                                    }
+                                  : { scale: 1, opacity: 1 }
+                              }
+                              transition={{
+                                duration: 1.2,
+                                repeat: step.isActive ? Infinity : 0,
+                                ease: "easeInOut",
+                              }}
+                            />
+                            <span className="font-medium text-gray-700">
+                              {step.label}
+                            </span>
+                            <span className="hidden text-gray-400 sm:inline">
+                              {step.description}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-5 space-y-2">
+                        {summaryLoadingState.skeletonWidths.map(
+                          (width, index) => (
                             <motion.div
                               key={width}
                               className="h-2 rounded-full bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
@@ -665,17 +675,18 @@ export function OrganizationSearch() {
                               }}
                               style={{ width }}
                             />
-                          ))}
-                        </div>
+                          )
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        {summaryError || "Summary unavailable."}
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
-              )
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      {summaryError || "Summary unavailable."}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )
           })}
 
           {results.results.length === 0 && (
@@ -697,8 +708,8 @@ export function OrganizationSearch() {
                 : "Search Your Browsing Memories"}
             </div>
             <p className="text-xs text-gray-500 max-w-sm mx-auto mb-6">
-              Ask questions in natural language and review the fetched
-              document content directly.
+              Ask questions in natural language and review the fetched document
+              content directly.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {[

@@ -1,10 +1,10 @@
 import React from "react"
-import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/auth.context"
+import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 
 import BriefingBadge from "@/components/briefing/BriefingBadge"
-import { fadeUpVariants } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
 function LogoutButton() {
   const { logout } = useAuth()

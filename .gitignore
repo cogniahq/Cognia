@@ -112,3 +112,7 @@ hyperindex/.envio/
 hyperindex/docker-compose.override.yml
 hyperindex/volumes/
 hyperindex/data/
+
+# Local temp artifacts
+tmp/
+client/test-results/

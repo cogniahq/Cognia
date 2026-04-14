@@ -10,6 +10,7 @@ import { logger } from '../../utils/core/logger.util'
 import { MemorySearchController } from './memory-search.controller'
 import { SearchEndpointsController } from './search-endpoints.controller'
 import { SourceType } from '@prisma/client'
+import { sanitizeSearchMetadataFilters } from '../../config/domain-packs'
 
 export class SearchController {
   // Main search endpoints
@@ -287,7 +288,8 @@ export class SearchController {
    */
   static async searchOrganization(req: OrganizationRequest, res: Response, next: NextFunction) {
     try {
-      const { query, limit, sourceTypes, includeAnswer } = req.body || {}
+      const { query, limit, sourceTypes, includeAnswer, metadataFilters: rawMetadataFilters } =
+        req.body || {}
 
       if (!query) {
         return next(new AppError('query is required', 400))
@@ -313,6 +315,7 @@ export class SearchController {
         typeof limit === 'number' && Number.isFinite(limit) && limit > 0
           ? Math.floor(limit)
           : undefined
+      const metadataFilters = sanitizeSearchMetadataFilters(rawMetadataFilters)
 
       const result = await unifiedSearchService.search({
         organizationId: req.organization.id,
@@ -321,6 +324,7 @@ export class SearchController {
         limit: parsedLimit,
         includeAnswer: includeAnswer !== false,
         userId, // Include user's personal browsing data
+        metadataFilters,
       })
 
       // Check if response was already sent (e.g., by timeout handler)

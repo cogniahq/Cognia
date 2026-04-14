@@ -8,6 +8,10 @@ import React, {
 
 import * as organizationService from "../services/organization/organization.service"
 import type {
+  DomainDocumentMetadata,
+  DomainPackId,
+} from "../lib/domain-packs"
+import type {
   Document,
   OrganizationMember,
   OrganizationWithRole,
@@ -27,7 +31,8 @@ interface OrganizationContextType {
     name: string,
     description?: string,
     industry?: string,
-    teamSize?: string
+    teamSize?: string,
+    domainPack?: DomainPackId
   ) => Promise<OrganizationWithRole>
   deleteOrganization: (slug: string) => Promise<void>
 
@@ -47,7 +52,7 @@ interface OrganizationContextType {
   // Documents
   documents: Document[]
   loadDocuments: () => Promise<void>
-  uploadDocument: (file: File) => Promise<Document>
+  uploadDocument: (file: File, metadata?: DomainDocumentMetadata) => Promise<Document>
   deleteDocument: (
     documentId: string,
     type?: "document" | "integration"
@@ -124,7 +129,8 @@ export function OrganizationProvider({
       name: string,
       description?: string,
       industry?: string,
-      teamSize?: string
+      teamSize?: string,
+      domainPack?: DomainPackId
     ) => {
       setIsLoading(true)
       setError(null)
@@ -134,6 +140,7 @@ export function OrganizationProvider({
           description,
           industry,
           teamSize,
+          domainPack,
         })
         const orgWithRole: OrganizationWithRole = {
           ...org,
@@ -241,11 +248,12 @@ export function OrganizationProvider({
   }, [currentOrganization])
 
   const uploadDocument = useCallback(
-    async (file: File) => {
+    async (file: File, metadata?: DomainDocumentMetadata) => {
       if (!currentOrganization) throw new Error("No organization selected")
       const doc = await organizationService.uploadDocument(
         currentOrganization.slug,
-        file
+        file,
+        metadata
       )
       setDocuments((prev) => [doc, ...prev])
       return doc

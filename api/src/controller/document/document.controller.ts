@@ -5,6 +5,7 @@ import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import AppError from '../../utils/http/app-error.util'
 import { DocumentStatus, SourceType } from '@prisma/client'
+import { sanitizeDomainDocumentMetadata, type DomainPackId } from '../../config/domain-packs'
 
 // Supported MIME types for document upload
 const SUPPORTED_MIME_TYPES = [
@@ -19,6 +20,19 @@ const SUPPORTED_MIME_TYPES = [
 ]
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
+function parseUploadMetadata(input: unknown, packId: DomainPackId) {
+  if (typeof input !== 'string' || !input.trim()) {
+    return sanitizeDomainDocumentMetadata({}, packId)
+  }
+
+  try {
+    const parsed = JSON.parse(input) as Record<string, unknown>
+    return sanitizeDomainDocumentMetadata(parsed, packId)
+  } catch {
+    throw new AppError('metadata must be valid JSON', 400)
+  }
+}
 
 export class DocumentController {
   /**
@@ -46,9 +60,12 @@ export class DocumentController {
         return next(new AppError('File size exceeds maximum limit of 50MB', 400))
       }
 
+      const metadata = parseUploadMetadata(req.body?.metadata, req.organization!.domain_pack)
+
       const document = await documentService.uploadDocument({
         organizationId: req.organization!.id,
         uploaderId: req.user!.id,
+        metadata,
         file: {
           buffer: file.buffer,
           originalname: file.originalname,
@@ -68,12 +85,17 @@ export class DocumentController {
             mime_type: document.mime_type,
             size_bytes: document.file_size,
             status: document.status,
+            metadata: document.metadata,
             created_at: document.created_at,
             updated_at: document.updated_at,
           },
         },
       })
     } catch (error) {
+      if (error instanceof AppError) {
+        return next(error)
+      }
+
       logger.error('[document] Upload error', {
         error: error instanceof Error ? error.message : String(error),
         organizationId: req.organization?.id,

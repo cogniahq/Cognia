@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+import {
+  getDomainMetadataBadges,
+  normalizeDomainPack,
+} from "@/lib/domain-packs"
 
 import type { Document } from "@/types/organization"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
@@ -184,6 +188,9 @@ export function DocumentList() {
           // Get uploader info from metadata if available
           const uploaderName = doc.metadata?.uploader_name as string | undefined
           const uploaderRole = doc.metadata?.uploader_role as string | undefined
+          const domainPack = normalizeDomainPack(currentOrganization?.domain_pack)
+          const metadataBadges = getDomainMetadataBadges(domainPack, doc.metadata)
+          const engagementName = doc.metadata?.engagementName as string | undefined
 
           return (
             <div
@@ -217,6 +224,23 @@ export function DocumentList() {
                 {doc.page_count && (
                   <div className="text-xs font-mono text-gray-400 mt-0.5">
                     {doc.page_count} page{doc.page_count !== 1 && "s"}
+                  </div>
+                )}
+                {(metadataBadges.length > 0 || engagementName) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {metadataBadges.map((badge) => (
+                      <span
+                        key={`${doc.id}-${badge.key}`}
+                        className="border border-gray-200 px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-gray-500"
+                      >
+                        {badge.label}
+                      </span>
+                    ))}
+                    {engagementName && (
+                      <span className="text-xs text-gray-500 truncate">
+                        {engagementName}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

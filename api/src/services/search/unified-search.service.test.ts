@@ -255,6 +255,138 @@ test('organization search returns a verbatim highlight excerpt alongside retriev
   }
 })
 
+test('organization search applies structured metadata filters to organization results', async () => {
+  const originalGenerateEmbedding = aiProvider.generateEmbedding
+  const originalGetCollections = qdrantClient.getCollections.bind(qdrantClient)
+  const originalGetCollection = qdrantClient.getCollection.bind(qdrantClient)
+  const originalSearch = qdrantClient.search.bind(qdrantClient)
+  const originalCount = prisma.memory.count
+  const originalFindMany = prisma.memory.findMany
+
+  aiProvider.generateEmbedding = (async () => [0.1, 0.2, 0.3]) as typeof aiProvider.generateEmbedding
+
+  qdrantClient.getCollections = (async () => ({
+    collections: [{ name: COLLECTION_NAME }],
+  })) as typeof qdrantClient.getCollections
+
+  qdrantClient.getCollection = (async () => ({
+    status: 'green',
+    optimizer_status: 'ok',
+    segments_count: 1,
+    config: { params: { vectors: { size: 1536 } } },
+    payload_schema: {
+      memory_id: {},
+      embedding_type: {},
+      user_id: {},
+      organization_id: {},
+      source_type: {},
+      document_id: {},
+      matter_id: {},
+      matter_ids: {},
+      client_id: {},
+      external_document_id: {},
+    },
+  })) as unknown as typeof qdrantClient.getCollection
+
+  qdrantClient.search = (async () => [
+    {
+      id: 'memory-1',
+      version: 1,
+      score: 0.99,
+      payload: { memory_id: 'memory-1' },
+    },
+    {
+      id: 'memory-2',
+      version: 1,
+      score: 0.96,
+      payload: { memory_id: 'memory-2' },
+    },
+  ]) as unknown as typeof qdrantClient.search
+
+  prisma.memory.count = (async () => 2) as typeof prisma.memory.count
+
+  prisma.memory.findMany = (async () => [
+    {
+      id: 'memory-1',
+      title: 'ITO v. Example Assessee',
+      content: 'ITAT held in favour of the assessee on the merits.',
+      page_metadata: {
+        domainPack: 'ca-firm',
+        artifactType: 'case-law',
+        authority: 'itat',
+        outcome: 'favourable',
+      } as Record<string, unknown>,
+      source_type: 'DOCUMENT',
+      url: null as string | null,
+      document_chunks: [
+        {
+          chunk_index: 0,
+          page_number: 3,
+          document: {
+            id: 'document-1',
+            original_name: 'ITO v. Example Assessee.pdf',
+          },
+        },
+      ],
+    },
+    {
+      id: 'memory-2',
+      title: 'CIT v. Example Revenue',
+      content: 'High Court ruled against the assessee.',
+      page_metadata: {
+        domainPack: 'ca-firm',
+        artifactType: 'case-law',
+        authority: 'high-court',
+        outcome: 'unfavourable',
+      } as Record<string, unknown>,
+      source_type: 'DOCUMENT',
+      url: null as string | null,
+      document_chunks: [
+        {
+          chunk_index: 0,
+          page_number: 7,
+          document: {
+            id: 'document-2',
+            original_name: 'CIT v. Example Revenue.pdf',
+          },
+        },
+      ],
+    },
+  ]) as unknown as typeof prisma.memory.findMany
+
+  try {
+    const result = await unifiedSearchService.search({
+      organizationId: 'org-1',
+      query: 'find favourable case law for the assessee',
+      includeAnswer: false,
+      metadataFilters: {
+        artifactTypes: ['case-law'],
+        authorities: ['itat'],
+        outcomes: ['favourable'],
+      },
+    })
+
+    assert.equal(result.results.length, 1)
+    assert.equal(result.totalResults, 1)
+    assert.equal(result.results[0]?.memoryId, 'memory-1')
+    assert.equal(
+      (result.results[0]?.metadata as Record<string, unknown> | undefined)?.authority,
+      'itat'
+    )
+    assert.equal(
+      (result.results[0]?.metadata as Record<string, unknown> | undefined)?.outcome,
+      'favourable'
+    )
+  } finally {
+    aiProvider.generateEmbedding = originalGenerateEmbedding
+    qdrantClient.getCollections = originalGetCollections
+    qdrantClient.getCollection = originalGetCollection
+    qdrantClient.search = originalSearch
+    prisma.memory.count = originalCount
+    prisma.memory.findMany = originalFindMany
+  }
+})
+
 test('organization summary answer uses retrieved content when the preview omits the answer', async () => {
   const originalGenerateContent = aiProvider.generateContent
 

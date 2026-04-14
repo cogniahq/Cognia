@@ -12,6 +12,7 @@ import {
 import { generateQueryEmbedding } from './embedding-search.service'
 import { tokenizeQuery } from './query-processor.service'
 import { isRateLimitError } from '../../utils/core/retry.util'
+import type { SearchMetadataFilters } from '../../config/domain-packs'
 
 const ANSWER_CONTEXT_CHARS = 320
 const MAX_ANSWER_RESULTS = 12
@@ -23,7 +24,20 @@ const MAX_FALLBACK_CITATIONS = 5
 type PublicSearchResult = UnifiedSearchResult['results'][number]
 type InternalSearchResult = PublicSearchResult & {
   answerContent: string
+  metadata?: Record<string, unknown>
 }
+
+const SEARCH_METADATA_KEYS = [
+  'domainPack',
+  'artifactType',
+  'engagementName',
+  'engagementType',
+  'authority',
+  'forum',
+  'outcome',
+  'practiceArea',
+  'tags',
+] as const
 
 export interface UnifiedSearchOptions {
   organizationId: string
@@ -32,6 +46,7 @@ export interface UnifiedSearchOptions {
   limit?: number
   includeAnswer?: boolean
   userId?: string // Include user's personal extension data in search
+  metadataFilters?: SearchMetadataFilters
 }
 
 export interface UnifiedSearchResult {
@@ -48,6 +63,7 @@ export interface UnifiedSearchResult {
     sourceType: SourceType
     title?: string
     url?: string
+    metadata?: Record<string, unknown>
   }>
   answer?: string
   citations?: Array<{
@@ -63,6 +79,59 @@ export interface UnifiedSearchResult {
 }
 
 export class UnifiedSearchService {
+  private pickResultMetadata(pageMetadata: Record<string, unknown>): Record<string, unknown> | undefined {
+    const metadataEntries = SEARCH_METADATA_KEYS.flatMap(key => {
+      const value = pageMetadata[key]
+      if (value === undefined || value === null) {
+        return []
+      }
+
+      if (typeof value === 'string' && !value.trim()) {
+        return []
+      }
+
+      if (Array.isArray(value) && value.length === 0) {
+        return []
+      }
+
+      return [[key, value] as const]
+    })
+
+    return metadataEntries.length > 0 ? Object.fromEntries(metadataEntries) : undefined
+  }
+
+  private matchesMetadataFilter(
+    candidate: unknown,
+    allowedValues: string[] | undefined
+  ): boolean {
+    if (!allowedValues || allowedValues.length === 0) {
+      return true
+    }
+
+    if (typeof candidate !== 'string') {
+      return false
+    }
+
+    return allowedValues.includes(candidate.toLowerCase())
+  }
+
+  private matchesMetadataFilters(
+    metadata: Record<string, unknown> | undefined,
+    filters: SearchMetadataFilters | undefined
+  ): boolean {
+    if (!filters) {
+      return true
+    }
+
+    return (
+      this.matchesMetadataFilter(metadata?.artifactType, filters.artifactTypes) &&
+      this.matchesMetadataFilter(metadata?.authority, filters.authorities) &&
+      this.matchesMetadataFilter(metadata?.forum, filters.forums) &&
+      this.matchesMetadataFilter(metadata?.outcome, filters.outcomes) &&
+      this.matchesMetadataFilter(metadata?.practiceArea, filters.practiceAreas)
+    )
+  }
+
   private getAnswerQueryTerms(query: string): string[] {
     const semanticTokens = tokenizeQuery(query)
     const sectionTokens =
@@ -430,7 +499,15 @@ export class UnifiedSearchService {
    * Search across organization documents and memories
    */
   async search(options: UnifiedSearchOptions): Promise<UnifiedSearchResult> {
-    const { organizationId, query, sourceTypes, limit, includeAnswer = true, userId } = options
+    const {
+      organizationId,
+      query,
+      sourceTypes,
+      limit,
+      includeAnswer = true,
+      userId,
+      metadataFilters,
+    } = options
 
     await ensureCollection()
 
@@ -543,6 +620,7 @@ export class UnifiedSearchService {
         const score = memoryScores.get(memory.id) || 0
         const rawContent = memory.content || ''
         const pageMetadata = normalizePageMetadata(memory.page_metadata)
+        const metadata = this.pickResultMetadata(pageMetadata)
         const representativeExcerpt =
           typeof pageMetadata.representativeExcerpt === 'string'
             ? pageMetadata.representativeExcerpt.replace(/\s+/g, ' ').trim()
@@ -572,9 +650,11 @@ export class UnifiedSearchService {
           sourceType: memory.source_type || SourceType.EXTENSION,
           title: memory.title ?? undefined,
           url: memory.url ?? undefined,
+          metadata,
           answerContent: rawContent,
         }
       })
+      .filter(result => this.matchesMetadataFilters(result.metadata, metadataFilters))
       .sort((a, b) => b.score - a.score)
       .slice(0, finalLimit)
 

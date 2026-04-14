@@ -3,6 +3,7 @@ import { OrgRole } from '@prisma/client'
 import { AuthenticatedRequest } from './auth.middleware'
 import { organizationAccessService } from '../services/organization/organization-access.service'
 import { logger } from '../utils/core/logger.util'
+import type { DomainPackId } from '../config/domain-packs'
 
 export interface OrganizationRequest extends AuthenticatedRequest {
   organization?: {
@@ -10,6 +11,7 @@ export interface OrganizationRequest extends AuthenticatedRequest {
     slug: string
     userRole: OrgRole
     plan: string
+    domain_pack: DomainPackId
     // Security settings
     ip_allowlist: string[]
     session_timeout: string
@@ -50,6 +52,7 @@ export async function requireOrganization(
       slug: membership.organization.slug,
       userRole: membership.role,
       plan: membership.organization.plan,
+      domain_pack: membership.organization.domain_pack as DomainPackId,
       // Security settings
       ip_allowlist: membership.organization.ip_allowlist,
       session_timeout: membership.organization.session_timeout,

@@ -8,6 +8,11 @@ import type {
   OrganizationWithRole,
   UpdateMemberRoleRequest,
 } from "../../types/organization"
+import type {
+  DomainDocumentMetadata,
+  DomainPackId,
+  SearchMetadataFilters,
+} from "@/lib/domain-packs"
 import { requireAuthToken } from "../../utils/auth"
 import {
   deleteRequest,
@@ -135,11 +140,15 @@ export async function getOrganizationDocuments(
 
 export async function uploadDocument(
   slug: string,
-  file: File
+  file: File,
+  metadata?: DomainDocumentMetadata
 ): Promise<Document> {
   requireAuthToken()
   const formData = new FormData()
   formData.append("file", file)
+  if (metadata) {
+    formData.append("metadata", JSON.stringify(metadata))
+  }
 
   const { axiosInstance } = await import("../../utils/http")
   const response = await axiosInstance.post(
@@ -227,6 +236,7 @@ export async function searchOrganization(
     limit?: number
     sourceTypes?: string[]
     includeAnswer?: boolean
+    metadataFilters?: SearchMetadataFilters
   }
 ): Promise<OrganizationSearchResponse> {
   requireAuthToken()
@@ -237,6 +247,7 @@ export async function searchOrganization(
       limit: options?.limit,
       sourceTypes: options?.sourceTypes,
       includeAnswer: options?.includeAnswer !== false,
+      metadataFilters: options?.metadataFilters,
     },
     undefined,
     undefined,
@@ -524,6 +535,7 @@ export interface UpdateProfileRequest {
   name?: string
   slug?: string
   description?: string
+  domainPack?: DomainPackId
   logo?: string
   website?: string
   streetAddress?: string

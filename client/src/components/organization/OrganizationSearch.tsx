@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+import {
+  DOMAIN_FILTER_TO_SEARCH_KEY,
+  getDomainMetadataBadges,
+  getDomainPackDefinition,
+  hasActiveSearchMetadataFilters,
+  type SearchMetadataFilters,
+} from "@/lib/domain-packs"
 import * as organizationService from "@/services/organization/organization.service"
 import type { DocumentPreviewData } from "@/services/organization/organization.service"
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
@@ -49,6 +56,9 @@ export function OrganizationSearch() {
   const [error, setError] = useState("")
   const [summaryError, setSummaryError] = useState("")
   const [summaryLoadingPhase, setSummaryLoadingPhase] = useState(0)
+  const [metadataFilters, setMetadataFilters] = useState<SearchMetadataFilters>(
+    {}
+  )
 
   // Document preview state
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -59,9 +69,14 @@ export function OrganizationSearch() {
   )
   const searchFilters = getOrganizationSearchFilters()
   const activeFilterLabel = getOrganizationSearchFilterLabel(activeFilterId)
+  const activePack = getDomainPackDefinition(currentOrganization?.domain_pack)
 
   const runSearch = useCallback(
-    async (trimmedQuery: string, filterId: string) => {
+    async (
+      trimmedQuery: string,
+      filterId: string,
+      nextMetadataFilters?: SearchMetadataFilters
+    ) => {
       if (!currentOrganization) return
 
       setIsSearching(true)
@@ -77,6 +92,11 @@ export function OrganizationSearch() {
           {
             includeAnswer: true,
             sourceTypes: getOrganizationSearchSourceTypes(filterId),
+            metadataFilters: hasActiveSearchMetadataFilters(
+              nextMetadataFilters || metadataFilters
+            )
+              ? nextMetadataFilters || metadataFilters
+              : undefined,
           }
         )
         setResults(searchResults)
@@ -87,7 +107,7 @@ export function OrganizationSearch() {
         setIsSearching(false)
       }
     },
-    [currentOrganization]
+    [currentOrganization, metadataFilters]
   )
 
   const handleSearch = useCallback(
@@ -95,9 +115,9 @@ export function OrganizationSearch() {
       e.preventDefault()
       if (!query.trim() || !currentOrganization) return
       const trimmedQuery = query.trim()
-      await runSearch(trimmedQuery, activeFilterId)
+      await runSearch(trimmedQuery, activeFilterId, metadataFilters)
     },
-    [activeFilterId, currentOrganization, query, runSearch]
+    [activeFilterId, currentOrganization, metadataFilters, query, runSearch]
   )
 
   const handleFilterChange = useCallback(
@@ -113,10 +133,64 @@ export function OrganizationSearch() {
         return
       }
 
-      void runSearch(rerunQuery, nextFilterId)
+      void runSearch(rerunQuery, nextFilterId, metadataFilters)
     },
-    [activeFilterId, currentOrganization, query, runSearch, submittedQuery]
+    [
+      activeFilterId,
+      currentOrganization,
+      metadataFilters,
+      query,
+      runSearch,
+      submittedQuery,
+    ]
   )
+
+  const handleMetadataFilterToggle = useCallback(
+    (
+      filterKey: keyof typeof DOMAIN_FILTER_TO_SEARCH_KEY,
+      value: string
+    ) => {
+      const searchKey = DOMAIN_FILTER_TO_SEARCH_KEY[filterKey]
+      let nextFilters: SearchMetadataFilters = metadataFilters
+
+      setMetadataFilters((prev) => {
+        const existingValues = prev[searchKey] || []
+        const nextValues = existingValues.includes(value)
+          ? existingValues.filter((entry) => entry !== value)
+          : [...existingValues, value]
+
+        nextFilters = {
+          ...prev,
+          [searchKey]: nextValues.length > 0 ? nextValues : undefined,
+        }
+
+        return nextFilters
+      })
+
+      const rerunQuery = submittedQuery || query.trim()
+      if (rerunQuery && currentOrganization) {
+        void runSearch(rerunQuery, activeFilterId, nextFilters)
+      }
+    },
+    [
+      activeFilterId,
+      currentOrganization,
+      metadataFilters,
+      query,
+      runSearch,
+      submittedQuery,
+    ]
+  )
+
+  const clearMetadataFilters = useCallback(() => {
+    const nextFilters: SearchMetadataFilters = {}
+    setMetadataFilters(nextFilters)
+
+    const rerunQuery = submittedQuery || query.trim()
+    if (rerunQuery && currentOrganization) {
+      void runSearch(rerunQuery, activeFilterId, nextFilters)
+    }
+  }, [activeFilterId, currentOrganization, query, runSearch, submittedQuery])
 
   const searchState = getOrganizationSearchState({
     documentCount: documents.length,
@@ -210,6 +284,14 @@ export function OrganizationSearch() {
     hasSummary: hasSummarySection,
     hasResults: visibleResults.length > 0,
   })
+  const activeMetadataFilterCount = Object.values(metadataFilters).reduce(
+    (count, value) => count + (Array.isArray(value) ? value.length : 0),
+    0
+  )
+
+  useEffect(() => {
+    setMetadataFilters({})
+  }, [currentOrganization?.id, activePack.id])
 
   useEffect(() => {
     const jobId = results?.answerJobId
@@ -389,6 +471,71 @@ export function OrganizationSearch() {
           </motion.div>
         </LayoutGroup>
 
+        <motion.div
+          layout
+          className="border border-gray-200 bg-gray-50 p-3"
+          initial="initial"
+          animate="animate"
+          variants={fadeUpVariants}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-gray-500">
+                Structured Filters
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                {activePack.shortLabel} workspace fields
+              </div>
+            </div>
+            {activeMetadataFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearMetadataFilters}
+                className="border border-gray-300 px-2 py-1 text-[11px] font-mono text-gray-600 transition-colors hover:border-gray-900 hover:text-gray-900"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+
+          <div className="mt-3 space-y-3">
+            {activePack.filterDefinitions.map((filter) => {
+              const filterKey = DOMAIN_FILTER_TO_SEARCH_KEY[filter.key]
+              const activeValues = metadataFilters[filterKey] || []
+
+              return (
+                <div key={filter.key}>
+                  <div className="mb-2 text-[11px] font-mono uppercase tracking-[0.18em] text-gray-400">
+                    {filter.label}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {filter.options.map((option) => {
+                      const isActive = activeValues.includes(option.value)
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            handleMetadataFilterToggle(filter.key, option.value)
+                          }
+                          className={`border px-2.5 py-1 text-xs font-mono transition-colors ${
+                            isActive
+                              ? "border-gray-900 bg-gray-900 text-white"
+                              : "border-gray-300 bg-white text-gray-600 hover:border-gray-500 hover:text-gray-900"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </motion.div>
+
         <motion.form onSubmit={handleSearch} layout className="space-y-2">
           <div className="flex gap-2">
             <motion.input
@@ -417,7 +564,12 @@ export function OrganizationSearch() {
           layout
         >
           <span>[FILTER] {activeFilterLabel}</span>
-          {submittedQuery && <span>Applied to "{submittedQuery}"</span>}
+          <div className="flex flex-wrap items-center gap-2">
+            {activeMetadataFilterCount > 0 && (
+              <span>{activeMetadataFilterCount} structured filter(s)</span>
+            )}
+            {submittedQuery && <span>Applied to "{submittedQuery}"</span>}
+          </div>
         </motion.div>
       </motion.div>
 
@@ -703,6 +855,89 @@ export function OrganizationSearch() {
               </motion.div>
             )
           })}
+
+          {visibleResults.length > 0 && (
+            <motion.div
+              initial="initial"
+              animate="animate"
+              variants={fadeUpVariants}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-wider text-gray-500">
+                  [RESULTS]
+                </span>
+                <span className="text-xs font-mono text-gray-400">
+                  {visibleResults.length} source
+                  {visibleResults.length === 1 ? "" : "s"}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {visibleResults.map((result) => {
+                  const metadataBadges = getDomainMetadataBadges(
+                    activePack.id,
+                    result.metadata
+                  )
+
+                  return (
+                    <div
+                      key={result.memoryId}
+                      className="border border-gray-200 bg-white p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-mono uppercase tracking-wide text-gray-400">
+                              [{result.sourceType}]
+                            </span>
+                            <h3 className="truncate text-sm font-medium text-gray-900">
+                              {result.documentName || result.title || "Source"}
+                            </h3>
+                          </div>
+
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-mono text-gray-400">
+                            {result.pageNumber && <span>Page {result.pageNumber}</span>}
+                            <span>Score {result.score.toFixed(3)}</span>
+                          </div>
+
+                          {metadataBadges.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {metadataBadges.map((badge) => (
+                                <span
+                                  key={`${result.memoryId}-${badge.key}`}
+                                  className="border border-gray-200 px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-gray-500"
+                                >
+                                  {badge.label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                            {result.highlightText || result.contentPreview}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCitationClick(
+                              result.memoryId,
+                              result.url,
+                              result.sourceType
+                            )
+                          }
+                          className="border border-gray-300 px-3 py-2 text-xs font-mono text-gray-700 transition-colors hover:border-gray-900 hover:text-gray-900"
+                        >
+                          Open Source
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          )}
 
           {results.results.length === 0 && (
             <div className="border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">

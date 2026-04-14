@@ -2,6 +2,7 @@ import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import { OrgRole } from '@prisma/client'
 import { randomBytes } from 'crypto'
+import { normalizeDomainPack } from '../../config/domain-packs'
 import type {
   CreateOrganizationInput,
   UpdateOrganizationInput,
@@ -40,6 +41,7 @@ export class OrganizationService {
         description: input.description,
         industry: input.industry,
         team_size: input.teamSize,
+        domain_pack: normalizeDomainPack(input.domainPack),
         setup_completed_steps: ['create'],
         setup_started_at: new Date(),
         members: {
@@ -65,6 +67,7 @@ export class OrganizationService {
       slug: organization.slug,
       industry: input.industry,
       teamSize: input.teamSize,
+      domainPack: normalizeDomainPack(input.domainPack),
       creatorId,
     })
 
@@ -520,6 +523,7 @@ export class OrganizationService {
         ...(input.name && { name: input.name }),
         ...(input.slug && { slug: input.slug }),
         ...(input.description !== undefined && { description: input.description }),
+        ...(input.domainPack !== undefined && { domain_pack: normalizeDomainPack(input.domainPack) }),
         ...(input.logo !== undefined && { logo: input.logo }),
         ...(input.website !== undefined && { website: input.website }),
         ...(input.streetAddress !== undefined && { street_address: input.streetAddress }),

@@ -1,5 +1,9 @@
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+import {
+  getDomainPackDefinition,
+  type DomainDocumentMetadata,
+} from "@/lib/domain-packs"
 
 import type { Document } from "@/types/organization"
 
@@ -10,6 +14,7 @@ const ALLOWED_TYPES = [
   "text/markdown",
   "image/png",
   "image/jpeg",
+  "image/gif",
   "image/webp",
 ]
 
@@ -23,6 +28,7 @@ const FILE_TYPE_LABELS: Record<string, string> = {
   "text/markdown": "MD",
   "image/png": "PNG",
   "image/jpeg": "JPG",
+  "image/gif": "GIF",
   "image/webp": "WEBP",
 }
 
@@ -62,7 +68,38 @@ export function DocumentUpload() {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { uploadDocument, refreshDocumentStatus } = useOrganization()
+  const { currentOrganization, uploadDocument, refreshDocumentStatus } =
+    useOrganization()
+  const activePack = getDomainPackDefinition(currentOrganization?.domain_pack)
+  const [metadata, setMetadata] = useState<DomainDocumentMetadata>({
+    domainPack: activePack.id,
+  })
+
+  useEffect(() => {
+    setMetadata({ domainPack: activePack.id })
+  }, [activePack.id])
+
+  const updateMetadataField = useCallback(
+    (
+      field:
+        | "artifactType"
+        | "engagementName"
+        | "engagementType"
+        | "authority"
+        | "forum"
+        | "outcome"
+        | "practiceArea"
+        | "tags",
+      value: string | string[] | undefined
+    ) => {
+      setMetadata((prev) => ({
+        ...prev,
+        domainPack: activePack.id,
+        [field]: value,
+      }))
+    },
+    [activePack.id]
+  )
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -103,7 +140,10 @@ export function DocumentUpload() {
           prev.map((f) => (f.file === file ? { ...f, progress: 50 } : f))
         )
 
-        const doc = await uploadDocument(file)
+        const doc = await uploadDocument(file, {
+          ...metadata,
+          domainPack: activePack.id,
+        })
 
         setUploadingFiles((prev) =>
           prev.map((f) =>
@@ -190,7 +230,7 @@ export function DocumentUpload() {
         )
       }
     },
-    [uploadDocument, refreshDocumentStatus]
+    [activePack.id, metadata, refreshDocumentStatus, uploadDocument]
   )
 
   const handleFiles = useCallback(
@@ -232,6 +272,102 @@ export function DocumentUpload() {
 
   return (
     <div className="space-y-4">
+      <div className="border border-gray-200 bg-gray-50 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-wider text-gray-500">
+              [CLASSIFICATION]
+            </div>
+            <div className="mt-1 text-sm text-gray-900">{activePack.label}</div>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500">
+              {activePack.description} These fields are attached to each file in
+              this upload batch and become available in search filters.
+            </p>
+          </div>
+          <div className="text-xs font-mono text-gray-400">
+            Applies to all selected files
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {activePack.filterDefinitions.map((filter) => (
+            <div key={filter.key}>
+              <label className="mb-2 block text-xs font-mono uppercase tracking-wide text-gray-600">
+                {filter.label}
+              </label>
+              <select
+                value={(metadata[filter.key] as string | undefined) || ""}
+                onChange={(e) =>
+                  updateMetadataField(
+                    filter.key,
+                    e.target.value || undefined
+                  )
+                }
+                className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+              >
+                <option value="">Select {filter.label.toLowerCase()}...</option>
+                {filter.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+
+          <div>
+            <label className="mb-2 block text-xs font-mono uppercase tracking-wide text-gray-600">
+              Engagement / Matter
+            </label>
+            <input
+              type="text"
+              value={metadata.engagementName || ""}
+              onChange={(e) =>
+                updateMetadataField("engagementName", e.target.value || undefined)
+              }
+              placeholder="e.g., Section 148 reopening for cash deposits"
+              className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-mono uppercase tracking-wide text-gray-600">
+              Engagement Type
+            </label>
+            <input
+              type="text"
+              value={metadata.engagementType || ""}
+              onChange={(e) =>
+                updateMetadataField("engagementType", e.target.value || undefined)
+              }
+              placeholder="e.g., Appeal, research, defence, advisory"
+              className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-xs font-mono uppercase tracking-wide text-gray-600">
+              Tags
+            </label>
+            <input
+              type="text"
+              value={metadata.tags?.join(", ") || ""}
+              onChange={(e) =>
+                updateMetadataField(
+                  "tags",
+                  e.target.value
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean)
+                )
+              }
+              placeholder="Comma-separated tags"
+              className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Drop zone */}
       <div
         className={`relative border-2 border-dashed p-8 text-center transition-colors cursor-pointer ${
@@ -256,7 +392,7 @@ export function DocumentUpload() {
           {isDragging ? "Drop files here" : "Drop files or click to upload"}
         </div>
         <div className="mt-1 text-xs font-mono text-gray-400">
-          PDF, DOCX, TXT, MD, PNG, JPG, WEBP — max 50MB
+          PDF, DOCX, TXT, MD, PNG, JPG, GIF, WEBP — max 50MB
         </div>
       </div>
 

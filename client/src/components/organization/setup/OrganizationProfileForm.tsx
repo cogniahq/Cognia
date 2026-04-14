@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import { DOMAIN_PACKS, type DomainPackId } from "@/lib/domain-packs"
 import {
   updateProfile,
   type UpdateProfileRequest,
@@ -53,6 +54,7 @@ export function OrganizationProfileForm({
     name: organization.name || "",
     slug: organization.slug || "",
     description: organization.description || "",
+    domainPack: organization.domain_pack || "general",
     logo: organization.logo || "",
     website: organization.website || "",
     streetAddress: organization.street_address || "",
@@ -64,7 +66,10 @@ export function OrganizationProfileForm({
       organization.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
   })
 
-  const handleChange = (field: keyof UpdateProfileRequest, value: string) => {
+  function handleChange(
+    field: keyof UpdateProfileRequest,
+    value: UpdateProfileRequest[keyof UpdateProfileRequest]
+  ) {
     setFormData((prev) => ({ ...prev, [field]: value }))
     setError("")
   }
@@ -149,6 +154,29 @@ export function OrganizationProfileForm({
           onChange={(e) => handleChange("name", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900"
         />
+      </div>
+
+      <div>
+        <label className="block text-xs font-mono text-gray-500 uppercase tracking-wider mb-2">
+          Workspace Type
+        </label>
+        <select
+          value={formData.domainPack}
+          onChange={(e) =>
+            handleChange("domainPack", e.target.value as DomainPackId)
+          }
+          className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 bg-white"
+        >
+          {Object.values(DOMAIN_PACKS).map((pack) => (
+            <option key={pack.id} value={pack.id}>
+              {pack.label}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-gray-500">
+          Change the document taxonomy and search filters used in this
+          workspace.
+        </p>
       </div>
 
       {/* Description */}

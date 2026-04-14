@@ -113,3 +113,49 @@ test('generation provider still allows search OpenAI generation when search-only
     openaiService.generateContent = originalGenerateContent
   }
 })
+
+test('generation provider allows email draft OpenAI generation when search-only mode is enabled', async () => {
+  const originalMode = process.env.OPENAI_SEARCH_ONLY_MODE
+  const originalProvider = process.env.GEN_PROVIDER
+  const originalGenerateContent = openaiService.generateContent
+
+  let openAICalls = 0
+
+  process.env.OPENAI_SEARCH_ONLY_MODE = 'true'
+  process.env.GEN_PROVIDER = 'openai'
+
+  openaiService.generateContent = (async (_prompt: string, isSearchRequest?: boolean) => {
+    openAICalls += 1
+    assert.equal(isSearchRequest, false)
+    return {
+      text: 'draft answer',
+      modelUsed: 'gpt-4o-mini',
+    }
+  }) as typeof openaiService.generateContent
+
+  try {
+    const result = await generationProviderService.generateContent(
+      'email draft prompt',
+      false,
+      undefined,
+      undefined,
+      true
+    )
+    assert.equal(result, 'draft answer')
+    assert.equal(openAICalls, 1)
+  } finally {
+    if (typeof originalMode === 'undefined') {
+      delete process.env.OPENAI_SEARCH_ONLY_MODE
+    } else {
+      process.env.OPENAI_SEARCH_ONLY_MODE = originalMode
+    }
+
+    if (typeof originalProvider === 'undefined') {
+      delete process.env.GEN_PROVIDER
+    } else {
+      process.env.GEN_PROVIDER = originalProvider
+    }
+
+    openaiService.generateContent = originalGenerateContent
+  }
+})

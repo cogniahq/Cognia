@@ -37,6 +37,7 @@ const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || ''
 const tokenEncryptor = ENCRYPTION_KEY ? createTokenEncryptor(ENCRYPTION_KEY) : null
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
+const SYNC_PAGE_LIMIT = 50
 
 /**
  * Context for integration operations
@@ -611,109 +612,149 @@ export class IntegrationService {
     }
 
     try {
-      // List resources from the integration
-      const page = await plugin.listResources(tokens, {
-        limit: 50, // Process in smaller batches
-      })
-
-      logger.log(`Found ${page.resources.length} resources from ${integration.provider}`)
-
       let synced = 0
       let skipped = 0
       let errors = 0
+      let totalResources = 0
+      let cursor: string | undefined
+      let pageNumber = 0
+      const seenCursors = new Set<string>()
 
-      // Process each resource
-      for (const resource of page.resources) {
-        // Skip folders
-        if (resource.type === 'folder') {
-          logger.log(`  [skip] ${resource.name} (folder)`)
-          skipped++
+      let hasMorePages = true
+
+      while (hasMorePages) {
+        const page = await plugin.listResources(tokens, {
+          limit: SYNC_PAGE_LIMIT,
+          cursor,
+        })
+
+        pageNumber += 1
+        totalResources += page.resources.length
+
+        logger.log(
+          `Found ${page.resources.length} resources from ${integration.provider} on page ${pageNumber}`
+        )
+
+        if (page.resources.length === 0 && !page.hasMore) {
+          break
+        }
+
+        if (page.nextCursor) {
+          if (seenCursors.has(page.nextCursor)) {
+            logger.warn(`[integration] repeated pagination cursor for ${integration.provider}`, {
+              integrationId: integration.id,
+              integrationType,
+              cursor: page.nextCursor,
+              pageNumber,
+            })
+            break
+          }
+
+          seenCursors.add(page.nextCursor)
+        }
+
+        // Process each resource
+        for (const resource of page.resources) {
+          // Skip folders
+          if (resource.type === 'folder') {
+            logger.log(`  [skip] ${resource.name} (folder)`)
+            skipped++
+            continue
+          }
+
+          try {
+            // Check if already synced
+            const existingSynced = await prisma.syncedResource.findUnique({
+              where: {
+                integration_id_integration_type_external_id: {
+                  integration_id: integration.id,
+                  integration_type: integrationType,
+                  external_id: resource.externalId,
+                },
+              },
+            })
+
+            // Skip if excluded from resync
+            if (existingSynced?.excluded) {
+              logger.log(`  [skip] ${resource.name} (excluded from resync)`)
+              skipped++
+              continue
+            }
+
+            // Skip if already synced and not modified
+            if (this.shouldSkipUnchangedResource(existingSynced, resource.modifiedAt)) {
+              logger.log(`  [skip] ${resource.name} (unchanged)`)
+              skipped++
+              continue
+            }
+
+            // Fetch full content
+            logger.log(`  [fetch] ${resource.name}...`)
+            const fetchedContent = await plugin.fetchResource(tokens, resource.externalId)
+            const preparedContent = await prepareIntegrationContentForSync(fetchedContent)
+            const content = preparedContent.content
+
+            // Skip if no usable content
+            if (!content.content || preparedContent.shouldSkip) {
+              logger.log(`  [skip] ${resource.name} (unsupported type)`)
+              skipped++
+              continue
+            }
+
+            const syncedResource = await prisma.syncedResource.upsert({
+              where: {
+                integration_id_integration_type_external_id: {
+                  integration_id: integration.id,
+                  integration_type: integrationType,
+                  external_id: resource.externalId,
+                },
+              },
+              create: {
+                integration_id: integration.id,
+                integration_type: integrationType,
+                external_id: resource.externalId,
+                resource_type: resource.type,
+                content_hash: content.contentHash,
+                last_synced_at: new Date(),
+              },
+              update: {
+                content_hash: content.contentHash,
+                last_synced_at: new Date(),
+              },
+            })
+
+            // Create or update memory
+            await this.createMemoryFromContent(content, {
+              userId,
+              organizationId,
+              integrationId: integration.id,
+              integrationType,
+              provider: integration.provider,
+              syncedResourceId: syncedResource.id,
+            })
+
+            logger.log(`  [synced] ${resource.name}`)
+            synced++
+
+            // Small delay to avoid rate limits
+            await new Promise(resolve => setTimeout(resolve, 100))
+          } catch (err) {
+            logger.error(`  [error] ${resource.name}: ${getErrorMessage(err, 'Unknown error')}`)
+            errors++
+          }
+        }
+
+        if (!page.hasMore || !page.nextCursor) {
+          hasMorePages = false
           continue
         }
 
-        try {
-          // Check if already synced
-          const existingSynced = await prisma.syncedResource.findUnique({
-            where: {
-              integration_id_integration_type_external_id: {
-                integration_id: integration.id,
-                integration_type: integrationType,
-                external_id: resource.externalId,
-              },
-            },
-          })
-
-          // Skip if excluded from resync
-          if (existingSynced?.excluded) {
-            logger.log(`  [skip] ${resource.name} (excluded from resync)`)
-            skipped++
-            continue
-          }
-
-          // Skip if already synced and not modified
-          if (this.shouldSkipUnchangedResource(existingSynced, resource.modifiedAt)) {
-            logger.log(`  [skip] ${resource.name} (unchanged)`)
-            skipped++
-            continue
-          }
-
-          // Fetch full content
-          logger.log(`  [fetch] ${resource.name}...`)
-          const fetchedContent = await plugin.fetchResource(tokens, resource.externalId)
-          const preparedContent = await prepareIntegrationContentForSync(fetchedContent)
-          const content = preparedContent.content
-
-          // Skip if no usable content
-          if (!content.content || preparedContent.shouldSkip) {
-            logger.log(`  [skip] ${resource.name} (unsupported type)`)
-            skipped++
-            continue
-          }
-
-          const syncedResource = await prisma.syncedResource.upsert({
-            where: {
-              integration_id_integration_type_external_id: {
-                integration_id: integration.id,
-                integration_type: integrationType,
-                external_id: resource.externalId,
-              },
-            },
-            create: {
-              integration_id: integration.id,
-              integration_type: integrationType,
-              external_id: resource.externalId,
-              resource_type: resource.type,
-              content_hash: content.contentHash,
-              last_synced_at: new Date(),
-            },
-            update: {
-              content_hash: content.contentHash,
-              last_synced_at: new Date(),
-            },
-          })
-
-          // Create or update memory
-          await this.createMemoryFromContent(content, {
-            userId,
-            organizationId,
-            integrationId: integration.id,
-            integrationType,
-            provider: integration.provider,
-            syncedResourceId: syncedResource.id,
-          })
-
-          logger.log(`  [synced] ${resource.name}`)
-          synced++
-
-          // Small delay to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 100))
-        } catch (err) {
-          logger.error(`  [error] ${resource.name}: ${getErrorMessage(err, 'Unknown error')}`)
-          errors++
-        }
+        cursor = page.nextCursor
       }
 
-      logger.log(`Sync complete: ${synced} synced, ${skipped} skipped, ${errors} errors`)
+      logger.log(
+        `Sync complete: ${synced} synced, ${skipped} skipped, ${errors} errors across ${totalResources} resources`
+      )
 
       // Update last sync time
       const updateData: { last_sync_at: Date; last_error: string | null } = {

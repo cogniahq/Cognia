@@ -114,6 +114,7 @@ export interface OrganizationSearchResult {
   documentName?: string
   chunkIndex?: number
   pageNumber?: number
+  highlightText?: string
   content: string
   contentPreview: string
   score: number

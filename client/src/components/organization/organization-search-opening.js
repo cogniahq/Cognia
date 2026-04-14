@@ -86,9 +86,10 @@ function scoreSentence(sentence, queryTokens) {
 
 export function getOrganizationSearchOpenSnippet(input) {
   const queryTokens = tokenizeQuery(input?.query)
+  const highlightText = normalizeCompactText(input?.result?.highlightText)
   const contentText = normalizeCompactText(input?.result?.content)
   const previewText = normalizeCompactText(input?.result?.contentPreview)
-  const candidateText = contentText || previewText
+  const candidateText = highlightText || contentText || previewText
 
   if (!candidateText) {
     return ""

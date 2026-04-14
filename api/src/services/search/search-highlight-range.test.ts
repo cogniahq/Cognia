@@ -61,3 +61,36 @@ test('search highlight text match tolerates fragmented whitespace in the source 
     'Aperture Cloud will notify Northstar Bank without undue delay and no later than twenty-four hours after confirmation of a security incident affecting customer data.'
   )
 })
+
+test('search highlight text match tolerates Notion-style sentence fragments across node boundaries', async () => {
+  const modulePath = pathToFileURL(
+    '/Users/art3mis/Developer/CogniaHQ/Cognia/extension/src/content/highlighting/search-highlight-range.ts'
+  ).href
+  const { findSearchHighlightTextMatchFromSegments } = (await importModule(modulePath)) as {
+    findSearchHighlightTextMatchFromSegments: (
+      segments: string[],
+      candidates: string[]
+    ) => {
+      rawStart: number
+      rawEnd: number
+      matchedCandidate: string
+      sentenceText: string
+    } | null
+  }
+
+  const match = findSearchHighlightTextMatchFromSegments(
+    [
+      'Aperture Cloud will notify Northstar Bank',
+      'without undue delay and no later than',
+      'twenty-four hours after confirmation',
+      'of a security incident affecting customer data.',
+    ],
+    ['twenty-four hours after confirmation of a security incident']
+  )
+
+  assert.ok(match)
+  assert.equal(
+    match?.sentenceText,
+    'Aperture Cloud will notify Northstar Bank without undue delay and no later than twenty-four hours after confirmation of a security incident affecting customer data.'
+  )
+})

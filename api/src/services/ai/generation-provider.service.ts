@@ -45,8 +45,11 @@ export function shouldRetryGenerationError(error: unknown): boolean {
   return status === 503 || status === 502
 }
 
-function shouldReserveOpenAIForSearch(isSearchRequest: boolean): boolean {
-  return isOpenAISearchOnlyModeEnabled() && !isSearchRequest
+function shouldReserveOpenAIForSearch(
+  isSearchRequest: boolean,
+  isEmailDraft: boolean
+): boolean {
+  return isOpenAISearchOnlyModeEnabled() && !isSearchRequest && !isEmailDraft
 }
 
 export class GenerationProviderService {
@@ -61,9 +64,9 @@ export class GenerationProviderService {
     let modelUsed: string | undefined
     const genProvider = getGenerationProvider()
 
-    if (shouldReserveOpenAIForSearch(isSearchRequest)) {
+    if (shouldReserveOpenAIForSearch(isSearchRequest, isEmailDraft)) {
       const error = new Error(
-        'OpenAI generation is reserved for search requests while OPENAI_SEARCH_ONLY_MODE is enabled.'
+        'OpenAI generation is reserved for search and email draft requests while OPENAI_SEARCH_ONLY_MODE is enabled.'
       ) as Error & { status?: number }
       error.status = 503
       throw error

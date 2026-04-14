@@ -1,4 +1,5 @@
 export type OrganizationSearchOpenResult = {
+  highlightText?: string
   content?: string
   contentPreview?: string
   documentName?: string

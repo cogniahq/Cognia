@@ -170,6 +170,91 @@ test('organization search returns every matching result when no limit is provide
   }
 })
 
+test('organization search returns a verbatim highlight excerpt alongside retrieval text', async () => {
+  const originalGenerateEmbedding = aiProvider.generateEmbedding
+  const originalGetCollections = qdrantClient.getCollections.bind(qdrantClient)
+  const originalGetCollection = qdrantClient.getCollection.bind(qdrantClient)
+  const originalSearch = qdrantClient.search.bind(qdrantClient)
+  const originalCount = prisma.memory.count
+  const originalFindMany = prisma.memory.findMany
+
+  aiProvider.generateEmbedding = (async () => [0.1, 0.2, 0.3]) as typeof aiProvider.generateEmbedding
+
+  qdrantClient.getCollections = (async () => ({
+    collections: [{ name: COLLECTION_NAME }],
+  })) as typeof qdrantClient.getCollections
+
+  qdrantClient.getCollection = (async () => ({
+    status: 'green',
+    optimizer_status: 'ok',
+    segments_count: 1,
+    config: { params: { vectors: { size: 1536 } } },
+    payload_schema: {
+      memory_id: {},
+      embedding_type: {},
+      user_id: {},
+      organization_id: {},
+      source_type: {},
+      document_id: {},
+      matter_id: {},
+      matter_ids: {},
+      client_id: {},
+      external_document_id: {},
+    },
+  })) as unknown as typeof qdrantClient.getCollection
+
+  qdrantClient.search = (async () => [
+    {
+      id: 'memory-1',
+      version: 1,
+      score: 0.98,
+      payload: { memory_id: 'memory-1' },
+    },
+  ]) as unknown as typeof qdrantClient.search
+
+  prisma.memory.count = (async () => 1) as typeof prisma.memory.count
+
+  prisma.memory.findMany = (async () => [
+    {
+      id: 'memory-1',
+      title: 'Fil-Pin Zoom Plugin',
+      content:
+        'The plugin captures Zoom meetings, stores transcripts, and syncs the resulting notes into the workspace for later retrieval.',
+      page_metadata: {
+        structuredSummary:
+          'Structured summary: the plugin captures meetings, provides searchable transcripts, and stores workspace artifacts for retrieval.',
+        representativeExcerpt:
+          'The plugin captures Zoom meetings, stores transcripts, and syncs the resulting notes into the workspace for later retrieval.',
+      } as Record<string, unknown>,
+      source_type: 'INTEGRATION',
+      url: 'https://www.notion.so/fil-pin-zoom-plugin-demo',
+      document_chunks: [] as Array<unknown>,
+    },
+  ]) as unknown as typeof prisma.memory.findMany
+
+  try {
+    const result = await unifiedSearchService.search({
+      organizationId: 'org-1',
+      query: 'What does the Fil-Pin Zoom Plugin say about data capture, transcripts, and storage?',
+      includeAnswer: false,
+    })
+
+    assert.equal(result.results.length, 1)
+    assert.match(result.results[0]?.content || '', /Structured summary:/)
+    assert.equal(
+      result.results[0]?.highlightText,
+      'The plugin captures Zoom meetings, stores transcripts, and syncs the resulting notes into the workspace for later retrieval.'
+    )
+  } finally {
+    aiProvider.generateEmbedding = originalGenerateEmbedding
+    qdrantClient.getCollections = originalGetCollections
+    qdrantClient.getCollection = originalGetCollection
+    qdrantClient.search = originalSearch
+    prisma.memory.count = originalCount
+    prisma.memory.findMany = originalFindMany
+  }
+})
+
 test('organization summary answer uses retrieved content when the preview omits the answer', async () => {
   const originalGenerateContent = aiProvider.generateContent
 
@@ -242,6 +327,93 @@ test('organization summary answer uses retrieved content when the preview omits 
         memoryId: 'memory-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+      },
+    ])
+  } finally {
+    aiProvider.generateContent = originalGenerateContent
+  }
+})
+
+test('organization summary answer uses full answer content when the relevant configuration is buried beyond retrieval text', async () => {
+  const originalGenerateContent = aiProvider.generateContent
+
+  let observedPrompt = ''
+
+  aiProvider.generateContent = (async (prompt: string) => {
+    observedPrompt = prompt
+
+    if (prompt.includes('314159 (0x4cb2f)') && prompt.includes('https://api.node.glif.io/rpc')) {
+      return '## Calibration Config\n\n- The notes list the Calibration RPC as `https://api.node.glif.io/rpc` and the FEVM chain ID as `314159 (0x4cb2f)`. [1]'
+    }
+
+    return 'The provided context does not include any information regarding the exact FEVM chain ID and RPC endpoint for Calibration.'
+  }) as typeof aiProvider.generateContent
+
+  const longPdpContent =
+    'Hackathon Details. '.repeat(40) +
+    'Calibration network references. API: https://api.node.glif.io/rpc (see testnet column). FEVM Chain ID: 314159 (0x4cb2f). Explorer: https://calibration.pdp-explorer.eng.filoz.org/.'
+
+  try {
+    const answerResult = await (
+      unifiedSearchService as unknown as {
+        generateAnswer: (
+          query: string,
+          results: Array<{
+            memoryId: string
+            documentName?: string
+            pageNumber?: number
+            content: string
+            contentPreview: string
+            answerContent?: string
+            score: number
+            sourceType: SourceType
+            title?: string
+            url?: string
+          }>
+        ) => Promise<{
+          answer: string
+          citations: Array<{
+            index: number
+            documentName?: string
+            pageNumber?: number
+            memoryId: string
+            url?: string
+            sourceType?: SourceType
+          }>
+        }>
+      }
+    ).generateAnswer(
+      'In the Filecoin PDP hackathon notes, what exact FEVM chain ID and RPC endpoint are listed for Calibration?',
+      [
+        {
+          memoryId: 'memory-1',
+          documentName: 'FWS Hackathon 1: Hack w/ a simple PDP service',
+          pageNumber: 1,
+          content:
+            'Title: FWS Hackathon 1: Hack w/ a simple PDP service\nSummary: PDP hackathon overview and Filecoin builder tooling notes.\nExcerpt: The hackathon gives the new PDP service a serious workout before launch.',
+          contentPreview: 'PDP hackathon overview and Filecoin builder tooling notes.',
+          answerContent: longPdpContent,
+          score: 0.99,
+          sourceType: SourceType.INTEGRATION,
+          title: 'FWS Hackathon 1: Hack w/ a simple PDP service',
+        },
+      ]
+    )
+
+    assert.match(observedPrompt, /314159 \(0x4cb2f\)/)
+    assert.match(observedPrompt, /https:\/\/api\.node\.glif\.io\/rpc/)
+    assert.equal(
+      answerResult.answer,
+      '## Calibration Config\n\n- The notes list the Calibration RPC as `https://api.node.glif.io/rpc` and the FEVM chain ID as `314159 (0x4cb2f)`. [1]'
+    )
+    assert.deepEqual(answerResult.citations, [
+      {
+        index: 1,
+        documentName: 'FWS Hackathon 1: Hack w/ a simple PDP service',
+        pageNumber: 1,
+        memoryId: 'memory-1',
+        url: undefined,
+        sourceType: SourceType.INTEGRATION,
       },
     ])
   } finally {

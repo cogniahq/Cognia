@@ -15,6 +15,40 @@ function normalizeCompactText(value: string) {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+function shouldInsertSegmentBoundarySpace(rawText: string, nextSegment: string) {
+  if (!rawText || !nextSegment) {
+    return false
+  }
+
+  const previousCharacter = rawText[rawText.length - 1] || ''
+  const nextCharacter = nextSegment[0] || ''
+
+  return /[a-z0-9)]/i.test(previousCharacter) && /[(a-z0-9]/i.test(nextCharacter)
+}
+
+function appendSearchableTextSegment(rawText: string, nextSegment: string) {
+  if (shouldInsertSegmentBoundarySpace(rawText, nextSegment)) {
+    return `${rawText} ${nextSegment}`
+  }
+
+  return `${rawText}${nextSegment}`
+}
+
+function getSearchHighlightBlockContainer(element: Element | null) {
+  let currentElement = element
+
+  while (currentElement && currentElement !== document.body) {
+    const computedStyle = window.getComputedStyle(currentElement)
+    if (computedStyle.display !== 'inline' && computedStyle.display !== 'contents') {
+      return currentElement
+    }
+
+    currentElement = currentElement.parentElement
+  }
+
+  return element
+}
+
 function buildNormalizedTextIndex(rawText: string) {
   let normalizedText = ''
   const normalizedToRaw: number[] = []
@@ -139,6 +173,18 @@ export function findSearchHighlightTextMatch(
   return null
 }
 
+export function findSearchHighlightTextMatchFromSegments(
+  segments: string[],
+  candidates: string[]
+) {
+  const rawText = segments.reduce(
+    (combinedText, segment) => appendSearchableTextSegment(combinedText, segment),
+    ''
+  )
+
+  return findSearchHighlightTextMatch(rawText, candidates)
+}
+
 function shouldSkipTextNode(node: Text) {
   const parentElement = node.parentElement
   if (!parentElement) {
@@ -166,6 +212,7 @@ function collectSearchableTextNodes(root: ParentNode) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   const entries: SearchableTextNodeEntry[] = []
   let rawText = ''
+  let previousBlockContainer: Element | null = null
 
   while (walker.nextNode()) {
     const textNode = walker.currentNode
@@ -174,13 +221,23 @@ function collectSearchableTextNodes(root: ParentNode) {
     }
 
     const textValue = textNode.textContent || ''
-    const start = rawText.length
-    rawText += textValue
+    const currentBlockContainer = getSearchHighlightBlockContainer(textNode.parentElement)
+    const nextRawText =
+      previousBlockContainer &&
+      currentBlockContainer &&
+      previousBlockContainer !== currentBlockContainer
+        ? `${rawText}\n`
+        : shouldInsertSegmentBoundarySpace(rawText, textValue)
+          ? `${rawText} `
+          : rawText
+    const start = nextRawText.length
+    rawText = `${nextRawText}${textValue}`
     entries.push({
       node: textNode,
       start,
       end: rawText.length,
     })
+    previousBlockContainer = currentBlockContainer
   }
 
   return {

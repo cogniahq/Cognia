@@ -90,7 +90,11 @@ function removeOverlayRoot() {
 function getRetryDelays() {
   const host = window.location.hostname.toLowerCase()
 
-  if (host.includes('docs.google.com') || host.includes('drive.google.com')) {
+  if (
+    host.includes('docs.google.com') ||
+    host.includes('drive.google.com') ||
+    host.includes('notion.so')
+  ) {
     return [250, 700, 1400, 2400, 4000, 6000, 9000, 12000, 16000]
   }
 

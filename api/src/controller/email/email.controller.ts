@@ -101,7 +101,7 @@ Return ONLY a valid JSON object with this exact structure:
 
 CRITICAL: Return ONLY valid JSON. No explanations, no markdown, no code blocks.`
 
-      const response = await aiProvider.generateContent(prompt, false, userId)
+      const response = await aiProvider.generateContent(prompt, false, userId, undefined, true)
       let draft: EmailDraftResult
 
       try {

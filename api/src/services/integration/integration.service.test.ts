@@ -2,6 +2,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { ResourceContent } from '@cogniahq/integrations'
+import { PluginRegistry } from '@cogniahq/integrations'
+import type { UserIntegration } from '@prisma/client'
 
 import { integrationService } from './integration.service'
 import { prisma } from '../../lib/prisma.lib'
@@ -148,4 +150,167 @@ test('integration resync repairs unchanged resources when they are not linked ye
     ),
     true
   )
+})
+
+test('direct integration sync paginates through all Google Drive resource pages', async () => {
+  const originalGet = PluginRegistry.get
+  const originalFindFirst = prisma.organizationMember.findFirst
+  const originalFindUnique = prisma.syncedResource.findUnique
+  const originalUpsert = prisma.syncedResource.upsert
+  const originalUserIntegrationUpdate = prisma.userIntegration.update
+
+  const integrationServiceHandle = integrationService as unknown as {
+    performDirectSync: (
+      integration: UserIntegration,
+      integrationType: 'user' | 'organization'
+    ) => Promise<void>
+    getDecryptedTokens: (integration: UserIntegration) => {
+      accessToken: string
+      refreshToken?: string
+      expiresAt?: Date
+    }
+    createMemoryFromContent: (
+      content: ResourceContent,
+      context: {
+        userId: string
+        organizationId?: string | null
+        integrationId: string
+        integrationType: 'user' | 'organization'
+        provider: string
+        syncedResourceId: string
+      }
+    ) => Promise<void>
+  }
+
+  const originalGetDecryptedTokens = integrationServiceHandle.getDecryptedTokens
+  const originalCreateMemoryFromContent = integrationServiceHandle.createMemoryFromContent
+
+  const listCalls: Array<{ cursor?: string; limit?: number }> = []
+  const fetchedExternalIds: string[] = []
+  const createdMemoryIds: string[] = []
+  let upsertCount = 0
+
+  const firstPageResource = {
+    id: 'resource-1',
+    externalId: 'drive-file-1',
+    type: 'file',
+    name: 'Page 1 doc',
+    mimeType: 'application/vnd.google-apps.document',
+    modifiedAt: new Date('2026-04-08T05:00:00.000Z'),
+  }
+  const secondPageResource = {
+    id: 'resource-2',
+    externalId: 'drive-file-2',
+    type: 'file',
+    name: 'Page 2 doc',
+    mimeType: 'application/vnd.google-apps.document',
+    modifiedAt: new Date('2026-04-08T05:01:00.000Z'),
+  }
+
+  const integrationRecord: UserIntegration = {
+    id: 'integration-1',
+    user_id: 'user-1',
+    provider: 'google_drive',
+    access_token: 'encrypted-access-token',
+    refresh_token: null,
+    token_expires_at: null,
+    config: null,
+    status: 'ACTIVE',
+    storage_strategy: 'FULL_CONTENT',
+    sync_frequency: 'HOURLY',
+    last_sync_at: null,
+    last_error: null,
+    webhook_id: null,
+    connected_at: new Date('2026-04-08T05:00:00.000Z'),
+    updated_at: new Date('2026-04-08T05:00:00.000Z'),
+  }
+
+  PluginRegistry.get = ((_provider: string) => {
+    void _provider
+
+    return ({
+      listResources: async (_tokens: unknown, options?: { cursor?: string; limit?: number }) => {
+        listCalls.push({
+          cursor: options?.cursor,
+          limit: options?.limit,
+        })
+
+        if (!options?.cursor) {
+          return {
+            resources: [firstPageResource],
+            nextCursor: 'page-2',
+            hasMore: true,
+          }
+        }
+
+        assert.equal(options.cursor, 'page-2')
+        return {
+          resources: [secondPageResource],
+          nextCursor: undefined,
+          hasMore: false,
+        }
+      },
+      fetchResource: async (_tokens: unknown, externalId: string) => {
+        fetchedExternalIds.push(externalId)
+        return createResourceContent({
+          externalId,
+          id: externalId,
+          title: `Fetched ${externalId}`,
+          mimeType: 'application/vnd.google-apps.document',
+          content: `Verbatim content for ${externalId}`,
+          contentHash: `content-hash-${externalId}`,
+          url: `https://docs.google.com/document/d/${externalId}/edit`,
+        })
+      },
+      capabilities: {
+        webhooks: false,
+      },
+    }) as ReturnType<typeof PluginRegistry.get>
+  }) as typeof PluginRegistry.get
+
+  prisma.organizationMember.findFirst = (async (): Promise<null> =>
+    null) as typeof prisma.organizationMember.findFirst
+
+  prisma.syncedResource.findUnique = (async (): Promise<null> =>
+    null) as typeof prisma.syncedResource.findUnique
+
+  prisma.syncedResource.upsert = (async (): Promise<{ id: string }> => {
+    upsertCount += 1
+    return {
+      id: `synced-${upsertCount}`,
+    }
+  }) as unknown as typeof prisma.syncedResource.upsert
+
+  prisma.userIntegration.update = (async (): Promise<UserIntegration> =>
+    integrationRecord) as unknown as typeof prisma.userIntegration.update
+
+  integrationServiceHandle.getDecryptedTokens = (() => ({
+    accessToken: 'test-access-token',
+  })) as typeof integrationServiceHandle.getDecryptedTokens
+
+  integrationServiceHandle.createMemoryFromContent = (async (
+    content: ResourceContent,
+    context: { syncedResourceId: string }
+  ): Promise<void> => {
+    createdMemoryIds.push(`${content.externalId}:${context.syncedResourceId}`)
+  }) as typeof integrationServiceHandle.createMemoryFromContent
+
+  try {
+    await integrationServiceHandle.performDirectSync(integrationRecord, 'user')
+
+    assert.deepEqual(listCalls, [
+      { cursor: undefined, limit: 50 },
+      { cursor: 'page-2', limit: 50 },
+    ])
+    assert.deepEqual(fetchedExternalIds, ['drive-file-1', 'drive-file-2'])
+    assert.deepEqual(createdMemoryIds, ['drive-file-1:synced-1', 'drive-file-2:synced-2'])
+  } finally {
+    PluginRegistry.get = originalGet
+    prisma.organizationMember.findFirst = originalFindFirst
+    prisma.syncedResource.findUnique = originalFindUnique
+    prisma.syncedResource.upsert = originalUpsert
+    prisma.userIntegration.update = originalUserIntegrationUpdate
+    integrationServiceHandle.getDecryptedTokens = originalGetDecryptedTokens
+    integrationServiceHandle.createMemoryFromContent = originalCreateMemoryFromContent
+  }
 })

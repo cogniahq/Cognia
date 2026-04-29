@@ -125,7 +125,14 @@ export function enforceIpAllowlist(req: OrganizationRequest, res: Response, next
     logger.error('[ip-allowlist] Error checking IP allowlist', {
       error: error instanceof Error ? error.message : String(error),
     })
-    // On error, allow access (fail open) to prevent lockouts
-    next()
+    if (process.env.SECURITY_FAIL_OPEN_BREAKGLASS === 'true') {
+      logger.warn('[ip-allowlist] BREAKGLASS engaged')
+      return next()
+    }
+    return res.status(503).json({
+      success: false,
+      message: 'Security check temporarily unavailable. Please retry.',
+      code: 'SECURITY_CHECK_UNAVAILABLE',
+    })
   }
 }

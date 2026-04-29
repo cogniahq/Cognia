@@ -67,7 +67,14 @@ export function enforceSessionTimeout(req: OrganizationRequest, res: Response, n
     logger.error('[session-timeout] Error checking session timeout', {
       error: error instanceof Error ? error.message : String(error),
     })
-    // On error, allow access (fail open)
-    next()
+    if (process.env.SECURITY_FAIL_OPEN_BREAKGLASS === 'true') {
+      logger.warn('[session-timeout] BREAKGLASS engaged')
+      return next()
+    }
+    return res.status(503).json({
+      success: false,
+      message: 'Security check temporarily unavailable. Please retry.',
+      code: 'SECURITY_CHECK_UNAVAILABLE',
+    })
   }
 }

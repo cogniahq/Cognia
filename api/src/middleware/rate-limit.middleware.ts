@@ -55,9 +55,16 @@ export function createRateLimiter(options: RateLimitOptions) {
 
       next()
     } catch (error) {
-      // If Redis fails, allow the request but log the error
       logger.error('Rate limiter error:', error)
-      next()
+      if (process.env.SECURITY_FAIL_OPEN_BREAKGLASS === 'true') {
+        logger.warn('Rate limiter BREAKGLASS engaged')
+        return next()
+      }
+      res.status(503).json({
+        message: 'Rate limiter temporarily unavailable. Please retry.',
+        code: 'SECURITY_CHECK_UNAVAILABLE',
+      })
+      return
     }
   }
 }

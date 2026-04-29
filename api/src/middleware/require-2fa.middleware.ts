@@ -66,7 +66,14 @@ export async function enforce2FARequirement(
     logger.error('[2fa-requirement] Error checking 2FA requirement', {
       error: error instanceof Error ? error.message : String(error),
     })
-    // On error, allow access (fail open) to prevent lockouts
-    next()
+    if (process.env.SECURITY_FAIL_OPEN_BREAKGLASS === 'true') {
+      logger.warn('[2fa-requirement] BREAKGLASS engaged - allowing request despite check failure')
+      return next()
+    }
+    return res.status(503).json({
+      success: false,
+      message: 'Security check temporarily unavailable. Please retry.',
+      code: 'SECURITY_CHECK_UNAVAILABLE',
+    })
   }
 }

@@ -2,7 +2,12 @@ import { Router, Request, Response } from 'express'
 import { prisma } from '../lib/prisma.lib'
 import { setAuthCookie, clearAuthCookie } from '../utils/auth/auth-cookie.util'
 import { generateToken } from '../utils/auth/jwt.util'
-import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
+import {
+  authenticateToken,
+  AuthenticatedRequest,
+  requireAdmin,
+} from '../middleware/auth.middleware'
+import { revokeJti, revokeAllForUser } from '../services/auth/jwt-revocation.service'
 import { hashPassword, comparePassword } from '../utils/core/password.util'
 import { validatePassword, PasswordPolicy } from '../utils/auth/password-policy.util'
 import {
@@ -54,11 +59,57 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   }
 })
 
-// Logout (clear session cookie)
-router.post('/logout', (_req: Request, res: Response) => {
-  clearAuthCookie(res)
-  res.status(200).json({ message: 'Logged out successfully' })
+// Logout (revoke current JWT's jti and clear session cookie)
+router.post('/logout', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const jti = req.user?.jti
+    if (jti) {
+      // Worst-case TTL: full configured JWT lifetime (default 7 days) in milliseconds
+      await revokeJti(jti, 7 * 24 * 60 * 60 * 1000)
+    }
+    clearAuthCookie(res)
+    return res.status(200).json({ message: 'Logged out successfully' })
+  } catch (error) {
+    logger.error('Logout error:', error)
+    return res.status(500).json({ message: 'Failed to logout' })
+  }
 })
+
+// Logout from all sessions for the current user (revoke-since floor)
+router.post('/logout-all', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+    await revokeAllForUser(req.user.id)
+    clearAuthCookie(res)
+    return res.status(200).json({ message: 'All sessions revoked' })
+  } catch (error) {
+    logger.error('Logout-all error:', error)
+    return res.status(500).json({ message: 'Failed to revoke sessions' })
+  }
+})
+
+// Admin-only: revoke all sessions for a given user
+router.post(
+  '/sessions/:userId/revoke',
+  authenticateToken,
+  requireAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { userId } = req.params
+      await revokeAllForUser(userId)
+      logger.log('[auth] Admin revoked user sessions', {
+        adminId: req.user!.id,
+        targetUserId: userId,
+      })
+      return res.status(200).json({ message: 'User sessions revoked', userId })
+    } catch (error) {
+      logger.error('Admin session revoke error:', error)
+      return res.status(500).json({ message: 'Failed to revoke user sessions' })
+    }
+  }
+)
 
 // Register with email/password
 router.post('/register', registerRateLimiter, async (req: Request, res: Response) => {

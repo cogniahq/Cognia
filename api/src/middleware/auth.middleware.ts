@@ -3,6 +3,7 @@ import { verifyToken, extractTokenFromHeader } from '../utils/auth/jwt.util'
 import { getSessionCookieName } from '../utils/core/env.util'
 import { logger } from '../utils/core/logger.util'
 import { getUserWithCache } from '../utils/core/user-cache.util'
+import { isJtiRevoked, isUserRevokedSince } from '../services/auth/jwt-revocation.service'
 import type { UserRole } from '@prisma/client'
 
 export interface AuthenticatedRequest extends Request {
@@ -11,6 +12,7 @@ export interface AuthenticatedRequest extends Request {
     email?: string
     role?: UserRole
     iat?: number // Token issued-at timestamp (seconds since epoch)
+    jti?: string // JWT id for per-token revocation
   }
 }
 
@@ -63,11 +65,21 @@ async function authenticateRequest(
       return
     }
 
+    if (payload.jti && (await isJtiRevoked(payload.jti))) {
+      res.status(401).json({ message: 'Token revoked' })
+      return
+    }
+    if (payload.iat && (await isUserRevokedSince(user.id, payload.iat))) {
+      res.status(401).json({ message: 'Session revoked' })
+      return
+    }
+
     req.user = {
       id: user.id,
       email: user.email || undefined,
       role: user.role,
       iat: payload.iat, // Token issued-at for session timeout checking
+      jti: payload.jti,
     }
 
     next()

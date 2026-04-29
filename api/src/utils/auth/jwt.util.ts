@@ -1,6 +1,7 @@
 import * as jwt from 'jsonwebtoken'
 import type { SignOptions } from 'jsonwebtoken'
 import type { StringValue } from 'ms'
+import { randomUUID } from 'node:crypto'
 
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
@@ -13,13 +14,14 @@ const JWT_EXPIRES_IN: StringValue | number = (process.env.JWT_EXPIRES_IN || '7d'
 export interface JWTPayload {
   userId: string
   email?: string
-  iat?: number // Issued at (automatically added by jwt.sign)
-  exp?: number // Expiration (automatically added by jwt.sign)
+  jti?: string
+  iat?: number
+  exp?: number
 }
 
 export function generateToken(payload: JWTPayload): string {
-  const options: SignOptions = { expiresIn: JWT_EXPIRES_IN }
-  return jwt.sign(payload, JWT_SECRET, options)
+  const options: SignOptions = { expiresIn: JWT_EXPIRES_IN, jwtid: randomUUID() }
+  return jwt.sign({ userId: payload.userId, email: payload.email }, JWT_SECRET, options)
 }
 
 export function verifyToken(token: string): JWTPayload | null {

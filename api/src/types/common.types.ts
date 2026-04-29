@@ -60,6 +60,43 @@ export type AuditEventType =
   | '2fa_enabled'
   | '2fa_disabled'
   | 'backup_codes_regenerated'
+  | 'password_reset_requested'
+  | 'password_reset_completed'
+  // Org lifecycle
+  | 'organization_created'
+  | 'organization_settings_changed'
+  | 'organization_deleted'
+  // Members
+  | 'member_invited'
+  | 'invitation_resent'
+  | 'invitation_revoked'
+  | 'invitation_accepted'
+  | 'member_added'
+  | 'member_removed'
+  | 'member_deactivated'
+  | 'role_changed'
+  // Integrations
+  | 'integration_connected'
+  | 'integration_disconnected'
+  | 'integration_token_refreshed'
+  | 'integration_sync_failed'
+  // Data
+  | 'memory_shared'
+  | 'memory_unshared'
+  | 'comment_posted'
+  | 'bulk_delete'
+  | 'data_exported'
+  | 'data_imported'
+  | 'account_deleted'
+  // API + SSO (placeholders for Phase 6/2)
+  | 'api_key_created'
+  | 'api_key_revoked'
+  | 'sso_login'
+  | 'scim_user_provisioned'
+  | 'scim_user_deprovisioned'
+  | 'ediscovery_search'
+  | 'legal_hold_applied'
+  | 'legal_hold_released'
 
 export type AuditEventCategory =
   | 'capture'
@@ -68,6 +105,10 @@ export type AuditEventCategory =
   | 'platform'
   | 'authentication'
   | 'security'
+  | 'organization'
+  | 'integration'
+  | 'compliance'
+  | 'api'
 
 export type ExportBundle = {
   version: string

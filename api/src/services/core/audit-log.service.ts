@@ -6,10 +6,15 @@ import type { AuditEventType, AuditEventCategory } from '../../types/common.type
 export type { AuditEventType, AuditEventCategory }
 
 interface AuditLogData {
-  userId: string
+  userId: string | null
+  organizationId?: string | null
+  actorEmail?: string | null
   eventType: AuditEventType
   eventCategory: AuditEventCategory
   action: string
+  targetUserId?: string | null
+  targetResourceType?: string | null
+  targetResourceId?: string | null
   metadata?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
@@ -23,10 +28,15 @@ export class AuditLogService {
     try {
       await prisma.auditLog.create({
         data: {
-          user_id: data.userId,
+          user_id: data.userId ?? undefined,
+          organization_id: data.organizationId ?? undefined,
+          actor_email: data.actorEmail ?? undefined,
           event_type: data.eventType,
           event_category: data.eventCategory,
           action: data.action,
+          target_user_id: data.targetUserId ?? undefined,
+          target_resource_type: data.targetResourceType ?? undefined,
+          target_resource_id: data.targetResourceId ?? undefined,
           metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined,
           ip_address: data.ipAddress,
           user_agent: data.userAgent,
@@ -38,7 +48,85 @@ export class AuditLogService {
         error: error instanceof Error ? error.message : String(error),
         eventType: data.eventType,
         userId: data.userId,
+        organizationId: data.organizationId,
       })
+    }
+  }
+
+  /**
+   * Log an org-scoped audit event (convenience helper)
+   */
+  async logOrgEvent(params: {
+    orgId: string
+    actorUserId: string | null
+    actorEmail?: string | null
+    eventType: AuditEventType
+    eventCategory: AuditEventCategory
+    action: string
+    targetUserId?: string | null
+    targetResourceType?: string | null
+    targetResourceId?: string | null
+    metadata?: Record<string, unknown>
+    ipAddress?: string
+    userAgent?: string
+  }): Promise<void> {
+    await this.logEvent({
+      userId: params.actorUserId,
+      organizationId: params.orgId,
+      actorEmail: params.actorEmail,
+      eventType: params.eventType,
+      eventCategory: params.eventCategory,
+      action: params.action,
+      targetUserId: params.targetUserId,
+      targetResourceType: params.targetResourceType,
+      targetResourceId: params.targetResourceId,
+      metadata: params.metadata,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+    })
+  }
+
+  /**
+   * Get audit logs scoped to an organization with optional filters
+   */
+  async getOrgAuditLogs(
+    orgId: string,
+    options?: {
+      eventType?: AuditEventType
+      eventCategory?: AuditEventCategory
+      actorUserId?: string
+      startDate?: Date
+      endDate?: Date
+      limit?: number
+      offset?: number
+    }
+  ) {
+    const where: Prisma.AuditLogWhereInput = { organization_id: orgId }
+    if (options?.eventType) where.event_type = options.eventType
+    if (options?.eventCategory) where.event_category = options.eventCategory
+    if (options?.actorUserId) where.user_id = options.actorUserId
+    if (options?.startDate || options?.endDate) {
+      where.created_at = {}
+      if (options.startDate) where.created_at.gte = options.startDate
+      if (options.endDate) where.created_at.lte = options.endDate
+    }
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        take: options?.limit ?? 100,
+        skip: options?.offset ?? 0,
+        include: {
+          user: { select: { id: true, email: true } },
+        },
+      }),
+      prisma.auditLog.count({ where }),
+    ])
+    return {
+      logs,
+      total,
+      limit: options?.limit ?? 100,
+      offset: options?.offset ?? 0,
     }
   }
 

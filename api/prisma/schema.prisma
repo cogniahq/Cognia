@@ -462,17 +462,23 @@ model DocumentChunk {
 }
 
 model AuditLog {
-  id                String   @id @default(uuid()) @db.Uuid
-  user_id           String   @db.Uuid
-  event_type        String
-  event_category    String
-  action            String
-  metadata          Json?
-  ip_address        String?
-  user_agent        String?
-  created_at        DateTime @default(now())
-  user              User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id                    String   @id @default(uuid()) @db.Uuid
+  organization_id       String?  @db.Uuid
+  user_id               String?  @db.Uuid
+  actor_email           String?  // preserved across user delete
+  event_type            String
+  event_category        String
+  action                String
+  target_user_id        String?  @db.Uuid
+  target_resource_type  String?
+  target_resource_id    String?
+  metadata              Json?
+  ip_address            String?
+  user_agent            String?
+  created_at            DateTime @default(now())
+  user                  User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
+  @@index([organization_id, created_at(sort: Desc)])
   @@index([user_id])
   @@index([event_type])
   @@index([event_category])

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { randomBytes, createHash } from 'node:crypto'
 import { authenticateToken } from '../middleware/auth.middleware'
 import { requireOrganization, requireOrgAdmin } from '../middleware/organization.middleware'
 import type { OrganizationRequest } from '../middleware/organization.middleware'
@@ -203,6 +204,61 @@ router.get('/:slug/integrations-health', async (req: OrganizationRequest, res) =
     orderBy: { connected_at: 'desc' },
   })
   res.json({ success: true, data: integrations })
+})
+
+// POST /:slug/scim/tokens - generate a new SCIM bearer token (returned ONCE)
+router.post('/:slug/scim/tokens', async (req: OrganizationRequest, res) => {
+  const orgId = req.organization!.id
+  const name = (req.body?.name as string | undefined) ?? null
+  const raw = randomBytes(32).toString('base64url')
+  const hash = createHash('sha256').update(raw).digest('hex')
+  const prefix = raw.slice(0, 8)
+  const token = await prisma.scimAccessToken.create({
+    data: {
+      organization_id: orgId,
+      token_hash: hash,
+      prefix,
+      name,
+      created_by_user_id: req.user?.id ?? null,
+    },
+  })
+  res.json({
+    success: true,
+    data: {
+      id: token.id,
+      prefix,
+      name: token.name,
+      created_at: token.created_at,
+      // Plaintext token returned ONCE. Frontend must show + copy.
+      token: raw,
+    },
+  })
+})
+
+// GET /:slug/scim/tokens - list (metadata only)
+router.get('/:slug/scim/tokens', async (req: OrganizationRequest, res) => {
+  const tokens = await prisma.scimAccessToken.findMany({
+    where: { organization_id: req.organization!.id },
+    orderBy: { created_at: 'desc' },
+    select: {
+      id: true,
+      prefix: true,
+      name: true,
+      created_at: true,
+      last_used_at: true,
+      revoked_at: true,
+    },
+  })
+  res.json({ success: true, data: tokens })
+})
+
+// DELETE /:slug/scim/tokens/:tokenId - revoke
+router.delete('/:slug/scim/tokens/:tokenId', async (req: OrganizationRequest, res) => {
+  await prisma.scimAccessToken.update({
+    where: { id: req.params.tokenId },
+    data: { revoked_at: new Date() },
+  })
+  res.json({ success: true })
 })
 
 // POST /:slug/members/:memberId/offboard

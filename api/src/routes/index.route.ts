@@ -18,6 +18,7 @@ import platformRouter from './platform.route'
 import orgAdminRouter from './org-admin.route'
 import oauthRouter from './oauth.route'
 import ssoRouter from './sso.route'
+import scimRouter from './scim.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -48,4 +49,6 @@ export const routes = (app: Express) => {
   app.use('/api/webhooks', webhooksRouter)
   // Briefing routes
   app.use('/api/briefings', briefingRouter)
+  // SCIM 2.0 (mounted at bare /scim, not /api/, per Azure AD/Okta conventions)
+  app.use('/scim', scimRouter)
 }

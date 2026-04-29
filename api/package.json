@@ -37,6 +37,7 @@
     "admin:stats": "node -r ts-node/register src/scripts/admin-stats.script.ts",
     "queue:status": "node -r ts-node/register src/scripts/queue-status.script.ts",
     "platform:create-app": "node -r ts-node/register src/scripts/create-platform-app.script.ts",
+    "backfill:2fa": "node -r ts-node/register src/scripts/encrypt-existing-2fa-secrets.script.ts",
     "check": "npm run lint:fix && npm run format && npm run build"
   },
   "keywords": [

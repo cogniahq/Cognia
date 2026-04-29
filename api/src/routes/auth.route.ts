@@ -19,6 +19,11 @@ import {
   registerRateLimiter,
   extensionTokenRateLimiter,
 } from '../middleware/rate-limit.middleware'
+import {
+  encrypt2faSecret,
+  decrypt2faSecret,
+  is2faSecretLegacy,
+} from '../services/auth/two-factor.service'
 
 const router = Router()
 
@@ -151,9 +156,19 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
 
       // Verify TOTP code
       if (totpCode) {
-        const isValid = verifyTOTP(user.two_factor_secret, totpCode)
+        const decryptedSecret = decrypt2faSecret(user.two_factor_secret)
+        const isValid = verifyTOTP(decryptedSecret, totpCode)
         if (!isValid) {
           return res.status(401).json({ message: 'Invalid 2FA code' })
+        }
+        // Opportunistically re-encrypt legacy plaintext secrets after a
+        // successful TOTP verification so the stored value is upgraded
+        // without requiring an explicit backfill run.
+        if (is2faSecretLegacy(user.two_factor_secret)) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { two_factor_secret: encrypt2faSecret(decryptedSecret) },
+          })
         }
       }
       // Or verify backup code
@@ -282,10 +297,12 @@ router.post('/2fa/setup', authenticateToken, async (req: AuthenticatedRequest, r
     const secret = generateSecret()
     const uri = generateTOTPUri(secret, user.email || 'user', 'Cognia')
 
-    // Store secret temporarily (not enabled yet)
+    // Store secret temporarily (not enabled yet) — encrypted at rest.
+    // The plaintext `secret` is still returned in the response so the
+    // client can render the QR code / setup string.
     await prisma.user.update({
       where: { id: user.id },
-      data: { two_factor_secret: secret },
+      data: { two_factor_secret: encrypt2faSecret(secret) },
     })
 
     res.status(200).json({
@@ -328,10 +345,20 @@ router.post('/2fa/verify', authenticateToken, async (req: AuthenticatedRequest, 
       return res.status(400).json({ message: 'Please setup 2FA first' })
     }
 
-    // Verify the code
-    const isValid = verifyTOTP(user.two_factor_secret, code)
+    // Verify the code (decrypts dual-read: legacy plaintext or enc:v1:)
+    const decryptedSecret = decrypt2faSecret(user.two_factor_secret)
+    const isValid = verifyTOTP(decryptedSecret, code)
     if (!isValid) {
       return res.status(401).json({ message: 'Invalid verification code' })
+    }
+
+    // Opportunistically upgrade a legacy plaintext secret to encrypted
+    // storage on a successful verify.
+    if (is2faSecretLegacy(user.two_factor_secret)) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { two_factor_secret: encrypt2faSecret(decryptedSecret) },
+      })
     }
 
     // Generate backup codes
@@ -402,10 +429,12 @@ router.post('/2fa/disable', authenticateToken, async (req: AuthenticatedRequest,
 
     // Optionally verify 2FA code if provided
     if (code && user.two_factor_secret) {
-      const isValid = verifyTOTP(user.two_factor_secret, code)
+      const decryptedSecret = decrypt2faSecret(user.two_factor_secret)
+      const isValid = verifyTOTP(decryptedSecret, code)
       if (!isValid) {
         return res.status(401).json({ message: 'Invalid 2FA code' })
       }
+      // No re-encryption upgrade here: the secret is about to be cleared.
     }
 
     // Disable 2FA
@@ -499,10 +528,20 @@ router.post(
         return res.status(401).json({ message: 'Invalid password' })
       }
 
-      // Verify 2FA code
-      const isValid = verifyTOTP(user.two_factor_secret, code)
+      // Verify 2FA code (decrypts dual-read: legacy plaintext or enc:v1:)
+      const decryptedSecret = decrypt2faSecret(user.two_factor_secret)
+      const isValid = verifyTOTP(decryptedSecret, code)
       if (!isValid) {
         return res.status(401).json({ message: 'Invalid 2FA code' })
+      }
+
+      // Opportunistically upgrade a legacy plaintext secret to encrypted
+      // storage on a successful verify.
+      if (is2faSecretLegacy(user.two_factor_secret)) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { two_factor_secret: encrypt2faSecret(decryptedSecret) },
+        })
       }
 
       // Generate new backup codes

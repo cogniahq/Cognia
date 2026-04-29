@@ -146,6 +146,8 @@ model User {
   memory_shares_authored       MemoryShare[]            @relation("MemorySharer")
   memory_shares_received       MemoryShare[]            @relation("MemoryShareRecipient")
   memory_comments              MemoryComment[]
+  memory_tags                  MemoryTag[]
+  saved_searches               SavedSearch[]
 
   @@map("users")
 }
@@ -220,6 +222,9 @@ model Organization {
   platform_upload_sessions PlatformUploadSession[] @relation("PlatformUploadSessionOrganization")
   scim_access_tokens           ScimAccessToken[]
   memory_shares                MemoryShare[]
+  workspaces                   Workspace[]
+  memory_tags                  MemoryTag[]
+  saved_searches               SavedSearch[]
 
   @@map("organizations")
 }
@@ -543,15 +548,18 @@ model Memory {
   last_accessed          DateTime             @default(now())
   source_type            SourceType?          @default(EXTENSION)
   organization_id        String?              @db.Uuid
+  workspace_id           String?              @db.Uuid
   deleted_at             DateTime?
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
   organization           Organization?        @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  workspace              Workspace?           @relation(fields: [workspace_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
   query_related_memories QueryRelatedMemory[]
   document_chunks        DocumentChunk[]
   shares                 MemoryShare[]
   comments               MemoryComment[]
+  tags                   MemoryTagOnMemory[]
 
   @@index([user_id])
   @@index([created_at])
@@ -837,4 +845,73 @@ model MemoryComment {
   @@index([memory_id])
   @@index([parent_id])
   @@map("memory_comments")
+}
+
+model Workspace {
+  id              String  @id @default(uuid()) @db.Uuid
+  organization_id String  @db.Uuid
+  name            String
+  slug            String
+  description     String?
+  created_by_user_id String? @db.Uuid
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  memories        Memory[]
+
+  @@unique([organization_id, slug])
+  @@index([organization_id])
+  @@map("workspaces")
+}
+
+model MemoryTag {
+  id              String  @id @default(uuid()) @db.Uuid
+  organization_id String? @db.Uuid
+  user_id         String? @db.Uuid
+  name            String
+  color           String?
+  created_at      DateTime @default(now())
+  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user            User?         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  memories        MemoryTagOnMemory[]
+
+  @@unique([organization_id, name])
+  @@unique([user_id, name])
+  @@index([organization_id])
+  @@index([user_id])
+  @@map("memory_tags")
+}
+
+model MemoryTagOnMemory {
+  memory_id  String @db.Uuid
+  tag_id     String @db.Uuid
+  created_at DateTime @default(now())
+  memory     Memory    @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  tag        MemoryTag @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([memory_id, tag_id])
+  @@index([memory_id])
+  @@index([tag_id])
+  @@map("memory_tags_on_memories")
+}
+
+model SavedSearch {
+  id              String   @id @default(uuid()) @db.Uuid
+  user_id         String   @db.Uuid
+  organization_id String?  @db.Uuid
+  name            String
+  query           String
+  filters         Json?
+  alert_enabled   Boolean  @default(false)
+  alert_frequency String   @default("daily")
+  last_alerted_at DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  user            User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([organization_id])
+  @@index([alert_enabled, alert_frequency])
+  @@map("saved_searches")
 }

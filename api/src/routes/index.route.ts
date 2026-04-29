@@ -22,6 +22,9 @@ import scimRouter from './scim.route'
 import onboardingRouter from './onboarding.route'
 import shareRouter from './share.route'
 import commentRouter from './comment.route'
+import workspaceRouter from './workspace.route'
+import tagRouter from './tag.route'
+import savedSearchRouter from './saved-search.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -59,4 +62,8 @@ export const routes = (app: Express) => {
   // Memory sharing + threaded comments
   app.use('/api/shares', shareRouter)
   app.use('/api/comments', commentRouter)
+  // Workspaces (org hierarchy), tags, and saved searches
+  app.use('/api/organizations', workspaceRouter)
+  app.use('/api/tags', tagRouter)
+  app.use('/api/saved-searches', savedSearchRouter)
 }

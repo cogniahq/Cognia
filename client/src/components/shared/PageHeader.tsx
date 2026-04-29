@@ -1,5 +1,6 @@
 import React from "react"
 import { useAuth } from "@/contexts/auth.context"
+import { useOrganization } from "@/contexts/organization.context"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 
@@ -38,6 +39,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   const navigate = useNavigate()
   const { accountType } = useAuth()
+  const { currentOrganization } = useOrganization()
 
   // Determine the dashboard path based on account type
   const dashboardPath =
@@ -54,6 +56,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     navigate(dashboardPath)
   }
 
+  const isOrgAdmin =
+    accountType === "ORGANIZATION" &&
+    currentOrganization?.userRole === "ADMIN" &&
+    !!currentOrganization?.slug
+
   // Show different nav buttons based on account type
   const allNavButtons =
     accountType === "ORGANIZATION"
@@ -61,6 +68,14 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           { label: "Workspace", path: "/organization" },
           { label: "Integrations", path: "/integrations" },
           { label: "Briefings", path: "/briefings" },
+          ...(isOrgAdmin
+            ? [
+                {
+                  label: "Admin",
+                  path: `/org-admin/${currentOrganization.slug}`,
+                },
+              ]
+            : []),
           { label: "Profile", path: "/profile" },
         ]
       : [

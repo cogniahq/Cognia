@@ -47,6 +47,11 @@ const MeshShowcase = lazy(() =>
     default: module.MeshShowcase,
   }))
 )
+const OrgAdmin = lazy(() =>
+  import("@/pages/org-admin.page").then((module) => ({
+    default: module.OrgAdmin,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -96,6 +101,7 @@ const AppRoutes = () => {
                 <Route path="/integrations" element={<Integrations />} />
                 <Route path="/briefings" element={<Briefings />} />
                 <Route path="/mesh-showcase" element={<MeshShowcase />} />
+                <Route path="/org-admin/:slug" element={<OrgAdmin />} />
               </>
             ) : (
               <>
@@ -121,6 +127,10 @@ const AppRoutes = () => {
                 />
                 <Route
                   path="/mesh-showcase"
+                  element={<Navigate to="/" replace />}
+                />
+                <Route
+                  path="/org-admin/:slug"
                   element={<Navigate to="/" replace />}
                 />
               </>

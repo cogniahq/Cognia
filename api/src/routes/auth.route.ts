@@ -8,6 +8,11 @@ import {
   requireAdmin,
 } from '../middleware/auth.middleware'
 import { revokeJti, revokeAllForUser } from '../services/auth/jwt-revocation.service'
+import {
+  issueRefreshToken,
+  rotateRefreshToken,
+  revokeAllForUser as revokeRefreshForUser,
+} from '../services/auth/refresh-token.service'
 import { hashPassword, comparePassword } from '../utils/core/password.util'
 import { validatePassword, PasswordPolicy } from '../utils/auth/password-policy.util'
 import {
@@ -75,14 +80,18 @@ router.post('/logout', authenticateToken, async (req: AuthenticatedRequest, res:
   }
 })
 
-// Logout from all sessions for the current user (revoke-since floor)
+// Logout from all sessions for the current user (revoke-since floor + refresh tokens)
 router.post('/logout-all', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!req.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' })
     }
-    await revokeAllForUser(req.user.id)
+    await Promise.all([
+      revokeAllForUser(req.user.id),
+      revokeRefreshForUser(req.user.id),
+    ])
     clearAuthCookie(res)
+    res.clearCookie('cognia_refresh', { path: '/api/auth/refresh' })
     return res.status(200).json({ message: 'All sessions revoked' })
   } catch (error) {
     logger.error('Logout-all error:', error)
@@ -90,7 +99,7 @@ router.post('/logout-all', authenticateToken, async (req: AuthenticatedRequest, 
   }
 })
 
-// Admin-only: revoke all sessions for a given user
+// Admin-only: revoke all sessions for a given user (JWT floor + refresh tokens)
 router.post(
   '/sessions/:userId/revoke',
   authenticateToken,
@@ -98,7 +107,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { userId } = req.params
-      await revokeAllForUser(userId)
+      await Promise.all([revokeAllForUser(userId), revokeRefreshForUser(userId)])
       logger.log('[auth] Admin revoked user sessions', {
         adminId: req.user!.id,
         targetUserId: userId,
@@ -151,6 +160,17 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       email: user.email || undefined,
     })
     setAuthCookie(res, token)
+    const { token: refreshToken } = await issueRefreshToken(user.id, {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    })
+    res.cookie('cognia_refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/auth/refresh',
+      maxAge: 14 * 24 * 60 * 60 * 1000,
+    })
     return res.status(201).json({
       message: 'Registered',
       token,
@@ -247,6 +267,17 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
       email: user.email || undefined,
     })
     setAuthCookie(res, token)
+    const { token: refreshToken } = await issueRefreshToken(user.id, {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    })
+    res.cookie('cognia_refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/auth/refresh',
+      maxAge: 14 * 24 * 60 * 60 * 1000,
+    })
     return res.status(200).json({
       success: true,
       data: {
@@ -264,6 +295,33 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Login error:', error)
     return res.status(500).json({ message: 'Failed to login' })
+  }
+})
+
+// Rotate the refresh token cookie and mint a fresh access JWT
+router.post('/refresh', async (req: Request, res: Response) => {
+  const presented = req.cookies?.cognia_refresh
+  if (!presented) {
+    return res.status(401).json({ message: 'No refresh token' })
+  }
+  try {
+    const { token: nextRefresh, userId } = await rotateRefreshToken(presented, {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    })
+    const accessToken = generateToken({ userId })
+    setAuthCookie(res, accessToken)
+    res.cookie('cognia_refresh', nextRefresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/auth/refresh',
+      maxAge: 14 * 24 * 60 * 60 * 1000,
+    })
+    return res.json({ token: accessToken })
+  } catch (err) {
+    res.clearCookie('cognia_refresh', { path: '/api/auth/refresh' })
+    return res.status(401).json({ message: (err as Error).message })
   }
 })
 

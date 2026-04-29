@@ -123,6 +123,7 @@ model User {
   notification_preferences NotificationPreferences?
   platform_user_links      PlatformUserLink[]
   platform_upload_sessions PlatformUploadSession[] @relation("PlatformUploadSessionUploader")
+  refresh_tokens           RefreshToken[]
 
   @@map("users")
 }
@@ -683,4 +684,23 @@ model NotificationPreferences {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+model RefreshToken {
+  id            String    @id @default(uuid()) @db.Uuid
+  user_id       String    @db.Uuid
+  family_id     String    @db.Uuid
+  token_hash    String    @unique
+  parent_id     String?   @db.Uuid
+  expires_at    DateTime
+  created_at    DateTime  @default(now())
+  used_at       DateTime?
+  revoked_at    DateTime?
+  ip_address    String?
+  user_agent    String?
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([family_id])
+  @@map("refresh_tokens")
 }

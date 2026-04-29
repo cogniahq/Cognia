@@ -26,6 +26,7 @@ import { logger } from './utils/core/logger.util'
 import { getAllowedOrigins, getMorganOutputMode } from './utils/core/env.util'
 import { validateRequestSize } from './utils/validation/validation.util'
 import { integrationService } from './services/integration'
+import { applySecurityHeaders } from './middleware/security-headers.middleware'
 
 const app = express()
 app.set('trust proxy', 1)
@@ -240,6 +241,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next()
 })
 
+applySecurityHeaders(app)
 app.use(
   cors({
     origin: (origin, callback) => {

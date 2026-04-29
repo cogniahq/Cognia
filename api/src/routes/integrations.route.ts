@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
 import { integrationService } from '../services/integration'
+import { auditLogService } from '../services/core/audit-log.service'
 import { SyncFrequency, StorageStrategy } from '@prisma/client'
 import { createOAuthState, parseOAuthState } from '../utils/auth/oauth-state.util'
 import { prisma } from '../lib/prisma.lib'
@@ -158,7 +159,7 @@ router.get('/:provider/callback', async (req, res: Response) => {
 
       const redirectUri = getRedirectUri(provider, 'organization')
 
-      await integrationService.connectOrgIntegration(
+      const connected = await integrationService.connectOrgIntegration(
         {
           userId: stateData.userId,
           organizationId: stateData.organizationId,
@@ -171,6 +172,26 @@ router.get('/:provider/callback', async (req, res: Response) => {
         }
       )
 
+      const actor = await prisma.user
+        .findUnique({ where: { id: stateData.userId }, select: { email: true } })
+        .catch((): null => null)
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: stateData.organizationId,
+          actorUserId: stateData.userId,
+          actorEmail: actor?.email ?? null,
+          eventType: 'integration_connected',
+          eventCategory: 'integration',
+          action: 'connect',
+          targetResourceType: 'integration',
+          targetResourceId: connected?.id ?? null,
+          metadata: { provider },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       return res.redirect(
         `${frontendUrl}/o/${stateData.organizationSlug}/settings/integrations?connected=${encodeURIComponent(provider)}`
       )
@@ -180,7 +201,7 @@ router.get('/:provider/callback', async (req, res: Response) => {
     const redirectUri = getRedirectUri(provider, 'user')
 
     // Connect the integration using userId from state
-    await integrationService.connectUserIntegration(
+    const connected = await integrationService.connectUserIntegration(
       { userId: stateData.userId },
       {
         provider,
@@ -188,6 +209,20 @@ router.get('/:provider/callback', async (req, res: Response) => {
         redirectUri,
       }
     )
+
+    await auditLogService
+      .logEvent({
+        userId: stateData.userId,
+        eventType: 'integration_connected',
+        eventCategory: 'integration',
+        action: 'connect',
+        targetResourceType: 'integration',
+        targetResourceId: connected?.id ?? null,
+        metadata: { provider },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
 
     // Redirect to frontend success page
     return redirectToIntegrations(provider, false)
@@ -296,7 +331,29 @@ router.delete('/:provider', authenticateToken, async (req: AuthenticatedRequest,
   try {
     const { provider } = req.params
 
+    // Snapshot integration id before deletion (best-effort, for audit)
+    const existing = await prisma.userIntegration
+      .findUnique({
+        where: { user_id_provider: { user_id: req.user!.id, provider } },
+        select: { id: true },
+      })
+      .catch((): null => null)
+
     await integrationService.disconnectUserIntegration(req.user!.id, provider)
+
+    await auditLogService
+      .logEvent({
+        userId: req.user!.id,
+        eventType: 'integration_disconnected',
+        eventCategory: 'integration',
+        action: 'disconnect',
+        targetResourceType: 'integration',
+        targetResourceId: existing?.id ?? null,
+        metadata: { provider },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
 
     res.json({ success: true, message: 'Integration disconnected' })
   } catch (error) {

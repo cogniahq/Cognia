@@ -3,6 +3,8 @@ import { AuthenticatedRequest } from '../../middleware/auth.middleware'
 import { OrganizationRequest } from '../../middleware/organization.middleware'
 import { organizationService } from '../../services/organization/organization.service'
 import { memoryMeshService } from '../../services/memory/memory-mesh.service'
+import { auditLogService } from '../../services/core/audit-log.service'
+import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import AppError from '../../utils/http/app-error.util'
 
@@ -56,6 +58,22 @@ export class OrganizationController {
         teamSize,
         domainPack,
       })
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: organization.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'organization_created',
+          eventCategory: 'organization',
+          action: 'create-org',
+          targetResourceType: 'organization',
+          targetResourceId: organization.id,
+          metadata: { slug: organization.slug, industry, teamSize },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(201).json({
         success: true,
@@ -157,6 +175,22 @@ export class OrganizationController {
         slug,
       })
 
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'organization_settings_changed',
+          eventCategory: 'organization',
+          action: 'update-settings',
+          targetResourceType: 'organization',
+          targetResourceId: req.organization!.id,
+          metadata: { fieldsChanged: Object.keys(req.body || {}) },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       res.status(200).json({
         success: true,
         data: organization,
@@ -222,6 +256,23 @@ export class OrganizationController {
         })
       }
 
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'member_added',
+          eventCategory: 'organization',
+          action: 'add-member',
+          targetUserId: member.user_id,
+          targetResourceType: 'organization_member',
+          targetResourceId: member.id,
+          metadata: { role: member.role, addedBy: email ? 'email' : 'userId' },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       res.status(201).json({
         success: true,
         data: { member },
@@ -279,7 +330,29 @@ export class OrganizationController {
         return next(new AppError('role is required', 400))
       }
 
+      // Capture old role for audit metadata (best-effort, not critical)
+      const previousMember = await prisma.organizationMember
+        .findUnique({ where: { id: memberId }, select: { role: true } })
+        .catch((): null => null)
+
       const member = await organizationService.updateMemberRole(memberId, { role })
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'role_changed',
+          eventCategory: 'organization',
+          action: 'change-role',
+          targetUserId: member.user_id,
+          targetResourceType: 'organization_member',
+          targetResourceId: member.id,
+          metadata: { from: previousMember?.role ?? null, to: member.role },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(200).json({
         success: true,
@@ -302,7 +375,32 @@ export class OrganizationController {
     try {
       const { memberId } = req.params
 
+      // Snapshot member before removal for audit (best-effort)
+      const removedMember = await prisma.organizationMember
+        .findUnique({
+          where: { id: memberId },
+          select: { id: true, user_id: true, role: true },
+        })
+        .catch((): null => null)
+
       await organizationService.removeMember(memberId)
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'member_removed',
+          eventCategory: 'organization',
+          action: 'remove-member-legacy',
+          targetUserId: removedMember?.user_id ?? null,
+          targetResourceType: 'organization_member',
+          targetResourceId: removedMember?.id ?? memberId,
+          metadata: { role: removedMember?.role ?? null },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(200).json({
         success: true,
@@ -429,6 +527,22 @@ export class OrganizationController {
 
       const organization = await organizationService.updateProfile(req.organization!.id, req.body)
 
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'organization_settings_changed',
+          eventCategory: 'organization',
+          action: 'update-settings',
+          targetResourceType: 'organization',
+          targetResourceId: req.organization!.id,
+          metadata: { section: 'profile', fieldsChanged: Object.keys(req.body || {}) },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       res.status(200).json({
         success: true,
         data: { organization },
@@ -455,6 +569,22 @@ export class OrganizationController {
     try {
       const organization = await organizationService.updateBilling(req.organization!.id, req.body)
 
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'organization_settings_changed',
+          eventCategory: 'organization',
+          action: 'update-settings',
+          targetResourceType: 'organization',
+          targetResourceId: req.organization!.id,
+          metadata: { section: 'billing', fieldsChanged: Object.keys(req.body || {}) },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       res.status(200).json({
         success: true,
         data: { organization },
@@ -475,6 +605,22 @@ export class OrganizationController {
   static async updateSecurity(req: OrganizationRequest, res: Response, next: NextFunction) {
     try {
       const organization = await organizationService.updateSecurity(req.organization!.id, req.body)
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'organization_settings_changed',
+          eventCategory: 'organization',
+          action: 'update-settings',
+          targetResourceType: 'organization',
+          targetResourceId: req.organization!.id,
+          metadata: { section: 'security', fieldsChanged: Object.keys(req.body || {}) },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(200).json({
         success: true,
@@ -591,6 +737,22 @@ export class OrganizationController {
             { email, role }
           )
           invitations.push(invitation)
+
+          await auditLogService
+            .logOrgEvent({
+              orgId: req.organization!.id,
+              actorUserId: req.user?.id ?? null,
+              actorEmail: req.user?.email ?? null,
+              eventType: 'member_invited',
+              eventCategory: 'organization',
+              action: 'invite',
+              targetResourceType: 'invitation',
+              targetResourceId: invitation.id,
+              metadata: { invitedEmail: email, role: invitation.role },
+              ipAddress: req.ip,
+              userAgent: req.get('user-agent') ?? undefined,
+            })
+            .catch(() => {})
         } catch (error) {
           errors.push({
             email,
@@ -641,7 +803,34 @@ export class OrganizationController {
     try {
       const { invitationId } = req.params
 
+      // Snapshot invitation before deletion (best-effort, for audit metadata)
+      const invitationSnapshot = await prisma.organizationInvitation
+        .findUnique({
+          where: { id: invitationId },
+          select: { id: true, email: true, role: true },
+        })
+        .catch((): null => null)
+
       await organizationService.revokeInvitation(invitationId)
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'invitation_revoked',
+          eventCategory: 'organization',
+          action: 'revoke-invitation',
+          targetResourceType: 'invitation',
+          targetResourceId: invitationSnapshot?.id ?? invitationId,
+          metadata: {
+            invitedEmail: invitationSnapshot?.email ?? null,
+            role: invitationSnapshot?.role ?? null,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(200).json({
         success: true,
@@ -704,6 +893,67 @@ export class OrganizationController {
       const userId = req.user!.id
 
       const organization = await organizationService.acceptInvitation(token, userId)
+
+      // Lookup invitation + membership for audit metadata (best-effort)
+      const invitationRecord = await prisma.organizationInvitation
+        .findUnique({
+          where: { token },
+          select: { id: true, email: true, role: true, invited_by: true },
+        })
+        .catch((): null => null)
+
+      const newMember = await prisma.organizationMember
+        .findUnique({
+          where: {
+            organization_id_user_id: {
+              organization_id: organization.id,
+              user_id: userId,
+            },
+          },
+          select: { id: true },
+        })
+        .catch((): null => null)
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: organization.id,
+          actorUserId: userId,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'invitation_accepted',
+          eventCategory: 'organization',
+          action: 'accept-invitation',
+          targetResourceType: 'invitation',
+          targetResourceId: invitationRecord?.id ?? null,
+          metadata: {
+            invitedEmail: invitationRecord?.email ?? null,
+            role: invitationRecord?.role ?? null,
+            invitedBy: invitationRecord?.invited_by ?? null,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: organization.id,
+          actorUserId: userId,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'member_added',
+          eventCategory: 'organization',
+          action: 'add-member',
+          targetUserId: userId,
+          targetResourceType: 'organization_member',
+          targetResourceId: newMember?.id ?? null,
+          metadata: {
+            role: invitationRecord?.role ?? null,
+            via: 'invitation',
+            invitationId: invitationRecord?.id ?? null,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(200).json({
         success: true,

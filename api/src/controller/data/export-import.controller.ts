@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express'
 import { AuthenticatedRequest } from '../../middleware/auth.middleware'
 import AppError from '../../utils/http/app-error.util'
 import { exportImportService } from '../../services/core/export-import.service'
+import { auditLogService } from '../../services/core/audit-log.service'
 import { logger } from '../../utils/core/logger.util'
 
 export class ExportImportController {
@@ -18,6 +19,24 @@ export class ExportImportController {
       logger.log('[export] Export request received', { userId: req.user.id })
 
       const bundle = await exportImportService.exportUserData(req.user.id)
+
+      await auditLogService
+        .logEvent({
+          userId: req.user.id,
+          eventType: 'data_exported',
+          eventCategory: 'data_management',
+          action: 'export-user-data',
+          metadata: {
+            memoryCount: Array.isArray(
+              (bundle as { memories?: unknown[] }).memories
+            )
+              ? (bundle as { memories: unknown[] }).memories.length
+              : undefined,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.setHeader('Content-Type', 'application/json')
       res.setHeader(
@@ -55,6 +74,21 @@ export class ExportImportController {
       })
 
       const result = await exportImportService.importUserData(req.user.id, bundle)
+
+      await auditLogService
+        .logEvent({
+          userId: req.user.id,
+          eventType: 'data_imported',
+          eventCategory: 'data_management',
+          action: 'import-user-data',
+          metadata: {
+            bundleVersion: bundle?.version,
+            memoryCount: Array.isArray(bundle?.memories) ? bundle.memories.length : undefined,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.status(200).json({
         success: true,

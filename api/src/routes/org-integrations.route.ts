@@ -10,6 +10,7 @@ import { enforceIpAllowlist } from '../middleware/ip-allowlist.middleware'
 import { enforceSessionTimeout } from '../middleware/session-timeout.middleware'
 import { enforce2FARequirement } from '../middleware/require-2fa.middleware'
 import { integrationService } from '../services/integration'
+import { auditLogService } from '../services/core/audit-log.service'
 import { prisma } from '../lib/prisma.lib'
 import { SyncFrequency, StorageStrategy } from '@prisma/client'
 import { createOAuthState, parseOAuthState } from '../utils/auth/oauth-state.util'
@@ -256,7 +257,7 @@ router.get('/:slug/integrations/:provider/callback', async (req, res: Response) 
 
     const redirectUri = getRedirectUri(provider, 'organization')
 
-    await integrationService.connectOrgIntegration(
+    const connected = await integrationService.connectOrgIntegration(
       {
         userId: stateData.userId,
         organizationId: stateData.organizationId,
@@ -268,6 +269,26 @@ router.get('/:slug/integrations/:provider/callback', async (req, res: Response) 
         syncFrequency: org?.default_sync_frequency || SyncFrequency.HOURLY,
       }
     )
+
+    const actor = await prisma.user
+      .findUnique({ where: { id: stateData.userId }, select: { email: true } })
+      .catch((): null => null)
+
+    await auditLogService
+      .logOrgEvent({
+        orgId: stateData.organizationId,
+        actorUserId: stateData.userId,
+        actorEmail: actor?.email ?? null,
+        eventType: 'integration_connected',
+        eventCategory: 'integration',
+        action: 'connect',
+        targetResourceType: 'integration',
+        targetResourceId: connected?.id ?? null,
+        metadata: { provider },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
 
     res.redirect(`${frontendUrl}/o/${slug}/settings/integrations?connected=${provider}`)
   } catch (error) {
@@ -367,7 +388,33 @@ router.delete(
     try {
       const { provider } = req.params
 
+      // Snapshot integration id before deletion (best-effort, for audit)
+      const existing = await prisma.organizationIntegration
+        .findUnique({
+          where: {
+            organization_id_provider: { organization_id: req.organization!.id, provider },
+          },
+          select: { id: true },
+        })
+        .catch((): null => null)
+
       await integrationService.disconnectOrgIntegration(req.organization!.id, provider)
+
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'integration_disconnected',
+          eventCategory: 'integration',
+          action: 'disconnect',
+          targetResourceType: 'integration',
+          targetResourceId: existing?.id ?? null,
+          metadata: { provider },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
 
       res.json({ success: true, message: 'Integration disconnected' })
     } catch (error) {

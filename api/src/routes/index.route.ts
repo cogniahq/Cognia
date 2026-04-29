@@ -17,6 +17,7 @@ import briefingRouter from './briefing.route'
 import platformRouter from './platform.route'
 import orgAdminRouter from './org-admin.route'
 import oauthRouter from './oauth.route'
+import ssoRouter from './sso.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -27,6 +28,7 @@ export const routes = (app: Express) => {
   app.use('/api/search', searchRouter)
   app.use('/api/auth', authRouter)
   app.use('/api/auth/oauth', oauthRouter)
+  app.use('/api/sso', ssoRouter)
   app.use('/api/profile', profileRouter)
   app.use('/api/export', exportImportRouter)
   app.use('/api/privacy', privacyRouter)

@@ -38,6 +38,7 @@ enum SourceType {
   DOCUMENT
   API
   INTEGRATION
+  DEMO
 }
 
 enum AccountType {
@@ -110,6 +111,10 @@ model User {
   two_factor_enabled       Boolean              @default(false)
   two_factor_secret        String?              // Encrypted TOTP secret
   two_factor_backup_codes  String[]             @default([]) // Hashed backup codes
+
+  // Onboarding fields
+  tour_completed_at        DateTime?
+  demo_dismissed_at        DateTime?
 
   memories                 Memory[]
   memory_snapshots         MemorySnapshot[]

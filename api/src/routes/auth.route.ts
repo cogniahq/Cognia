@@ -43,6 +43,7 @@ import {
   consumeEmailVerificationToken,
   sendVerificationEmail,
 } from '../services/auth/email-verification.service'
+import { seedSampleWorkspace } from '../services/onboarding/sample-workspace-seeder.service'
 
 const router = Router()
 
@@ -202,6 +203,11 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
     // Issue and send a verify-email token for the freshly created user
     const { token: vToken } = await issueEmailVerificationToken(user.id, 'verify_email')
     await sendVerificationEmail(user.email!, vToken, 'verify_email').catch(() => {})
+
+    // Kick off sample-workspace seeding asynchronously so registration is not blocked
+    seedSampleWorkspace(user.id).catch(err =>
+      logger.warn('[register] seeder failed', { error: String(err) })
+    )
 
     const token = generateToken({
       userId: user.id,

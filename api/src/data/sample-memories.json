@@ -1,0 +1,182 @@
+[
+  {
+    "title": "Retrieval-Augmented Generation in Plain English",
+    "url": "https://example.com/rag-overview",
+    "content": "Retrieval-augmented generation (RAG) is a pattern where a language model is paired with an external knowledge store. Instead of relying solely on weights baked in at training time, the system fetches relevant passages from a vector database or search index and injects them into the prompt. This approach gives models access to private documents, fresh information, and domain-specific corpora without retraining. A typical RAG pipeline embeds the user query, performs nearest-neighbor search, reranks the top results, and feeds them as context to the generator. Quality hinges on three things: chunking strategy, embedding choice, and retrieval recall. Smaller chunks often improve precision but can fragment ideas; larger chunks preserve context but dilute relevance. Hybrid retrieval combining sparse BM25 with dense vectors tends to outperform either alone. RAG also makes hallucinations easier to audit since each answer can cite the retrieved passages it drew from.",
+    "topics": ["ai", "rag", "embeddings"]
+  },
+  {
+    "title": "What Makes an AI Agent Different from a Chatbot",
+    "url": "https://example.com/agents-101",
+    "content": "An AI agent is a system where a language model decides which actions to take in a loop, rather than producing a single one-shot answer. The model is given access to tools (functions, APIs, browsers, code interpreters) and is invoked repeatedly with the growing transcript until it signals completion. Each turn the model can call a tool, observe the result, and update its plan. The contrast with a chatbot is autonomy: a chatbot waits for the next user message; an agent keeps acting toward a goal. Reliability problems show up quickly. Loops can fail to terminate. Tool errors propagate. Long contexts get expensive. Practitioners constrain agents with explicit task descriptions, hard step limits, structured tool schemas, and evaluators that catch low-quality trajectories. Agents shine when the task is well-bounded and the tool surface is small enough to keep the model in distribution.",
+    "topics": ["ai", "agents"]
+  },
+  {
+    "title": "How Vector Embeddings Encode Meaning",
+    "url": "https://example.com/embeddings-meaning",
+    "content": "An embedding is a list of numbers — usually a few hundred to a few thousand floats — that represents a piece of text, an image, or another input. Embeddings produced by a well-trained model arrange themselves so that semantically related items sit close together in the vector space. Cosine similarity, the dot product divided by the magnitudes, is the standard distance metric. Embeddings power search, clustering, classification, and recommendation. They are not a magic universal coordinate system, though: they reflect the training distribution. Embeddings from a code model and embeddings from a general-purpose text model are not interchangeable. When evaluating an embedding model, look beyond MTEB scores at recall on your own corpus, the dimensionality cost, and whether the vendor commits to keeping the model stable so you do not have to re-embed your entire collection on every release.",
+    "topics": ["ai", "embeddings"]
+  },
+  {
+    "title": "Writing a Product Roadmap that Survives Contact with Reality",
+    "url": "https://example.com/roadmaps",
+    "content": "A roadmap is a story about where the product is going and why, not a delivery schedule disguised as a calendar. The most common failure mode is publishing a date-stamped feature list that the team cannot reasonably commit to — every slipped quarter erodes credibility with customers and executives. A more durable approach groups work into now / next / later, anchors each bucket to outcomes (activation, retention, expansion), and explicitly lists what the team is choosing not to do. Confidence decreases as you move outward in the timeline; that uncertainty is the point. Pair the roadmap with a regularly updated changelog so the people who care about progress can see it without you having to defend a date. The roadmap is a communication tool: its job is to align customers, sales, and engineering on the next bet, not to look impressive on a slide.",
+    "topics": ["product", "roadmap"]
+  },
+  {
+    "title": "Pricing Models for Early-Stage SaaS",
+    "url": "https://example.com/saas-pricing",
+    "content": "Most early-stage SaaS companies price too low. The instinct is to win deals by undercutting incumbents, but a low price signals low value and starves the company of the revenue it needs to keep building. Common models include per-seat (predictable, easy to budget), usage-based (aligns with value but harder to forecast), tiered packaging (good for self-serve), and hybrid combinations. The right starting point depends on who pays and what they are trading away — time, money, risk, headcount. A useful exercise: ask five customers what they would happily pay, what would make them hesitate, and what would make them walk. The middle answer is usually closer to your real price than the spreadsheet you built. Raising price later is harder than starting high and discounting; grandfather existing customers when you reprice.",
+    "topics": ["product", "pricing"]
+  },
+  {
+    "title": "REST in One Page",
+    "url": "https://example.com/rest-summary",
+    "content": "REST is a style of designing networked APIs around resources rather than procedures. A resource is anything worth naming — a user, an order, a comment — and each resource has a stable URL. Clients interact with resources using a small set of HTTP verbs: GET to read, POST to create, PUT or PATCH to update, DELETE to remove. Responses use standard status codes (2xx success, 4xx client error, 5xx server error) and a consistent media type, almost always JSON. REST is intentionally less prescriptive than RPC, which is both its strength and its weakness — two REST APIs from different teams can feel very different. Pragmatic teams adopt conventions: nest resources predictably, paginate with cursors, return errors as structured objects, and version the API in the URL or a header so clients are not surprised by breaking changes.",
+    "topics": ["architecture", "api"]
+  },
+  {
+    "title": "OAuth 2.0 Authorization Code Flow",
+    "url": "https://example.com/oauth-auth-code",
+    "content": "The OAuth 2.0 authorization code flow is the standard way a user grants a third-party application access to their data on another service without sharing their password. The application redirects the user to the authorization server with a client ID, a list of requested scopes, and a redirect URI. The user authenticates and consents. The authorization server redirects back to the application with a short-lived authorization code. The application then exchanges that code, server-to-server, for an access token (and usually a refresh token). The access token is the credential used on subsequent API calls. This flow keeps the user's password and the long-lived refresh token off the front channel. Public clients (single-page apps, mobile apps) should use PKCE, a proof-of-possession extension that prevents an attacker who intercepts the code from redeeming it.",
+    "topics": ["security", "oauth"]
+  },
+  {
+    "title": "Encryption at Rest vs. in Transit",
+    "url": "https://example.com/encryption-basics",
+    "content": "Encryption at rest protects data sitting on disk; encryption in transit protects it as it moves over the network. Both matter, and they protect against different threats. At rest is usually solved at the storage layer — full-disk encryption on cloud volumes, transparent data encryption in the database, or envelope encryption with a key management service. The keys, not the data, are the asset that needs the most protection: rotate them, log access, and keep them out of source control. In transit is solved with TLS, which has good defaults today: TLS 1.3, certificates from a trusted CA, and HSTS to prevent downgrade attacks. Internal service-to-service traffic deserves the same treatment as external — the days of trusting the private network are behind us. Together, these two layers form the floor of any reasonable data security posture.",
+    "topics": ["security", "encryption"]
+  },
+  {
+    "title": "React Hooks: A Mental Model",
+    "url": "https://example.com/react-hooks",
+    "content": "Hooks let function components manage state and side effects without classes. The two most important are useState and useEffect. useState gives a component a piece of local state and a setter; calling the setter schedules a re-render. useEffect runs a function after render, and you control when it re-runs by listing dependencies. The common bug is forgetting a dependency, which produces stale closures: the effect captures values from the render where it was created, not the latest ones. The dependency array is not optional plumbing — it is the signal that tells React when the effect needs to run again. useMemo and useCallback are optimizations, not correctness tools. Reach for them after profiling, not before. Custom hooks are just functions that call other hooks; extracting them is the cleanest way to share stateful logic across components.",
+    "topics": ["react", "typescript"]
+  },
+  {
+    "title": "TypeScript Generics Without the Tears",
+    "url": "https://example.com/ts-generics",
+    "content": "Generics let you write code that works over a range of types without giving up type safety. The simplest example is a function like identity<T>(value: T): T that takes a value and returns it unchanged — the T captures the input type and threads it through to the output. Generics shine in collections (Array<T>, Map<K, V>), in promises (Promise<T>), and in functions that transform data while preserving its shape. The two patterns most worth learning are constraints (T extends { id: string }) and inference helpers (using infer inside conditional types). Avoid making generics carry every possible flag — if a function has more than two type parameters, it is usually trying to be too clever. Good generic code is invisible to the caller: types flow through, errors appear at the call site, and nobody has to write the type arguments by hand.",
+    "topics": ["typescript"]
+  },
+  {
+    "title": "Postgres Indexes: B-tree, GIN, and BRIN",
+    "url": "https://example.com/postgres-indexes",
+    "content": "The default Postgres index is a B-tree, which works for equality and range queries on ordered data. It is the right choice for primary keys, foreign keys, and anything you sort or filter by ranges. GIN (Generalized Inverted Index) is for composite values: arrays, JSONB documents, full-text search vectors. It indexes the elements inside the value rather than the value as a whole, which is what makes containment queries (@>, ?) fast. BRIN (Block Range Index) is tiny — just a summary of value ranges per block. It is useful on huge tables where the data is naturally ordered, like timestamped event logs. Picking the wrong index type is a common cause of mysterious slow queries; checking EXPLAIN ANALYZE early is cheaper than guessing. Indexes are not free: they consume disk and slow down writes, so audit them periodically and drop the ones the planner ignores.",
+    "topics": ["databases", "postgres"]
+  },
+  {
+    "title": "Redis as a Cache, a Queue, and a Lock",
+    "url": "https://example.com/redis-roles",
+    "content": "Redis is best understood as a fast in-memory data structure server. The same instance can act as a cache (with TTLs and eviction policies), a queue (using lists or streams), and a coordination primitive (locks, leaderboards, rate limiters). For caching, the GET/SET and EXPIRE commands cover most of what you need; pick an eviction policy that matches your workload (allkeys-lru is a sane default). For queues, streams (XADD, XREAD) are usually a better fit than lists because they keep history and support consumer groups. For distributed locks, the SET key value NX PX pattern is a starting point, but be careful — naive locks have well-known failure modes around clock skew and process death. Redis is not durable by default; if losing the last few seconds of writes is unacceptable, configure AOF with fsync set to everysec or always.",
+    "topics": ["databases", "redis"]
+  },
+  {
+    "title": "When to Reach for Microservices",
+    "url": "https://example.com/microservices-when",
+    "content": "Microservices are a deployment strategy, not an architecture pattern. Splitting a system into independently deployed services lets different teams ship at different speeds and scale parts of the system independently. The cost is operational: every service boundary adds a network call, a serialization step, a deployment artifact, and a place where things can go wrong. Most products do not need microservices on day one. A well-modularized monolith with clear internal boundaries can take a small team a long way before the deployment-coupling pain outweighs the distributed-system pain. The signal that it is time to split is organizational: when two teams cannot ship without coordinating on the same release, a service boundary along that seam will pay for itself. Splitting earlier than that usually buys you the costs without the benefits.",
+    "topics": ["architecture", "microservices"]
+  },
+  {
+    "title": "Designing Systems for Graceful Degradation",
+    "url": "https://example.com/graceful-degradation",
+    "content": "Real systems fail constantly — a downstream API times out, a cache goes cold, a region drops off the network. Graceful degradation is the design discipline of keeping the user-facing parts of the system useful even when components underneath are broken. The patterns are well-known: timeouts on every network call, circuit breakers that stop hammering a failing dependency, fallback responses (cached values, defaults, partial pages), and bulkheads that keep one slow caller from starving the rest. The opposite is fail-fast everywhere — which is fine for internal jobs but disastrous when a user is waiting. The hardest part is not coding the patterns; it is having the conversations to decide what 'useful' means when each dependency is unavailable. Run game-day exercises and inject failures in staging until the answers stop being surprising.",
+    "topics": ["architecture"]
+  },
+  {
+    "title": "Accessibility Is a Feature, Not a Lint Rule",
+    "url": "https://example.com/a11y-feature",
+    "content": "Treating accessibility as a checklist of automated rules — alt text on images, labels on inputs, sufficient color contrast — catches the easy mistakes but misses the ones that matter most. Automated tools can verify maybe a third of WCAG. The rest requires using the product with a keyboard, with a screen reader, with a magnifier, and noticing what does not work. Common failures are subtler than missing alt text: focus that gets trapped inside a modal, a custom dropdown that announces nothing on selection, a 'Skip to content' link that does not actually skip. Accessibility is not a separate workstream; it is a quality property of every component. The teams that get it right design with assistive technology in mind from the beginning, write component tests that include keyboard interaction, and treat accessibility regressions like any other bug.",
+    "topics": ["ux", "accessibility"]
+  },
+  {
+    "title": "What a Design System Actually Is",
+    "url": "https://example.com/design-systems",
+    "content": "A design system is not a Figma library, and it is not a component library either. It is the combination of the two plus the documentation, the principles, and the process for making changes. A complete design system has tokens (colors, spacing, typography expressed as variables), components (the building blocks, in code and in design), patterns (compositions of components solving recurring UX problems), and guidelines (when to use what). Without all four, teams end up reinventing pieces inconsistently. The most common pitfall is shipping the components without the patterns, which leaves product designers to decide how a date picker fits into a form layout — and they will each make a different choice. The system pays for itself only when adoption is high; a design system that lives next to a product full of one-off components is just more work.",
+    "topics": ["ux", "design-systems"]
+  },
+  {
+    "title": "Information Architecture in Five Questions",
+    "url": "https://example.com/ia-five-questions",
+    "content": "Good information architecture is what lets users find things without thinking. When a navigation feels obvious, someone designed it carefully; when it feels confusing, no one did. Five questions guide most IA decisions. What are the user's mental categories — not the company's? What do users come back to repeatedly, and what is one-and-done? Where does each task naturally start? What word would a user type into a search box for this thing? What is the cost of getting it wrong — a missed click, or a missed customer? Card sorts, tree tests, and first-click tests are inexpensive ways to validate answers before committing them to code. Reorganizing navigation in a live product is expensive — links break, muscle memory rebels, support tickets spike — so doing the homework up front pays for itself.",
+    "topics": ["ux"]
+  },
+  {
+    "title": "The Agile Manifesto, Honestly",
+    "url": "https://example.com/agile-honestly",
+    "content": "The four values of the Agile Manifesto — individuals and interactions over processes and tools, working software over comprehensive documentation, customer collaboration over contract negotiation, responding to change over following a plan — are deliberately worded as preferences, not absolutes. The right side of each pair still has value; it is just second when there is a conflict. Most of what gets called 'Agile' in practice is some specific framework (Scrum, SAFe, Kanban) bolted on top of a culture that does not actually want any of the four values. Standups become status meetings. Sprints become deadlines. Retrospectives become performative. The original spirit was simpler: ship often, talk to users, and change your mind in public. Teams that internalize that part can use whatever ceremony they like — or none — and will outperform teams that follow every ritual but skipped the reading.",
+    "topics": ["product"]
+  },
+  {
+    "title": "Code Review as Knowledge Transfer",
+    "url": "https://example.com/code-review",
+    "content": "The point of code review is not to catch bugs — automated tests and types do that more reliably. The point is to spread context: how this part of the system works, why a previous decision went the way it did, what the team agrees on stylistically. The reviewer who says 'this is fine' on every PR is failing at the harder part of the job. Useful reviews ask questions, suggest alternatives, and link to the relevant prior conversation or doc. Bad reviews nitpick formatting that a linter should catch, demand the author rewrite the change in the reviewer's preferred style, or block on personal taste dressed up as principle. Authors share responsibility: small, well-titled PRs with a short rationale get reviewed faster and better than thousand-line diffs landed on a Friday afternoon.",
+    "topics": ["product"]
+  },
+  {
+    "title": "Database Migrations Without Downtime",
+    "url": "https://example.com/zero-downtime-migrations",
+    "content": "Schema changes are the highest-risk deploys most teams do, and the recipe for doing them safely is well-understood: never combine a write change and a read change in the same release. Adding a column? Add it nullable, deploy code that writes to it, backfill existing rows, deploy code that reads from it, then in a later release make it non-nullable. Renaming a column? Add the new column, dual-write, migrate readers, retire the old column. The shape is always the same: expand, migrate, contract. Long-running migrations on big tables need extra care — locking can take an application down even when the change itself is logically safe. Tools like pg_repack, pt-online-schema-change, and gh-ost exist to do the rewrite without holding a lock long enough to matter.",
+    "topics": ["databases", "postgres", "architecture"]
+  },
+  {
+    "title": "Rate Limiting Strategies",
+    "url": "https://example.com/rate-limiting",
+    "content": "A rate limiter protects a system from being overwhelmed by any single client — friendly or hostile. The simplest algorithm is a fixed window: count requests per minute and reject when the count exceeds a threshold. It is easy to implement but suffers from boundary spikes where a client crams two windows' worth of requests across the boundary. A sliding window smooths that out. Token bucket is the most common production choice: each client has a bucket that refills at a steady rate, and each request consumes one token. Bursts are allowed up to the bucket size. Leaky bucket is similar but enforces a constant outflow. Whichever algorithm you pick, decide what to limit on (IP, user, API key) and how to surface the limit (HTTP 429 with Retry-After). Rate limits should be observable so legitimate clients can adjust before they get blocked.",
+    "topics": ["security", "architecture"]
+  },
+  {
+    "title": "The CAP Theorem, Briefly",
+    "url": "https://example.com/cap-theorem",
+    "content": "The CAP theorem states that a distributed data store cannot simultaneously guarantee consistency, availability, and partition tolerance during a network partition — you can have at most two. In practice, partitions happen, so the real choice is between consistency and availability when the network breaks. CP systems (like spanner-style strongly consistent stores) prefer to refuse writes during a partition; AP systems (like Dynamo-style eventually consistent stores) prefer to accept writes and reconcile later. The theorem is often misapplied. Most systems are not in a partition most of the time, and modern engines achieve consistency, availability, and very low latency simultaneously when the network is healthy. The interesting question is not which two letters you picked but how the system behaves at the boundary — what failure modes appear, and what guarantees the application code is allowed to assume.",
+    "topics": ["databases", "architecture"]
+  },
+  {
+    "title": "Idempotency Keys: A Quick Guide",
+    "url": "https://example.com/idempotency-keys",
+    "content": "Network failures make every API call a potential duplicate: the request reached the server, the response did not reach the client, the client retries, and now you have two charges. An idempotency key is a client-supplied identifier that lets the server recognize the retry and return the original result instead of doing the work twice. The standard pattern is to store the key, the request hash, and the response in a small table with a TTL. On a repeat request, return the stored response. The key has to be supplied by the caller because only the caller knows whether two requests are 'the same' from the user's point of view. Stripe popularized the pattern in payments APIs, but it applies anywhere the operation has side effects — sending an email, charging a card, creating a resource that costs money.",
+    "topics": ["architecture", "api"]
+  },
+  {
+    "title": "Observability vs. Monitoring",
+    "url": "https://example.com/observability",
+    "content": "Monitoring tells you whether the things you predicted might break are broken. Observability tells you what happened when something you did not predict broke. The difference is usually framed as known unknowns versus unknown unknowns. Monitoring relies on dashboards and alerts wired to specific signals — CPU, error rate, queue depth. Observability relies on rich, high-cardinality telemetry — structured logs, traces, and exemplars — that lets you ask new questions of the data after the fact. The three pillars (logs, metrics, traces) are useful but incomplete; the fourth pillar people increasingly add is events with arbitrary attributes that you can group and filter on. Sampling, retention, and cost dominate the engineering trade-offs. The goal is not to capture everything forever; it is to capture enough that the next outage is debuggable.",
+    "topics": ["architecture"]
+  },
+  {
+    "title": "JWTs Are Not a Session Store",
+    "url": "https://example.com/jwt-vs-session",
+    "content": "JSON Web Tokens are a compact way to encode signed claims that a server can verify without a database lookup. That stateless property is also their main weakness when used as session tokens. Logging a user out, rotating permissions, or revoking a stolen token requires either keeping a server-side blocklist (which defeats the stateless benefit) or accepting that revocation is delayed until the token expires. Short token lifetimes plus refresh tokens narrow the window but do not close it. For most web applications, the simpler choice is opaque session tokens stored in a fast cache with a TTL — revocation is a delete, rotation is a write, and the threat model is easier to reason about. JWTs make sense for scenarios where the verifier does not have access to a session store: cross-service trust, signed download URLs, third-party integrations.",
+    "topics": ["security", "oauth"]
+  },
+  {
+    "title": "Feature Flags as a Continuous Delivery Tool",
+    "url": "https://example.com/feature-flags",
+    "content": "Feature flags decouple deploying code from releasing functionality. Code paths are gated by runtime checks against a flag service, so a feature can be deployed dark, turned on for internal users, expanded to a small percentage of customers, and rolled back instantly without a redeploy. This unlocks several practices: trunk-based development (everyone merges to main, flags hide unfinished work), staged rollouts, A/B tests, and kill switches for risky changes. The downside is debt. Every flag is a branch in the code; flags that outlive their experiments add complexity without value. A discipline of regularly auditing flags, deleting expired ones, and limiting how many can be in flight at once keeps the cost manageable. The flags worth keeping long-term are the ones that protect the system from itself — kill switches and circuit breakers, not feature toggles.",
+    "topics": ["architecture", "product"]
+  },
+  {
+    "title": "Why Type Safety Pays Off in Backends",
+    "url": "https://example.com/types-in-backends",
+    "content": "A statically typed backend catches a class of bugs that show up late and expensively in dynamic systems: a renamed field that one caller missed, a nullable value used as if it were not, a list mistakenly passed where a single item was expected. Types double as living documentation — the type signature of a function tells you more about what it does than most comments. The cost is up-front: defining shapes, propagating generics, debating whether a field is optional. The payoff is not visible in any single PR but compounds over the life of the codebase. Refactors become tractable, autocomplete becomes useful, and the surface area of 'mystery runtime errors' shrinks. TypeScript, Go, Rust, and Kotlin all reach for the same outcome from different starting points; the language matters less than the team's commitment to keeping the type information honest.",
+    "topics": ["typescript", "architecture"]
+  },
+  {
+    "title": "Threat Modeling in Thirty Minutes",
+    "url": "https://example.com/threat-modeling",
+    "content": "A useful threat model fits on a whiteboard. Draw the system as a small set of trust boundaries — what is inside your control, what is outside, what flows across the boundary. For each flow, ask what would happen if an attacker could read it, modify it, replay it, or refuse to deliver it. STRIDE — spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege — is a checklist that helps you not skip categories. The output is a short list of mitigations to design in (authentication, integrity, logging, rate limits) and a shorter list of risks you have explicitly accepted. The exercise pays off most when done early, while the architecture is still cheap to change. Done late it becomes a backlog of patches; done in time it shapes the system.",
+    "topics": ["security"]
+  },
+  {
+    "title": "Caching Is Not a Performance Strategy",
+    "url": "https://example.com/cache-not-strategy",
+    "content": "Adding a cache in front of a slow query is the most common reflex when an endpoint gets too slow. It works, sometimes, until it does not — and the failure modes are nasty. Cache stampedes hammer the origin when a hot key expires. Inconsistency between cache and source confuses users. Memory pressure forces evictions in unpredictable order. The deeper problem is that caching covers up rather than fixes a slow underlying system. Before caching, ask whether the query can be made faster (an index, a denormalization), whether the data really needs to be that fresh, and whether the work can be done ahead of time instead of on demand. When you do cache, pick a key carefully, set a TTL on purpose, and have a story for invalidation. 'Cache it for five minutes' is a hypothesis, not a strategy.",
+    "topics": ["architecture", "redis"]
+  },
+  {
+    "title": "Onboarding Decides Whether the Product Sticks",
+    "url": "https://example.com/onboarding-matters",
+    "content": "The first ten minutes a user spends with a product determine whether they come back. Most teams under-invest here. Onboarding is treated as a one-time tutorial bolted onto the front of the app, when it should be the most carefully designed flow in the system. The job of onboarding is not to explain features; it is to get the user to their first moment of value as quickly as possible. That moment is product-specific — a first message sent, a first chart rendered, a first deal closed — and identifying it precisely is the hardest part. Pre-populated sample data, opinionated defaults, and a tour that teaches by showing the user something useful they did not have to set up themselves all reduce the time-to-value. Empty states, by contrast, are where products go to die.",
+    "topics": ["product", "ux"]
+  }
+]

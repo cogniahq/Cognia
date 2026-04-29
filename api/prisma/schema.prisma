@@ -92,6 +92,17 @@ enum BriefingType {
   TEAM_REPORT
 }
 
+enum SharePermission {
+  READ
+  COMMENT
+}
+
+enum ShareRecipientType {
+  USER
+  ORG
+  LINK
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -132,6 +143,9 @@ model User {
   refresh_tokens           RefreshToken[]
   oauth_identities             OAuthIdentity[]
   email_verification_tokens    EmailVerificationToken[]
+  memory_shares_authored       MemoryShare[]            @relation("MemorySharer")
+  memory_shares_received       MemoryShare[]            @relation("MemoryShareRecipient")
+  memory_comments              MemoryComment[]
 
   @@map("users")
 }
@@ -205,6 +219,7 @@ model Organization {
   platform_tenant_links PlatformTenantLink[]
   platform_upload_sessions PlatformUploadSession[] @relation("PlatformUploadSessionOrganization")
   scim_access_tokens           ScimAccessToken[]
+  memory_shares                MemoryShare[]
 
   @@map("organizations")
 }
@@ -535,6 +550,8 @@ model Memory {
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
   query_related_memories QueryRelatedMemory[]
   document_chunks        DocumentChunk[]
+  shares                 MemoryShare[]
+  comments               MemoryComment[]
 
   @@index([user_id])
   @@index([created_at])
@@ -778,4 +795,46 @@ model ScimAccessToken {
 
   @@index([organization_id])
   @@map("scim_access_tokens")
+}
+
+model MemoryShare {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  memory_id           String                 @db.Uuid
+  sharer_user_id      String                 @db.Uuid
+  recipient_type      ShareRecipientType
+  recipient_user_id   String?                @db.Uuid
+  recipient_org_id    String?                @db.Uuid
+  link_token          String?                @unique
+  permission          SharePermission        @default(READ)
+  expires_at          DateTime?
+  created_at          DateTime               @default(now())
+  revoked_at          DateTime?
+  memory              Memory                 @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  sharer_user         User                   @relation("MemorySharer", fields: [sharer_user_id], references: [id], onDelete: Cascade)
+  recipient_user      User?                  @relation("MemoryShareRecipient", fields: [recipient_user_id], references: [id], onDelete: SetNull)
+  recipient_org       Organization?          @relation(fields: [recipient_org_id], references: [id], onDelete: SetNull)
+
+  @@index([memory_id])
+  @@index([recipient_user_id])
+  @@index([recipient_org_id])
+  @@map("memory_shares")
+}
+
+model MemoryComment {
+  id              String          @id @default(uuid()) @db.Uuid
+  memory_id       String          @db.Uuid
+  author_user_id  String          @db.Uuid
+  parent_id       String?         @db.Uuid
+  body_md         String          @db.Text
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  deleted_at      DateTime?
+  memory          Memory          @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  author          User            @relation(fields: [author_user_id], references: [id], onDelete: Cascade)
+  parent          MemoryComment?  @relation("ChildComments", fields: [parent_id], references: [id], onDelete: SetNull)
+  children        MemoryComment[] @relation("ChildComments")
+
+  @@index([memory_id])
+  @@index([parent_id])
+  @@map("memory_comments")
 }

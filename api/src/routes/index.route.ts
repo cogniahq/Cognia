@@ -20,6 +20,8 @@ import oauthRouter from './oauth.route'
 import ssoRouter from './sso.route'
 import scimRouter from './scim.route'
 import onboardingRouter from './onboarding.route'
+import shareRouter from './share.route'
+import commentRouter from './comment.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -54,4 +56,7 @@ export const routes = (app: Express) => {
   app.use('/scim', scimRouter)
   // Onboarding (sample-workspace dismissal, tour completion, state)
   app.use('/api/onboarding', onboardingRouter)
+  // Memory sharing + threaded comments
+  app.use('/api/shares', shareRouter)
+  app.use('/api/comments', commentRouter)
 }

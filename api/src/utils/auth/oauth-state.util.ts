@@ -108,3 +108,93 @@ export function parseOAuthState(
 
   return parsedPayload
 }
+
+/**
+ * Sign-in OAuth state — used by the "Sign in with Google/Microsoft" flow.
+ *
+ * Unlike the integration state above, there is no logged-in `userId` at the
+ * point we mint this state (the user is still anonymous). It carries the PKCE
+ * `codeVerifier` and a `returnTo` that the callback redirects to. The HMAC
+ * signing/parsing reuses the same secret + base64url+'.'+sig format as the
+ * integration state to keep one consistent pattern.
+ */
+
+export type SignInOAuthProvider = 'google' | 'microsoft'
+
+export interface SignInOAuthStatePayload {
+  kind: 'signin'
+  provider: SignInOAuthProvider
+  codeVerifier: string
+  returnTo: string
+  timestamp: number
+}
+
+function isSignInOAuthStatePayload(value: unknown): value is SignInOAuthStatePayload {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const payload = value as Partial<SignInOAuthStatePayload>
+  return (
+    payload.kind === 'signin' &&
+    (payload.provider === 'google' || payload.provider === 'microsoft') &&
+    typeof payload.codeVerifier === 'string' &&
+    payload.codeVerifier.length > 0 &&
+    typeof payload.returnTo === 'string' &&
+    typeof payload.timestamp === 'number' &&
+    Number.isFinite(payload.timestamp)
+  )
+}
+
+export function createSignInOAuthState(payload: {
+  provider: SignInOAuthProvider
+  codeVerifier: string
+  returnTo: string
+}): string {
+  const fullPayload: SignInOAuthStatePayload = {
+    kind: 'signin',
+    provider: payload.provider,
+    codeVerifier: payload.codeVerifier,
+    returnTo: payload.returnTo,
+    timestamp: Date.now(),
+  }
+  const encodedPayload = Buffer.from(JSON.stringify(fullPayload)).toString('base64url')
+  const signature = signState(encodedPayload)
+  return `${encodedPayload}.${signature}`
+}
+
+export function parseSignInOAuthState(
+  state: string,
+  maxAgeMs: number = OAUTH_STATE_TTL_MS
+): SignInOAuthStatePayload {
+  const separatorIndex = state.lastIndexOf('.')
+
+  if (separatorIndex <= 0 || separatorIndex === state.length - 1) {
+    throw new Error('Invalid state format')
+  }
+
+  const encodedPayload = state.slice(0, separatorIndex)
+  const signature = state.slice(separatorIndex + 1)
+  const expectedSignature = signState(encodedPayload)
+
+  if (!safeEqual(signature, expectedSignature)) {
+    throw new Error('Invalid state signature')
+  }
+
+  let parsedPayload: unknown
+  try {
+    parsedPayload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'))
+  } catch {
+    throw new Error('Invalid state payload')
+  }
+
+  if (!isSignInOAuthStatePayload(parsedPayload)) {
+    throw new Error('Invalid state data')
+  }
+
+  const stateAge = Date.now() - parsedPayload.timestamp
+  if (stateAge < 0 || stateAge > maxAgeMs) {
+    throw new Error('Authorization expired')
+  }
+
+  return parsedPayload
+}

@@ -7,6 +7,8 @@
  * - custom: configurable (future)
  */
 
+import { isPasswordPwned } from '../../services/auth/hibp.service'
+
 export type PasswordPolicy = 'standard' | 'strong' | 'custom'
 
 export interface PasswordValidationResult {
@@ -66,6 +68,29 @@ export function validatePassword(
     valid: errors.length === 0,
     errors,
   }
+}
+
+/**
+ * Validate password against a policy AND check against HaveIBeenPwned.
+ *
+ * Runs the synchronous policy rules first (returns those errors immediately if
+ * any). Only if the password passes the policy do we make the HIBP k-anonymity
+ * call. The HIBP service fails open (logs a warning, returns false) on network
+ * errors so outages don't block signups.
+ */
+export async function validatePasswordWithBreachCheck(
+  password: string,
+  policy: PasswordPolicy = 'standard'
+): Promise<PasswordValidationResult> {
+  const sync = validatePassword(password, policy)
+  if (!sync.valid) return sync
+  if (await isPasswordPwned(password)) {
+    return {
+      valid: false,
+      errors: ['This password appeared in a data breach. Please choose a different one.'],
+    }
+  }
+  return { valid: true, errors: [] }
 }
 
 /**

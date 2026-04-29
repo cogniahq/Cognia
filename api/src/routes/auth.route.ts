@@ -14,7 +14,10 @@ import {
   revokeAllForUser as revokeRefreshForUser,
 } from '../services/auth/refresh-token.service'
 import { hashPassword, comparePassword } from '../utils/core/password.util'
-import { validatePassword, PasswordPolicy } from '../utils/auth/password-policy.util'
+import {
+  validatePasswordWithBreachCheck,
+  PasswordPolicy,
+} from '../utils/auth/password-policy.util'
 import {
   generateSecret,
   generateTOTPUri,
@@ -132,8 +135,8 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       return res.status(400).json({ message: 'account_type must be PERSONAL or ORGANIZATION' })
     }
 
-    // Validate password against standard policy for new registrations
-    const passwordValidation = validatePassword(password, 'standard')
+    // Validate password against standard policy + HIBP breach check for new registrations
+    const passwordValidation = await validatePasswordWithBreachCheck(password, 'standard')
     if (!passwordValidation.valid) {
       return res.status(400).json({
         message: 'Password does not meet requirements',
@@ -729,8 +732,8 @@ router.post(
         }
       }
 
-      // Validate new password
-      const validation = validatePassword(newPassword, policy)
+      // Validate new password against policy + HIBP breach check
+      const validation = await validatePasswordWithBreachCheck(newPassword, policy)
       if (!validation.valid) {
         return res.status(400).json({
           message: 'New password does not meet requirements',

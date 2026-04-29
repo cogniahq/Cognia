@@ -37,6 +37,7 @@ import {
   decrypt2faSecret,
   is2faSecretLegacy,
 } from '../services/auth/two-factor.service'
+import { auditLogService } from '../services/core/audit-log.service'
 
 const router = Router()
 
@@ -70,6 +71,19 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
 // Logout (revoke current JWT's jti and clear session cookie)
 router.post('/logout', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (req.user?.id) {
+      await auditLogService
+        .logEvent({
+          userId: req.user.id,
+          eventType: 'logout',
+          eventCategory: 'authentication',
+          action: 'logout',
+          metadata: { jti: req.user.jti },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+    }
     const jti = req.user?.jti
     if (jti) {
       // Worst-case TTL: full configured JWT lifetime (default 7 days) in milliseconds
@@ -93,6 +107,17 @@ router.post('/logout-all', authenticateToken, async (req: AuthenticatedRequest, 
       revokeAllForUser(req.user.id),
       revokeRefreshForUser(req.user.id),
     ])
+    await auditLogService
+      .logEvent({
+        userId: req.user.id,
+        eventType: 'session_revoked',
+        eventCategory: 'security',
+        action: 'logout-all',
+        metadata: { scope: 'self' },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
     clearAuthCookie(res)
     res.clearCookie('cognia_refresh', { path: '/api/auth/refresh' })
     return res.status(200).json({ message: 'All sessions revoked' })
@@ -111,6 +136,17 @@ router.post(
     try {
       const { userId } = req.params
       await Promise.all([revokeAllForUser(userId), revokeRefreshForUser(userId)])
+      await auditLogService
+        .logEvent({
+          userId,
+          eventType: 'session_revoked',
+          eventCategory: 'security',
+          action: 'admin-revoke',
+          metadata: { revokedBy: req.user?.id },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
       logger.log('[auth] Admin revoked user sessions', {
         adminId: req.user!.id,
         targetUserId: userId,
@@ -212,6 +248,17 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
 
     const ok = await comparePassword(password, user.password_hash)
     if (!ok) {
+      await auditLogService
+        .logEvent({
+          userId: user.id,
+          eventType: 'login_failed',
+          eventCategory: 'authentication',
+          action: 'login',
+          metadata: { reason: 'invalid_password' },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
       return res.status(401).json({ message: 'Invalid credentials' })
     }
 
@@ -233,6 +280,17 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
         const decryptedSecret = decrypt2faSecret(user.two_factor_secret)
         const isValid = verifyTOTP(decryptedSecret, totpCode)
         if (!isValid) {
+          await auditLogService
+            .logEvent({
+              userId: user.id,
+              eventType: 'login_failed',
+              eventCategory: 'authentication',
+              action: 'login',
+              metadata: { reason: 'invalid_2fa' },
+              ipAddress: req.ip,
+              userAgent: req.get('user-agent') ?? undefined,
+            })
+            .catch(() => {})
           return res.status(401).json({ message: 'Invalid 2FA code' })
         }
         // Opportunistically re-encrypt legacy plaintext secrets after a
@@ -249,6 +307,17 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
       else if (backupCode) {
         const codeIndex = verifyBackupCode(backupCode, user.two_factor_backup_codes)
         if (codeIndex === -1) {
+          await auditLogService
+            .logEvent({
+              userId: user.id,
+              eventType: 'login_failed',
+              eventCategory: 'authentication',
+              action: 'login',
+              metadata: { reason: 'invalid_2fa' },
+              ipAddress: req.ip,
+              userAgent: req.get('user-agent') ?? undefined,
+            })
+            .catch(() => {})
           return res.status(401).json({ message: 'Invalid backup code' })
         }
         // Remove used backup code
@@ -281,6 +350,17 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
       path: '/api/auth/refresh',
       maxAge: 14 * 24 * 60 * 60 * 1000,
     })
+    await auditLogService
+      .logEvent({
+        userId: user.id,
+        eventType: 'login_success',
+        eventCategory: 'authentication',
+        action: 'login',
+        metadata: { source: req.body?.source ?? 'web' },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
     return res.status(200).json({
       success: true,
       data: {
@@ -488,6 +568,17 @@ router.post('/2fa/verify', authenticateToken, async (req: AuthenticatedRequest, 
 
     logger.log('[auth] 2FA enabled', { userId: user.id })
 
+    await auditLogService
+      .logEvent({
+        userId: user.id,
+        eventType: '2fa_enabled',
+        eventCategory: 'security',
+        action: '2fa-setup',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
+
     res.status(200).json({
       success: true,
       data: {
@@ -560,6 +651,17 @@ router.post('/2fa/disable', authenticateToken, async (req: AuthenticatedRequest,
     })
 
     logger.log('[auth] 2FA disabled', { userId: user.id })
+
+    await auditLogService
+      .logEvent({
+        userId: user.id,
+        eventType: '2fa_disabled',
+        eventCategory: 'security',
+        action: '2fa-disable',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
 
     res.status(200).json({
       success: true,
@@ -667,6 +769,17 @@ router.post(
 
       logger.log('[auth] Backup codes regenerated', { userId: user.id })
 
+      await auditLogService
+        .logEvent({
+          userId: user.id,
+          eventType: 'backup_codes_regenerated',
+          eventCategory: 'security',
+          action: '2fa-backup-codes-regenerate',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       res.status(200).json({
         success: true,
         data: {
@@ -750,6 +863,18 @@ router.post(
       })
 
       logger.log('[auth] Password changed', { userId: req.user!.id })
+
+      await auditLogService
+        .logEvent({
+          userId: req.user!.id,
+          eventType: 'password_changed',
+          eventCategory: 'security',
+          action: 'password-change',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+
       res.status(200).json({ message: 'Password changed successfully' })
     } catch (error) {
       logger.error('Change password error:', error)

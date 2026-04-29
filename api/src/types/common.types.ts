@@ -52,8 +52,22 @@ export type AuditEventType =
   | 'platform_membership_sync'
   | 'platform_document_upload'
   | 'platform_search'
+  | 'login_success'
+  | 'login_failed'
+  | 'logout'
+  | 'session_revoked'
+  | 'password_changed'
+  | '2fa_enabled'
+  | '2fa_disabled'
+  | 'backup_codes_regenerated'
 
-export type AuditEventCategory = 'capture' | 'search' | 'data_management' | 'platform'
+export type AuditEventCategory =
+  | 'capture'
+  | 'search'
+  | 'data_management'
+  | 'platform'
+  | 'authentication'
+  | 'security'
 
 export type ExportBundle = {
   version: string

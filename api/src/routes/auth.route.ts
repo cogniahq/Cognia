@@ -38,6 +38,11 @@ import {
   is2faSecretLegacy,
 } from '../services/auth/two-factor.service'
 import { auditLogService } from '../services/core/audit-log.service'
+import {
+  issueEmailVerificationToken,
+  consumeEmailVerificationToken,
+  sendVerificationEmail,
+} from '../services/auth/email-verification.service'
 
 const router = Router()
 
@@ -193,6 +198,10 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
         account_type: account_type as 'PERSONAL' | 'ORGANIZATION',
       },
     })
+
+    // Issue and send a verify-email token for the freshly created user
+    const { token: vToken } = await issueEmailVerificationToken(user.id, 'verify_email')
+    await sendVerificationEmail(user.email!, vToken, 'verify_email').catch(() => {})
 
     const token = generateToken({
       userId: user.id,
@@ -882,5 +891,71 @@ router.post(
     }
   }
 )
+
+// ==========================================
+// Email verification + magic-link endpoints
+// ==========================================
+
+// Public endpoint to verify an email address using a token previously sent to it
+router.post('/verify-email', async (req: Request, res: Response) => {
+  const { token } = req.body ?? {}
+  if (!token) return res.status(400).json({ message: 'token required' })
+  try {
+    const { userId } = await consumeEmailVerificationToken(token, 'verify_email')
+    res.json({ success: true, userId })
+  } catch (err) {
+    res.status(400).json({ success: false, message: (err as Error).message })
+  }
+})
+
+// Re-issue a verification email for the currently authenticated user
+router.post(
+  '/resend-verification',
+  authenticateToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.user?.id || !req.user.email) return res.status(401).json({ message: 'Unauthorized' })
+    const { token } = await issueEmailVerificationToken(req.user.id, 'verify_email')
+    await sendVerificationEmail(req.user.email, token, 'verify_email').catch(() => {})
+    res.json({ success: true })
+  }
+)
+
+// Magic-link flow (passwordless)
+router.post('/magic-link/send', async (req: Request, res: Response) => {
+  const { email } = req.body ?? {}
+  if (!email) return res.status(400).json({ message: 'email required' })
+  const user = await prisma.user.findUnique({ where: { email } })
+  // Always 200 to prevent enumeration
+  if (!user) return res.json({ success: true })
+  const { token } = await issueEmailVerificationToken(user.id, 'magic_link')
+  await sendVerificationEmail(email, token, 'magic_link').catch(() => {})
+  res.json({ success: true })
+})
+
+router.post('/magic-link/consume', async (req: Request, res: Response) => {
+  const { token } = req.body ?? {}
+  if (!token) return res.status(400).json({ message: 'token required' })
+  try {
+    const { userId } = await consumeEmailVerificationToken(token, 'magic_link')
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return res.status(401).json({ message: 'User not found' })
+    // Issue access + refresh tokens, mirroring /login success path
+    const accessToken = generateToken({ userId: user.id, email: user.email ?? undefined })
+    const { token: refreshToken } = await issueRefreshToken(user.id, {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    })
+    res.cookie('cognia_refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/auth/refresh',
+      maxAge: 14 * 24 * 60 * 60 * 1000,
+    })
+    res.json({ success: true, token: accessToken })
+  } catch (err) {
+    res.status(400).json({ success: false, message: (err as Error).message })
+  }
+})
 
 export default router

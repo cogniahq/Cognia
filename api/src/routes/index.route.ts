@@ -15,6 +15,7 @@ import orgIntegrationsRouter from './org-integrations.route'
 import webhooksRouter from './webhooks.route'
 import briefingRouter from './briefing.route'
 import platformRouter from './platform.route'
+import orgAdminRouter from './org-admin.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -28,6 +29,7 @@ export const routes = (app: Express) => {
   app.use('/api/export', exportImportRouter)
   app.use('/api/privacy', privacyRouter)
   app.use('/api/admin', adminRouter)
+  app.use('/api/org-admin', orgAdminRouter)
   app.use('/api/organizations', organizationRouter)
   app.use('/api/platform', platformRouter)
   // Document routes are mounted under /api/organizations/:slug/documents

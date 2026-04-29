@@ -19,6 +19,7 @@ import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
 import { startDocumentWorker } from './workers/document-worker'
 import { startBriefingWorker } from './workers/briefing-worker'
+import { startAuditRetentionWorker } from './workers/audit-retention.worker'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { isOpenAISearchOnlyModeEnabled } from './services/ai/ai-config'
@@ -314,6 +315,8 @@ server.listen(port, async () => {
   } catch (e) {
     logger.warn('[startup] integration_service_error', String((e as Error)?.message || e))
   }
+  startAuditRetentionWorker()
+  logger.log('[startup] audit_retention_worker_started')
   logger.log('[startup] server_listening', { protocol, port })
 })
 process.on('unhandledRejection', (err: Error) => {

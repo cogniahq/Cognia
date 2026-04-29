@@ -56,12 +56,19 @@ export interface UpdateOrganizationSecurityInput {
   auditRetention?: '30d' | '90d' | '365d' | 'unlimited'
   ipAllowlist?: string[]
   ssoEnabled?: boolean
-  ssoConfig?: {
-    provider?: string
-    ssoUrl?: string
-    entityId?: string
-    certificate?: string
-  }
+  // Replaces ssoConfig (JSON dropped in Phase 2A)
+  ssoProvider?: 'saml' | 'oidc' | null
+  ssoIdpEntityId?: string | null
+  ssoIdpSsoUrl?: string | null
+  ssoIdpCert?: string | null
+  ssoIdpOidcIssuer?: string | null
+  ssoIdpOidcClientId?: string | null
+  ssoIdpOidcClientSecret?: string | null // plaintext from wizard; service encrypts before write
+  ssoAttributeEmail?: string | null
+  ssoAttributeGroups?: string | null
+  ssoRoleMapping?: Record<string, string> | null
+  ssoEnforced?: boolean
+  ssoEmailDomains?: string[]
 }
 
 export interface SetupProgress {
@@ -132,7 +139,18 @@ export interface OrganizationWithMembers {
   audit_retention?: string
   ip_allowlist?: string[]
   sso_enabled?: boolean
-  sso_config?: Prisma.JsonValue | null
+  sso_provider?: string | null
+  sso_idp_entity_id?: string | null
+  sso_idp_sso_url?: string | null
+  sso_idp_cert?: string | null
+  sso_idp_oidc_issuer?: string | null
+  sso_idp_oidc_client_id?: string | null
+  sso_idp_oidc_client_secret?: string | null
+  sso_attribute_email?: string | null
+  sso_attribute_groups?: string | null
+  sso_role_mapping?: Prisma.JsonValue | null
+  sso_enforced?: boolean
+  sso_email_domains?: string[]
   // Setup tracking
   setup_completed_steps?: string[]
   setup_started_at?: Date | null

@@ -3,6 +3,7 @@ import { logger } from '../../utils/core/logger.util'
 import { OrgRole } from '@prisma/client'
 import { randomBytes } from 'crypto'
 import { normalizeDomainPack } from '../../config/domain-packs'
+import { encryptString } from '../../utils/auth/crypto.util'
 import type {
   CreateOrganizationInput,
   UpdateOrganizationInput,
@@ -604,18 +605,41 @@ export class OrganizationService {
     organizationId: string,
     input: UpdateOrganizationSecurityInput
   ): Promise<OrganizationWithMembers> {
+    const data: any = {}
+    if (input.dataResidency !== undefined) data.data_residency = input.dataResidency
+    if (input.require2FA !== undefined) data.require_2fa = input.require2FA
+    if (input.sessionTimeout !== undefined) data.session_timeout = input.sessionTimeout
+    if (input.passwordPolicy !== undefined) data.password_policy = input.passwordPolicy
+    if (input.auditRetention !== undefined) data.audit_retention = input.auditRetention
+    if (input.ipAllowlist !== undefined) data.ip_allowlist = input.ipAllowlist
+    if (input.ssoEnabled !== undefined) data.sso_enabled = input.ssoEnabled
+    if (input.ssoProvider !== undefined) data.sso_provider = input.ssoProvider
+    if (input.ssoIdpEntityId !== undefined) data.sso_idp_entity_id = input.ssoIdpEntityId
+    if (input.ssoIdpSsoUrl !== undefined) data.sso_idp_sso_url = input.ssoIdpSsoUrl
+    if (input.ssoIdpCert !== undefined) data.sso_idp_cert = input.ssoIdpCert
+    if (input.ssoIdpOidcIssuer !== undefined) data.sso_idp_oidc_issuer = input.ssoIdpOidcIssuer
+    if (input.ssoIdpOidcClientId !== undefined) data.sso_idp_oidc_client_id = input.ssoIdpOidcClientId
+    if (input.ssoIdpOidcClientSecret !== undefined) {
+      if (input.ssoIdpOidcClientSecret === null) {
+        data.sso_idp_oidc_client_secret = null
+      } else {
+        const key = process.env.TOKEN_ENCRYPTION_KEY
+        if (!key) throw new Error('TOKEN_ENCRYPTION_KEY not set')
+        data.sso_idp_oidc_client_secret = encryptString(input.ssoIdpOidcClientSecret, key)
+      }
+    }
+    if (input.ssoAttributeEmail !== undefined) data.sso_attribute_email = input.ssoAttributeEmail
+    if (input.ssoAttributeGroups !== undefined) data.sso_attribute_groups = input.ssoAttributeGroups
+    if (input.ssoRoleMapping !== undefined) {
+      // Prisma: pass null to clear, object as Json
+      data.sso_role_mapping = input.ssoRoleMapping === null ? null : (input.ssoRoleMapping as any)
+    }
+    if (input.ssoEnforced !== undefined) data.sso_enforced = input.ssoEnforced
+    if (input.ssoEmailDomains !== undefined) data.sso_email_domains = input.ssoEmailDomains
+
     const organization = await prisma.organization.update({
       where: { id: organizationId },
-      data: {
-        ...(input.dataResidency !== undefined && { data_residency: input.dataResidency }),
-        ...(input.require2FA !== undefined && { require_2fa: input.require2FA }),
-        ...(input.sessionTimeout !== undefined && { session_timeout: input.sessionTimeout }),
-        ...(input.passwordPolicy !== undefined && { password_policy: input.passwordPolicy }),
-        ...(input.auditRetention !== undefined && { audit_retention: input.auditRetention }),
-        ...(input.ipAllowlist !== undefined && { ip_allowlist: input.ipAllowlist }),
-        ...(input.ssoEnabled !== undefined && { sso_enabled: input.ssoEnabled }),
-        ...(input.ssoConfig !== undefined && { sso_config: input.ssoConfig }),
-      },
+      data,
       include: {
         members: {
           include: {

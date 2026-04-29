@@ -4,6 +4,7 @@ import { integrationService } from '../services/integration'
 import { SyncFrequency, StorageStrategy } from '@prisma/client'
 import { createOAuthState, parseOAuthState } from '../utils/auth/oauth-state.util'
 import { prisma } from '../lib/prisma.lib'
+import { integrationSyncRateLimiter } from '../middleware/rate-limit.middleware'
 
 const router = Router()
 const getErrorMessage = (error: unknown, fallback: string) =>
@@ -260,6 +261,7 @@ router.put(
 router.post(
   '/:provider/sync',
   authenticateToken,
+  integrationSyncRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { provider } = req.params

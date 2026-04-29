@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from 'express'
 import { getRedisClient } from '../lib/redis.lib'
 import { logger } from '../utils/core/logger.util'
+import type { AuthenticatedRequest } from './auth.middleware'
 
 interface RateLimitOptions {
   windowMs: number // Time window in milliseconds
   maxRequests: number // Max requests per window
   keyPrefix: string // Redis key prefix
   message?: string // Error message
+  keyExtractor?: (req: Request) => string // defaults to client IP
 }
 
 function getClientIp(req: Request): string {
@@ -17,6 +19,11 @@ function getClientIp(req: Request): string {
   return req.ip || req.socket.remoteAddress || 'unknown'
 }
 
+export function userOrIpKey(req: Request): string {
+  const userId = (req as AuthenticatedRequest).user?.id
+  return userId ? `u:${userId}` : `ip:${getClientIp(req)}`
+}
+
 export function createRateLimiter(options: RateLimitOptions) {
   const {
     windowMs,
@@ -25,11 +32,13 @@ export function createRateLimiter(options: RateLimitOptions) {
     message = 'Too many requests, please try again later',
   } = options
 
+  const extractor = options.keyExtractor ?? ((r: Request) => `ip:${getClientIp(r)}`)
+
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const redis = getRedisClient()
-      const ip = getClientIp(req)
-      const key = `${keyPrefix}:${ip}`
+      const subject = extractor(req)
+      const key = `${keyPrefix}:${subject}`
 
       const current = await redis.incr(key)
 
@@ -48,7 +57,7 @@ export function createRateLimiter(options: RateLimitOptions) {
       }
 
       if (current > maxRequests) {
-        logger.warn(`Rate limit exceeded for IP ${ip} on ${keyPrefix}`)
+        logger.warn(`Rate limit exceeded for ${subject} on ${keyPrefix}`)
         res.status(429).json({ message })
         return
       }
@@ -89,4 +98,28 @@ export const extensionTokenRateLimiter = createRateLimiter({
   maxRequests: 10, // 10 token requests per 15 minutes
   keyPrefix: 'ratelimit:extension-token',
   message: 'Too many token requests. Please try again later.',
+})
+
+// Pre-configured rate limiters for authenticated endpoints (per-user when possible)
+export const searchRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  keyPrefix: 'ratelimit:search',
+  message: 'Search rate limit exceeded. Slow down or upgrade your plan.',
+  keyExtractor: userOrIpKey,
+})
+
+export const exportRateLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  maxRequests: 5,
+  keyPrefix: 'ratelimit:export',
+  message: 'Export rate limit exceeded. Try again in an hour.',
+  keyExtractor: userOrIpKey,
+})
+
+export const integrationSyncRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: 'ratelimit:integration-sync',
+  keyExtractor: userOrIpKey,
 })

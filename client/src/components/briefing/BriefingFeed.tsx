@@ -5,6 +5,7 @@ import {
 } from "@/services/briefing/briefing.service"
 
 import type { Briefing, BriefingType } from "@/types/briefing"
+import { BriefingsEmptyState } from "@/components/empty-states/BriefingsEmptyState"
 
 import BriefingCard from "./BriefingCard"
 
@@ -126,12 +127,10 @@ export default function BriefingFeed() {
           ))}
         </div>
       ) : briefings.length === 0 ? (
-        <div className="text-center py-12 border border-gray-200 bg-white">
-          <p className="text-sm font-mono text-gray-500">
-            No briefings yet. Keep browsing and Cognia will generate your first
-            daily digest.
-          </p>
-        </div>
+        <BriefingsEmptyState
+          onGenerateNow={handleGenerate}
+          generating={generating}
+        />
       ) : (
         <div className="space-y-3">
           {briefings.map((b) => (

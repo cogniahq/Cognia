@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom"
 import BriefingBadge from "@/components/briefing/BriefingBadge"
 import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner"
+import { OrgSwitcher } from "@/components/shared/OrgSwitcher"
 
 function LogoutButton() {
   const { logout } = useAuth()
@@ -141,6 +142,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                   {btn.label === "Briefings" && <BriefingBadge />}
                 </motion.button>
               ))}
+              <OrgSwitcher />
               <LogoutButton />
             </div>
           </div>

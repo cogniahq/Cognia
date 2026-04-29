@@ -1,7 +1,7 @@
 import React from "react"
+import { Link } from "react-router-dom"
 
 import { Section } from "./Section"
-import { WaitlistForm } from "./WaitlistForm"
 
 export const CTASection: React.FC = () => {
   return (
@@ -12,11 +12,23 @@ export const CTASection: React.FC = () => {
             Ready to remember everything?
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-gray-700 mb-6 sm:mb-8 max-w-2xl mx-auto px-2 sm:px-0">
-            Join the waitlist to be among the first ones to experience Cognia,
-            or deploy it yourself.
+            Sign up free in under a minute, or deploy it yourself.
           </p>
           <div className="max-w-md mx-auto space-y-3 sm:space-y-4 px-2 sm:px-0">
-            <WaitlistForm compact />
+            <Link
+              to="/signup"
+              className="block w-full group relative overflow-hidden border border-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-200 bg-gray-900"
+            >
+              <span className="relative z-10 text-xs sm:text-sm font-medium text-white flex items-center justify-center gap-2">
+                Start free →
+              </span>
+            </Link>
+            <Link
+              to="/pricing"
+              className="block text-center text-xs sm:text-sm text-gray-600 hover:text-gray-900 underline underline-offset-4"
+            >
+              See pricing
+            </Link>
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex-1 h-px bg-gray-300"></div>
               <span className="text-xs sm:text-sm text-gray-500 font-primary">

@@ -9,6 +9,13 @@ import { useSpotlightSearchState } from "@/hooks/use-spotlight-search-state"
 import { MemoryMesh3D } from "@/components/memories/mesh"
 import { SpotlightSearch } from "@/components/memories/spotlight-search"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { MemoriesEmptyState } from "@/components/empty-states/MemoriesEmptyState"
+import { SampleDataBanner } from "@/components/onboarding/SampleDataBanner"
+import { CreateOrganizationDialog } from "@/components/organization/CreateOrganizationDialog"
+import {
+  onboardingService,
+  type OnboardingState,
+} from "@/services/onboarding.service"
 
 export const Memories: React.FC = () => {
   const navigate = useNavigate()
@@ -33,6 +40,20 @@ export const Memories: React.FC = () => {
 
   const similarityThreshold = 0.3
   const { memories, totalMemoryCount } = useMemories()
+  const [onboardingState, setOnboardingState] =
+    useState<OnboardingState | null>(null)
+  const [showCreateOrg, setShowCreateOrg] = useState(false)
+  const [teamBannerDismissed, setTeamBannerDismissed] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    onboardingService
+      .getState()
+      .then(setOnboardingState)
+      .catch(() => {
+        // Best-effort; absence of state simply suppresses the banner.
+      })
+  }, [isAuthenticated])
   const {
     isSpotlightOpen,
     setIsSpotlightOpen,
@@ -69,6 +90,52 @@ export const Memories: React.FC = () => {
     >
       <PageHeader pageName="Memories" />
 
+      {onboardingState && onboardingState.demoMemoryCount > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+          <SampleDataBanner
+            demoMemoryCount={onboardingState.demoMemoryCount}
+            onDismissed={() =>
+              setOnboardingState((prev) =>
+                prev ? { ...prev, demoMemoryCount: 0, demoDismissed: true } : prev
+              )
+            }
+          />
+        </div>
+      )}
+
+      {!teamBannerDismissed && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+          <div className="border border-gray-200 bg-white px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
+            <span className="text-gray-700">
+              Want to invite your team? Create a team workspace.
+            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => setShowCreateOrg(true)}
+                className="text-xs font-mono px-3 py-1.5 border border-gray-300 hover:border-black hover:bg-gray-900 hover:text-white transition-colors"
+              >
+                Create team workspace →
+              </button>
+              <button
+                onClick={() => setTeamBannerDismissed(true)}
+                className="text-xs font-mono text-gray-400 hover:text-gray-900"
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <CreateOrganizationDialog
+        open={showCreateOrg}
+        onOpenChange={setShowCreateOrg}
+      />
+
+      {memories.length === 0 && totalMemoryCount === 0 ? (
+        <MemoriesEmptyState />
+      ) : (
       <div className="flex flex-col md:flex-row h-[calc(100vh-3.5rem)] relative">
         <div
           className="flex-1 relative order-2 md:order-1 h-[50vh] md:h-auto md:min-h-[calc(100vh-3.5rem)] border-b md:border-b-0 bg-white"
@@ -198,6 +265,7 @@ export const Memories: React.FC = () => {
           }}
         />
       </div>
+      )}
     </div>
   )
 }

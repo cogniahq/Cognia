@@ -62,6 +62,11 @@ const AuthMagic = lazy(() =>
     default: module.AuthMagic,
   }))
 )
+const Pricing = lazy(() =>
+  import("@/pages/pricing.page").then((module) => ({
+    default: module.Pricing,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -100,9 +105,11 @@ const AppRoutes = () => {
         <AnimatedPage key={location.pathname}>
           <Routes location={location}>
             <Route path="/" element={<AuthRedirectLanding />} />
+            <Route path="/pricing" element={<Pricing />} />
             {enableInternalRoutes ? (
               <>
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Login />} />
                 <Route path="/auth/verify-email" element={<VerifyEmail />} />
                 <Route path="/auth/magic" element={<AuthMagic />} />
                 <Route path="/memories" element={<Memories />} />
@@ -118,6 +125,7 @@ const AppRoutes = () => {
             ) : (
               <>
                 <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route path="/signup" element={<Navigate to="/" replace />} />
                 <Route
                   path="/auth/verify-email"
                   element={<Navigate to="/" replace />}

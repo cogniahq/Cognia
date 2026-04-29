@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { IntegrationsEmptyState } from "@/components/empty-states/IntegrationsEmptyState"
 
 // Integration logos as inline SVGs
 const IntegrationLogos: Record<string, React.ReactNode> = {
@@ -370,16 +371,7 @@ export const Integrations: React.FC = () => {
         </div>
 
         {/* Empty state */}
-        {available.length === 0 && !isLoading && (
-          <div className="text-center py-12 border border-gray-200">
-            <div className="text-xs font-mono text-gray-500">
-              No integrations available
-            </div>
-            <div className="text-xs text-gray-400 mt-1">
-              Configure integrations in your environment to enable them
-            </div>
-          </div>
-        )}
+        {available.length === 0 && !isLoading && <IntegrationsEmptyState />}
 
         {/* Info box */}
         <div className="mt-6 px-3 py-2 bg-gray-50 border border-gray-200 text-xs text-gray-600">

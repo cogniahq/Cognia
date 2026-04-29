@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { cn } from "@/lib/utils.lib"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { ConsoleButton } from "@/components/landing/ConsoleButton"
+import { OAuthButton } from "@/components/auth/OAuthButton"
+import { SsoDiscovery } from "@/components/auth/SsoDiscovery"
+import { MagicLinkForm } from "@/components/auth/MagicLinkForm"
+import { DomainCaptureModal } from "@/components/auth/DomainCaptureModal"
+import type { SsoDiscoveryResult } from "@/services/identity.service"
+import { identityService } from "@/services/identity.service"
 
 type AccountType = "PERSONAL" | "ORGANIZATION"
 
@@ -125,6 +131,50 @@ export const Login = () => {
   const [totpCode, setTotpCode] = useState("")
   const [useBackupCode, setUseBackupCode] = useState(false)
 
+  // Phase 2: SSO discovery + magic link + domain capture
+  const [ssoDiscovery, setSsoDiscovery] =
+    useState<SsoDiscoveryResult | null>(null)
+  const [showMagicLink, setShowMagicLink] = useState(false)
+  const [showDomainCapture, setShowDomainCapture] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
+
+  // Capture token from OAuth callback redirect (?token=...)
+  useEffect(() => {
+    const tokenFromOauth = searchParams.get("token")
+    if (!tokenFromOauth) return
+    try {
+      localStorage.setItem("auth_token", tokenFromOauth)
+    } catch {
+      // ignore
+    }
+    // Clear token from URL for hygiene
+    const cleanUrl = window.location.pathname
+    window.history.replaceState({}, "", cleanUrl)
+    // Refresh auth context (will trigger redirect via isAuthenticated branch)
+    void (async () => {
+      try {
+        // Lazy access to checkAuth via context
+        // (Login already imports useAuth above; calling here would require
+        // checkAuth — we surface it through window.location reload instead.)
+        window.location.reload()
+      } catch {
+        // ignore
+      }
+    })()
+  }, [searchParams])
+
+  const handleSsoResult = useCallback(
+    (result: SsoDiscoveryResult | null) => {
+      setSsoDiscovery(result)
+    },
+    []
+  )
+
+  const handleSsoLogin = () => {
+    if (!ssoDiscovery?.loginUrl) return
+    window.location.href = ssoDiscovery.loginUrl
+  }
+
   // Check for session expired parameter
   useEffect(() => {
     if (searchParams.get("expired") === "true") {
@@ -161,6 +211,22 @@ export const Login = () => {
     try {
       let resultUser
       if (isRegister) {
+        // Domain capture: check if this email's domain matches an existing
+        // org's sso_email_domains *before* creating a new workspace.
+        if (selectedAccountType === "ORGANIZATION") {
+          try {
+            const discovery = await identityService.discoverSso(email.trim())
+            if (discovery?.ssoAvailable && discovery.orgSlug) {
+              setSsoDiscovery(discovery)
+              setRegisteredEmail(email.trim())
+              setShowDomainCapture(true)
+              setIsLoading(false)
+              return
+            }
+          } catch {
+            // Discovery is best-effort; fall through to normal register.
+          }
+        }
         resultUser = await register(
           email.trim(),
           password.trim(),
@@ -541,8 +607,39 @@ export const Login = () => {
                       }}
                       disabled={isLoading}
                     />
+                    {!isRegister && (
+                      <SsoDiscovery email={email} onResult={handleSsoResult} />
+                    )}
                   </div>
 
+                  {/* SSO discovery hint + enforced redirect */}
+                  {!isRegister && ssoDiscovery?.ssoAvailable && (
+                    <div className="border border-blue-200 bg-blue-50 px-4 py-3 space-y-2">
+                      <div className="text-xs text-blue-900">
+                        {ssoDiscovery.enforced
+                          ? `${ssoDiscovery.orgName ?? "Your organization"} requires SSO sign-in.`
+                          : `${ssoDiscovery.orgName ?? "Your organization"} supports SSO sign-in.`}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSsoLogin}
+                        disabled={!ssoDiscovery.loginUrl}
+                        className="w-full text-xs font-medium px-3 py-2 bg-gray-900 text-white hover:bg-black disabled:opacity-40"
+                      >
+                        Continue with{" "}
+                        {ssoDiscovery.orgName
+                          ? `${ssoDiscovery.orgName} SSO`
+                          : "SSO"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Hide password block when SSO is enforced for this email */}
+                  {!(
+                    !isRegister &&
+                    ssoDiscovery?.ssoAvailable &&
+                    ssoDiscovery?.enforced
+                  ) && (
                   <div>
                     <label
                       htmlFor="password"
@@ -679,6 +776,7 @@ export const Login = () => {
                       </p>
                     )}
                   </div>
+                  )}
 
                   {/* 2FA Code Input */}
                   {requires2FA && !isRegister && (
@@ -824,27 +922,68 @@ export const Login = () => {
                     </div>
                   )}
 
-                  <div className="space-y-3">
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-gray-100 border border-gray-300 text-black hover:bg-black hover:text-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? (
-                        <span className="flex items-center justify-center">
-                          <LoadingSpinner size="sm" className="mr-2" />
-                          {isRegister ? "Creating account..." : "Signing in..."}
-                        </span>
-                      ) : (
-                        <span className="relative z-10 text-sm font-medium">
-                          {isRegister ? "Create account" : "Sign in"}
-                        </span>
-                      )}
-                      <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                    </button>
-                  </div>
+                  {!(
+                    !isRegister &&
+                    ssoDiscovery?.ssoAvailable &&
+                    ssoDiscovery?.enforced
+                  ) && (
+                    <div className="space-y-3">
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-gray-100 border border-gray-300 text-black hover:bg-black hover:text-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center justify-center">
+                            <LoadingSpinner size="sm" className="mr-2" />
+                            {isRegister
+                              ? "Creating account..."
+                              : "Signing in..."}
+                          </span>
+                        ) : (
+                          <span className="relative z-10 text-sm font-medium">
+                            {isRegister ? "Create account" : "Sign in"}
+                          </span>
+                        )}
+                        <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                      </button>
+                    </div>
+                  )}
                 </form>
               )}
+
+              {/* OAuth + magic link block — login mode only, hidden on
+                   account-type selection step */}
+              {!isRegister || !showAccountTypeSelection ? (
+                <div className="space-y-3 pt-4 border-t border-gray-200">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 text-center">
+                    or continue with
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <OAuthButton provider="google" />
+                    <OAuthButton provider="microsoft" />
+                  </div>
+                  {!isRegister && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowMagicLink((v) => !v)}
+                        className="w-full text-xs font-medium text-gray-600 hover:text-gray-900 underline transition-colors"
+                      >
+                        {showMagicLink
+                          ? "Use password instead"
+                          : "Email me a sign-in link"}
+                      </button>
+                      {showMagicLink && (
+                        <MagicLinkForm
+                          defaultEmail={email}
+                          className="pt-2"
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : null}
 
               <div className="relative pt-4">
                 <div className="absolute inset-0 flex items-center">
@@ -904,6 +1043,39 @@ export const Login = () => {
           </div>
         </div>
       </div>
+
+      {/* Domain capture modal — appears post-register if email domain
+           matches an existing org's sso_email_domains */}
+      <DomainCaptureModal
+        open={showDomainCapture}
+        onOpenChange={setShowDomainCapture}
+        email={registeredEmail ?? email}
+        discovery={ssoDiscovery}
+        onCreateOwn={async () => {
+          setShowDomainCapture(false)
+          // Continue with the original registration
+          setIsLoading(true)
+          try {
+            const resultUser = await register(
+              (registeredEmail ?? email).trim(),
+              password.trim(),
+              selectedAccountType
+            )
+            const dashboardPath = getDashboardPath(resultUser.account_type)
+            setTimeout(() => navigate(dashboardPath), 500)
+          } catch (err) {
+            const e = err as {
+              response?: { data?: { message?: string } }
+              message?: string
+            }
+            setError(
+              e.response?.data?.message || e.message || "Failed to register"
+            )
+          } finally {
+            setIsLoading(false)
+          }
+        }}
+      />
     </div>
   )
 }

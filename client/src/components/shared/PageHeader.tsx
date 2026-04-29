@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom"
 
 import BriefingBadge from "@/components/briefing/BriefingBadge"
 import { fadeUpVariants } from "@/components/shared/site-motion-variants"
+import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner"
 
 function LogoutButton() {
   const { logout } = useAuth()
@@ -146,6 +147,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
       </motion.header>
       <div className="h-14" aria-hidden="true" />
+      <EmailVerificationBanner />
     </>
   )
 }

@@ -14,14 +14,21 @@ import ActivityTab from "@/components/org-admin/ActivityTab"
 import IntegrationsHealthTab from "@/components/org-admin/IntegrationsHealthTab"
 import MembersTab from "@/components/org-admin/MembersTab"
 import SecurityTab from "@/components/org-admin/SecurityTab"
+import SsoSetupTab from "@/components/org-admin/SsoSetupTab"
 
-type AdminTab = "activity" | "members" | "security" | "integrations"
+type AdminTab =
+  | "activity"
+  | "members"
+  | "security"
+  | "integrations"
+  | "sso"
 
 const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
   { id: "activity", label: "Activity" },
   { id: "members", label: "Members" },
   { id: "security", label: "Security" },
   { id: "integrations", label: "Integrations" },
+  { id: "sso", label: "SSO" },
 ]
 
 export function OrgAdmin() {
@@ -149,6 +156,7 @@ export function OrgAdmin() {
             {activeTab === "integrations" && (
               <IntegrationsHealthTab slug={slug} />
             )}
+            {activeTab === "sso" && <SsoSetupTab slug={slug} />}
           </motion.div>
         </motion.div>
       </div>

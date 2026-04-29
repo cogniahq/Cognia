@@ -52,6 +52,16 @@ const OrgAdmin = lazy(() =>
     default: module.OrgAdmin,
   }))
 )
+const VerifyEmail = lazy(() =>
+  import("@/pages/verify-email.page").then((module) => ({
+    default: module.VerifyEmail,
+  }))
+)
+const AuthMagic = lazy(() =>
+  import("@/pages/auth-magic.page").then((module) => ({
+    default: module.AuthMagic,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -93,6 +103,8 @@ const AppRoutes = () => {
             {enableInternalRoutes ? (
               <>
                 <Route path="/login" element={<Login />} />
+                <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                <Route path="/auth/magic" element={<AuthMagic />} />
                 <Route path="/memories" element={<Memories />} />
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/analytics" element={<Analytics />} />
@@ -106,6 +118,14 @@ const AppRoutes = () => {
             ) : (
               <>
                 <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route
+                  path="/auth/verify-email"
+                  element={<Navigate to="/" replace />}
+                />
+                <Route
+                  path="/auth/magic"
+                  element={<Navigate to="/" replace />}
+                />
                 <Route path="/memories" element={<Navigate to="/" replace />} />
                 <Route path="/docs" element={<Navigate to="/" replace />} />
                 <Route

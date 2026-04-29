@@ -528,6 +528,7 @@ model Memory {
   last_accessed          DateTime             @default(now())
   source_type            SourceType?          @default(EXTENSION)
   organization_id        String?              @db.Uuid
+  deleted_at             DateTime?
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
   organization           Organization?        @relation(fields: [organization_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
@@ -546,6 +547,7 @@ model Memory {
   @@index([last_accessed])
   @@index([organization_id])
   @@index([source_type])
+  @@index([user_id, deleted_at])
   @@unique([user_id, canonical_hash])
   @@map("memories")
 }

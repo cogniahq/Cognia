@@ -5,6 +5,7 @@ import type { OrganizationRequest } from '../middleware/organization.middleware'
 import { auditLogService } from '../services/core/audit-log.service'
 import { prisma } from '../lib/prisma.lib'
 import type { AuditEventType, AuditEventCategory } from '../types/common.types'
+import { offboardMember } from '../services/organization/member-offboarding.service'
 
 const router = Router({ mergeParams: true })
 
@@ -202,6 +203,26 @@ router.get('/:slug/integrations-health', async (req: OrganizationRequest, res) =
     orderBy: { connected_at: 'desc' },
   })
   res.json({ success: true, data: integrations })
+})
+
+// POST /:slug/members/:memberId/offboard
+router.post('/:slug/members/:memberId/offboard', async (req: OrganizationRequest, res) => {
+  try {
+    await offboardMember({
+      organizationId: req.organization!.id,
+      memberId: req.params.memberId,
+      actorUserId: req.user!.id,
+      actorEmail: req.user!.email ?? null,
+      reassignDocsToUserId: req.body?.reassignDocsToUserId,
+      hardDelete: !!req.body?.hardDelete,
+      reason: req.body?.reason,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    })
+    res.json({ success: true })
+  } catch (err) {
+    res.status(400).json({ success: false, message: (err as Error).message })
+  }
 })
 
 export default router

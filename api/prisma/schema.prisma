@@ -280,13 +280,15 @@ model PlatformUploadSession {
 }
 
 model OrganizationMember {
-  id              String       @id @default(uuid()) @db.Uuid
-  organization_id String       @db.Uuid
-  user_id         String       @db.Uuid
-  role            OrgRole      @default(VIEWER)
-  created_at      DateTime     @default(now())
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  id                  String       @id @default(uuid()) @db.Uuid
+  organization_id     String       @db.Uuid
+  user_id             String       @db.Uuid
+  role                OrgRole      @default(VIEWER)
+  created_at          DateTime     @default(now())
+  deactivated_at      DateTime?
+  deactivation_reason String?
+  organization        Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user                User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([organization_id, user_id])
   @@index([organization_id])

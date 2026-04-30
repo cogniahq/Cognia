@@ -148,6 +148,7 @@ model User {
   memory_comments              MemoryComment[]
   memory_tags                  MemoryTag[]
   saved_searches               SavedSearch[]
+  api_keys                     ApiKey[]
 
   @@map("users")
 }
@@ -230,6 +231,7 @@ model Organization {
   subscription                 Subscription?
   invoices                     Invoice[]
   usage_records                UsageRecord[]
+  api_keys                     ApiKey[]
 
   @@map("organizations")
 }
@@ -989,4 +991,23 @@ model BillingEvent {
 
   @@index([organization_id])
   @@map("billing_events")
+}
+
+model ApiKey {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organization_id     String?   @db.Uuid
+  user_id             String    @db.Uuid
+  name                String
+  prefix              String    // first 8 chars (visible)
+  key_hash            String    @unique
+  scopes              String[]  // ['memories.read','memories.write','search','briefings.read']
+  last_used_at        DateTime?
+  created_at          DateTime  @default(now())
+  revoked_at          DateTime?
+  user                User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization        Organization?  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([user_id])
+  @@map("api_keys")
 }

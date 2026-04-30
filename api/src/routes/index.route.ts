@@ -26,6 +26,9 @@ import workspaceRouter from './workspace.route'
 import tagRouter from './tag.route'
 import savedSearchRouter from './saved-search.route'
 import billingRouter from './billing.route'
+import apiKeysRouter from './api-keys.route'
+import v1Router from './v1.route'
+import openApiRouter from './openapi.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -70,4 +73,10 @@ export const routes = (app: Express) => {
   // Billing (subscriptions, usage, invoices, customer portal). Stripe webhook is
   // mounted directly on the app in App.ts (it needs the raw body before json()).
   app.use('/api/billing', billingRouter)
+  // API keys (developer-issued bearer keys for the public /v1 API)
+  app.use('/api/api-keys', apiKeysRouter)
+  // Public versioned API (authenticated via API keys)
+  app.use('/v1', v1Router)
+  // OpenAPI 3 spec for the public API
+  app.use('/', openApiRouter)
 }

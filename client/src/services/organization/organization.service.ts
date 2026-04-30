@@ -271,6 +271,8 @@ export interface AnswerJobResult {
     title: string | null
     url: string | null
     source_type: string | null
+    author_email?: string | null
+    captured_at?: string | null
   }>
 }
 

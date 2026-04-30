@@ -25,6 +25,8 @@ type PublicSearchResult = UnifiedSearchResult['results'][number]
 type InternalSearchResult = PublicSearchResult & {
   answerContent: string
   metadata?: Record<string, unknown>
+  authorEmail?: string | null
+  capturedAt?: string | null
 }
 
 const SEARCH_METADATA_KEYS = [
@@ -73,6 +75,8 @@ export interface UnifiedSearchResult {
     memoryId: string
     url?: string
     sourceType?: SourceType
+    authorEmail?: string | null
+    capturedAt?: string | null
   }>
   totalResults: number
   answerJobId?: string // Job ID for async answer generation
@@ -412,7 +416,7 @@ export class UnifiedSearchService {
 
   private buildFallbackAnswer(
     error: unknown,
-    results: PublicSearchResult[]
+    results: Array<PublicSearchResult & { authorEmail?: string | null; capturedAt?: string | null }>
   ): { answer: string; citations: UnifiedSearchResult['citations'] } {
     const message =
       error instanceof Error && error.message ? error.message.toLowerCase() : String(error).toLowerCase()
@@ -433,6 +437,8 @@ export class UnifiedSearchService {
       memoryId: result.memoryId,
       url: result.url,
       sourceType: result.sourceType,
+      authorEmail: result.authorEmail ?? null,
+      capturedAt: result.capturedAt ?? null,
     }))
 
     const citationLine =
@@ -597,6 +603,12 @@ export class UnifiedSearchService {
         page_metadata: true,
         source_type: true,
         url: true,
+        created_at: true,
+        user: {
+          select: {
+            email: true,
+          },
+        },
         document_chunks: {
           take: 1,
           select: {
@@ -652,6 +664,8 @@ export class UnifiedSearchService {
           url: memory.url ?? undefined,
           metadata,
           answerContent: rawContent,
+          authorEmail: memory.user?.email ?? null,
+          capturedAt: memory.created_at ? memory.created_at.toISOString() : null,
         }
       })
       .filter(result => this.matchesMetadataFilters(result.metadata, metadataFilters))
@@ -659,8 +673,10 @@ export class UnifiedSearchService {
       .slice(0, finalLimit)
 
     const results: PublicSearchResult[] = internalResults.map(result => {
-      const { answerContent, ...publicResult } = result
+      const { answerContent, authorEmail, capturedAt, ...publicResult } = result
       void answerContent
+      void authorEmail
+      void capturedAt
       return publicResult
     })
 
@@ -755,6 +771,8 @@ Answer:`
         memoryId: answerResults[n - 1].result.memoryId,
         url: answerResults[n - 1].result.url,
         sourceType: answerResults[n - 1].result.sourceType,
+        authorEmail: answerResults[n - 1].result.authorEmail ?? null,
+        capturedAt: answerResults[n - 1].result.capturedAt ?? null,
       }))
 
     return { answer: response, citations }
@@ -786,6 +804,8 @@ Answer:`
         title: c.documentName || null,
         url: c.url || null,
         source_type: c.sourceType || null,
+        author_email: c.authorEmail ?? null,
+        captured_at: c.capturedAt ?? null,
       }))
 
       await setSearchJobResult(jobId, {
@@ -811,6 +831,8 @@ Answer:`
           title: citation.documentName || null,
           url: citation.url || null,
           source_type: citation.sourceType || null,
+          author_email: citation.authorEmail ?? null,
+          captured_at: citation.capturedAt ?? null,
         })),
         status: 'completed',
       })

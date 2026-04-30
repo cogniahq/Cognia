@@ -59,6 +59,14 @@ export function getVisibleOrganizationSearchCitations(input) {
     if (!existing.pageNumber && citation?.pageNumber) {
       existing.pageNumber = citation.pageNumber
     }
+
+    if (!existing.authorEmail && citation?.authorEmail) {
+      existing.authorEmail = citation.authorEmail
+    }
+
+    if (!existing.capturedAt && citation?.capturedAt) {
+      existing.capturedAt = citation.capturedAt
+    }
   }
 
   return deduplicated

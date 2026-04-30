@@ -42,6 +42,9 @@ export async function setSearchJobResult(
       memory_id: string
       title: string | null
       url: string | null
+      source_type?: string | null
+      author_email?: string | null
+      captured_at?: string | null
     }>
     results?: Array<{ memory_id: string; title: string | null; url: string | null; score: number }>
     status?: SearchJobStatus

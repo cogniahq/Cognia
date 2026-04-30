@@ -41,6 +41,8 @@ function mapAnswerJobCitations(
     memoryId: citation.memory_id,
     url: citation.url || undefined,
     sourceType: citation.source_type || undefined,
+    authorEmail: citation.author_email || undefined,
+    capturedAt: citation.captured_at || undefined,
   }))
 }
 
@@ -642,13 +644,29 @@ export function OrganizationSearch() {
                                   citation.sourceType
                                 )
                               }
-                              className="rounded border border-gray-200 px-2 py-1 text-xs font-mono text-gray-600 transition-colors hover:border-gray-900 hover:text-gray-900"
+                              className="flex flex-col items-start rounded border border-gray-200 px-2 py-1 text-left text-xs font-mono text-gray-600 transition-colors hover:border-gray-900 hover:text-gray-900"
                               variants={fadeUpVariants}
                               whileHover={{ y: -2, scale: 1.01 }}
                               whileTap={{ scale: 0.98 }}
                             >
-                              [{citation.indices.join(", ")}]{" "}
-                              {citation.documentName || "Source"}
+                              <span>
+                                [{citation.indices.join(", ")}]{" "}
+                                {citation.documentName || "Source"}
+                              </span>
+                              {citation.authorEmail && (
+                                <span className="mt-0.5 truncate text-[10px] font-mono text-gray-500">
+                                  captured by {citation.authorEmail.split("@")[0]}
+                                  {citation.capturedAt && (
+                                    <>
+                                      {" "}
+                                      ·{" "}
+                                      {new Date(
+                                        citation.capturedAt
+                                      ).toLocaleDateString()}
+                                    </>
+                                  )}
+                                </span>
+                              )}
                             </motion.button>
                           ))}
                         </motion.div>

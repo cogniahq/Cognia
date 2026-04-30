@@ -5,6 +5,8 @@ export interface OrganizationSearchCitation {
   memoryId: string
   url?: string
   sourceType?: string
+  authorEmail?: string
+  capturedAt?: string
 }
 
 export interface VisibleOrganizationSearchCitation

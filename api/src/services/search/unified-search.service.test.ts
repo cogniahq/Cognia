@@ -459,6 +459,8 @@ test('organization summary answer uses retrieved content when the preview omits 
         memoryId: 'memory-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
     ])
   } finally {
@@ -546,6 +548,8 @@ test('organization summary answer uses full answer content when the relevant con
         memoryId: 'memory-1',
         url: undefined,
         sourceType: SourceType.INTEGRATION,
+        authorEmail: null,
+        capturedAt: null,
       },
     ])
   } finally {
@@ -616,6 +620,8 @@ test('organization summary answer only includes the highest-ranked evidence slic
         memoryId: 'memory-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
       {
         index: 12,
@@ -624,6 +630,8 @@ test('organization summary answer only includes the highest-ranked evidence slic
         memoryId: 'memory-12',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
     ])
   } finally {
@@ -699,6 +707,8 @@ test('organization summary answer caps the total prompt context for large retrie
         memoryId: 'memory-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
       {
         index: 4,
@@ -707,6 +717,8 @@ test('organization summary answer caps the total prompt context for large retrie
         memoryId: 'memory-4',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
     ])
   } finally {
@@ -809,6 +821,8 @@ test('organization summary answer diversifies sources before taking multiple chu
         memoryId: 'memory-a-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
       {
         index: 2,
@@ -817,6 +831,8 @@ test('organization summary answer diversifies sources before taking multiple chu
         memoryId: 'memory-b-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
       {
         index: 3,
@@ -825,6 +841,8 @@ test('organization summary answer diversifies sources before taking multiple chu
         memoryId: 'memory-c-1',
         url: undefined,
         sourceType: SourceType.DOCUMENT,
+        authorEmail: null,
+        capturedAt: null,
       },
     ])
   } finally {

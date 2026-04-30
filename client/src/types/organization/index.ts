@@ -141,6 +141,8 @@ export interface OrganizationSearchResponse {
     memoryId: string
     url?: string
     sourceType?: string
+    authorEmail?: string
+    capturedAt?: string
   }>
   totalResults: number
   answerJobId?: string // Job ID for async answer generation

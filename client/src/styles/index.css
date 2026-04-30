@@ -5,6 +5,17 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/*
+ * Reserve space for the vertical scrollbar even when content fits the viewport.
+ * Without this, Radix Dialog/DropdownMenu (and any modal that locks body scroll)
+ * adds compensating padding-right on <body> when opened, which shifts the
+ * fixed header content relative to the centered page content. scrollbar-gutter
+ * eliminates that jump entirely on all modern browsers.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

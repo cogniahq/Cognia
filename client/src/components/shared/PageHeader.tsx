@@ -4,12 +4,22 @@ import { useOrganization } from "@/contexts/organization.context"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 
-import BriefingBadge from "@/components/briefing/BriefingBadge"
 import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner"
 import { OrgSwitcher } from "@/components/shared/OrgSwitcher"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-function LogoutButton() {
+interface UserMenuProps {
+  email?: string
+}
+
+function UserMenu({ email }: UserMenuProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
 
@@ -18,15 +28,44 @@ function LogoutButton() {
     navigate("/login")
   }
 
+  const initial = email?.trim().charAt(0).toUpperCase() || "U"
+  const displayLabel = email ?? "Account"
+
   return (
-    <motion.button
-      onClick={handleLogout}
-      className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
-      whileHover={{ y: -2, scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      Logout
-    </motion.button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="flex items-center gap-2 px-2 py-1 text-xs font-mono text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
+          aria-label="Open user menu"
+        >
+          <span className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center text-[10px] font-mono">
+            {initial}
+          </span>
+          <span className="hidden sm:inline max-w-[140px] truncate">
+            {displayLabel}
+          </span>
+          <span className="text-gray-400">▼</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-[200px] rounded-none border-gray-300"
+      >
+        <DropdownMenuItem
+          onClick={() => navigate("/profile")}
+          className="cursor-pointer rounded-none text-xs font-mono"
+        >
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={handleLogout}
+          className="cursor-pointer rounded-none text-xs font-mono text-gray-700"
+        >
+          Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -40,7 +79,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   rightActions,
 }) => {
   const navigate = useNavigate()
-  const { accountType } = useAuth()
+  const { accountType, user } = useAuth()
   const { currentOrganization } = useOrganization()
 
   // Determine the dashboard path based on account type
@@ -63,13 +102,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     currentOrganization?.userRole === "ADMIN" &&
     !!currentOrganization?.slug
 
-  // Show different nav buttons based on account type
+  // Top-level nav items (no Profile/Logout — those live in the user menu)
   const allNavButtons =
     accountType === "ORGANIZATION"
       ? [
           { label: "Workspace", path: "/organization" },
           { label: "Integrations", path: "/integrations" },
-          { label: "Briefings", path: "/briefings" },
           ...(isOrgAdmin
             ? [
                 {
@@ -82,14 +120,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 },
               ]
             : []),
-          { label: "Profile", path: "/profile" },
         ]
       : [
           { label: "Memories", path: "/memories" },
           { label: "Analytics", path: "/analytics" },
           { label: "Integrations", path: "/integrations" },
-          { label: "Briefings", path: "/briefings" },
-          { label: "Profile", path: "/profile" },
         ]
 
   const navButtons = allNavButtons.filter(
@@ -134,6 +169,16 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             </div>
             <div className="flex items-center space-x-3">
               {rightActions}
+              <OrgSwitcher />
+              {isOrgAdmin && (
+                <span
+                  className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-gray-500 border border-gray-300"
+                  aria-label="Admin role"
+                  title="You are an admin of this workspace"
+                >
+                  Admin
+                </span>
+              )}
               {navButtons.map((btn) => (
                 <motion.button
                   key={btn.path}
@@ -143,11 +188,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                   whileTap={{ scale: 0.98 }}
                 >
                   {btn.label}
-                  {btn.label === "Briefings" && <BriefingBadge />}
                 </motion.button>
               ))}
-              <OrgSwitcher />
-              <LogoutButton />
+              <UserMenu email={user?.email} />
             </div>
           </div>
         </div>

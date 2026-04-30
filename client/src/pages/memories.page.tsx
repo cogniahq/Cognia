@@ -91,13 +91,22 @@ export const Memories: React.FC = () => {
       <PageHeader
         pageName="Memories"
         rightActions={
-          <button
-            onClick={() => navigate("/memories/trash")}
-            className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300"
-            data-testid="trash-link"
-          >
-            Trash
-          </button>
+          <>
+            <button
+              onClick={() => navigate("/memories/v2")}
+              className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300"
+              data-testid="list-view-link"
+            >
+              List view
+            </button>
+            <button
+              onClick={() => navigate("/memories/trash")}
+              className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300"
+              data-testid="trash-link"
+            >
+              Trash
+            </button>
+          </>
         }
       />
 

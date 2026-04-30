@@ -1,6 +1,11 @@
 // Tier metadata mirror of `api/src/services/billing/plans.config.ts`.
 // Kept in sync manually for now — when a tier changes server-side, update
 // this file as well. Limits use -1 to mean "unlimited" (matches API).
+//
+// Note: prices shown here are display-only. Actual billing is driven by the
+// Razorpay plan_ids configured on the server (RAZORPAY_PLAN_PRO /
+// RAZORPAY_PLAN_ENTERPRISE) and surfaced to the client via
+// VITE_RAZORPAY_PLAN_PRO.
 
 export type PlanId = "free" | "pro" | "enterprise"
 

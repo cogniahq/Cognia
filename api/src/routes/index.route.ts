@@ -72,8 +72,9 @@ export const routes = (app: Express) => {
   app.use('/api/organizations', workspaceRouter)
   app.use('/api/tags', tagRouter)
   app.use('/api/saved-searches', savedSearchRouter)
-  // Billing (subscriptions, usage, invoices, customer portal). Stripe webhook is
-  // mounted directly on the app in App.ts (it needs the raw body before json()).
+  // Billing (subscriptions, usage, invoices, custom pause/resume/cancel
+  // endpoints). Razorpay webhook is mounted directly on the app in App.ts
+  // (it needs the raw body before json()).
   app.use('/api/billing', billingRouter)
   // API keys (developer-issued bearer keys for the public /v1 API)
   app.use('/api/api-keys', apiKeysRouter)

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Billing service — wraps the Phase 5A backend endpoints under /api/billing/:slug.
+// Billing service — wraps the backend Razorpay billing endpoints under
+// /api/billing/:slug.
 //
 // We use a small fetch-based wrapper (rather than the shared axios instance) so
 // we can inspect 402 QUOTA_EXCEEDED bodies and dispatch a global event that the
@@ -49,11 +50,19 @@ export interface BillingUsage {
 
 export interface BillingInvoice {
   id: string
-  number?: string | null
+  razorpay_invoice_id?: string
+  razorpay_payment_id?: string | null
   status: string
+  amount_due_paise?: number
+  amount_paid_paise?: number
+  currency?: string
+  created_at?: string | null
+  hosted_url?: string | null
+  pdf_url?: string | null
+  // legacy/optional alias fields used by older UI code
+  number?: string | null
   amountDue?: number
   amountPaid?: number
-  currency?: string
   created?: string | null
   hostedInvoiceUrl?: string | null
   invoicePdf?: string | null
@@ -61,6 +70,8 @@ export interface BillingInvoice {
 
 export interface BillingResponse {
   billingEnabled: boolean
+  provider?: string
+  publicKeyId?: string | null
   subscription: BillingSubscription | null
   usage: BillingUsage
   invoices: BillingInvoice[]
@@ -125,24 +136,34 @@ export const billingService = {
       `/billing/${slug}`
     ),
 
-  checkout: (
-    slug: string,
-    priceId: string,
-    successUrl?: string,
-    cancelUrl?: string
-  ) =>
-    fetchJSON<{ success: boolean; url: string }>(
-      `/billing/${slug}/checkout`,
-      {
-        method: "POST",
-        body: JSON.stringify({ priceId, successUrl, cancelUrl }),
-      }
-    ),
-
-  portal: (slug: string, returnUrl?: string) =>
-    fetchJSON<{ success: boolean; url: string }>(`/billing/${slug}/portal`, {
+  // Razorpay flow: server creates a subscription, returns its id + public key.
+  // The client opens Razorpay Checkout JS with these values to collect payment.
+  checkout: (slug: string, planId: string, totalCount?: number) =>
+    fetchJSON<{
+      success: boolean
+      subscriptionId: string
+      shortUrl: string | null
+      status: string
+      keyId: string | null
+    }>(`/billing/${slug}/checkout`, {
       method: "POST",
-      body: JSON.stringify({ returnUrl }),
+      body: JSON.stringify({ planId, totalCount }),
+    }),
+
+  cancel: (slug: string, atCycleEnd = true) =>
+    fetchJSON<{ success: boolean }>(`/billing/${slug}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ atCycleEnd }),
+    }),
+
+  pause: (slug: string) =>
+    fetchJSON<{ success: boolean }>(`/billing/${slug}/pause`, {
+      method: "POST",
+    }),
+
+  resume: (slug: string) =>
+    fetchJSON<{ success: boolean }>(`/billing/${slug}/resume`, {
+      method: "POST",
     }),
 }
 

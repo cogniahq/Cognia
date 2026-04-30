@@ -12,8 +12,8 @@ interface ImportMeta {
     VITE_FIREBASE_MESSAGING_SENDER_ID: string
     VITE_FIREBASE_APP_ID: string
     VITE_FIREBASE_MEASUREMENT_ID: string
-    VITE_STRIPE_PRICE_PRO?: string
-    VITE_STRIPE_PRICE_ENTERPRISE?: string
+    VITE_RAZORPAY_PLAN_PRO?: string
+    VITE_RAZORPAY_PLAN_ENTERPRISE?: string
     DEV: boolean
   }
 }

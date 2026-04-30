@@ -939,16 +939,17 @@ model SavedSearch {
 model Subscription {
   id                       String   @id @default(uuid()) @db.Uuid
   organization_id          String   @unique @db.Uuid
-  stripe_customer_id       String?  @unique
-  stripe_subscription_id   String?  @unique
-  stripe_price_id          String?
-  status                   String   @default("incomplete") // active|past_due|canceled|trialing|incomplete
+  razorpay_customer_id     String?  @unique
+  razorpay_subscription_id String?  @unique
+  razorpay_plan_id         String?
+  status                   String   @default("created") // created|authenticated|active|paused|halted|cancelled|completed|expired
   plan_id                  String   @default("free")
   current_period_start     DateTime?
   current_period_end       DateTime?
   cancel_at_period_end     Boolean  @default(false)
   trial_ends_at            DateTime?
   seats_purchased          Int      @default(1)
+  short_url                String?  // Razorpay-hosted hosted_url for the subscription
   created_at               DateTime @default(now())
   updated_at               DateTime @updatedAt
   organization             Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
@@ -959,11 +960,12 @@ model Subscription {
 model Invoice {
   id                  String    @id @default(uuid()) @db.Uuid
   organization_id     String    @db.Uuid
-  stripe_invoice_id   String    @unique
-  amount_due_cents    Int
-  amount_paid_cents   Int       @default(0)
-  currency            String    @default("usd")
-  status              String    // draft|open|paid|uncollectible|void
+  razorpay_invoice_id String    @unique
+  razorpay_payment_id String?
+  amount_due_paise    Int       // Razorpay uses paise (smallest unit) for INR; we'll use it for any currency
+  amount_paid_paise   Int       @default(0)
+  currency            String    @default("INR")
+  status              String    // issued|paid|cancelled|expired|partially_paid
   hosted_url          String?
   pdf_url             String?
   period_start        DateTime?
@@ -984,7 +986,7 @@ model UsageRecord {
   tokens_used              Int       @default(0)
   memories_created         Int       @default(0)
   integrations_active      Int       @default(0)
-  reported_to_stripe_at    DateTime?
+  reported_to_razorpay_at  DateTime?
   created_at               DateTime  @default(now())
   organization             Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
@@ -996,7 +998,7 @@ model BillingEvent {
   id                String   @id @default(uuid()) @db.Uuid
   organization_id   String?  @db.Uuid
   type              String
-  stripe_event_id   String   @unique
+  razorpay_event_id String   @unique
   payload           Json
   processed_at      DateTime?
   error             String?

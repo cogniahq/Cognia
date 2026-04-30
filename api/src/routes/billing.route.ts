@@ -6,10 +6,13 @@ import {
   OrganizationRequest,
 } from '../middleware/organization.middleware'
 import {
-  createCheckoutSession,
-  createPortalSession,
+  createSubscription,
+  cancelSubscription,
+  pauseSubscription,
+  resumeSubscription,
   isBillingEnabled,
-} from '../services/billing/stripe.service'
+  getPublicKeyId,
+} from '../services/billing/razorpay.service'
 import { getCurrentUsage } from '../services/billing/quota.service'
 import { prisma } from '../lib/prisma.lib'
 
@@ -30,6 +33,8 @@ router.get('/:slug', async (req: OrganizationRequest, res: Response) => {
     success: true,
     data: {
       billingEnabled: isBillingEnabled(),
+      provider: 'razorpay',
+      publicKeyId: getPublicKeyId(),
       subscription: sub,
       usage,
       invoices: recentInvoices,
@@ -37,6 +42,8 @@ router.get('/:slug', async (req: OrganizationRequest, res: Response) => {
   })
 })
 
+// POST /:slug/checkout — creates a Razorpay subscription on the server, returns
+// the subscription_id that the frontend feeds into Razorpay Checkout JS.
 router.post('/:slug/checkout', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
   if (!isBillingEnabled()) {
     return res.status(503).json({ success: false, message: 'Billing not configured' })
@@ -44,37 +51,45 @@ router.post('/:slug/checkout', requireOrgAdmin, async (req: OrganizationRequest,
   if (!req.user?.email) {
     return res.status(401).json({ success: false, message: 'Unauthorized' })
   }
-  const priceId = req.body?.priceId as string | undefined
-  const successUrl =
-    (req.body?.successUrl as string | undefined) ??
-    `${process.env.PUBLIC_APP_URL ?? ''}/billing?success=true`
-  const cancelUrl =
-    (req.body?.cancelUrl as string | undefined) ??
-    `${process.env.PUBLIC_APP_URL ?? ''}/billing?canceled=true`
-  if (!priceId) return res.status(400).json({ success: false, message: 'priceId required' })
+  const planId = req.body?.planId as string | undefined // Razorpay plan_id
+  const totalCount = Number(req.body?.totalCount) || 12
+  if (!planId) return res.status(400).json({ success: false, message: 'planId required' })
   try {
-    const url = await createCheckoutSession(
+    const out = await createSubscription(
       req.organization!.id,
-      priceId,
-      successUrl,
-      cancelUrl,
-      req.user.email
+      planId,
+      req.user.email,
+      totalCount
     )
-    return res.json({ success: true, url })
+    return res.json({ success: true, ...out, keyId: getPublicKeyId() })
   } catch (err) {
     return res.status(500).json({ success: false, message: (err as Error).message })
   }
 })
 
-router.post('/:slug/portal', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
-  if (!isBillingEnabled()) {
-    return res.status(503).json({ success: false, message: 'Billing not configured' })
-  }
-  const returnUrl =
-    (req.body?.returnUrl as string | undefined) ?? `${process.env.PUBLIC_APP_URL ?? ''}/billing`
+// Custom portal endpoints — Razorpay has no hosted billing portal.
+router.post('/:slug/cancel', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
   try {
-    const url = await createPortalSession(req.organization!.id, returnUrl)
-    return res.json({ success: true, url })
+    await cancelSubscription(req.organization!.id, req.body?.atCycleEnd !== false)
+    return res.json({ success: true })
+  } catch (err) {
+    return res.status(404).json({ success: false, message: (err as Error).message })
+  }
+})
+
+router.post('/:slug/pause', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
+  try {
+    await pauseSubscription(req.organization!.id)
+    return res.json({ success: true })
+  } catch (err) {
+    return res.status(404).json({ success: false, message: (err as Error).message })
+  }
+})
+
+router.post('/:slug/resume', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
+  try {
+    await resumeSubscription(req.organization!.id)
+    return res.json({ success: true })
   } catch (err) {
     return res.status(404).json({ success: false, message: (err as Error).message })
   }

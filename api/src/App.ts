@@ -14,7 +14,7 @@ import http from 'http'
 import globalErrorHandler from './controller/utils/global-error.controller'
 
 import { routes } from './routes/index.route'
-import stripeWebhookRouter from './routes/stripe-webhook.route'
+import razorpayWebhookRouter from './routes/razorpay-webhook.route'
 import { prisma } from './lib/prisma.lib'
 import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
@@ -200,9 +200,10 @@ if (morganOutputMode === 'log' || morganOutputMode === 'both') {
   app.use(morgan(plainMorganFormat, { stream: morganFileStream }))
 }
 
-// Stripe webhook MUST be mounted before express.json() so the raw body is preserved
-// for signature verification. The router uses express.raw() internally.
-app.use('/api/stripe/webhook', stripeWebhookRouter)
+// Razorpay webhook MUST be mounted before express.json() so the raw body is
+// preserved for HMAC-SHA256 signature verification. The router uses
+// express.raw() internally.
+app.use('/api/razorpay/webhook', razorpayWebhookRouter)
 
 const captureRawBody = (req: Request, _res: Response, buf: Buffer) => {
   const requestWithRawBody = req as Request & { rawBody?: string }

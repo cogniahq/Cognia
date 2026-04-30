@@ -8,8 +8,10 @@ interface DunningBannerProps {
 }
 
 /**
- * Top-of-page banner shown when the org's subscription is past_due (or
- * unpaid / incomplete). Clicking the CTA opens the Stripe customer portal.
+ * Top-of-page banner shown when the org's subscription is in a dunning state.
+ * For Razorpay this maps to `halted` (auto-charge has failed and Razorpay has
+ * stopped retrying) and `pending`. Clicking the CTA re-runs the Razorpay
+ * Checkout flow so the user can re-authorise payment.
  */
 export const DunningBanner: React.FC<DunningBannerProps> = ({
   subscription,
@@ -18,7 +20,12 @@ export const DunningBanner: React.FC<DunningBannerProps> = ({
   const [busy, setBusy] = useState(false)
   const status = subscription?.status?.toLowerCase()
   const showBanner =
-    status === "past_due" || status === "unpaid" || status === "incomplete"
+    status === "halted" ||
+    status === "pending" ||
+    // Legacy Stripe statuses kept here so a transitional state is still surfaced
+    status === "past_due" ||
+    status === "unpaid" ||
+    status === "incomplete"
 
   if (!showBanner) return null
 

@@ -88,7 +88,7 @@
     "openai": "^6.18.0",
     "openid-client": "^6.8.4",
     "pdf-parse": "^2.4.5",
-    "stripe": "^22.1.0",
+    "razorpay": "^2.9.6",
     "ts-node": "^10.9.1",
     "typescript": "^5.4.5",
     "umap-js": "^1.4.0"

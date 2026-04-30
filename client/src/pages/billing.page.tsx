@@ -19,11 +19,14 @@ import {
   type BillingResponse,
 } from "@/services/billing.service"
 import { getPlanTier, type PlanId } from "@/data/plans"
+import { openRazorpaySubscriptionCheckout } from "@/lib/razorpay"
 
-function formatAmount(cents?: number, currency?: string): string {
-  if (cents == null) return "—"
-  const amount = (cents / 100).toFixed(2)
-  return `${currency?.toUpperCase() || "USD"} ${amount}`
+function formatAmount(paise?: number, currency?: string): string {
+  if (paise == null) return "—"
+  // Razorpay reports amounts in paise (smallest unit). Same scale (×100) for
+  // INR + USD plans, so dividing by 100 gives the major unit.
+  const amount = (paise / 100).toFixed(2)
+  return `${currency?.toUpperCase() || "INR"} ${amount}`
 }
 
 function formatDate(iso?: string | null): string {
@@ -41,7 +44,7 @@ function formatDate(iso?: string | null): string {
 
 export function Billing() {
   const navigate = useNavigate()
-  const { isLoading: authLoading } = useAuth()
+  const { isLoading: authLoading, user } = useAuth()
   const { currentOrganization, organizations, loadOrganizations } =
     useOrganization()
 
@@ -50,7 +53,9 @@ export function Billing() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null)
-  const [portalBusy, setPortalBusy] = useState(false)
+  const [actionBusy, setActionBusy] = useState<
+    "cancel" | "pause" | "resume" | null
+  >(null)
 
   useEffect(() => {
     try {
@@ -89,58 +94,104 @@ export function Billing() {
     if (slug) fetchBilling()
   }, [slug, fetchBilling])
 
-  const openPortal = useCallback(async () => {
+  const onCancel = useCallback(async () => {
     if (!slug) return
-    setPortalBusy(true)
+    if (!window.confirm("Cancel subscription at the end of the current period?"))
+      return
+    setActionBusy("cancel")
     try {
-      const res = await billingService.portal(slug, window.location.href)
-      if (res.url) {
-        window.location.href = res.url
-      } else {
-        toast.error("Could not open billing portal")
-      }
+      await billingService.cancel(slug, true)
+      toast.success("Subscription set to cancel at period end")
+      await fetchBilling()
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Could not open billing portal"
-      toast.error(message)
+      toast.error(
+        err instanceof Error ? err.message : "Could not cancel subscription"
+      )
     } finally {
-      setPortalBusy(false)
+      setActionBusy(null)
     }
-  }, [slug])
+  }, [slug, fetchBilling])
+
+  const onPause = useCallback(async () => {
+    if (!slug) return
+    setActionBusy("pause")
+    try {
+      await billingService.pause(slug)
+      toast.success("Subscription paused")
+      await fetchBilling()
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not pause subscription"
+      )
+    } finally {
+      setActionBusy(null)
+    }
+  }, [slug, fetchBilling])
+
+  const onResume = useCallback(async () => {
+    if (!slug) return
+    setActionBusy("resume")
+    try {
+      await billingService.resume(slug)
+      toast.success("Subscription resumed")
+      await fetchBilling()
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not resume subscription"
+      )
+    } finally {
+      setActionBusy(null)
+    }
+  }, [slug, fetchBilling])
+
+  const onUpdatePayment = useCallback(async () => {
+    // Razorpay has no hosted billing portal — when payments fail the user
+    // re-authorises by going through Checkout again with the same plan.
+    if (!slug) return
+    const planId = (data?.subscription as { plan_id?: string } | null)?.plan_id
+    const tier =
+      planId === "pro" || planId === "enterprise" ? (planId as PlanId) : "pro"
+    await onUpgrade(tier)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, data])
 
   const onUpgrade = useCallback(
-    async (planId: PlanId) => {
+    async (planTierId: PlanId) => {
       if (!slug) return
-      if (planId === "enterprise") {
+      if (planTierId === "enterprise") {
         window.location.href =
           "mailto:sales@cognia.so?subject=Cognia%20Enterprise"
         return
       }
-      if (planId === "free") return
+      if (planTierId === "free") return
 
-      const priceId =
-        planId === "pro"
-          ? import.meta.env.VITE_STRIPE_PRICE_PRO
+      const razorpayPlanId =
+        planTierId === "pro"
+          ? import.meta.env.VITE_RAZORPAY_PLAN_PRO
           : undefined
 
-      if (!priceId) {
+      if (!razorpayPlanId) {
         toast.error("Billing not configured. Contact your admin.")
         return
       }
 
-      setPendingPlan(planId)
+      setPendingPlan(planTierId)
       try {
-        const res = await billingService.checkout(
-          slug,
-          priceId,
-          `${window.location.origin}/billing?checkout=success`,
-          `${window.location.origin}/billing?checkout=cancelled`
-        )
-        if (res.url) {
-          window.location.href = res.url
-        } else {
-          toast.error("Could not start checkout")
-        }
+        const out = await billingService.checkout(slug, razorpayPlanId)
+        if (!out.keyId) throw new Error("Razorpay not configured server-side")
+        await openRazorpaySubscriptionCheckout({
+          keyId: out.keyId,
+          subscriptionId: out.subscriptionId,
+          name: "Cognia",
+          description: `${planTierId === "pro" ? "Pro" : "Enterprise"} subscription`,
+          prefillEmail: user?.email,
+          onSuccess: () => {
+            toast.success("Subscription activated. Refreshing…")
+            // Webhook will sync our DB shortly after; refetch.
+            setTimeout(() => fetchBilling(), 1500)
+          },
+          onDismiss: () => toast("Checkout closed"),
+        })
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Could not start checkout"
@@ -149,7 +200,7 @@ export function Billing() {
         setPendingPlan(null)
       }
     },
-    [slug]
+    [slug, user?.email, fetchBilling]
   )
 
   if (!isAuthenticated || authLoading) return null
@@ -171,12 +222,21 @@ export function Billing() {
   }
 
   const currentPlanId = (data?.usage?.plan ||
-    data?.subscription?.plan ||
+    (data?.subscription as { plan_id?: string } | null)?.plan_id ||
     "free") as string
   const currentTier = getPlanTier(currentPlanId)
   const subscription = data?.subscription || null
   const usage = data?.usage?.usage
   const invoices = data?.invoices ?? []
+  const subStatus = (
+    subscription as { status?: string } | null
+  )?.status?.toLowerCase()
+  const hasActiveSub =
+    !!subscription &&
+    subStatus !== "cancelled" &&
+    subStatus !== "completed" &&
+    subStatus !== "expired"
+  const isPaused = subStatus === "paused"
 
   return (
     <div className="min-h-screen bg-white">
@@ -208,7 +268,7 @@ export function Billing() {
             <motion.div variants={fadeUpVariants}>
               <DunningBanner
                 subscription={subscription}
-                onUpdatePayment={openPortal}
+                onUpdatePayment={onUpdatePayment}
               />
             </motion.div>
           )}
@@ -240,29 +300,51 @@ export function Billing() {
                     <h2 className="text-xl font-medium text-gray-900">
                       {currentTier?.displayName ?? currentPlanId}
                     </h2>
-                    {subscription?.status && (
+                    {(subscription as { status?: string } | null)?.status && (
                       <div className="text-xs text-gray-500 mt-1 font-mono">
-                        Status: {subscription.status}
-                        {subscription.currentPeriodEnd && (
+                        Status:{" "}
+                        {(subscription as { status?: string } | null)?.status}
+                        {(subscription as { current_period_end?: string } | null)
+                          ?.current_period_end && (
                           <>
                             {" · "}Renews{" "}
-                            {formatDate(subscription.currentPeriodEnd)}
+                            {formatDate(
+                              (subscription as { current_period_end?: string })
+                                .current_period_end
+                            )}
                           </>
                         )}
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={openPortal}
-                      disabled={portalBusy || !data.billingEnabled}
-                      className="px-3 py-2 text-xs font-mono uppercase tracking-wide border border-gray-300 text-gray-900 hover:border-black hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    >
-                      {portalBusy
-                        ? "Opening..."
-                        : "Manage payment & billing"}
-                    </button>
-                  </div>
+                  {hasActiveSub && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isPaused ? (
+                        <button
+                          onClick={onResume}
+                          disabled={actionBusy !== null || !data.billingEnabled}
+                          className="px-3 py-2 text-xs font-mono uppercase tracking-wide border border-gray-300 text-gray-900 hover:border-black hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          {actionBusy === "resume" ? "Resuming..." : "Resume"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={onPause}
+                          disabled={actionBusy !== null || !data.billingEnabled}
+                          className="px-3 py-2 text-xs font-mono uppercase tracking-wide border border-gray-300 text-gray-900 hover:border-black hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          {actionBusy === "pause" ? "Pausing..." : "Pause"}
+                        </button>
+                      )}
+                      <button
+                        onClick={onCancel}
+                        disabled={actionBusy !== null || !data.billingEnabled}
+                        className="px-3 py-2 text-xs font-mono uppercase tracking-wide border border-red-300 text-red-700 hover:border-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {actionBusy === "cancel" ? "Cancelling..." : "Cancel"}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {usage && (
@@ -316,11 +398,11 @@ export function Billing() {
                             className="border-b border-gray-100 last:border-0"
                           >
                             <td className="py-2 pr-4 text-gray-700">
-                              {formatDate(inv.created)}
+                              {formatDate(inv.created_at ?? inv.created)}
                             </td>
                             <td className="py-2 pr-4 text-gray-700">
                               {formatAmount(
-                                inv.amountPaid ?? inv.amountDue,
+                                inv.amount_paid_paise ?? inv.amount_due_paise,
                                 inv.currency
                               )}
                             </td>
@@ -329,7 +411,7 @@ export function Billing() {
                                 className={`text-[10px] font-mono uppercase tracking-[0.2em] px-2 py-0.5 border ${
                                   inv.status === "paid"
                                     ? "border-emerald-500 text-emerald-700"
-                                    : inv.status === "open"
+                                    : inv.status === "issued"
                                       ? "border-amber-500 text-amber-700"
                                       : "border-gray-300 text-gray-600"
                                 }`}
@@ -338,9 +420,12 @@ export function Billing() {
                               </span>
                             </td>
                             <td className="py-2 pr-4 text-right">
-                              {inv.hostedInvoiceUrl ? (
+                              {inv.hosted_url ?? inv.hostedInvoiceUrl ? (
                                 <a
-                                  href={inv.hostedInvoiceUrl}
+                                  href={
+                                    (inv.hosted_url ?? inv.hostedInvoiceUrl) ||
+                                    "#"
+                                  }
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-xs font-mono text-gray-900 underline hover:text-black"

@@ -1011,3 +1011,25 @@ model ApiKey {
   @@index([user_id])
   @@map("api_keys")
 }
+
+model WebhookDelivery {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organization_id     String?   @db.Uuid
+  user_id             String?   @db.Uuid
+  integration_id      String?   @db.Uuid
+  provider            String
+  event_id            String    // provider's event id (for dedup)
+  payload             Json
+  status              String    @default("pending") // pending|processed|failed|dead
+  attempts            Int       @default(0)
+  last_error          String?
+  next_retry_at       DateTime?
+  processed_at        DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  @@unique([provider, event_id])
+  @@index([status, next_retry_at])
+  @@index([organization_id])
+  @@map("webhook_deliveries")
+}

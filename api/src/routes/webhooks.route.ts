@@ -1,8 +1,29 @@
 import { Router, Request, Response } from 'express'
-import { PluginRegistry } from '@cogniahq/integrations'
+import { PluginRegistry, type SyncEvent } from '@cogniahq/integrations'
 import { logger } from '../utils/core/logger.util'
+import { ingestWebhookEvent } from '../services/integration/webhook-ingest.service'
+import { prisma } from '../lib/prisma.lib'
 
 const router = Router()
+
+const generateFallbackEventId = (): string =>
+  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+/**
+ * Build a stable provider event id for dedup. Plugins return SyncEvent rows
+ * which don't carry a single canonical event id, so we derive one from the
+ * resource + action + timestamp tuple. Falls back to a random id when fields
+ * are missing.
+ */
+const deriveEventId = (ev: SyncEvent): string => {
+  const parts = [
+    ev.externalId ?? ev.resourceId ?? '',
+    ev.action ?? '',
+    ev.timestamp instanceof Date ? ev.timestamp.toISOString() : String(ev.timestamp ?? ''),
+  ].filter(Boolean)
+  if (parts.length === 0) return generateFallbackEventId()
+  return parts.join(':')
+}
 
 /**
  * POST /api/webhooks/integrations/:provider
@@ -38,24 +59,29 @@ router.post('/integrations/:provider', async (req: Request, res: Response) => {
       },
     })
 
-    // Queue for async processing
-    // Note: In a full implementation, this would be queued via the queue manager
-    // For now, we'll process inline or acknowledge
-
     // Respond immediately (webhooks expect fast response)
     res.status(200).json({ received: true })
 
-    // Process webhook asynchronously
+    // Process webhook asynchronously: enqueue events into the durable
+    // webhook-delivery queue (idempotent, retried with exponential backoff,
+    // dead-lettered on terminal failure).
     setImmediate(async () => {
       try {
-        if (plugin.handleWebhookPayload) {
-          const events = await plugin.handleWebhookPayload(
-            req.body,
-            req.headers as Record<string, string>
-          )
-          logger.log(`Processed ${events.length} events from ${provider} webhook`)
+        if (!plugin.handleWebhookPayload) return
+        const events: SyncEvent[] = await plugin.handleWebhookPayload(
+          req.body,
+          req.headers as Record<string, string>
+        )
+        logger.log(`Processed ${events.length} events from ${provider} webhook`)
 
-          // TODO: Queue resource sync jobs for each event
+        for (const ev of events) {
+          await ingestWebhookEvent({
+            provider,
+            eventId: deriveEventId(ev),
+            payload: ev,
+          }).catch(err =>
+            logger.error('[webhook] ingest failed', { provider, error: String(err) })
+          )
         }
       } catch (error) {
         logger.error(`Error processing ${provider} webhook`, error)
@@ -93,22 +119,52 @@ router.post('/integrations/:provider/:integrationId', async (req: Request, res: 
 
     res.status(200).json({ received: true })
 
-    // Process asynchronously
+    // Resolve integration to capture org/user scope. We probe both
+    // user_integrations and organization_integrations because the same
+    // provider id is used across both tables.
     setImmediate(async () => {
       try {
-        if (plugin.handleWebhookPayload) {
-          const events = await plugin.handleWebhookPayload(
-            req.body,
-            req.headers as Record<string, string>
-          )
+        if (!plugin.handleWebhookPayload) return
+        const events: SyncEvent[] = await plugin.handleWebhookPayload(
+          req.body,
+          req.headers as Record<string, string>
+        )
 
-          // Tag events with the integration ID
-          for (const event of events) {
-            event.integrationId = integrationId
-          }
+        // Tag events with the integration ID
+        for (const event of events) {
+          event.integrationId = integrationId
+        }
 
-          logger.log(
-            `Processed ${events.length} events from ${provider} webhook for ${integrationId}`
+        logger.log(
+          `Processed ${events.length} events from ${provider} webhook for ${integrationId}`
+        )
+
+        const [userInteg, orgInteg] = await Promise.all([
+          prisma.userIntegration
+            .findUnique({ where: { id: integrationId } })
+            .catch((): null => null),
+          prisma.organizationIntegration
+            .findUnique({ where: { id: integrationId } })
+            .catch((): null => null),
+        ])
+
+        const organizationId = orgInteg?.organization_id ?? null
+        const userId = userInteg?.user_id ?? null
+
+        for (const ev of events) {
+          await ingestWebhookEvent({
+            provider,
+            eventId: deriveEventId(ev),
+            payload: ev,
+            organizationId,
+            userId,
+            integrationId,
+          }).catch(err =>
+            logger.error('[webhook] ingest failed', {
+              provider,
+              integrationId,
+              error: String(err),
+            })
           )
         }
       } catch (error) {

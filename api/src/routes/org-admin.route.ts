@@ -7,6 +7,7 @@ import { auditLogService } from '../services/core/audit-log.service'
 import { prisma } from '../lib/prisma.lib'
 import type { AuditEventType, AuditEventCategory } from '../types/common.types'
 import { offboardMember } from '../services/organization/member-offboarding.service'
+import { getWebhookQueue } from '../queues/webhook.queue'
 
 const router = Router({ mergeParams: true })
 
@@ -258,6 +259,38 @@ router.delete('/:slug/scim/tokens/:tokenId', async (req: OrganizationRequest, re
     where: { id: req.params.tokenId },
     data: { revoked_at: new Date() },
   })
+  res.json({ success: true })
+})
+
+// GET /:slug/webhook-deliveries - inspect webhook delivery rows for this org.
+// Defaults to dead-lettered rows; pass ?status=pending|processed|failed|dead.
+router.get('/:slug/webhook-deliveries', async (req: OrganizationRequest, res) => {
+  const orgId = req.organization!.id
+  const status = (req.query.status as string) ?? 'dead'
+  const items = await prisma.webhookDelivery.findMany({
+    where: { organization_id: orgId, status },
+    orderBy: { created_at: 'desc' },
+    take: 100,
+  })
+  res.json({ success: true, data: items })
+})
+
+// POST /:slug/webhook-deliveries/:id/retry - re-enqueue a dead-lettered delivery.
+router.post('/:slug/webhook-deliveries/:id/retry', async (req: OrganizationRequest, res) => {
+  const item = await prisma.webhookDelivery.findFirst({
+    where: { id: req.params.id, organization_id: req.organization!.id },
+  })
+  if (!item) return res.status(404).json({ message: 'Not found' })
+  await prisma.webhookDelivery.update({
+    where: { id: item.id },
+    data: { status: 'pending', last_error: null },
+  })
+  const q = getWebhookQueue()
+  await q.add(
+    'process',
+    { deliveryId: item.id },
+    { attempts: 5, backoff: { type: 'exponential', delay: 1000 } }
+  )
   res.json({ success: true })
 })
 

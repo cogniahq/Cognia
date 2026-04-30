@@ -22,6 +22,8 @@ import { startDocumentWorker } from './workers/document-worker'
 import { startBriefingWorker } from './workers/briefing-worker'
 import { startAuditRetentionWorker } from './workers/audit-retention.worker'
 import { startTrashPurgeWorker } from './workers/trash-purge.worker'
+import { startWebhookWorker } from './workers/webhook-worker'
+import { startOAuthRefreshScheduler } from './services/integration/oauth-refresh.service'
 import { ensureCollection } from './lib/qdrant.lib'
 import { aiProvider } from './services/ai/ai-provider.service'
 import { isOpenAISearchOnlyModeEnabled } from './services/ai/ai-config'
@@ -325,6 +327,10 @@ server.listen(port, async () => {
   logger.log('[startup] audit_retention_worker_started')
   startTrashPurgeWorker()
   logger.log('[startup] trash_purge_worker_started')
+  startWebhookWorker()
+  logger.log('[startup] webhook_worker_started')
+  startOAuthRefreshScheduler()
+  logger.log('[startup] oauth_refresh_scheduler_started')
   logger.log('[startup] server_listening', { protocol, port })
 })
 process.on('unhandledRejection', (err: Error) => {

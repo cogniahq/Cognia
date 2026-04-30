@@ -19,7 +19,6 @@ import { prisma } from './lib/prisma.lib'
 import { startContentWorker } from './workers/content-worker'
 import { startCyclicProfileWorker } from './workers/profile-worker'
 import { startDocumentWorker } from './workers/document-worker'
-import { startBriefingWorker } from './workers/briefing-worker'
 import { startAuditRetentionWorker } from './workers/audit-retention.worker'
 import { startTrashPurgeWorker } from './workers/trash-purge.worker'
 import { startWebhookWorker } from './workers/webhook-worker'
@@ -311,14 +310,6 @@ server.listen(port, async () => {
   }
   startDocumentWorker()
   logger.log('[startup] document_worker_started')
-  if (openAISearchOnlyMode) {
-    logger.log('[startup] briefing_worker_skipped', {
-      reason: 'OPENAI_SEARCH_ONLY_MODE',
-    })
-  } else {
-    startBriefingWorker()
-    logger.log('[startup] briefing_worker_started')
-  }
   try {
     await integrationService.initialize()
     logger.log('[startup] integration_service_ready')

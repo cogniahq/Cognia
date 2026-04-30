@@ -135,18 +135,4 @@ router.post(
   }
 )
 
-// GET /v1/briefings (read-only stub)
-router.get(
-  '/briefings',
-  requireScope('briefings.read'),
-  async (req: ApiKeyRequest, res: Response) => {
-    const items = await prisma.intelligenceBriefing.findMany({
-      where: { user_id: req.apiKey!.userId },
-      orderBy: { created_at: 'desc' },
-      take: Math.min(Number(req.query.limit ?? 20), 100),
-    })
-    res.json({ data: items })
-  }
-)
-
 export default router

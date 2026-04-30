@@ -4,7 +4,7 @@ export function getOpenApiSpec() {
     info: {
       title: 'Cognia API',
       version: '1.0.0',
-      description: 'Programmatic access to Cognia memories, search, and briefings.',
+      description: 'Programmatic access to Cognia memories and search.',
     },
     servers: [{ url: process.env.PUBLIC_API_URL || 'http://localhost:3000' }],
     components: {
@@ -150,13 +150,6 @@ export function getOpenApiSpec() {
               },
             },
           },
-        },
-      },
-      '/v1/briefings': {
-        get: {
-          summary: 'List briefings',
-          tags: ['Briefings'],
-          responses: { '200': { description: 'Briefings list' } },
         },
       },
     },

@@ -6,7 +6,7 @@ import { auditLogService } from '../services/core/audit-log.service'
 
 const router = Router()
 
-const VALID_SCOPES = ['memories.read', 'memories.write', 'search', 'briefings.read']
+const VALID_SCOPES = ['memories.read', 'memories.write', 'search']
 
 router.use(authenticateToken)
 

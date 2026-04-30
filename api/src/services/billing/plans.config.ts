@@ -25,7 +25,7 @@ export const PLANS: Record<string, PlanLimits> = {
     maxMemories: 10000,
     maxIntegrations: 5,
     syncFrequencyMin: 60, // hourly
-    features: ['All Free', 'Priority email support', 'Briefings', 'Workspaces'],
+    features: ['All Free', 'Priority email support', 'Workspaces'],
   },
   enterprise: {
     id: 'enterprise',

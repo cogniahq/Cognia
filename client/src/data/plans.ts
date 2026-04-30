@@ -55,7 +55,6 @@ export const PLAN_TIERS: PlanTier[] = [
       "10,000 memories",
       "5 integrations",
       "Hourly sync",
-      "Briefings",
       "Workspaces",
       "Tags",
       "Priority email support",

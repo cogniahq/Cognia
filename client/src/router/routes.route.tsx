@@ -47,11 +47,6 @@ const Integrations = lazy(() =>
     default: module.Integrations,
   }))
 )
-const Briefings = lazy(() =>
-  import("@/pages/briefings.page").then((module) => ({
-    default: module.Briefings,
-  }))
-)
 const MeshShowcase = lazy(() =>
   import("@/pages/mesh-showcase.page").then((module) => ({
     default: module.MeshShowcase,
@@ -179,7 +174,6 @@ const AppRoutes = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/organization" element={<Organization />} />
                 <Route path="/integrations" element={<Integrations />} />
-                <Route path="/briefings" element={<Briefings />} />
                 <Route path="/mesh-showcase" element={<MeshShowcase />} />
                 <Route path="/org-admin/:slug" element={<OrgAdmin />} />
                 <Route path="/billing" element={<Billing />} />
@@ -217,10 +211,6 @@ const AppRoutes = () => {
                 />
                 <Route
                   path="/integrations"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route
-                  path="/briefings"
                   element={<Navigate to="/" replace />}
                 />
                 <Route

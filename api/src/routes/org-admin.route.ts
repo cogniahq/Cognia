@@ -9,6 +9,8 @@ import type { AuditEventType, AuditEventCategory } from '../types/common.types'
 import { offboardMember } from '../services/organization/member-offboarding.service'
 import { getWebhookQueue } from '../queues/webhook.queue'
 import { setOrgLlmConfig } from '../services/llm/byok-router.service'
+import { applyOrgHold, releaseOrgHold } from '../services/compliance/legal-hold.service'
+import { searchOrg } from '../services/compliance/ediscovery.service'
 
 const router = Router({ mergeParams: true })
 
@@ -345,6 +347,44 @@ router.get('/:slug/llm-config', async (req: OrganizationRequest, res) => {
       hasKey: !!org?.llm_key_encrypted,
     },
   })
+})
+
+// POST /:slug/legal-hold - apply legal hold to org
+router.post('/:slug/legal-hold', async (req: OrganizationRequest, res) => {
+  const until = new Date(req.body?.until)
+  if (Number.isNaN(until.getTime())) return res.status(400).json({ message: 'Invalid until date' })
+  await applyOrgHold(
+    req.organization!.id,
+    until,
+    req.user!.id,
+    req.user!.email ?? null,
+    req.body?.reason
+  )
+  res.json({ success: true })
+})
+
+// DELETE /:slug/legal-hold - release legal hold
+router.delete('/:slug/legal-hold', async (req: OrganizationRequest, res) => {
+  await releaseOrgHold(req.organization!.id, req.user!.id, req.user!.email ?? null)
+  res.json({ success: true })
+})
+
+// POST /:slug/ediscovery - admin-only cross-org search
+router.post('/:slug/ediscovery', async (req: OrganizationRequest, res) => {
+  const { query, limit, startDate, endDate } = req.body ?? {}
+  if (!query) return res.status(400).json({ message: 'query required' })
+  const out = await searchOrg({
+    orgId: req.organization!.id,
+    query,
+    limit,
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
+    actorUserId: req.user!.id,
+    actorEmail: req.user!.email ?? null,
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent') ?? undefined,
+  })
+  res.json({ success: true, data: out })
 })
 
 // POST /:slug/members/:memberId/offboard

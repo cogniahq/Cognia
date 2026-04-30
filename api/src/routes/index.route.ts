@@ -30,6 +30,7 @@ import apiKeysRouter from './api-keys.route'
 import v1Router from './v1.route'
 import mcpRouter from './mcp.route'
 import openApiRouter from './openapi.route'
+import gdprRouter from './gdpr.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -82,4 +83,6 @@ export const routes = (app: Express) => {
   app.use('/mcp', mcpRouter)
   // OpenAPI 3 spec for the public API
   app.use('/', openApiRouter)
+  // GDPR data rights (account deletion, consent, status)
+  app.use('/api/gdpr', gdprRouter)
 }

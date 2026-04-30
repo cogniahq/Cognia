@@ -127,6 +127,11 @@ model User {
   tour_completed_at        DateTime?
   demo_dismissed_at        DateTime?
 
+  // Compliance fields
+  deletion_scheduled_at    DateTime?
+  consent                  Json?    // { cookies: bool, analytics: bool, marketing: bool, recordedAt: ... }
+  legal_hold_until         DateTime?
+
   memories                 Memory[]
   memory_snapshots         MemorySnapshot[]
   token_usage              TokenUsage[]
@@ -216,6 +221,9 @@ model Organization {
   llm_provider           String?    // 'openai' | 'anthropic' | 'azure_openai' | 'bedrock'
   llm_config             Json?      // public config (region, model defaults)
   llm_key_encrypted      String?    // encrypted via TOKEN_ENCRYPTION_KEY (crypto.util AES-GCM)
+
+  // Compliance fields
+  legal_hold_until       DateTime?
 
   // Relations
   members      OrganizationMember[]

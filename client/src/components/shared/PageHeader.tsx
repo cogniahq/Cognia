@@ -76,6 +76,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                   label: "Admin",
                   path: `/org-admin/${currentOrganization.slug}`,
                 },
+                {
+                  label: "Billing",
+                  path: "/billing",
+                },
               ]
             : []),
           { label: "Profile", path: "/profile" },

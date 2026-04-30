@@ -77,6 +77,11 @@ const Pricing = lazy(() =>
     default: module.Pricing,
   }))
 )
+const Billing = lazy(() =>
+  import("@/pages/billing.page").then((module) => ({
+    default: module.Billing,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -133,6 +138,7 @@ const AppRoutes = () => {
                 <Route path="/briefings" element={<Briefings />} />
                 <Route path="/mesh-showcase" element={<MeshShowcase />} />
                 <Route path="/org-admin/:slug" element={<OrgAdmin />} />
+                <Route path="/billing" element={<Billing />} />
               </>
             ) : (
               <>
@@ -179,6 +185,10 @@ const AppRoutes = () => {
                 />
                 <Route
                   path="/org-admin/:slug"
+                  element={<Navigate to="/" replace />}
+                />
+                <Route
+                  path="/billing"
                   element={<Navigate to="/" replace />}
                 />
               </>

@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { CommandMenu } from "@/components/shared/CommandMenu"
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary"
 import { SecurityErrorHandler } from "@/components/shared/SecurityErrorHandler"
+import { QuotaExceededModal } from "@/components/billing/QuotaExceededModal"
 
 function AppContent() {
   useKeyboardShortcuts()
@@ -23,6 +24,7 @@ function AppContent() {
       <AppRoutes />
       <Toaster />
       <SecurityErrorHandler />
+      <QuotaExceededModal />
     </>
   )
 }

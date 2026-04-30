@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom"
 import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner"
 import { OrgSwitcher } from "@/components/shared/OrgSwitcher"
+import { useHasPermission } from "@/hooks/use-permissions"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,18 +103,37 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     currentOrganization?.userRole === "ADMIN" &&
     !!currentOrganization?.slug
 
+  // Phase 7 RBAC: gate Admin / Billing nav by granular permissions.
+  // We still scope to ORGANIZATION accounts, but the visibility itself is
+  // driven by permissions hydrated from /api/auth/me.
+  const canSeeAdminLink = useHasPermission("audit.read")
+  const canSeeBillingLink = useHasPermission("billing.read")
+
+  const showAdminNav =
+    accountType === "ORGANIZATION" &&
+    !!currentOrganization?.slug &&
+    canSeeAdminLink
+  const showBillingNav =
+    accountType === "ORGANIZATION" &&
+    !!currentOrganization?.slug &&
+    canSeeBillingLink
+
   // Top-level nav items (no Profile/Logout — those live in the user menu)
   const allNavButtons =
     accountType === "ORGANIZATION"
       ? [
           { label: "Workspace", path: "/organization" },
           { label: "Integrations", path: "/integrations" },
-          ...(isOrgAdmin
+          ...(showAdminNav
             ? [
                 {
                   label: "Admin",
-                  path: `/org-admin/${currentOrganization.slug}`,
+                  path: `/org-admin/${currentOrganization!.slug}`,
                 },
+              ]
+            : []),
+          ...(showBillingNav
+            ? [
                 {
                   label: "Billing",
                   path: "/billing",

@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Can } from "@/components/auth/Can"
 
 import OffboardDialog from "./OffboardDialog"
 
@@ -138,30 +139,42 @@ export default function MembersTab({ slug }: MembersTabProps) {
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="inline-flex items-center justify-center w-7 h-7 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-                              aria-label="Open menu"
+                        <Can
+                          permission="member.remove"
+                          fallback={
+                            <span
+                              className="text-[10px] font-mono text-gray-400"
+                              aria-label="No permission to manage member"
                             >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem
-                              disabled={isDeactivated}
-                              onSelect={() => openOffboard(member, false)}
-                            >
-                              Deactivate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-red-600 focus:text-red-700"
-                              onSelect={() => openOffboard(member, true)}
-                            >
-                              Remove permanently
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              —
+                            </span>
+                          }
+                        >
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className="inline-flex items-center justify-center w-7 h-7 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                                aria-label="Open menu"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                disabled={isDeactivated}
+                                onSelect={() => openOffboard(member, false)}
+                              >
+                                Deactivate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-700"
+                                onSelect={() => openOffboard(member, true)}
+                              >
+                                Remove permanently
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </Can>
                       </td>
                     </tr>
                   )

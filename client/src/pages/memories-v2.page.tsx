@@ -6,6 +6,7 @@ import { requireAuthToken } from "@/utils/auth"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useHasPermission } from "@/hooks/use-permissions"
 import { VirtualizedMemoryList } from "@/components/memories/VirtualizedMemoryList"
 import { MemoryBulkBar } from "@/components/memories/MemoryBulkBar"
 import { MemoryEditDialog } from "@/components/memories/MemoryEditDialog"
@@ -38,6 +39,14 @@ export const MemoriesV2: React.FC = () => {
   const [sharing, setSharing] = useState<MemoryV2 | null>(null)
   const [deleting, setDeleting] = useState<MemoryV2 | null>(null)
   const [deletingBusy, setDeletingBusy] = useState(false)
+
+  // Phase 7 RBAC gating: callbacks are only passed when the user holds the
+  // matching permission. VirtualizedMemoryList already renders the row
+  // buttons conditionally on the presence of these callbacks, so passing
+  // `undefined` hides the button.
+  const canWriteMemory = useHasPermission("memory.write")
+  const canDeleteMemory = useHasPermission("memory.delete")
+  const canShareMemory = useHasPermission("memory.share")
 
   useEffect(() => {
     try {
@@ -173,9 +182,9 @@ export const MemoriesV2: React.FC = () => {
                 memories={memories}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                onEdit={(m) => setEditing(m)}
-                onShare={(m) => setSharing(m)}
-                onDelete={(m) => setDeleting(m)}
+                onEdit={canWriteMemory ? (m) => setEditing(m) : undefined}
+                onShare={canShareMemory ? (m) => setSharing(m) : undefined}
+                onDelete={canDeleteMemory ? (m) => setDeleting(m) : undefined}
                 height={600}
               />
             )}

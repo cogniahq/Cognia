@@ -11,10 +11,28 @@ import { axiosInstance } from "@/utils/http"
 
 type AccountType = "PERSONAL" | "ORGANIZATION"
 
+/**
+ * Phase 7 RBAC: `/api/auth/me` returns effective permission sets so the
+ * frontend can gate UI without an extra round-trip.
+ * - personalPermissions: applies when the user has no org context selected.
+ * - orgPermissions[]: one entry per active org membership; the `<Can>`
+ *   component / `usePermissions()` hook picks the entry matching the
+ *   currently-selected organization.
+ */
+interface OrgPermissionSet {
+  organizationId: string
+  orgSlug?: string
+  role?: "ADMIN" | "EDITOR" | "VIEWER"
+  permissions: string[]
+}
+
 interface User {
   id: string
   email?: string
   account_type?: AccountType
+  role?: "USER" | "ADMIN"
+  personalPermissions?: string[]
+  orgPermissions?: OrgPermissionSet[]
 }
 
 interface LoginResult {
@@ -218,6 +236,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (token && user) {
         setAuthState(token, user)
+        // Hydrate effective permissions from /me — login response only has
+        // basic identity fields. Failure here is non-fatal; the user is
+        // still logged in, gates simply won't render until next /me hit.
+        try {
+          const meResp = await axiosInstance.get("/auth/me")
+          const meData = meResp.data?.data || meResp.data
+          if (meData?.id) setUser(meData)
+        } catch {
+          // ignore
+        }
         return { user }
       } else {
         throw new Error("Invalid response from server")
@@ -245,6 +273,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (token && user) {
         setAuthState(token, user)
+        // Hydrate effective permissions from /me — registration response
+        // only has basic identity fields.
+        try {
+          const meResp = await axiosInstance.get("/auth/me")
+          const meData = meResp.data?.data || meResp.data
+          if (meData?.id) setUser(meData)
+        } catch {
+          // ignore
+        }
         return user
       } else {
         throw new Error("Invalid response from server")

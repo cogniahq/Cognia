@@ -88,7 +88,18 @@ export const Memories: React.FC = () => {
         backgroundImage: "linear-gradient(135deg, #f9fafb, #ffffff, #f3f4f6)",
       }}
     >
-      <PageHeader pageName="Memories" />
+      <PageHeader
+        pageName="Memories"
+        rightActions={
+          <button
+            onClick={() => navigate("/memories/trash")}
+            className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300"
+            data-testid="trash-link"
+          >
+            Trash
+          </button>
+        }
+      />
 
       {onboardingState && onboardingState.demoMemoryCount > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">

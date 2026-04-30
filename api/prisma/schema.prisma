@@ -212,6 +212,11 @@ model Organization {
   setup_completed_at     DateTime?
   security_prompt_shown  Boolean     @default(false)
 
+  // BYOK (Bring Your Own Key) for LLM providers — Enterprise plan only
+  llm_provider           String?    // 'openai' | 'anthropic' | 'azure_openai' | 'bedrock'
+  llm_config             Json?      // public config (region, model defaults)
+  llm_key_encrypted      String?    // encrypted via TOKEN_ENCRYPTION_KEY (crypto.util AES-GCM)
+
   // Relations
   members      OrganizationMember[]
   documents    Document[]

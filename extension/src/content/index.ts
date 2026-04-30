@@ -2,6 +2,7 @@ import { runtime } from '@/lib/browser'
 import { MESSAGE_TYPES } from '@/utils/core/constants.util'
 import { detectPrivacyExtensions, getPrivacyExtensionInfo } from './privacy/privacy-detector'
 import { captureContext } from './extraction/content-extractor'
+import { scanForSecretsClient } from '@/dlp'
 import {
   startContinuousMonitoring,
   stopContinuousMonitoring,
@@ -86,6 +87,19 @@ async function sendContextToBackground() {
     }
 
     if (!hasValidContent) {
+      return
+    }
+
+    // Client-side DLP: scan for high-confidence secret patterns before sending
+    // captures to the API. The server runs the same scan as defence-in-depth;
+    // catching it here avoids the network round-trip and any chance the secret
+    // appears in transit.
+    const dlp = scanForSecretsClient(contextData.content_snippet || '')
+    if (dlp.blocked) {
+      console.warn('Cognia: capture blocked by client-side DLP', {
+        url: window.location.hostname,
+        matches: dlp.matches,
+      })
       return
     }
 

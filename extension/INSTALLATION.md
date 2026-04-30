@@ -1,5 +1,22 @@
 # Cognia Extension Installation Guide
 
+## Enterprise / managed install
+
+Administrators deploying Cognia via Chrome Enterprise (Group Policy / MDM)
+can use the template at `policy/cognia-extension-policy.json` to force-install
+the extension and apply runtime host blocklists (banking, health, admin
+consoles). Replace `<extension-id>` with the published Web Store id and merge
+the JSON into your existing `ExtensionSettings` policy.
+
+## Hardening roadmap (host permissions)
+
+The current `manifest.json` requests `<all_urls>` host permissions to support
+the extension's continuous capture flow. The hardening migration moves this
+to `optional_host_permissions` with `activeTab` as the default. This change
+is intentionally deferred until the popup/background flow is updated to
+request optional permissions on demand — see TODO in
+`extension/src/content/index.ts`. Tracked as part of Phase 6 Slice C.
+
 ## Quick Start
 
 ### Option A: Install from Pre-built Release (4 Steps)

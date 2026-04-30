@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma.lib'
 import type { AuditEventType, AuditEventCategory } from '../types/common.types'
 import { offboardMember } from '../services/organization/member-offboarding.service'
 import { getWebhookQueue } from '../queues/webhook.queue'
+import { setOrgLlmConfig } from '../services/llm/byok-router.service'
 
 const router = Router({ mergeParams: true })
 
@@ -292,6 +293,58 @@ router.post('/:slug/webhook-deliveries/:id/retry', async (req: OrganizationReque
     { attempts: 5, backoff: { type: 'exponential', delay: 1000 } }
   )
   res.json({ success: true })
+})
+
+// PUT /:slug/llm-config - set/update BYOK provider + encrypted API key (Enterprise only)
+router.put('/:slug/llm-config', async (req: OrganizationRequest, res) => {
+  const sub = await prisma.subscription.findUnique({
+    where: { organization_id: req.organization!.id },
+  })
+  const planId = sub?.plan_id ?? 'free'
+  if (planId !== 'enterprise') {
+    return res
+      .status(402)
+      .json({ success: false, code: 'QUOTA_EXCEEDED', message: 'BYOK requires Enterprise plan' })
+  }
+  try {
+    await setOrgLlmConfig(req.organization!.id, {
+      provider: (req.body?.provider as string | null | undefined) ?? null,
+      config: req.body?.config as Record<string, unknown> | undefined,
+      apiKey: req.body?.apiKey as string | null | undefined,
+    })
+    await auditLogService
+      .logOrgEvent({
+        orgId: req.organization!.id,
+        actorUserId: req.user?.id ?? null,
+        actorEmail: req.user?.email ?? null,
+        eventType: 'organization_settings_changed',
+        eventCategory: 'security',
+        action: 'byok_config_updated',
+        metadata: { provider: req.body?.provider ?? null, hasKey: req.body?.apiKey != null },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      .catch(() => {})
+    res.json({ success: true })
+  } catch (err) {
+    res.status(400).json({ success: false, message: (err as Error).message })
+  }
+})
+
+// GET /:slug/llm-config - read current BYOK config (no plaintext key returned)
+router.get('/:slug/llm-config', async (req: OrganizationRequest, res) => {
+  const org = await prisma.organization.findUnique({
+    where: { id: req.organization!.id },
+    select: { llm_provider: true, llm_config: true, llm_key_encrypted: true },
+  })
+  res.json({
+    success: true,
+    data: {
+      provider: org?.llm_provider ?? null,
+      config: org?.llm_config ?? null,
+      hasKey: !!org?.llm_key_encrypted,
+    },
+  })
 })
 
 // POST /:slug/members/:memberId/offboard

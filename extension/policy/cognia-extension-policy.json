@@ -1,0 +1,18 @@
+{
+  "_comment": "Chrome Enterprise managed-install template for the Cognia browser extension. Replace `<extension-id>` with the actual Web Store extension id once published, then deploy via Group Policy / MDM. See https://chromeenterprise.google/policies/#ExtensionSettings for the full schema.",
+  "ExtensionSettings": {
+    "<extension-id>": {
+      "installation_mode": "force_installed",
+      "update_url": "https://clients2.google.com/service/update2/crx",
+      "runtime_blocked_hosts": [
+        "*://*/banking/*",
+        "*://*/health/*",
+        "*://*/admin/*",
+        "*://*.bank/*"
+      ],
+      "runtime_allowed_hosts": [],
+      "blocked_permissions": [],
+      "toolbar_pin": "force_pinned"
+    }
+  }
+}

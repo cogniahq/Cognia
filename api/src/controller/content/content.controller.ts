@@ -6,6 +6,7 @@ import AppError from '../../utils/http/app-error.util'
 import { logger } from '../../utils/core/logger.util'
 import { buildContentPreview } from '../../utils/text/text.util'
 import { MemoryProcessingController } from '../memory/memory-processing.controller'
+import { scanForSecrets } from '../../services/integration/server-dlp.service'
 
 export class ContentController {
   static async submitContent(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -26,6 +27,23 @@ export class ContentController {
 
       if (!raw_text || typeof raw_text !== 'string' || raw_text.trim().length === 0) {
         return next(new AppError('raw_text, content, or text is required', 400))
+      }
+
+      // Server-side DLP: scan for high-confidence secret patterns and reject the
+      // capture if any matched. The extension also runs a client-side scan, this
+      // is the defence-in-depth gate for any other API caller.
+      const dlp = scanForSecrets(raw_text)
+      if (dlp.blocked) {
+        logger.warn('[content] DLP blocked submission', {
+          userId: user_id,
+          matches: dlp.matches,
+        })
+        return res.status(422).json({
+          success: false,
+          code: 'DLP_BLOCKED',
+          message: 'Content contains sensitive data and was not stored',
+          matches: dlp.matches,
+        })
       }
 
       const jobData: ContentJobData = {

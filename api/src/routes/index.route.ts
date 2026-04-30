@@ -28,6 +28,7 @@ import savedSearchRouter from './saved-search.route'
 import billingRouter from './billing.route'
 import apiKeysRouter from './api-keys.route'
 import v1Router from './v1.route'
+import mcpRouter from './mcp.route'
 import openApiRouter from './openapi.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
@@ -77,6 +78,8 @@ export const routes = (app: Express) => {
   app.use('/api/api-keys', apiKeysRouter)
   // Public versioned API (authenticated via API keys)
   app.use('/v1', v1Router)
+  // Model Context Protocol (MCP) JSON-RPC server (authenticated via API keys)
+  app.use('/mcp', mcpRouter)
   // OpenAPI 3 spec for the public API
   app.use('/', openApiRouter)
 }

@@ -38,6 +38,7 @@
     "queue:status": "node -r ts-node/register src/scripts/queue-status.script.ts",
     "platform:create-app": "node -r ts-node/register src/scripts/create-platform-app.script.ts",
     "backfill:2fa": "node -r ts-node/register src/scripts/encrypt-existing-2fa-secrets.script.ts",
+    "seed:yc-demo": "node -r ts-node/register src/scripts/seed-yc-demo.script.ts",
     "check": "npm run lint:fix && npm run format && npm run build"
   },
   "keywords": [

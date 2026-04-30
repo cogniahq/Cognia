@@ -19,7 +19,6 @@ import { DocumentList } from "@/components/organization/DocumentList"
 import { DocumentUpload } from "@/components/organization/DocumentUpload"
 import { MemberManagement } from "@/components/organization/MemberManagement"
 import { OrganizationSearch } from "@/components/organization/OrganizationSearch"
-import { OrganizationSelector } from "@/components/organization/OrganizationSelector"
 import { SetupChecklist } from "@/components/organization/setup"
 import { PageHeader } from "@/components/shared/PageHeader"
 import {
@@ -318,17 +317,7 @@ export function Organization() {
   // Main organization view
   return (
     <div className="min-h-screen bg-white">
-      <PageHeader
-        pageName="Workspace"
-        rightActions={
-          <div className="flex items-center gap-3">
-            <OrganizationSelector />
-            <span className="inline-flex items-center rounded-full border border-gray-300/60 px-2.5 py-0.5 text-[10px] tracking-[0.2em] uppercase text-gray-600">
-              {currentOrganization.userRole}
-            </span>
-          </div>
-        }
-      />
+      <PageHeader pageName="Workspace" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <motion.div

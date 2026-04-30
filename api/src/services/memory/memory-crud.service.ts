@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma.lib'
 import { auditLogService } from '../core/audit-log.service'
 
@@ -34,7 +35,7 @@ function decodeCursor(cursor: string): { createdAt: Date; id: string } | null {
 export async function listMemories(opts: MemoryListOptions) {
   const limit = Math.min(opts.limit ?? 50, 200)
   const cursor = opts.cursor ? decodeCursor(opts.cursor) : null
-  const where: any = { user_id: opts.userId }
+  const where: Prisma.MemoryWhereInput = { user_id: opts.userId }
   if (opts.organizationId) where.organization_id = opts.organizationId
   if (opts.onlyDeleted) where.deleted_at = { not: null }
   else if (!opts.includeDeleted) where.deleted_at = null
@@ -45,8 +46,14 @@ export async function listMemories(opts: MemoryListOptions) {
     ]
   }
   if (cursor) {
+    const existingAnd = where.AND
+    const previous: Prisma.MemoryWhereInput[] = Array.isArray(existingAnd)
+      ? existingAnd
+      : existingAnd
+        ? [existingAnd]
+        : []
     where.AND = [
-      ...(where.AND ?? []),
+      ...previous,
       {
         OR: [
           { created_at: { lt: cursor.createdAt } },

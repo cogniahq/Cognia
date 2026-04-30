@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma.lib'
 
 export async function createSavedSearch(input: {
@@ -15,7 +16,7 @@ export async function createSavedSearch(input: {
       organization_id: input.organizationId,
       name: input.name,
       query: input.query,
-      filters: input.filters as any,
+      filters: (input.filters ?? {}) as Prisma.InputJsonValue,
       alert_enabled: input.alertEnabled ?? false,
       alert_frequency: input.alertFrequency ?? 'daily',
     },
@@ -47,7 +48,7 @@ export async function updateSavedSearch(
     data: {
       ...(patch.name !== undefined && { name: patch.name }),
       ...(patch.query !== undefined && { query: patch.query }),
-      ...(patch.filters !== undefined && { filters: patch.filters as any }),
+      ...(patch.filters !== undefined && { filters: patch.filters as Prisma.InputJsonValue }),
       ...(patch.alertEnabled !== undefined && { alert_enabled: patch.alertEnabled }),
       ...(patch.alertFrequency !== undefined && { alert_frequency: patch.alertFrequency }),
     },

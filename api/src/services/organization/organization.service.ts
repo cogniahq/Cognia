@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
-import { OrgRole } from '@prisma/client'
+import { OrgRole, Prisma } from '@prisma/client'
 import { randomBytes } from 'crypto'
 import { normalizeDomainPack } from '../../config/domain-packs'
 import { encryptString } from '../../utils/auth/crypto.util'
@@ -607,7 +607,7 @@ export class OrganizationService {
     organizationId: string,
     input: UpdateOrganizationSecurityInput
   ): Promise<OrganizationWithMembers> {
-    const data: any = {}
+    const data: Prisma.OrganizationUpdateInput = {}
     if (input.dataResidency !== undefined) data.data_residency = input.dataResidency
     if (input.require2FA !== undefined) data.require_2fa = input.require2FA
     if (input.sessionTimeout !== undefined) data.session_timeout = input.sessionTimeout
@@ -635,7 +635,10 @@ export class OrganizationService {
     if (input.ssoAttributeGroups !== undefined) data.sso_attribute_groups = input.ssoAttributeGroups
     if (input.ssoRoleMapping !== undefined) {
       // Prisma: pass null to clear, object as Json
-      data.sso_role_mapping = input.ssoRoleMapping === null ? null : (input.ssoRoleMapping as any)
+      data.sso_role_mapping =
+        input.ssoRoleMapping === null
+          ? Prisma.DbNull
+          : (input.ssoRoleMapping as Prisma.InputJsonValue)
     }
     if (input.ssoEnforced !== undefined) data.sso_enforced = input.ssoEnforced
     if (input.ssoEmailDomains !== undefined) data.sso_email_domains = input.ssoEmailDomains

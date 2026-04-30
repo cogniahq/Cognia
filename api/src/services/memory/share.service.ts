@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import type { Memory, MemoryShare } from '@prisma/client'
 import { prisma } from '../../lib/prisma.lib'
 import { auditLogService } from '../core/audit-log.service'
 
@@ -75,7 +76,7 @@ export async function revokeShare(shareId: string, sharerUserId: string): Promis
 
 export async function getMemoryByShareLink(
   linkToken: string
-): Promise<{ memory: any; share: any } | null> {
+): Promise<{ memory: Memory; share: MemoryShare } | null> {
   const share = await prisma.memoryShare.findUnique({
     where: { link_token: linkToken },
     include: { memory: true },

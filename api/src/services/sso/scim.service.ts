@@ -1,8 +1,23 @@
 import { prisma } from '../../lib/prisma.lib'
 import { revokeAllForUser as revokeJwts } from '../auth/jwt-revocation.service'
 import { revokeAllForUser as revokeRefresh } from '../auth/refresh-token.service'
-import type { OrgRole } from '@prisma/client'
+import type { OrgRole, Prisma } from '@prisma/client'
 import { auditLogService } from '../core/audit-log.service'
+
+type MemberWithUser = Prisma.OrganizationMemberGetPayload<{ include: { user: true } }>
+
+interface ScimPatchOp {
+  op: string
+  path?: string
+  value?: unknown
+}
+
+interface ScimUserPayload {
+  userName?: string
+  emails?: { value?: string; primary?: boolean; type?: string }[]
+  groups?: { value?: string; display?: string }[]
+  [key: string]: unknown
+}
 
 const USER_SCHEMA = 'urn:ietf:params:scim:schemas:core:2.0:User'
 const GROUP_SCHEMA = 'urn:ietf:params:scim:schemas:core:2.0:Group'
@@ -19,7 +34,7 @@ export interface ScimUser {
   groups?: { value: string; display: string }[]
 }
 
-export function memberToScim(member: any, _baseUrl: string): ScimUser {
+export function memberToScim(member: MemberWithUser, _baseUrl: string): ScimUser {
   return {
     schemas: [USER_SCHEMA],
     id: member.id,
@@ -45,7 +60,7 @@ export async function listUsers(
   const count = Math.min(opts.count ?? 100, 200)
   const skip = startIndex - 1
 
-  const where: any = { organization_id: orgId }
+  const where: Prisma.OrganizationMemberWhereInput = { organization_id: orgId }
   if (opts.filter) {
     // Support a couple of common filters: userName eq "x", emails.value eq "y", externalId eq "z"
     const m = opts.filter.match(/(userName|externalId|emails\.value)\s+eq\s+"([^"]+)"/i)
@@ -89,7 +104,7 @@ export async function getUser(
 
 export async function createUser(
   orgId: string,
-  body: any,
+  body: ScimUserPayload,
   baseUrl: string,
   actor: { actorUserId: string | null; actorEmail: string | null }
 ) {
@@ -138,7 +153,7 @@ export async function createUser(
 export async function patchUser(
   orgId: string,
   memberId: string,
-  ops: any[],
+  ops: ScimPatchOp[],
   baseUrl: string,
   actor: { actorUserId: string | null; actorEmail: string | null }
 ): Promise<ScimUser | null> {
@@ -155,7 +170,8 @@ export async function patchUser(
       (opName === 'replace' || opName === 'add') &&
       (path === 'active' || (op.value && typeof op.value === 'object' && 'active' in op.value))
     ) {
-      const active = path === 'active' ? Boolean(op.value) : Boolean(op.value.active)
+      const active =
+        path === 'active' ? Boolean(op.value) : Boolean((op.value as { active?: unknown }).active)
       if (!active && !member.deactivated_at) {
         await prisma.organizationMember.update({
           where: { id: member.id },

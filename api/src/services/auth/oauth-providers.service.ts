@@ -23,7 +23,7 @@ import {
   OAuthProviderConfig,
   OAuthProviderName,
 } from '../../config/oauth-providers.config'
-import { generateCodeVerifier, deriveCodeChallenge } from '../../utils/auth/pkce.util'
+import { deriveCodeChallenge } from '../../utils/auth/pkce.util'
 
 export interface OAuthUserInfo {
   subject: string

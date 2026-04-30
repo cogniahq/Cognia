@@ -1,7 +1,19 @@
 import React from "react"
 import { motion } from "framer-motion"
+import { Link } from "react-router-dom"
 
 import { fadeUpVariants } from "@/components/shared/site-motion-variants"
+
+const TRUST_LINKS: { label: string; to: string; external?: boolean }[] = [
+  { label: "Trust center", to: "/trust" },
+  { label: "Security", to: "/security" },
+  { label: "Privacy", to: "/privacy" },
+  { label: "Terms", to: "/terms" },
+  { label: "Subprocessors", to: "/subprocessors" },
+  { label: "DPA", to: "/dpa" },
+  { label: "Bug bounty", to: "/security/bug-bounty" },
+  { label: "Status", to: "https://status.cogniahq.com", external: true },
+]
 
 export const Footer: React.FC = () => {
   return (
@@ -68,6 +80,38 @@ export const Footer: React.FC = () => {
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </motion.button>
+          </div>
+        </div>
+
+        {/* Trust & legal */}
+        <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200/50">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="text-xs font-mono uppercase tracking-wide text-gray-500">
+              Trust & legal
+            </div>
+            <nav className="flex flex-wrap gap-x-4 gap-y-2">
+              {TRUST_LINKS.map((link) =>
+                link.external ? (
+                  <a
+                    key={link.to}
+                    href={link.to}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-xs sm:text-sm text-gray-600 hover:text-black transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="text-xs sm:text-sm text-gray-600 hover:text-black transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
+            </nav>
           </div>
         </div>
 

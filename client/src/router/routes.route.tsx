@@ -82,6 +82,41 @@ const Billing = lazy(() =>
     default: module.Billing,
   }))
 )
+const Security = lazy(() =>
+  import("@/pages/security.page").then((module) => ({
+    default: module.Security,
+  }))
+)
+const Trust = lazy(() =>
+  import("@/pages/trust.page").then((module) => ({
+    default: module.Trust,
+  }))
+)
+const Privacy = lazy(() =>
+  import("@/pages/privacy.page").then((module) => ({
+    default: module.Privacy,
+  }))
+)
+const Terms = lazy(() =>
+  import("@/pages/terms.page").then((module) => ({
+    default: module.Terms,
+  }))
+)
+const SubprocessorsPage = lazy(() =>
+  import("@/pages/subprocessors.page").then((module) => ({
+    default: module.Subprocessors,
+  }))
+)
+const DPAPage = lazy(() =>
+  import("@/pages/dpa.page").then((module) => ({
+    default: module.DPA,
+  }))
+)
+const BugBounty = lazy(() =>
+  import("@/pages/bug-bounty.page").then((module) => ({
+    default: module.BugBounty,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -121,6 +156,15 @@ const AppRoutes = () => {
           <Routes location={location}>
             <Route path="/" element={<AuthRedirectLanding />} />
             <Route path="/pricing" element={<Pricing />} />
+
+            {/* Public trust & legal pages — always available */}
+            <Route path="/security" element={<Security />} />
+            <Route path="/security/bug-bounty" element={<BugBounty />} />
+            <Route path="/trust" element={<Trust />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/subprocessors" element={<SubprocessorsPage />} />
+            <Route path="/dpa" element={<DPAPage />} />
             {enableInternalRoutes ? (
               <>
                 <Route path="/login" element={<Login />} />

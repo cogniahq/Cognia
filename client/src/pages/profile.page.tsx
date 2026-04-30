@@ -1,13 +1,30 @@
 import React, { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
+import { gdprService } from "@/services/gdpr.service"
 import { ProfileService, type UserProfile } from "@/services/profile.service"
 import { requireAuthToken } from "@/utils/auth"
 import { useNavigate } from "react-router-dom"
 
+import { DeleteAccountDialog } from "@/components/gdpr/DeleteAccountDialog"
 import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings"
 import { PageHeader } from "@/components/shared/PageHeader"
 
 import { EmptyState, ErrorMessage } from "../components/ui/loading-spinner"
+
+const API_URL = import.meta.env.VITE_API_URL || ""
+
+const formatScheduledDate = (iso: string | null): string => {
+  if (!iso) return ""
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  } catch {
+    return iso
+  }
+}
 
 export const Profile: React.FC = () => {
   const navigate = useNavigate()
@@ -17,6 +34,10 @@ export const Profile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletionScheduledFor, setDeletionScheduledFor] = useState<
+    string | null
+  >(null)
 
   useEffect(() => {
     try {
@@ -26,6 +47,18 @@ export const Profile: React.FC = () => {
       navigate("/login")
     }
   }, [navigate])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    gdprService
+      .getStatus()
+      .then((res) => {
+        setDeletionScheduledFor(res.data?.scheduledFor ?? null)
+      })
+      .catch(() => {
+        // non-fatal — banner just won't show
+      })
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -172,6 +205,68 @@ export const Profile: React.FC = () => {
 
           {/* Security Settings - 2FA */}
           <TwoFactorSettings />
+
+          {/* Privacy & data rights */}
+          <div className="bg-white border border-gray-200 p-4">
+            <div className="text-sm font-mono text-gray-600 mb-3 uppercase tracking-wide">
+              [PRIVACY & DATA RIGHTS]
+            </div>
+
+            {deletionScheduledFor && (
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 py-2 bg-red-50 border border-red-200 text-sm text-red-800">
+                <span>
+                  Your account is scheduled for deletion on{" "}
+                  <strong>{formatScheduledDate(deletionScheduledFor)}</strong>.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="px-3 py-1 bg-white border border-red-300 text-red-700 text-xs font-mono hover:bg-red-100 transition-colors"
+                >
+                  Cancel deletion
+                </button>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-600 mb-4">
+              Export everything we hold about you, or schedule a permanent
+              account deletion. Deletion runs after a 30-day grace period
+              and can be cancelled any time before then.
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`${API_URL}/api/export`}
+                download
+                className="px-3 py-1.5 text-xs font-mono text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
+              >
+                Export my data
+              </a>
+              <button
+                type="button"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="px-3 py-1.5 text-xs font-mono text-red-700 hover:text-red-900 hover:bg-red-50 border border-red-300 transition-colors"
+              >
+                {deletionScheduledFor
+                  ? "Manage deletion"
+                  : "Delete my account"}
+              </button>
+            </div>
+          </div>
+
+          <DeleteAccountDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            scheduledFor={deletionScheduledFor}
+            onScheduled={(when) => {
+              setDeletionScheduledFor(when)
+              setDeleteDialogOpen(false)
+            }}
+            onCancelled={() => {
+              setDeletionScheduledFor(null)
+              setDeleteDialogOpen(false)
+            }}
+          />
 
           {error && (
             <ErrorMessage message={error} onRetry={() => setError(null)} />

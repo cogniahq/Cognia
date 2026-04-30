@@ -150,7 +150,7 @@ export default function MembersTab({ slug }: MembersTabProps) {
                             </span>
                           }
                         >
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <button
                                 className="inline-flex items-center justify-center w-7 h-7 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"

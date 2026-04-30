@@ -33,7 +33,7 @@ function UserMenu({ email }: UserMenuProps) {
   const displayLabel = email ?? "Account"
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           className="flex items-center gap-2 px-2 py-1 text-xs font-mono text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"

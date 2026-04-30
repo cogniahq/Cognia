@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
+import { requirePermission } from '../middleware/permission.middleware'
 import { createShare, listSharesForMemory, revokeShare, getMemoryByShareLink } from '../services/memory/share.service'
 
 const router = Router()
 
-router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
+router.post('/', authenticateToken, requirePermission('memory.share', { allowPersonal: true }), async (req: AuthenticatedRequest, res) => {
   if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
   try {
     const out = await createShare({
@@ -30,7 +31,7 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
   res.json({ success: true, data: out })
 })
 
-router.delete('/:shareId', authenticateToken, async (req: AuthenticatedRequest, res) => {
+router.delete('/:shareId', authenticateToken, requirePermission('memory.share', { allowPersonal: true }), async (req: AuthenticatedRequest, res) => {
   if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
   try {
     await revokeShare(req.params.shareId, req.user.id)

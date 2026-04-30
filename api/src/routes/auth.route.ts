@@ -44,10 +44,13 @@ import {
   sendVerificationEmail,
 } from '../services/auth/email-verification.service'
 import { seedSampleWorkspace } from '../services/onboarding/sample-workspace-seeder.service'
+import { getEffectivePermissions } from '../services/auth/permissions.service'
 
 const router = Router()
 
-// Get current user
+// Get current user — extended in Phase 7 to return effective RBAC permissions
+// for both the personal account and every org membership the user has.
+// Frontend reads `personalPermissions` + `orgPermissions[]` to gate UI.
 router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
@@ -59,6 +62,29 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
       return res.status(404).json({ message: 'User not found' })
     }
 
+    // Effective permission sets:
+    // - personalPermissions: scope = no org. Matches what the user can do
+    //   on /api endpoints that operate without an org context.
+    // - orgPermissions: one entry per active membership. Frontend picks
+    //   the entry matching `currentOrganization` and uses it for gating.
+    const personalPermissions = await getEffectivePermissions(user.id, null)
+
+    const memberships = await prisma.organizationMember.findMany({
+      where: { user_id: user.id, deactivated_at: null },
+      include: {
+        organization: { select: { id: true, name: true, slug: true } },
+      },
+    })
+
+    const orgPermissions = await Promise.all(
+      memberships.map(async (m) => ({
+        organizationId: m.organization.id,
+        orgSlug: m.organization.slug,
+        role: m.role,
+        permissions: await getEffectivePermissions(user.id, m.organization.id),
+      }))
+    )
+
     res.json({
       success: true,
       data: {
@@ -66,6 +92,8 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
         email: user.email,
         account_type: user.account_type,
         role: user.role,
+        personalPermissions,
+        orgPermissions,
       },
     })
   } catch (error) {

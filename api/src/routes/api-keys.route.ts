@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { randomBytes, createHash } from 'node:crypto'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
+import { requirePermission } from '../middleware/permission.middleware'
 import { prisma } from '../lib/prisma.lib'
 import { auditLogService } from '../services/core/audit-log.service'
 
@@ -10,7 +11,10 @@ const VALID_SCOPES = ['memories.read', 'memories.write', 'search']
 
 router.use(authenticateToken)
 
-router.post('/', async (req: AuthenticatedRequest, res: Response) => {
+router.post(
+  '/',
+  requirePermission('api_key.create', { orgFromBody: 'organizationId', allowPersonal: true }),
+  async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user?.id) {
     res.status(401).json({ message: 'Unauthorized' })
     return
@@ -83,7 +87,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   res.json({ success: true, data: keys })
 })
 
-router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/:id', requirePermission('api_key.revoke', { allowPersonal: true }), async (req: AuthenticatedRequest, res: Response) => {
   if (!req.user?.id) {
     res.status(401).json({ message: 'Unauthorized' })
     return

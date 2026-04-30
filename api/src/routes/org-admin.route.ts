@@ -3,6 +3,7 @@ import { randomBytes, createHash } from 'node:crypto'
 import { authenticateToken } from '../middleware/auth.middleware'
 import { requireOrganization, requireOrgAdmin } from '../middleware/organization.middleware'
 import type { OrganizationRequest } from '../middleware/organization.middleware'
+import { requirePermission } from '../middleware/permission.middleware'
 import { auditLogService } from '../services/core/audit-log.service'
 import { prisma } from '../lib/prisma.lib'
 import type { AuditEventType, AuditEventCategory } from '../types/common.types'
@@ -15,10 +16,13 @@ import { searchOrg } from '../services/compliance/ediscovery.service'
 const router = Router({ mergeParams: true })
 
 // Apply auth + org membership + admin check to every route
+// Phase 7 RBAC: keep `requireOrgAdmin` as a coarse gate, but layer
+// `requirePermission(...)` on top per-route so 403s carry the specific
+// permission name and clients can map them to UI gates.
 router.use('/:slug', authenticateToken, requireOrganization, requireOrgAdmin)
 
 // GET /:slug/activity - paginated audit log
-router.get('/:slug/activity', async (req: OrganizationRequest, res) => {
+router.get('/:slug/activity', requirePermission('audit.read'), async (req: OrganizationRequest, res) => {
   const orgId = req.organization!.id
   const limit = Math.min(Number(req.query.limit) || 50, 200)
   const offset = Number(req.query.offset) || 0
@@ -46,7 +50,7 @@ router.get('/:slug/activity', async (req: OrganizationRequest, res) => {
 })
 
 // GET /:slug/activity/export.csv
-router.get('/:slug/activity/export.csv', async (req: OrganizationRequest, res) => {
+router.get('/:slug/activity/export.csv', requirePermission('audit.export'), async (req: OrganizationRequest, res) => {
   const orgId = req.organization!.id
   const eventType = req.query.eventType as AuditEventType | undefined
   const eventCategory = req.query.eventCategory as AuditEventCategory | undefined
@@ -211,7 +215,7 @@ router.get('/:slug/integrations-health', async (req: OrganizationRequest, res) =
 })
 
 // POST /:slug/scim/tokens - generate a new SCIM bearer token (returned ONCE)
-router.post('/:slug/scim/tokens', async (req: OrganizationRequest, res) => {
+router.post('/:slug/scim/tokens', requirePermission('scim.manage'), async (req: OrganizationRequest, res) => {
   const orgId = req.organization!.id
   const name = (req.body?.name as string | undefined) ?? null
   const raw = randomBytes(32).toString('base64url')
@@ -240,7 +244,7 @@ router.post('/:slug/scim/tokens', async (req: OrganizationRequest, res) => {
 })
 
 // GET /:slug/scim/tokens - list (metadata only)
-router.get('/:slug/scim/tokens', async (req: OrganizationRequest, res) => {
+router.get('/:slug/scim/tokens', requirePermission('scim.manage'), async (req: OrganizationRequest, res) => {
   const tokens = await prisma.scimAccessToken.findMany({
     where: { organization_id: req.organization!.id },
     orderBy: { created_at: 'desc' },
@@ -257,7 +261,7 @@ router.get('/:slug/scim/tokens', async (req: OrganizationRequest, res) => {
 })
 
 // DELETE /:slug/scim/tokens/:tokenId - revoke
-router.delete('/:slug/scim/tokens/:tokenId', async (req: OrganizationRequest, res) => {
+router.delete('/:slug/scim/tokens/:tokenId', requirePermission('scim.manage'), async (req: OrganizationRequest, res) => {
   await prisma.scimAccessToken.update({
     where: { id: req.params.tokenId },
     data: { revoked_at: new Date() },
@@ -298,7 +302,7 @@ router.post('/:slug/webhook-deliveries/:id/retry', async (req: OrganizationReque
 })
 
 // PUT /:slug/llm-config - set/update BYOK provider + encrypted API key (Enterprise only)
-router.put('/:slug/llm-config', async (req: OrganizationRequest, res) => {
+router.put('/:slug/llm-config', requirePermission('llm.configure'), async (req: OrganizationRequest, res) => {
   const sub = await prisma.subscription.findUnique({
     where: { organization_id: req.organization!.id },
   })
@@ -334,7 +338,7 @@ router.put('/:slug/llm-config', async (req: OrganizationRequest, res) => {
 })
 
 // GET /:slug/llm-config - read current BYOK config (no plaintext key returned)
-router.get('/:slug/llm-config', async (req: OrganizationRequest, res) => {
+router.get('/:slug/llm-config', requirePermission('llm.configure'), async (req: OrganizationRequest, res) => {
   const org = await prisma.organization.findUnique({
     where: { id: req.organization!.id },
     select: { llm_provider: true, llm_config: true, llm_key_encrypted: true },
@@ -350,7 +354,7 @@ router.get('/:slug/llm-config', async (req: OrganizationRequest, res) => {
 })
 
 // POST /:slug/legal-hold - apply legal hold to org
-router.post('/:slug/legal-hold', async (req: OrganizationRequest, res) => {
+router.post('/:slug/legal-hold', requirePermission('legal_hold.apply'), async (req: OrganizationRequest, res) => {
   const until = new Date(req.body?.until)
   if (Number.isNaN(until.getTime())) return res.status(400).json({ message: 'Invalid until date' })
   await applyOrgHold(
@@ -364,13 +368,13 @@ router.post('/:slug/legal-hold', async (req: OrganizationRequest, res) => {
 })
 
 // DELETE /:slug/legal-hold - release legal hold
-router.delete('/:slug/legal-hold', async (req: OrganizationRequest, res) => {
+router.delete('/:slug/legal-hold', requirePermission('legal_hold.apply'), async (req: OrganizationRequest, res) => {
   await releaseOrgHold(req.organization!.id, req.user!.id, req.user!.email ?? null)
   res.json({ success: true })
 })
 
 // POST /:slug/ediscovery - admin-only cross-org search
-router.post('/:slug/ediscovery', async (req: OrganizationRequest, res) => {
+router.post('/:slug/ediscovery', requirePermission('ediscovery.search'), async (req: OrganizationRequest, res) => {
   const { query, limit, startDate, endDate } = req.body ?? {}
   if (!query) return res.status(400).json({ message: 'query required' })
   const out = await searchOrg({
@@ -388,7 +392,7 @@ router.post('/:slug/ediscovery', async (req: OrganizationRequest, res) => {
 })
 
 // POST /:slug/members/:memberId/offboard
-router.post('/:slug/members/:memberId/offboard', async (req: OrganizationRequest, res) => {
+router.post('/:slug/members/:memberId/offboard', requirePermission('member.remove'), async (req: OrganizationRequest, res) => {
   try {
     await offboardMember({
       organizationId: req.organization!.id,

@@ -5,6 +5,7 @@ import {
   requireOrgAdmin,
   OrganizationRequest,
 } from '../middleware/organization.middleware'
+import { requirePermission } from '../middleware/permission.middleware'
 import {
   createSubscription,
   cancelSubscription,
@@ -20,7 +21,7 @@ const router = Router({ mergeParams: true })
 
 router.use('/:slug', authenticateToken, requireOrganization)
 
-router.get('/:slug', async (req: OrganizationRequest, res: Response) => {
+router.get('/:slug', requirePermission('billing.read'), async (req: OrganizationRequest, res: Response) => {
   const orgId = req.organization!.id
   const sub = await prisma.subscription.findUnique({ where: { organization_id: orgId } })
   const usage = await getCurrentUsage(orgId)
@@ -44,7 +45,7 @@ router.get('/:slug', async (req: OrganizationRequest, res: Response) => {
 
 // POST /:slug/checkout — creates a Razorpay subscription on the server, returns
 // the subscription_id that the frontend feeds into Razorpay Checkout JS.
-router.post('/:slug/checkout', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
+router.post('/:slug/checkout', requireOrgAdmin, requirePermission('billing.manage'), async (req: OrganizationRequest, res: Response) => {
   if (!isBillingEnabled()) {
     return res.status(503).json({ success: false, message: 'Billing not configured' })
   }
@@ -68,7 +69,7 @@ router.post('/:slug/checkout', requireOrgAdmin, async (req: OrganizationRequest,
 })
 
 // Custom portal endpoints — Razorpay has no hosted billing portal.
-router.post('/:slug/cancel', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
+router.post('/:slug/cancel', requireOrgAdmin, requirePermission('billing.cancel'), async (req: OrganizationRequest, res: Response) => {
   try {
     await cancelSubscription(req.organization!.id, req.body?.atCycleEnd !== false)
     return res.json({ success: true })
@@ -77,7 +78,7 @@ router.post('/:slug/cancel', requireOrgAdmin, async (req: OrganizationRequest, r
   }
 })
 
-router.post('/:slug/pause', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
+router.post('/:slug/pause', requireOrgAdmin, requirePermission('billing.manage'), async (req: OrganizationRequest, res: Response) => {
   try {
     await pauseSubscription(req.organization!.id)
     return res.json({ success: true })
@@ -86,7 +87,7 @@ router.post('/:slug/pause', requireOrgAdmin, async (req: OrganizationRequest, re
   }
 })
 
-router.post('/:slug/resume', requireOrgAdmin, async (req: OrganizationRequest, res: Response) => {
+router.post('/:slug/resume', requireOrgAdmin, requirePermission('billing.manage'), async (req: OrganizationRequest, res: Response) => {
   try {
     await resumeSubscription(req.organization!.id)
     return res.json({ success: true })

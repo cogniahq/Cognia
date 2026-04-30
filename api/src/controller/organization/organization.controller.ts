@@ -4,6 +4,7 @@ import { OrganizationRequest } from '../../middleware/organization.middleware'
 import { organizationService } from '../../services/organization/organization.service'
 import { memoryMeshService } from '../../services/memory/memory-mesh.service'
 import { auditLogService } from '../../services/core/audit-log.service'
+import { checkSeatAvailable } from '../../services/billing/quota.service'
 import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import AppError from '../../utils/http/app-error.util'
@@ -241,6 +242,20 @@ export class OrganizationController {
 
       if (!userId && !email) {
         return next(new AppError('Either userId or email is required', 400))
+      }
+
+      // Plan seat enforcement
+      const seatCheck = await checkSeatAvailable(req.organization!.id)
+      if (!seatCheck.ok) {
+        return res.status(402).json({
+          success: false,
+          code: 'QUOTA_EXCEEDED',
+          quotaExceeded: 'seats',
+          current: seatCheck.current,
+          limit: seatCheck.limit,
+          plan: seatCheck.plan,
+          message: 'Plan seat limit reached. Upgrade to add more members.',
+        })
       }
 
       let member

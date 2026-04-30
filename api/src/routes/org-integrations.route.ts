@@ -11,6 +11,7 @@ import { enforceSessionTimeout } from '../middleware/session-timeout.middleware'
 import { enforce2FARequirement } from '../middleware/require-2fa.middleware'
 import { integrationService } from '../services/integration'
 import { auditLogService } from '../services/core/audit-log.service'
+import { checkIntegrationQuotaAvailable } from '../services/billing/quota.service'
 import { prisma } from '../lib/prisma.lib'
 import { SyncFrequency, StorageStrategy } from '@prisma/client'
 import { createOAuthState, parseOAuthState } from '../utils/auth/oauth-state.util'
@@ -187,6 +188,20 @@ router.post(
   async (req: OrganizationRequest, res: Response) => {
     try {
       const { provider } = req.params
+
+      // Plan integration quota enforcement (gate before kicking off OAuth)
+      const quotaCheck = await checkIntegrationQuotaAvailable(req.organization!.id)
+      if (!quotaCheck.ok) {
+        return res.status(402).json({
+          success: false,
+          code: 'QUOTA_EXCEEDED',
+          quotaExceeded: 'integrations',
+          current: quotaCheck.current,
+          limit: quotaCheck.limit,
+          plan: quotaCheck.plan,
+          message: 'Plan integration limit reached. Upgrade to connect more integrations.',
+        })
+      }
 
       const redirectUri = getRedirectUri(provider, 'organization')
 

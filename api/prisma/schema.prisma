@@ -226,6 +226,11 @@ model Organization {
   memory_tags                  MemoryTag[]
   saved_searches               SavedSearch[]
 
+  // Billing relations
+  subscription                 Subscription?
+  invoices                     Invoice[]
+  usage_records                UsageRecord[]
+
   @@map("organizations")
 }
 
@@ -914,4 +919,74 @@ model SavedSearch {
   @@index([organization_id])
   @@index([alert_enabled, alert_frequency])
   @@map("saved_searches")
+}
+
+model Subscription {
+  id                       String   @id @default(uuid()) @db.Uuid
+  organization_id          String   @unique @db.Uuid
+  stripe_customer_id       String?  @unique
+  stripe_subscription_id   String?  @unique
+  stripe_price_id          String?
+  status                   String   @default("incomplete") // active|past_due|canceled|trialing|incomplete
+  plan_id                  String   @default("free")
+  current_period_start     DateTime?
+  current_period_end       DateTime?
+  cancel_at_period_end     Boolean  @default(false)
+  trial_ends_at            DateTime?
+  seats_purchased          Int      @default(1)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+  organization             Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organization_id     String    @db.Uuid
+  stripe_invoice_id   String    @unique
+  amount_due_cents    Int
+  amount_paid_cents   Int       @default(0)
+  currency            String    @default("usd")
+  status              String    // draft|open|paid|uncollectible|void
+  hosted_url          String?
+  pdf_url             String?
+  period_start        DateTime?
+  period_end          DateTime?
+  paid_at             DateTime?
+  created_at          DateTime  @default(now())
+  organization        Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@map("invoices")
+}
+
+model UsageRecord {
+  id                       String    @id @default(uuid()) @db.Uuid
+  organization_id          String    @db.Uuid
+  period_start             DateTime
+  period_end               DateTime
+  tokens_used              Int       @default(0)
+  memories_created         Int       @default(0)
+  integrations_active      Int       @default(0)
+  reported_to_stripe_at    DateTime?
+  created_at               DateTime  @default(now())
+  organization             Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, period_start])
+  @@map("usage_records")
+}
+
+model BillingEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  organization_id   String?  @db.Uuid
+  type              String
+  stripe_event_id   String   @unique
+  payload           Json
+  processed_at      DateTime?
+  error             String?
+  created_at        DateTime @default(now())
+
+  @@index([organization_id])
+  @@map("billing_events")
 }

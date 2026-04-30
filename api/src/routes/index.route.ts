@@ -25,6 +25,7 @@ import commentRouter from './comment.route'
 import workspaceRouter from './workspace.route'
 import tagRouter from './tag.route'
 import savedSearchRouter from './saved-search.route'
+import billingRouter from './billing.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -66,4 +67,7 @@ export const routes = (app: Express) => {
   app.use('/api/organizations', workspaceRouter)
   app.use('/api/tags', tagRouter)
   app.use('/api/saved-searches', savedSearchRouter)
+  // Billing (subscriptions, usage, invoices, customer portal). Stripe webhook is
+  // mounted directly on the app in App.ts (it needs the raw body before json()).
+  app.use('/api/billing', billingRouter)
 }

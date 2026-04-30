@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { OAuthButton } from "./OAuthButton"
 
@@ -32,7 +32,9 @@ describe("OAuthButton", () => {
 
   it("calls identityService.oauthStart with provider + returnTo on click", () => {
     render(<OAuthButton provider="google" returnTo="/login" />)
-    fireEvent.click(screen.getByRole("button", { name: /Continue with Google/i }))
+    fireEvent.click(
+      screen.getByRole("button", { name: /Continue with Google/i })
+    )
     expect(oauthStartMock).toHaveBeenCalledTimes(1)
     expect(oauthStartMock).toHaveBeenCalledWith("google", "/login")
   })

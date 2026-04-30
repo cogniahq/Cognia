@@ -1,23 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Trash2, Search } from "lucide-react"
-
+import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
+import type { SavedSearch } from "@/services/saved-search.service"
 import { requireAuthToken } from "@/utils/auth"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Search, Trash2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+
 import { useHasPermission } from "@/hooks/use-permissions"
-import { VirtualizedMemoryList } from "@/components/memories/VirtualizedMemoryList"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { Input } from "@/components/ui/input"
 import { MemoryBulkBar } from "@/components/memories/MemoryBulkBar"
 import { MemoryEditDialog } from "@/components/memories/MemoryEditDialog"
 import { MemoryShareDialog } from "@/components/memories/MemoryShareDialog"
+import { VirtualizedMemoryList } from "@/components/memories/VirtualizedMemoryList"
 import { SavedSearchSidebar } from "@/components/saved-searches/SavedSearchSidebar"
-import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import {
-  memoryV2Service,
-  type MemoryV2,
-} from "@/services/memory-v2.service"
-import type { SavedSearch } from "@/services/saved-search.service"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 /**
  * Phase 4 Slice D memories list view. Coexists with the legacy mesh-driven
@@ -87,10 +84,7 @@ export const MemoriesV2: React.FC = () => {
     })
   }, [])
 
-  const selectedIdsArray = useMemo(
-    () => Array.from(selectedIds),
-    [selectedIds]
-  )
+  const selectedIdsArray = useMemo(() => Array.from(selectedIds), [selectedIds])
 
   const handleApplySaved = (s: SavedSearch) => {
     setSearchQuery(s.query)

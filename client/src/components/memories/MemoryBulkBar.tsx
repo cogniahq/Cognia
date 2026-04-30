@@ -1,8 +1,9 @@
 import React, { useState } from "react"
-import { Trash2, Tag as TagIcon, FolderInput } from "lucide-react"
+import { memoryV2Service } from "@/services/memory-v2.service"
+import { FolderInput, Tag as TagIcon, Trash2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { memoryV2Service } from "@/services/memory-v2.service"
 
 interface MemoryBulkBarProps {
   selectedIds: string[]

@@ -67,7 +67,7 @@ export async function canAny(
 ): Promise<boolean> {
   if (permissions.length === 0) return false
   const perms = await getEffectivePermissions(userId, orgId)
-  return permissions.some((p) => perms.includes(p))
+  return permissions.some(p => perms.includes(p))
 }
 
 /**
@@ -80,5 +80,5 @@ export async function canAll(
 ): Promise<boolean> {
   if (permissions.length === 0) return true
   const perms = await getEffectivePermissions(userId, orgId)
-  return permissions.every((p) => perms.includes(p))
+  return permissions.every(p => perms.includes(p))
 }

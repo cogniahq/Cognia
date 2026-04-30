@@ -53,9 +53,7 @@ export const memoryV2Service = {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== "") qs.set(k, String(v))
     })
-    return fetchJSON<MemoryListResponse>(
-      `/api/memories/v2?${qs.toString()}`
-    )
+    return fetchJSON<MemoryListResponse>(`/api/memories/v2?${qs.toString()}`)
   },
   update: (
     id: string,

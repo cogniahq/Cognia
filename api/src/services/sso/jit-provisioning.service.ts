@@ -52,9 +52,7 @@ function mapGroupsToRole(
  * - Otherwise syncs the role from the assertion mapping.
  * - Enforces sso_email_domains allowlist if present on the org.
  */
-export async function provisionFromAssertion(
-  assertion: SsoAssertion
-): Promise<ProvisionResult> {
+export async function provisionFromAssertion(assertion: SsoAssertion): Promise<ProvisionResult> {
   const org = await prisma.organization.findUnique({ where: { slug: assertion.orgSlug } })
   if (!org) throw new Error(`Org ${assertion.orgSlug} not found`)
   if (!org.sso_enabled || !org.sso_provider) {

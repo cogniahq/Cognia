@@ -1,5 +1,4 @@
 import React from "react"
-
 import { formatLimit } from "@/data/plans"
 
 interface UsageBurndownCardProps {
@@ -48,9 +47,7 @@ export const UsageBurndownCard: React.FC<UsageBurndownCardProps> = ({
         <span className="text-2xl font-light font-editorial text-gray-900">
           {current.toLocaleString()}
         </span>
-        <span className="text-sm text-gray-500">
-          / {formatLimit(limit)}
-        </span>
+        <span className="text-sm text-gray-500">/ {formatLimit(limit)}</span>
       </div>
 
       {!isUnlimited && (

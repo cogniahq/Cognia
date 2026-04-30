@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+
+import type { Document } from "@/types/organization"
 import {
   getDomainMetadataBadges,
   normalizeDomainPack,
 } from "@/lib/domain-packs"
-
-import type { Document } from "@/types/organization"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const FILE_TYPE_LABELS: Record<string, string> = {
@@ -188,9 +188,16 @@ export function DocumentList() {
           // Get uploader info from metadata if available
           const uploaderName = doc.metadata?.uploader_name as string | undefined
           const uploaderRole = doc.metadata?.uploader_role as string | undefined
-          const domainPack = normalizeDomainPack(currentOrganization?.domain_pack)
-          const metadataBadges = getDomainMetadataBadges(domainPack, doc.metadata)
-          const engagementName = doc.metadata?.engagementName as string | undefined
+          const domainPack = normalizeDomainPack(
+            currentOrganization?.domain_pack
+          )
+          const metadataBadges = getDomainMetadataBadges(
+            domainPack,
+            doc.metadata
+          )
+          const engagementName = doc.metadata?.engagementName as
+            | string
+            | undefined
 
           return (
             <div

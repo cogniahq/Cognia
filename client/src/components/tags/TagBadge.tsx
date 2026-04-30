@@ -1,5 +1,6 @@
 import React from "react"
 import { X } from "lucide-react"
+
 import { cn } from "@/lib/utils.lib"
 
 interface TagBadgeProps {
@@ -27,7 +28,9 @@ export const TagBadge: React.FC<TagBadgeProps> = ({
     <span
       className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono",
-        selected ? "bg-black text-white border-black" : "bg-gray-50 border-gray-300 text-gray-800",
+        selected
+          ? "bg-black text-white border-black"
+          : "bg-gray-50 border-gray-300 text-gray-800",
         onClick ? "cursor-pointer hover:bg-gray-100" : "",
         className
       )}

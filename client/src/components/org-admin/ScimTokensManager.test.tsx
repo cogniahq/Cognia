@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ScimTokensManager from "./ScimTokensManager"
 
@@ -96,9 +96,7 @@ describe("ScimTokensManager", () => {
 
     // Plaintext token revealed exactly once
     await waitFor(() => {
-      expect(
-        screen.getByText("scim_new_full_secret_value")
-      ).toBeInTheDocument()
+      expect(screen.getByText("scim_new_full_secret_value")).toBeInTheDocument()
     })
   })
 

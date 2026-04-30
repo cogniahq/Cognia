@@ -230,8 +230,8 @@ export const Profile: React.FC = () => {
 
             <p className="text-xs text-gray-600 mb-4">
               Export everything we hold about you, or schedule a permanent
-              account deletion. Deletion runs after a 30-day grace period
-              and can be cancelled any time before then.
+              account deletion. Deletion runs after a 30-day grace period and
+              can be cancelled any time before then.
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -247,9 +247,7 @@ export const Profile: React.FC = () => {
                 onClick={() => setDeleteDialogOpen(true)}
                 className="px-3 py-1.5 text-xs font-mono text-red-700 hover:text-red-900 hover:bg-red-50 border border-red-300 transition-colors"
               >
-                {deletionScheduledFor
-                  ? "Manage deletion"
-                  : "Delete my account"}
+                {deletionScheduledFor ? "Manage deletion" : "Delete my account"}
               </button>
             </div>
           </div>

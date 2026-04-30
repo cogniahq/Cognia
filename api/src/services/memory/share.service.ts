@@ -33,32 +33,49 @@ export async function createShare(input: CreateShareInput) {
       expires_at: input.expiresAt,
     },
   })
-  await auditLogService.logEvent({
-    userId: input.sharerUserId, eventType: 'memory_shared', eventCategory: 'data_management',
-    action: 'share', metadata: { memoryId: input.memoryId, recipientType: input.recipientType },
-  }).catch(() => {})
+  await auditLogService
+    .logEvent({
+      userId: input.sharerUserId,
+      eventType: 'memory_shared',
+      eventCategory: 'data_management',
+      action: 'share',
+      metadata: { memoryId: input.memoryId, recipientType: input.recipientType },
+    })
+    .catch(() => {})
   return share
 }
 
 export async function listSharesForMemory(memoryId: string, sharerUserId: string) {
   return prisma.memoryShare.findMany({
     where: { memory_id: memoryId, sharer_user_id: sharerUserId, revoked_at: null },
-    include: { recipient_user: { select: { id: true, email: true } }, recipient_org: { select: { id: true, name: true, slug: true } } },
+    include: {
+      recipient_user: { select: { id: true, email: true } },
+      recipient_org: { select: { id: true, name: true, slug: true } },
+    },
     orderBy: { created_at: 'desc' },
   })
 }
 
 export async function revokeShare(shareId: string, sharerUserId: string): Promise<void> {
-  const s = await prisma.memoryShare.findFirst({ where: { id: shareId, sharer_user_id: sharerUserId } })
+  const s = await prisma.memoryShare.findFirst({
+    where: { id: shareId, sharer_user_id: sharerUserId },
+  })
   if (!s) throw new Error('Share not found')
   await prisma.memoryShare.update({ where: { id: shareId }, data: { revoked_at: new Date() } })
-  await auditLogService.logEvent({
-    userId: sharerUserId, eventType: 'memory_unshared', eventCategory: 'data_management',
-    action: 'revoke', metadata: { shareId },
-  }).catch(() => {})
+  await auditLogService
+    .logEvent({
+      userId: sharerUserId,
+      eventType: 'memory_unshared',
+      eventCategory: 'data_management',
+      action: 'revoke',
+      metadata: { shareId },
+    })
+    .catch(() => {})
 }
 
-export async function getMemoryByShareLink(linkToken: string): Promise<{ memory: any; share: any } | null> {
+export async function getMemoryByShareLink(
+  linkToken: string
+): Promise<{ memory: any; share: any } | null> {
   const share = await prisma.memoryShare.findUnique({
     where: { link_token: linkToken },
     include: { memory: true },
@@ -76,19 +93,30 @@ export async function canRead(memoryId: string, viewerUserId: string | null): Pr
   if (viewerUserId) {
     // direct user share
     const direct = await prisma.memoryShare.findFirst({
-      where: { memory_id: memoryId, recipient_user_id: viewerUserId, revoked_at: null, OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }] },
+      where: {
+        memory_id: memoryId,
+        recipient_user_id: viewerUserId,
+        revoked_at: null,
+        OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
+      },
     })
     if (direct) return true
     // org share via membership
     if (memory.organization_id) {
       const member = await prisma.organizationMember.findFirst({
-        where: { user_id: viewerUserId, organization_id: memory.organization_id, deactivated_at: null },
+        where: {
+          user_id: viewerUserId,
+          organization_id: memory.organization_id,
+          deactivated_at: null,
+        },
       })
       if (member) return true
     }
     const orgShare = await prisma.memoryShare.findFirst({
       where: {
-        memory_id: memoryId, recipient_type: 'ORG', revoked_at: null,
+        memory_id: memoryId,
+        recipient_type: 'ORG',
+        revoked_at: null,
         OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
         recipient_org: { members: { some: { user_id: viewerUserId, deactivated_at: null } } },
       },

@@ -8,8 +8,7 @@ export interface Tag {
 }
 
 export const tagService = {
-  list: () =>
-    fetchJSON<{ success: boolean; data: Tag[] }>(`/api/tags`),
+  list: () => fetchJSON<{ success: boolean; data: Tag[] }>(`/api/tags`),
   create: (input: { name: string; color?: string }) =>
     fetchJSON<{ success: boolean; data: Tag }>(`/api/tags`, {
       method: "POST",

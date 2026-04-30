@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
+import {
+  identityService,
+  type CreatedScimToken,
+  type ScimToken,
+} from "@/services/identity.service"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -10,11 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  identityService,
-  type CreatedScimToken,
-  type ScimToken,
-} from "@/services/identity.service"
 
 interface ScimTokensManagerProps {
   slug: string
@@ -81,9 +81,7 @@ export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
       setCopied(false)
       await load()
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to create token"
-      )
+      toast.error(err instanceof Error ? err.message : "Failed to create token")
     } finally {
       setCreating(false)
     }

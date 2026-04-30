@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
 import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
 
 export const TrashView: React.FC = () => {
   const navigate = useNavigate()

@@ -80,7 +80,9 @@ export interface IntegrationHealth {
 
 // ============ Helpers ============
 
-function unwrap<T>(response: { data: { success?: boolean; data?: T; message?: string; error?: string } }): T {
+function unwrap<T>(response: {
+  data: { success?: boolean; data?: T; message?: string; error?: string }
+}): T {
   if (response.data?.success === false) {
     throw new Error(
       response.data?.message || response.data?.error || "Request failed"
@@ -89,7 +91,9 @@ function unwrap<T>(response: { data: { success?: boolean; data?: T; message?: st
   return response.data?.data as T
 }
 
-function buildQuery(params: Record<string, string | number | undefined>): string {
+function buildQuery(
+  params: Record<string, string | number | undefined>
+): string {
   const qs = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") qs.set(k, String(v))
@@ -136,7 +140,9 @@ export const orgAdminService = {
   },
 
   getIntegrationsHealth: async (slug: string): Promise<IntegrationHealth[]> => {
-    const res = await axiosInstance.get(`/org-admin/${slug}/integrations-health`)
+    const res = await axiosInstance.get(
+      `/org-admin/${slug}/integrations-health`
+    )
     return unwrap<IntegrationHealth[]>(res) || []
   },
 

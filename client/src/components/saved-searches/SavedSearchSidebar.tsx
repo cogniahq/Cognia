@@ -1,18 +1,14 @@
 import React, { useEffect, useState } from "react"
-import { Trash2, Plus, Bookmark } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   savedSearchService,
   type SavedSearch,
 } from "@/services/saved-search.service"
+import { Bookmark, Plus, Trash2 } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface SavedSearchSidebarProps {
   /**
@@ -191,9 +187,7 @@ export const SavedSearchSidebar: React.FC<SavedSearchSidebarProps> = ({
           </div>
         )}
 
-        {error && (
-          <div className="text-xs text-red-600 font-mono">{error}</div>
-        )}
+        {error && <div className="text-xs text-red-600 font-mono">{error}</div>}
 
         {loading ? (
           <div className="text-xs text-gray-500">Loading...</div>

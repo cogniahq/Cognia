@@ -1,6 +1,11 @@
 import { Router } from 'express'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
-import { createSavedSearch, listSavedSearches, updateSavedSearch, deleteSavedSearch } from '../services/memory/saved-search.service'
+import {
+  createSavedSearch,
+  listSavedSearches,
+  updateSavedSearch,
+  deleteSavedSearch,
+} from '../services/memory/saved-search.service'
 
 const router = Router()
 

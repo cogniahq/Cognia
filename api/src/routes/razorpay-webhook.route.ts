@@ -1,5 +1,8 @@
 import { Router, raw } from 'express'
-import { verifyWebhookSignature, planIdFromRazorpayPlan } from '../services/billing/razorpay.service'
+import {
+  verifyWebhookSignature,
+  planIdFromRazorpayPlan,
+} from '../services/billing/razorpay.service'
 import { prisma } from '../lib/prisma.lib'
 import { logger } from '../utils/core/logger.util'
 import { auditLogService } from '../services/core/audit-log.service'
@@ -49,7 +52,9 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
     const sub = p.subscription?.entity?.id
     const inv = p.invoice?.entity?.id
     const pay = p.payment?.entity?.id
-    return sub ?? inv ?? pay ?? `${eventName}-${createdAt}-${Math.random().toString(36).slice(2, 8)}`
+    return (
+      sub ?? inv ?? pay ?? `${eventName}-${createdAt}-${Math.random().toString(36).slice(2, 8)}`
+    )
   })()
   const eventId = `${eventName}:${entityKey}:${createdAt}`
 
@@ -119,9 +124,7 @@ async function dispatchEvent(eventName: string, event: any): Promise<void> {
           current_period_start: subEntity.current_start
             ? new Date(subEntity.current_start * 1000)
             : null,
-          current_period_end: subEntity.current_end
-            ? new Date(subEntity.current_end * 1000)
-            : null,
+          current_period_end: subEntity.current_end ? new Date(subEntity.current_end * 1000) : null,
           seats_purchased: subEntity.quantity ?? 1,
           short_url: subEntity.short_url ?? null,
         },
@@ -133,9 +136,7 @@ async function dispatchEvent(eventName: string, event: any): Promise<void> {
           current_period_start: subEntity.current_start
             ? new Date(subEntity.current_start * 1000)
             : null,
-          current_period_end: subEntity.current_end
-            ? new Date(subEntity.current_end * 1000)
-            : null,
+          current_period_end: subEntity.current_end ? new Date(subEntity.current_end * 1000) : null,
           seats_purchased: subEntity.quantity ?? 1,
           short_url: subEntity.short_url ?? null,
         },
@@ -196,9 +197,7 @@ async function dispatchEvent(eventName: string, event: any): Promise<void> {
           currency: invEntity.currency ?? 'INR',
           status: invEntity.status,
           hosted_url: invEntity.short_url ?? null,
-          period_start: invEntity.billing_start
-            ? new Date(invEntity.billing_start * 1000)
-            : null,
+          period_start: invEntity.billing_start ? new Date(invEntity.billing_start * 1000) : null,
           period_end: invEntity.billing_end ? new Date(invEntity.billing_end * 1000) : null,
           paid_at: invEntity.paid_at ? new Date(invEntity.paid_at * 1000) : null,
         },

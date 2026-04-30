@@ -32,7 +32,13 @@ export async function listSavedSearches(userId: string, organizationId?: string)
 export async function updateSavedSearch(
   id: string,
   userId: string,
-  patch: Partial<{ name: string; query: string; filters: Record<string, unknown>; alertEnabled: boolean; alertFrequency: string }>
+  patch: Partial<{
+    name: string
+    query: string
+    filters: Record<string, unknown>
+    alertEnabled: boolean
+    alertFrequency: string
+  }>
 ) {
   const s = await prisma.savedSearch.findFirst({ where: { id, user_id: userId } })
   if (!s) throw new Error('Saved search not found')

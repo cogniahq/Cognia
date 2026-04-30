@@ -1,11 +1,11 @@
 import { useRef, useState } from "react"
-import { DOMAIN_PACKS, type DomainPackId } from "@/lib/domain-packs"
 import {
   updateProfile,
   type UpdateProfileRequest,
 } from "@/services/organization/organization.service"
 
 import type { Organization } from "@/types/organization"
+import { DOMAIN_PACKS, type DomainPackId } from "@/lib/domain-packs"
 
 interface OrganizationProfileFormProps {
   organization: Organization

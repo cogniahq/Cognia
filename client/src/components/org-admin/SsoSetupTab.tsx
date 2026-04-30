@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
+import { identityService } from "@/services/identity.service"
+import { orgAdminService } from "@/services/org-admin.service"
 import { Loader2 } from "lucide-react"
 
-import { orgAdminService } from "@/services/org-admin.service"
-import { identityService } from "@/services/identity.service"
 import ScimTokensManager from "@/components/org-admin/ScimTokensManager"
 import SsoSetupWizard from "@/components/org-admin/SsoSetupWizard"
 
@@ -25,9 +25,7 @@ export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
       setHasConfig(!!data.sso?.enabled)
       setProvider(data.sso?.provider ?? null)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load SSO status"
-      )
+      setError(err instanceof Error ? err.message : "Failed to load SSO status")
     } finally {
       setIsLoading(false)
     }
@@ -88,7 +86,11 @@ export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
               onClick={() => setShowWizard((s) => !s)}
               className="text-xs font-medium px-3 py-2 bg-gray-900 text-white hover:bg-black"
             >
-              {showWizard ? "Hide wizard" : hasConfig ? "Reconfigure" : "Set up SSO"}
+              {showWizard
+                ? "Hide wizard"
+                : hasConfig
+                  ? "Reconfigure"
+                  : "Set up SSO"}
             </button>
           </div>
         </div>

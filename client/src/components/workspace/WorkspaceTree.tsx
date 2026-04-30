@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react"
-import { ChevronRight, FolderTree, Plus } from "lucide-react"
 import { workspaceService, type Workspace } from "@/services/workspace.service"
+import { ChevronRight, FolderTree, Plus } from "lucide-react"
+
 import { WorkspaceCreateDialog } from "./WorkspaceCreateDialog"
 
 interface WorkspaceTreeProps {

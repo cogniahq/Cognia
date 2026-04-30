@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth.context"
 import { commentService, type Comment } from "@/services/comment.service"
+
+import { Button } from "@/components/ui/button"
 
 interface MemoryCommentThreadProps {
   memoryId: string

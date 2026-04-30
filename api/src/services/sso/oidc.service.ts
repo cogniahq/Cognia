@@ -27,11 +27,7 @@ export interface OidcOrgClient {
 export async function getOidcClientForOrg(slug: string): Promise<OidcOrgClient | null> {
   const org = await prisma.organization.findUnique({ where: { slug } })
   if (!org || !org.sso_enabled || org.sso_provider !== 'oidc') return null
-  if (
-    !org.sso_idp_oidc_issuer ||
-    !org.sso_idp_oidc_client_id ||
-    !org.sso_idp_oidc_client_secret
-  )
+  if (!org.sso_idp_oidc_issuer || !org.sso_idp_oidc_client_id || !org.sso_idp_oidc_client_secret)
     return null
 
   const baseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000'

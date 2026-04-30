@@ -1,11 +1,16 @@
 import 'dotenv/config'
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
-import { issueEmailVerificationToken, consumeEmailVerificationToken } from './email-verification.service'
+import {
+  issueEmailVerificationToken,
+  consumeEmailVerificationToken,
+} from './email-verification.service'
 import { prisma } from '../../lib/prisma.lib'
 import { randomUUID } from 'node:crypto'
 
-after(async () => { await prisma.$disconnect() })
+after(async () => {
+  await prisma.$disconnect()
+})
 
 async function makeUser(): Promise<string> {
   const u = await prisma.user.create({ data: { email: `e-${randomUUID()}@x.io` } })

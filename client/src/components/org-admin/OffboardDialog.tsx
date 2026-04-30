@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react"
+import { orgAdminService, type AdminMember } from "@/services/org-admin.service"
 import { toast } from "sonner"
 
-import {
-  orgAdminService,
-  type AdminMember,
-} from "@/services/org-admin.service"
 import {
   Dialog,
   DialogContent,
@@ -63,9 +60,7 @@ export default function OffboardDialog({
         reason: reason.trim() || undefined,
       })
       toast.success(
-        hardDelete
-          ? "Member permanently removed"
-          : "Member deactivated"
+        hardDelete ? "Member permanently removed" : "Member deactivated"
       )
       onCompleted()
       onClose()

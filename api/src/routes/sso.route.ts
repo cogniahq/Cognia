@@ -4,11 +4,7 @@ import { generateToken } from '../utils/auth/jwt.util'
 import { issueRefreshToken } from '../services/auth/refresh-token.service'
 import { auditLogService } from '../services/core/audit-log.service'
 import { provisionFromAssertion } from '../services/sso/jit-provisioning.service'
-import {
-  buildSaml,
-  extractProfile,
-  getSamlConfigForOrg,
-} from '../services/sso/saml.service'
+import { buildSaml, extractProfile, getSamlConfigForOrg } from '../services/sso/saml.service'
 import {
   buildOidcAuthUrl,
   completeOidcCallback,
@@ -120,9 +116,7 @@ router.post('/saml/:slug/acs', async (req: Request, res: Response) => {
     const appUrl = process.env.PUBLIC_APP_URL || 'http://localhost:5173'
     res.redirect(`${appUrl}/?token=${encodeURIComponent(accessToken)}`)
   } catch (err) {
-    res
-      .status(401)
-      .json({ message: 'SAML validation failed', detail: (err as Error).message })
+    res.status(401).json({ message: 'SAML validation failed', detail: (err as Error).message })
   }
 })
 
@@ -133,10 +127,7 @@ router.post('/saml/:slug/acs', async (req: Request, res: Response) => {
 router.get('/oidc/:slug/login', async (req: Request, res: Response) => {
   const out = await getOidcClientForOrg(req.params.slug)
   if (!out) return res.status(404).json({ message: 'OIDC not configured for this org' })
-  const { url, state, nonce, codeVerifier } = await buildOidcAuthUrl(
-    out.config,
-    out.redirectUri
-  )
+  const { url, state, nonce, codeVerifier } = await buildOidcAuthUrl(out.config, out.redirectUri)
   oidcStateStore.set(state, {
     codeVerifier,
     nonce,
@@ -211,9 +202,7 @@ router.get('/oidc/:slug/callback', async (req: Request, res: Response) => {
       : `${appUrl}${stateData.returnTo}`
     res.redirect(`${redirectTarget}?token=${encodeURIComponent(accessToken)}`)
   } catch (err) {
-    res
-      .status(401)
-      .json({ message: 'OIDC callback failed', detail: (err as Error).message })
+    res.status(401).json({ message: 'OIDC callback failed', detail: (err as Error).message })
   }
 })
 

@@ -16,10 +16,7 @@ import {
   handleOAuthCallback,
   generateCodeVerifier,
 } from '../services/auth/oauth-providers.service'
-import {
-  createSignInOAuthState,
-  parseSignInOAuthState,
-} from '../utils/auth/oauth-state.util'
+import { createSignInOAuthState, parseSignInOAuthState } from '../utils/auth/oauth-state.util'
 import { generateToken } from '../utils/auth/jwt.util'
 import { issueRefreshToken } from '../services/auth/refresh-token.service'
 import { auditLogService } from '../services/core/audit-log.service'

@@ -1,7 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { generationProviderService, shouldRetryGenerationError } from './generation-provider.service'
+import {
+  generationProviderService,
+  shouldRetryGenerationError,
+} from './generation-provider.service'
 import { openaiService } from './openai.service'
 
 test('generation provider does not retry unrecoverable OpenAI rate limit errors', () => {

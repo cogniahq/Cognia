@@ -1,6 +1,11 @@
 import { Router } from 'express'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
-import { postComment, listComments, editComment, deleteComment } from '../services/memory/comment.service'
+import {
+  postComment,
+  listComments,
+  editComment,
+  deleteComment,
+} from '../services/memory/comment.service'
 
 const router = Router()
 

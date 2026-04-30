@@ -8,11 +8,11 @@ import { BrowserRouter as Router } from "react-router-dom"
 
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { Toaster } from "@/components/ui/sonner"
+import { QuotaExceededModal } from "@/components/billing/QuotaExceededModal"
+import { CookieConsent } from "@/components/legal/CookieConsent"
 import { CommandMenu } from "@/components/shared/CommandMenu"
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary"
 import { SecurityErrorHandler } from "@/components/shared/SecurityErrorHandler"
-import { QuotaExceededModal } from "@/components/billing/QuotaExceededModal"
-import { CookieConsent } from "@/components/legal/CookieConsent"
 
 function AppContent() {
   useKeyboardShortcuts()

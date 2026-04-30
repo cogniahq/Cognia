@@ -1,6 +1,10 @@
 import { prisma } from '../../lib/prisma.lib'
 
-export async function createTag(scope: { userId?: string; orgId?: string }, name: string, color?: string) {
+export async function createTag(
+  scope: { userId?: string; orgId?: string },
+  name: string,
+  color?: string
+) {
   if (!scope.userId && !scope.orgId) throw new Error('Tag scope required')
   return prisma.memoryTag.create({
     data: { user_id: scope.userId, organization_id: scope.orgId, name, color },
@@ -10,10 +14,12 @@ export async function createTag(scope: { userId?: string; orgId?: string }, name
 export async function listTags(scope: { userId?: string; orgId?: string }) {
   if (!scope.userId && !scope.orgId) return []
   return prisma.memoryTag.findMany({
-    where: { OR: [
-      ...(scope.userId ? [{ user_id: scope.userId }] : []),
-      ...(scope.orgId ? [{ organization_id: scope.orgId }] : []),
-    ]},
+    where: {
+      OR: [
+        ...(scope.userId ? [{ user_id: scope.userId }] : []),
+        ...(scope.orgId ? [{ organization_id: scope.orgId }] : []),
+      ],
+    },
     orderBy: { name: 'asc' },
   })
 }

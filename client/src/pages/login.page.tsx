@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
+import type { SsoDiscoveryResult } from "@/services/identity.service"
+import { identityService } from "@/services/identity.service"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { cn } from "@/lib/utils.lib"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { ConsoleButton } from "@/components/landing/ConsoleButton"
+import { DomainCaptureModal } from "@/components/auth/DomainCaptureModal"
+import { MagicLinkForm } from "@/components/auth/MagicLinkForm"
 import { OAuthButton } from "@/components/auth/OAuthButton"
 import { SsoDiscovery } from "@/components/auth/SsoDiscovery"
-import { MagicLinkForm } from "@/components/auth/MagicLinkForm"
-import { DomainCaptureModal } from "@/components/auth/DomainCaptureModal"
-import type { SsoDiscoveryResult } from "@/services/identity.service"
-import { identityService } from "@/services/identity.service"
+import { ConsoleButton } from "@/components/landing/ConsoleButton"
 
 type AccountType = "PERSONAL" | "ORGANIZATION"
 
@@ -135,8 +135,9 @@ export const Login = () => {
   const [useBackupCode, setUseBackupCode] = useState(false)
 
   // Phase 2: SSO discovery + magic link + domain capture
-  const [ssoDiscovery, setSsoDiscovery] =
-    useState<SsoDiscoveryResult | null>(null)
+  const [ssoDiscovery, setSsoDiscovery] = useState<SsoDiscoveryResult | null>(
+    null
+  )
   const [showMagicLink, setShowMagicLink] = useState(false)
   const [showDomainCapture, setShowDomainCapture] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
@@ -166,12 +167,9 @@ export const Login = () => {
     })()
   }, [searchParams])
 
-  const handleSsoResult = useCallback(
-    (result: SsoDiscoveryResult | null) => {
-      setSsoDiscovery(result)
-    },
-    []
-  )
+  const handleSsoResult = useCallback((result: SsoDiscoveryResult | null) => {
+    setSsoDiscovery(result)
+  }, [])
 
   const handleSsoLogin = () => {
     if (!ssoDiscovery?.loginUrl) return
@@ -445,68 +443,68 @@ export const Login = () => {
               </div>
 
               <form className="space-y-5" onSubmit={handleSubmit}>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Email address
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      className={cn(
-                        "block w-full px-4 py-3 border rounded-none transition-all duration-200",
-                        "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
-                        "placeholder:text-gray-400 text-gray-900 text-sm",
-                        error
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-gray-300"
-                      )}
-                      placeholder="name@company.com"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value)
-                        setError("")
-                      }}
-                      disabled={isLoading}
-                    />
-                    {!isRegister && (
-                      <SsoDiscovery email={email} onResult={handleSsoResult} />
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className={cn(
+                      "block w-full px-4 py-3 border rounded-none transition-all duration-200",
+                      "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
+                      "placeholder:text-gray-400 text-gray-900 text-sm",
+                      error
+                        ? "border-red-300 focus:ring-red-500"
+                        : "border-gray-300"
                     )}
-                  </div>
-
-                  {/* SSO discovery hint + enforced redirect */}
-                  {!isRegister && ssoDiscovery?.ssoAvailable && (
-                    <div className="border border-blue-200 bg-blue-50 px-4 py-3 space-y-2">
-                      <div className="text-xs text-blue-900">
-                        {ssoDiscovery.enforced
-                          ? `${ssoDiscovery.orgName ?? "Your organization"} requires SSO sign-in.`
-                          : `${ssoDiscovery.orgName ?? "Your organization"} supports SSO sign-in.`}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleSsoLogin}
-                        disabled={!ssoDiscovery.loginUrl}
-                        className="w-full text-xs font-medium px-3 py-2 bg-gray-900 text-white hover:bg-black disabled:opacity-40"
-                      >
-                        Continue with{" "}
-                        {ssoDiscovery.orgName
-                          ? `${ssoDiscovery.orgName} SSO`
-                          : "SSO"}
-                      </button>
-                    </div>
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setError("")
+                    }}
+                    disabled={isLoading}
+                  />
+                  {!isRegister && (
+                    <SsoDiscovery email={email} onResult={handleSsoResult} />
                   )}
+                </div>
 
-                  {/* Hide password block when SSO is enforced for this email */}
-                  {!(
-                    !isRegister &&
-                    ssoDiscovery?.ssoAvailable &&
-                    ssoDiscovery?.enforced
-                  ) && (
+                {/* SSO discovery hint + enforced redirect */}
+                {!isRegister && ssoDiscovery?.ssoAvailable && (
+                  <div className="border border-blue-200 bg-blue-50 px-4 py-3 space-y-2">
+                    <div className="text-xs text-blue-900">
+                      {ssoDiscovery.enforced
+                        ? `${ssoDiscovery.orgName ?? "Your organization"} requires SSO sign-in.`
+                        : `${ssoDiscovery.orgName ?? "Your organization"} supports SSO sign-in.`}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSsoLogin}
+                      disabled={!ssoDiscovery.loginUrl}
+                      className="w-full text-xs font-medium px-3 py-2 bg-gray-900 text-white hover:bg-black disabled:opacity-40"
+                    >
+                      Continue with{" "}
+                      {ssoDiscovery.orgName
+                        ? `${ssoDiscovery.orgName} SSO`
+                        : "SSO"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Hide password block when SSO is enforced for this email */}
+                {!(
+                  !isRegister &&
+                  ssoDiscovery?.ssoAvailable &&
+                  ssoDiscovery?.enforced
+                ) && (
                   <div>
                     <label
                       htmlFor="password"
@@ -643,107 +641,15 @@ export const Login = () => {
                       </p>
                     )}
                   </div>
-                  )}
+                )}
 
-                  {/* 2FA Code Input */}
-                  {requires2FA && !isRegister && (
-                    <div className="space-y-3">
-                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-none">
-                        <div className="flex">
-                          <svg
-                            className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                            />
-                          </svg>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-blue-800">
-                              Two-factor authentication required
-                            </p>
-                            <p className="text-xs text-blue-600 mt-1">
-                              Enter the code from your authenticator app
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="totpCode"
-                          className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                          {useBackupCode
-                            ? "Backup code"
-                            : "Authentication code"}
-                        </label>
-                        <input
-                          id="totpCode"
-                          name="totpCode"
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          required
-                          className={cn(
-                            "block w-full px-4 py-3 border rounded-none transition-all duration-200",
-                            "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
-                            "placeholder:text-gray-400 text-gray-900 text-sm font-mono tracking-widest text-center",
-                            error
-                              ? "border-red-300 focus:ring-red-500"
-                              : "border-gray-300"
-                          )}
-                          placeholder={useBackupCode ? "XXXX-XXXX" : "000000"}
-                          value={totpCode}
-                          onChange={(e) => {
-                            setTotpCode(e.target.value)
-                            setError("")
-                          }}
-                          disabled={isLoading}
-                          maxLength={useBackupCode ? 9 : 6}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUseBackupCode(!useBackupCode)
-                            setTotpCode("")
-                            setError("")
-                          }}
-                          className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
-                        >
-                          {useBackupCode
-                            ? "Use authenticator app"
-                            : "Use backup code instead"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRequires2FA(false)
-                            setTotpCode("")
-                            setUseBackupCode(false)
-                            setError("")
-                          }}
-                          className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
-                        >
-                          ← Back to login
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {sessionExpiredMessage && !error && (
-                    <div className="bg-orange-50 border border-orange-200 p-4 rounded-none">
+                {/* 2FA Code Input */}
+                {requires2FA && !isRegister && (
+                  <div className="space-y-3">
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-none">
                       <div className="flex">
                         <svg
-                          className="w-5 h-5 text-orange-600 mt-0.5 mr-3 flex-shrink-0"
+                          className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -752,100 +658,185 @@ export const Login = () => {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                           />
                         </svg>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-orange-800">
-                            {sessionExpiredMessage}
+                          <p className="text-sm font-medium text-blue-800">
+                            Two-factor authentication required
+                          </p>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Enter the code from your authenticator app
                           </p>
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 p-4 rounded-none">
-                      <div className="flex">
-                        <svg
-                          className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-red-800">
-                            {error}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {!(
-                    !isRegister &&
-                    ssoDiscovery?.ssoAvailable &&
-                    ssoDiscovery?.enforced
-                  ) && (
-                    <div className="space-y-3">
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-gray-100 border border-gray-300 text-black hover:bg-black hover:text-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                    <div>
+                      <label
+                        htmlFor="totpCode"
+                        className="block text-sm font-medium text-gray-700 mb-2"
                       >
-                        {isLoading ? (
-                          <span className="flex items-center justify-center">
-                            <LoadingSpinner size="sm" className="mr-2" />
-                            {isRegister
-                              ? "Creating account..."
-                              : "Signing in..."}
-                          </span>
-                        ) : (
-                          <span className="relative z-10 text-sm font-medium">
-                            {isRegister ? "Create account" : "Sign in"}
-                          </span>
+                        {useBackupCode ? "Backup code" : "Authentication code"}
+                      </label>
+                      <input
+                        id="totpCode"
+                        name="totpCode"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        required
+                        className={cn(
+                          "block w-full px-4 py-3 border rounded-none transition-all duration-200",
+                          "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
+                          "placeholder:text-gray-400 text-gray-900 text-sm font-mono tracking-widest text-center",
+                          error
+                            ? "border-red-300 focus:ring-red-500"
+                            : "border-gray-300"
                         )}
-                        <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                        placeholder={useBackupCode ? "XXXX-XXXX" : "000000"}
+                        value={totpCode}
+                        onChange={(e) => {
+                          setTotpCode(e.target.value)
+                          setError("")
+                        }}
+                        disabled={isLoading}
+                        maxLength={useBackupCode ? 9 : 6}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseBackupCode(!useBackupCode)
+                          setTotpCode("")
+                          setError("")
+                        }}
+                        className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
+                      >
+                        {useBackupCode
+                          ? "Use authenticator app"
+                          : "Use backup code instead"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRequires2FA(false)
+                          setTotpCode("")
+                          setUseBackupCode(false)
+                          setError("")
+                        }}
+                        className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
+                      >
+                        ← Back to login
                       </button>
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {sessionExpiredMessage && !error && (
+                  <div className="bg-orange-50 border border-orange-200 p-4 rounded-none">
+                    <div className="flex">
+                      <svg
+                        className="w-5 h-5 text-orange-600 mt-0.5 mr-3 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-orange-800">
+                          {sessionExpiredMessage}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 p-4 rounded-none">
+                    <div className="flex">
+                      <svg
+                        className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-red-800">
+                          {error}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!(
+                  !isRegister &&
+                  ssoDiscovery?.ssoAvailable &&
+                  ssoDiscovery?.enforced
+                ) && (
+                  <div className="space-y-3">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-gray-100 border border-gray-300 text-black hover:bg-black hover:text-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          {isRegister ? "Creating account..." : "Signing in..."}
+                        </span>
+                      ) : (
+                        <span className="relative z-10 text-sm font-medium">
+                          {isRegister ? "Create account" : "Sign in"}
+                        </span>
+                      )}
+                      <div className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                    </button>
+                  </div>
+                )}
               </form>
 
               {/* OAuth + magic link block */}
               <div className="space-y-3 pt-4 border-t border-gray-200">
-                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 text-center">
-                    or continue with
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <OAuthButton provider="google" />
-                    <OAuthButton provider="microsoft" />
-                  </div>
-                  {!isRegister && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setShowMagicLink((v) => !v)}
-                        className="w-full text-xs font-medium text-gray-600 hover:text-gray-900 underline transition-colors"
-                      >
-                        {showMagicLink
-                          ? "Use password instead"
-                          : "Email me a sign-in link"}
-                      </button>
-                      {showMagicLink && (
-                        <MagicLinkForm
-                          defaultEmail={email}
-                          className="pt-2"
-                        />
-                      )}
-                    </>
-                  )}
+                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 text-center">
+                  or continue with
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <OAuthButton provider="google" />
+                  <OAuthButton provider="microsoft" />
+                </div>
+                {!isRegister && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowMagicLink((v) => !v)}
+                      className="w-full text-xs font-medium text-gray-600 hover:text-gray-900 underline transition-colors"
+                    >
+                      {showMagicLink
+                        ? "Use password instead"
+                        : "Email me a sign-in link"}
+                    </button>
+                    {showMagicLink && (
+                      <MagicLinkForm defaultEmail={email} className="pt-2" />
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="relative pt-4">

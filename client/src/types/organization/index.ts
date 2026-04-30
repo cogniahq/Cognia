@@ -1,7 +1,4 @@
-import type {
-  DomainDocumentMetadata,
-  DomainPackId,
-} from "@/lib/domain-packs"
+import type { DomainDocumentMetadata, DomainPackId } from "@/lib/domain-packs"
 
 export type OrgRole = "ADMIN" | "EDITOR" | "VIEWER"
 

@@ -20,8 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { IntegrationsEmptyState } from "@/components/empty-states/IntegrationsEmptyState"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 // Integration logos as inline SVGs
 const IntegrationLogos: Record<string, React.ReactNode> = {

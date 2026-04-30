@@ -6,11 +6,8 @@ import React, {
   useState,
 } from "react"
 
+import type { DomainDocumentMetadata, DomainPackId } from "../lib/domain-packs"
 import * as organizationService from "../services/organization/organization.service"
-import type {
-  DomainDocumentMetadata,
-  DomainPackId,
-} from "../lib/domain-packs"
 import type {
   Document,
   OrganizationMember,
@@ -52,7 +49,10 @@ interface OrganizationContextType {
   // Documents
   documents: Document[]
   loadDocuments: () => Promise<void>
-  uploadDocument: (file: File, metadata?: DomainDocumentMetadata) => Promise<Document>
+  uploadDocument: (
+    file: File,
+    metadata?: DomainDocumentMetadata
+  ) => Promise<Document>
   deleteDocument: (
     documentId: string,
     type?: "document" | "integration"

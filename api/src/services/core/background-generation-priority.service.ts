@@ -70,9 +70,12 @@ export class BackgroundGenerationPriorityService {
 
       return false
     } catch (error) {
-      logger.warn('[background-priority] failed to inspect search priority gate, allowing background work', {
-        error: error instanceof Error ? error.message : String(error),
-      })
+      logger.warn(
+        '[background-priority] failed to inspect search priority gate, allowing background work',
+        {
+          error: error instanceof Error ? error.message : String(error),
+        }
+      )
       return false
     }
   }

@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
-
 import {
   orgAdminService,
   type IntegrationHealth,
 } from "@/services/org-admin.service"
+import { Loader2 } from "lucide-react"
 
 interface IntegrationsHealthTabProps {
   slug: string
 }
 
-const STATUS_STYLES: Record<string, { label: string; tone: "green" | "yellow" | "red" | "gray" }> = {
+const STATUS_STYLES: Record<
+  string,
+  { label: string; tone: "green" | "yellow" | "red" | "gray" }
+> = {
   ACTIVE: { label: "Active", tone: "green" },
   CONNECTED: { label: "Connected", tone: "green" },
   PAUSED: { label: "Paused", tone: "yellow" },
@@ -36,7 +38,9 @@ function formatDate(iso?: string | null): string {
   }
 }
 
-export default function IntegrationsHealthTab({ slug }: IntegrationsHealthTabProps) {
+export default function IntegrationsHealthTab({
+  slug,
+}: IntegrationsHealthTabProps) {
   const [items, setItems] = useState<IntegrationHealth[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -101,11 +105,10 @@ export default function IntegrationsHealthTab({ slug }: IntegrationsHealthTabPro
         ) : (
           <ul className="divide-y divide-gray-100">
             {items.map((item) => {
-              const style =
-                STATUS_STYLES[item.status?.toUpperCase()] || {
-                  label: item.status || "Unknown",
-                  tone: "gray" as const,
-                }
+              const style = STATUS_STYLES[item.status?.toUpperCase()] || {
+                label: item.status || "Unknown",
+                tone: "gray" as const,
+              }
               return (
                 <li
                   key={item.id}
@@ -125,9 +128,7 @@ export default function IntegrationsHealthTab({ slug }: IntegrationsHealthTabPro
                     <div className="mt-1 text-xs text-gray-500 font-mono">
                       Last sync: {formatDate(item.last_sync_at)}
                       {item.user?.email && (
-                        <span className="ml-3">
-                          · Owner: {item.user.email}
-                        </span>
+                        <span className="ml-3">· Owner: {item.user.email}</span>
                       )}
                     </div>
                     {item.last_error && (

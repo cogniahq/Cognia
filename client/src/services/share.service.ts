@@ -38,7 +38,8 @@ export const shareService = {
       method: "DELETE",
     }),
   consumeLink: (token: string) =>
-    fetchJSON<{ success: boolean; data: { memoryId: string } & Record<string, unknown> }>(
-      `/api/shares/link/${encodeURIComponent(token)}`
-    ),
+    fetchJSON<{
+      success: boolean
+      data: { memoryId: string } & Record<string, unknown>
+    }>(`/api/shares/link/${encodeURIComponent(token)}`),
 }

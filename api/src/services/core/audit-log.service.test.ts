@@ -5,7 +5,9 @@ import { auditLogService } from './audit-log.service'
 import { prisma } from '../../lib/prisma.lib'
 import { randomUUID } from 'node:crypto'
 
-after(async () => { await prisma.$disconnect() })
+after(async () => {
+  await prisma.$disconnect()
+})
 
 async function makeOrg(): Promise<string> {
   const o = await prisma.organization.create({
@@ -62,15 +64,25 @@ test('audit: filters by eventType + actorUserId', async () => {
   const a = await makeUser()
   const b = await makeUser()
   await auditLogService.logOrgEvent({
-    orgId, actorUserId: a.id, actorEmail: a.email,
-    eventType: 'login_success', eventCategory: 'authentication', action: 'login',
+    orgId,
+    actorUserId: a.id,
+    actorEmail: a.email,
+    eventType: 'login_success',
+    eventCategory: 'authentication',
+    action: 'login',
   })
   await auditLogService.logOrgEvent({
-    orgId, actorUserId: b.id, actorEmail: b.email,
-    eventType: 'member_added', eventCategory: 'organization', action: 'add',
+    orgId,
+    actorUserId: b.id,
+    actorEmail: b.email,
+    eventType: 'member_added',
+    eventCategory: 'organization',
+    action: 'add',
   })
   const { logs: aLogs } = await auditLogService.getOrgAuditLogs(orgId, { actorUserId: a.id })
-  const { logs: memberLogs } = await auditLogService.getOrgAuditLogs(orgId, { eventType: 'member_added' })
+  const { logs: memberLogs } = await auditLogService.getOrgAuditLogs(orgId, {
+    eventType: 'member_added',
+  })
   assert.equal(aLogs.length, 1)
   assert.equal(aLogs[0].event_type, 'login_success')
   assert.equal(memberLogs.length, 1)

@@ -73,10 +73,10 @@ export const Subprocessors: React.FC = () => {
       lastUpdated="2026-04-30"
     >
       <p>
-        We use the subprocessors listed below to deliver the Cognia
-        service. Each is bound by a data-processing agreement that requires
-        them to handle customer data with at least the protections we
-        commit to in our own DPA.
+        We use the subprocessors listed below to deliver the Cognia service.
+        Each is bound by a data-processing agreement that requires them to
+        handle customer data with at least the protections we commit to in our
+        own DPA.
       </p>
 
       <div className="mt-8 not-prose overflow-x-auto">
@@ -130,9 +130,8 @@ export const Subprocessors: React.FC = () => {
           Subscribe to subprocessor changes
         </h2>
         <p className="text-sm sm:text-base text-gray-700 mb-4">
-          We notify subscribed customers at least 30 days before adding a
-          new subprocessor or materially changing our reliance on an
-          existing one.
+          We notify subscribed customers at least 30 days before adding a new
+          subprocessor or materially changing our reliance on an existing one.
         </p>
         <form
           onSubmit={handleSubscribe}

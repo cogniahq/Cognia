@@ -65,11 +65,7 @@ test('scim: list filters by emails.value', async () => {
     'http://t/scim/v2',
     { actorUserId: null, actorEmail: null }
   )
-  const list = await listUsers(
-    org.id,
-    { filter: `emails.value eq "${email}"` },
-    'http://t/scim/v2'
-  )
+  const list = await listUsers(org.id, { filter: `emails.value eq "${email}"` }, 'http://t/scim/v2')
   assert.equal(list.totalResults, 1)
 })
 

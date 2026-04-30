@@ -45,10 +45,7 @@ export function shouldRetryGenerationError(error: unknown): boolean {
   return status === 503 || status === 502
 }
 
-function shouldReserveOpenAIForSearch(
-  isSearchRequest: boolean,
-  isEmailDraft: boolean
-): boolean {
+function shouldReserveOpenAIForSearch(isSearchRequest: boolean, isEmailDraft: boolean): boolean {
   return isOpenAISearchOnlyModeEnabled() && !isSearchRequest && !isEmailDraft
 }
 

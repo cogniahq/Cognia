@@ -71,9 +71,7 @@ export function getOpenApiSpec() {
         get: {
           summary: 'Get a memory',
           tags: ['Memories'],
-          parameters: [
-            { in: 'path', name: 'id', required: true, schema: { type: 'string' } },
-          ],
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
           responses: {
             '200': {
               description: 'Memory',

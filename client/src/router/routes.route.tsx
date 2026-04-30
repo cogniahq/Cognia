@@ -221,10 +221,7 @@ const AppRoutes = () => {
                   path="/org-admin/:slug"
                   element={<Navigate to="/" replace />}
                 />
-                <Route
-                  path="/billing"
-                  element={<Navigate to="/" replace />}
-                />
+                <Route path="/billing" element={<Navigate to="/" replace />} />
               </>
             )}
 

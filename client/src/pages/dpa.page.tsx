@@ -14,34 +14,28 @@ export const DPA: React.FC = () => {
           Standard DPA
         </h2>
         <p>
-          Cognia's standard Data Processing Addendum is modeled on the
-          European Commission's Standard Contractual Clauses (Module 2 —
-          Controller to Processor) and incorporates the UK International
-          Data Transfer Addendum where applicable. It documents:
+          Cognia's standard Data Processing Addendum is modeled on the European
+          Commission's Standard Contractual Clauses (Module 2 — Controller to
+          Processor) and incorporates the UK International Data Transfer
+          Addendum where applicable. It documents:
         </p>
         <ul className="list-disc pl-6 space-y-1 mt-3">
           <li>
             The scope, nature, and purpose of processing under your
             subscription.
           </li>
+          <li>Categories of data subjects and personal data processed.</li>
           <li>
-            Categories of data subjects and personal data processed.
+            Technical and organizational measures (TOMs) — encryption, access
+            control, monitoring, incident response.
           </li>
           <li>
-            Technical and organizational measures (TOMs) — encryption,
-            access control, monitoring, incident response.
+            Subprocessor flow-down obligations and our notification commitments.
           </li>
           <li>
-            Subprocessor flow-down obligations and our notification
-            commitments.
+            International transfer mechanisms (SCCs, UK IDTA, Swiss addendum).
           </li>
-          <li>
-            International transfer mechanisms (SCCs, UK IDTA, Swiss
-            addendum).
-          </li>
-          <li>
-            Data subject rights assistance and breach notification SLAs.
-          </li>
+          <li>Data subject rights assistance and breach notification SLAs.</li>
         </ul>
       </section>
 
@@ -50,8 +44,8 @@ export const DPA: React.FC = () => {
           Download
         </h2>
         <p className="mb-4">
-          The standard DPA is pre-signed by Cognia. Counter-sign and email
-          the executed copy back to{" "}
+          The standard DPA is pre-signed by Cognia. Counter-sign and email the
+          executed copy back to{" "}
           <a
             href="mailto:legal@cognia.example"
             className="text-blue-600 underline"
@@ -74,17 +68,16 @@ export const DPA: React.FC = () => {
           Custom DPA
         </h2>
         <p>
-          Enterprise customers with specific legal or regulatory
-          requirements (HIPAA BAA, sector-specific addenda, jurisdiction
-          riders) can request a custom DPA. Contact{" "}
+          Enterprise customers with specific legal or regulatory requirements
+          (HIPAA BAA, sector-specific addenda, jurisdiction riders) can request
+          a custom DPA. Contact{" "}
           <a
             href="mailto:legal@cognia.example"
             className="text-blue-600 underline"
           >
             legal@cognia.example
           </a>{" "}
-          with the relevant context and we will route to our outside
-          counsel.
+          with the relevant context and we will route to our outside counsel.
         </p>
       </section>
     </LegalPageLayout>

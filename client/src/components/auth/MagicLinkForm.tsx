@@ -1,9 +1,9 @@
 import { useState } from "react"
+import { identityService } from "@/services/identity.service"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils.lib"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { identityService } from "@/services/identity.service"
 
 interface MagicLinkFormProps {
   defaultEmail?: string

@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
+import { orgAdminService, type AdminMember } from "@/services/org-admin.service"
 import { Loader2, MoreHorizontal } from "lucide-react"
 
-import {
-  orgAdminService,
-  type AdminMember,
-} from "@/services/org-admin.service"
 import {
   DropdownMenu,
   DropdownMenuContent,

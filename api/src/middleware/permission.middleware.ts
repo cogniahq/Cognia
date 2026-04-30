@@ -1,10 +1,7 @@
 import { Response, NextFunction } from 'express'
 import { AuthenticatedRequest } from './auth.middleware'
 import { OrganizationRequest } from './organization.middleware'
-import {
-  can,
-  getEffectivePermissions,
-} from '../services/auth/permissions.service'
+import { can, getEffectivePermissions } from '../services/auth/permissions.service'
 import type { Permission } from '../services/auth/permissions.config'
 import { logger } from '../utils/core/logger.util'
 
@@ -66,10 +63,7 @@ function resolveOrgId(
  *     requirePermission('member.invite'),
  *     handler)
  */
-export function requirePermission(
-  permission: Permission,
-  opts: PermissionOptions = DEFAULT_OPTS
-) {
+export function requirePermission(permission: Permission, opts: PermissionOptions = DEFAULT_OPTS) {
   const merged = { ...DEFAULT_OPTS, ...opts }
   return async (
     req: AuthenticatedRequest & OrganizationRequest,
@@ -78,16 +72,12 @@ export function requirePermission(
   ): Promise<void> => {
     try {
       if (!req.user?.id) {
-        res
-          .status(401)
-          .json({ message: 'Unauthorized', code: 'UNAUTHORIZED' })
+        res.status(401).json({ message: 'Unauthorized', code: 'UNAUTHORIZED' })
         return
       }
       const orgId = resolveOrgId(req, merged)
       if (!orgId && !merged.allowPersonal) {
-        res
-          .status(403)
-          .json({ message: 'Org context required', code: 'ORG_REQUIRED' })
+        res.status(403).json({ message: 'Org context required', code: 'ORG_REQUIRED' })
         return
       }
       const allowed = await can(req.user.id, orgId, permission)
@@ -127,20 +117,16 @@ export function requireAnyPermission(
   ): Promise<void> => {
     try {
       if (!req.user?.id) {
-        res
-          .status(401)
-          .json({ message: 'Unauthorized', code: 'UNAUTHORIZED' })
+        res.status(401).json({ message: 'Unauthorized', code: 'UNAUTHORIZED' })
         return
       }
       const orgId = resolveOrgId(req, merged)
       if (!orgId && !merged.allowPersonal) {
-        res
-          .status(403)
-          .json({ message: 'Org context required', code: 'ORG_REQUIRED' })
+        res.status(403).json({ message: 'Org context required', code: 'ORG_REQUIRED' })
         return
       }
       const userPerms = await getEffectivePermissions(req.user.id, orgId)
-      if (permissions.some((p) => userPerms.includes(p))) {
+      if (permissions.some(p => userPerms.includes(p))) {
         next()
         return
       }

@@ -356,8 +356,7 @@ export class MeshRelationsService {
       const desiredRelations = filteredRelations.map(relatedMemory => ({
         relatedMemoryId: relatedMemory.memory.id,
         similarityScore: relatedMemory.similarity_score || relatedMemory.similarity,
-        relationType:
-          (relatedMemory.relation_type as RelationType) || RelationType.semantic,
+        relationType: (relatedMemory.relation_type as RelationType) || RelationType.semantic,
       }))
 
       const existingRelations = await prisma.memoryRelation.findMany({

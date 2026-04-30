@@ -130,9 +130,7 @@ export const GuidedTourOverlay: React.FC<GuidedTourOverlayProps> = ({
             disabled={busy}
             className="px-5 py-2 text-sm font-medium bg-gray-900 text-white hover:bg-black transition-colors disabled:opacity-50"
           >
-            {busy
-              ? "Saving..."
-              : current.cta || (isLast ? "Finish" : "Next")}
+            {busy ? "Saving..." : current.cta || (isLast ? "Finish" : "Next")}
           </button>
         </div>
       </div>

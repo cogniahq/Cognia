@@ -39,6 +39,7 @@ and restart the API. With this set, the same middlewares log a WARN and call `ne
 ## JWT session model
 
 After Phase 0:
+
 - Access JWT TTL: configurable via `JWT_EXPIRES_IN` (default 15m as documented in `.env.example`).
 - Refresh token TTL: 14 days (configurable via `REFRESH_TOKEN_EXPIRES_IN_DAYS`).
 - Each access JWT carries a `jti` claim (UUID).
@@ -46,11 +47,11 @@ After Phase 0:
 
 ### Revocation
 
-| Endpoint | Effect |
-|---|---|
-| `POST /api/auth/logout` | Revokes the current token's `jti`. Clears cookies. Requires the access token. |
-| `POST /api/auth/logout-all` | Revokes every JWT issued for the current user (via the `revoke-since` floor) AND revokes all refresh-token families. Requires the access token. |
-| `POST /api/auth/sessions/:userId/revoke` | Same as `/logout-all` but for an arbitrary user. Admin-only. Use to forcibly log out a fired employee, compromised account, etc. |
+| Endpoint                                 | Effect                                                                                                                                          |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/logout`                  | Revokes the current token's `jti`. Clears cookies. Requires the access token.                                                                   |
+| `POST /api/auth/logout-all`              | Revokes every JWT issued for the current user (via the `revoke-since` floor) AND revokes all refresh-token families. Requires the access token. |
+| `POST /api/auth/sessions/:userId/revoke` | Same as `/logout-all` but for an arbitrary user. Admin-only. Use to forcibly log out a fired employee, compromised account, etc.                |
 
 ### How revocation works
 
@@ -61,6 +62,7 @@ After Phase 0:
 ### Refresh-token reuse detection
 
 When `/auth/refresh` is called with a token whose `used_at` is already set, the service:
+
 1. Logs a WARN with `userId` + `familyId`.
 2. Calls `revokeFamily(familyId)`, which marks every token in that lineage as revoked.
 3. Returns `401 Refresh token reuse detected` to the caller.
@@ -74,8 +76,9 @@ Stored in `users.two_factor_secret` AES-256-GCM-encrypted with `TWO_FACTOR_ENCRY
 **Dual-read pattern**: legacy plaintext rows (no prefix) are still readable; on the next successful TOTP verify on a legacy row, the value is opportunistically re-encrypted in place.
 
 **Rotation procedure** (until KMS lands in Phase 6):
+
 1. Generate a new key: `openssl rand -hex 32`.
-2. Run the backfill script: `npm run backfill:2fa` (with the *new* key as `TWO_FACTOR_ENCRYPTION_KEY`). Note: this only re-encrypts legacy rows. To rotate already-encrypted rows you need a two-key rotation strategy — defer to Phase 6 (proper KMS integration).
+2. Run the backfill script: `npm run backfill:2fa` (with the _new_ key as `TWO_FACTOR_ENCRYPTION_KEY`). Note: this only re-encrypts legacy rows. To rotate already-encrypted rows you need a two-key rotation strategy — defer to Phase 6 (proper KMS integration).
 3. Deploy the new key.
 
 **Backfill script**: `npm run backfill:2fa` — reads every user with 2FA enabled and a non-null secret, encrypts any legacy rows. Idempotent.
@@ -101,6 +104,7 @@ Applied via `applySecurityHeaders(app)` in `src/App.ts` BEFORE `cors()` and rout
 - `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; ...`
 
 CSP can break inline scripts. If a customer reports broken UI after a deploy, check the browser console for CSP violations and either:
+
 1. Adjust the directive in `security-headers.middleware.ts`, OR
 2. Move the inline script into a hashed/static file.
 
@@ -108,14 +112,14 @@ There is no `SECURITY_DISABLE_CSP` env var — adjust the directive directly.
 
 ## Rate limits (after Phase 0)
 
-| Limiter | Window | Max | Key |
-|---|---|---|---|
-| `loginRateLimiter` | 15 min | 5 | per-IP |
-| `registerRateLimiter` | 60 min | 3 | per-IP |
-| `extensionTokenRateLimiter` | 15 min | 10 | per-IP |
-| `searchRateLimiter` | 60 sec | 60 | per-user-or-IP |
-| `exportRateLimiter` | 60 min | 5 | per-user-or-IP |
-| `integrationSyncRateLimiter` | 60 sec | 30 | per-user-or-IP |
+| Limiter                      | Window | Max | Key            |
+| ---------------------------- | ------ | --- | -------------- |
+| `loginRateLimiter`           | 15 min | 5   | per-IP         |
+| `registerRateLimiter`        | 60 min | 3   | per-IP         |
+| `extensionTokenRateLimiter`  | 15 min | 10  | per-IP         |
+| `searchRateLimiter`          | 60 sec | 60  | per-user-or-IP |
+| `exportRateLimiter`          | 60 min | 5   | per-user-or-IP |
+| `integrationSyncRateLimiter` | 60 sec | 30  | per-user-or-IP |
 
 The `userOrIpKey` extractor uses `u:<userId>` when authenticated and `ip:<addr>` otherwise. The two namespaces never collide.
 
@@ -130,6 +134,7 @@ Override the HIBP host via `HIBP_API_BASE` (used by tests). Default is `https://
 ## Audit log coverage (Phase 0 baseline)
 
 The `audit_logs` table receives entries on:
+
 - `login_success` — successful login
 - `login_failed` — wrong password or wrong 2FA (only when the user record was found; unknown-email attempts are NOT logged in Phase 0 because `user_id` is NOT NULL on the schema. Phase 1 makes this nullable.)
 - `logout` — single-token revoke

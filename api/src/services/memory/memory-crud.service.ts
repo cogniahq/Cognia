@@ -71,7 +71,7 @@ export async function listMemories(opts: MemoryListOptions) {
 export async function updateMemory(
   userId: string,
   memoryId: string,
-  data: { title?: string; content?: string; full_content?: string },
+  data: { title?: string; content?: string; full_content?: string }
 ) {
   const m = await prisma.memory.findFirst({ where: { id: memoryId, user_id: userId } })
   if (!m) throw new Error('Memory not found')

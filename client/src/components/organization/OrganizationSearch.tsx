@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+import * as organizationService from "@/services/organization/organization.service"
+import type { DocumentPreviewData } from "@/services/organization/organization.service"
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
+
+import type { OrganizationSearchResponse } from "@/types/organization"
 import {
   DOMAIN_FILTER_TO_SEARCH_KEY,
   getDomainMetadataBadges,
@@ -7,11 +12,6 @@ import {
   hasActiveSearchMetadataFilters,
   type SearchMetadataFilters,
 } from "@/lib/domain-packs"
-import * as organizationService from "@/services/organization/organization.service"
-import type { DocumentPreviewData } from "@/services/organization/organization.service"
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
-
-import type { OrganizationSearchResponse } from "@/types/organization"
 import { DocumentPreviewModal } from "@/components/ui/document-preview-modal"
 import { getOrganizationAnswerDeliveryMode } from "@/components/organization/organization-answer-delivery"
 import { getOrganizationAnswerState } from "@/components/organization/organization-answer-state"
@@ -148,10 +148,7 @@ export function OrganizationSearch() {
   )
 
   const handleMetadataFilterToggle = useCallback(
-    (
-      filterKey: keyof typeof DOMAIN_FILTER_TO_SEARCH_KEY,
-      value: string
-    ) => {
+    (filterKey: keyof typeof DOMAIN_FILTER_TO_SEARCH_KEY, value: string) => {
       const searchKey = DOMAIN_FILTER_TO_SEARCH_KEY[filterKey]
       let nextFilters: SearchMetadataFilters = metadataFilters
 
@@ -655,7 +652,8 @@ export function OrganizationSearch() {
                               </span>
                               {citation.authorEmail && (
                                 <span className="mt-0.5 truncate text-[10px] font-mono text-gray-500">
-                                  captured by {citation.authorEmail.split("@")[0]}
+                                  captured by{" "}
+                                  {citation.authorEmail.split("@")[0]}
                                   {citation.capturedAt && (
                                     <>
                                       {" "}
@@ -914,7 +912,9 @@ export function OrganizationSearch() {
                           </div>
 
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-mono text-gray-400">
-                            {result.pageNumber && <span>Page {result.pageNumber}</span>}
+                            {result.pageNumber && (
+                              <span>Page {result.pageNumber}</span>
+                            )}
                             <span>Score {result.score.toFixed(3)}</span>
                           </div>
 

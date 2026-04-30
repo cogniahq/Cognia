@@ -5,23 +5,18 @@ import { requireAuthToken } from "@/utils/auth"
 import { LayoutGroup, motion } from "framer-motion"
 import { useNavigate, useParams } from "react-router-dom"
 
-import { PageHeader } from "@/components/shared/PageHeader"
-import {
-  fadeUpVariants,
-  staggerContainerVariants,
-} from "@/components/shared/site-motion-variants"
 import ActivityTab from "@/components/org-admin/ActivityTab"
 import IntegrationsHealthTab from "@/components/org-admin/IntegrationsHealthTab"
 import MembersTab from "@/components/org-admin/MembersTab"
 import SecurityTab from "@/components/org-admin/SecurityTab"
 import SsoSetupTab from "@/components/org-admin/SsoSetupTab"
+import { PageHeader } from "@/components/shared/PageHeader"
+import {
+  fadeUpVariants,
+  staggerContainerVariants,
+} from "@/components/shared/site-motion-variants"
 
-type AdminTab =
-  | "activity"
-  | "members"
-  | "security"
-  | "integrations"
-  | "sso"
+type AdminTab = "activity" | "members" | "security" | "integrations" | "sso"
 
 const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
   { id: "activity", label: "Activity" },

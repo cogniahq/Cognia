@@ -228,7 +228,7 @@ test('direct integration sync paginates through all Google Drive resource pages'
   PluginRegistry.get = ((_provider: string) => {
     void _provider
 
-    return ({
+    return {
       listResources: async (_tokens: unknown, options?: { cursor?: string; limit?: number }) => {
         listCalls.push({
           cursor: options?.cursor,
@@ -265,7 +265,7 @@ test('direct integration sync paginates through all Google Drive resource pages'
       capabilities: {
         webhooks: false,
       },
-    }) as ReturnType<typeof PluginRegistry.get>
+    } as ReturnType<typeof PluginRegistry.get>
   }) as typeof PluginRegistry.get
 
   prisma.organizationMember.findFirst = (async (): Promise<null> =>

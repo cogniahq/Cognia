@@ -1,7 +1,7 @@
 import { mockMeshData } from "@/data/mock"
 
-import { MemoryMesh3DPreview } from "@/components/landing/mesh-preview/MemoryMesh3DPreview"
 import { MeshEmptyState } from "@/components/empty-states/MeshEmptyState"
+import { MemoryMesh3DPreview } from "@/components/landing/mesh-preview/MemoryMesh3DPreview"
 
 export function MeshShowcase() {
   const hasNodes = !!mockMeshData?.nodes && mockMeshData.nodes.length > 0

@@ -18,15 +18,17 @@ test('email controller marks draft generation as an email draft request', async 
   let jsonPayload: unknown
   let nextError: unknown
 
-  profileUpdateService.getProfileContext = (async () => 'profile context') as typeof originalGetProfileContext
-  ;(memorySearchService as { searchMemories: typeof memorySearchService.searchMemories }).searchMemories =
-    ((async () => ({
-      query: 'thread',
-      results: [] as never[],
-      context: 'memory context',
-      contextBlocks: [] as never[],
-      policy: 'chat',
-    })) as unknown) as typeof originalSearchMemories
+  profileUpdateService.getProfileContext = (async () =>
+    'profile context') as typeof originalGetProfileContext
+  ;(
+    memorySearchService as { searchMemories: typeof memorySearchService.searchMemories }
+  ).searchMemories = (async () => ({
+    query: 'thread',
+    results: [] as never[],
+    context: 'memory context',
+    contextBlocks: [] as never[],
+    policy: 'chat',
+  })) as unknown as typeof originalSearchMemories
   aiProvider.generateContent = (async (...args: unknown[]) => {
     generationArgs = args
     return JSON.stringify({
@@ -78,8 +80,9 @@ test('email controller marks draft generation as an email draft request', async 
     assert.equal(generationArgs?.[4], true)
   } finally {
     profileUpdateService.getProfileContext = originalGetProfileContext
-    ;(memorySearchService as { searchMemories: typeof memorySearchService.searchMemories }).searchMemories =
-      originalSearchMemories
+    ;(
+      memorySearchService as { searchMemories: typeof memorySearchService.searchMemories }
+    ).searchMemories = originalSearchMemories
     aiProvider.generateContent = originalGenerateContent
   }
 })

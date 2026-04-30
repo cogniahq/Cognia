@@ -25,7 +25,11 @@ export async function offboardMember(opts: OffboardOptions): Promise<void> {
 
   if (opts.reassignDocsToUserId) {
     const target = await prisma.organizationMember.findFirst({
-      where: { organization_id: opts.organizationId, user_id: opts.reassignDocsToUserId, deactivated_at: null },
+      where: {
+        organization_id: opts.organizationId,
+        user_id: opts.reassignDocsToUserId,
+        deactivated_at: null,
+      },
     })
     if (!target) throw new Error('Reassignment target is not an active member of this org')
     await prisma.document.updateMany({
@@ -34,10 +38,7 @@ export async function offboardMember(opts: OffboardOptions): Promise<void> {
     })
   }
 
-  await Promise.all([
-    revokeJwts(member.user_id),
-    revokeRefresh(member.user_id),
-  ])
+  await Promise.all([revokeJwts(member.user_id), revokeRefresh(member.user_id)])
 
   if (opts.hardDelete) {
     await prisma.organizationMember.delete({ where: { id: member.id } })

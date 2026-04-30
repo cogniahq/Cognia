@@ -27,9 +27,7 @@ export class ExportImportController {
           eventCategory: 'data_management',
           action: 'export-user-data',
           metadata: {
-            memoryCount: Array.isArray(
-              (bundle as { memories?: unknown[] }).memories
-            )
+            memoryCount: Array.isArray((bundle as { memories?: unknown[] }).memories)
               ? (bundle as { memories: unknown[] }).memories.length
               : undefined,
           },

@@ -1003,10 +1003,13 @@ export class IntegrationService {
   }
 
   private shouldSkipUnchangedResource(
-    existingSynced: Pick<{
-      last_synced_at: Date
-      memory_id: string | null
-    }, 'last_synced_at' | 'memory_id'> | null,
+    existingSynced: Pick<
+      {
+        last_synced_at: Date
+        memory_id: string | null
+      },
+      'last_synced_at' | 'memory_id'
+    > | null,
     modifiedAt: Date
   ): boolean {
     if (!existingSynced?.memory_id) {

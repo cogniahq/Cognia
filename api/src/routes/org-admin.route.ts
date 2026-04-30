@@ -22,113 +22,125 @@ const router = Router({ mergeParams: true })
 router.use('/:slug', authenticateToken, requireOrganization, requireOrgAdmin)
 
 // GET /:slug/activity - paginated audit log
-router.get('/:slug/activity', requirePermission('audit.read'), async (req: OrganizationRequest, res) => {
-  const orgId = req.organization!.id
-  const limit = Math.min(Number(req.query.limit) || 50, 200)
-  const offset = Number(req.query.offset) || 0
-  const eventType = req.query.eventType as AuditEventType | undefined
-  const eventCategory = req.query.eventCategory as AuditEventCategory | undefined
-  const actorUserId = req.query.actorUserId as string | undefined
-  const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined
-  const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined
+router.get(
+  '/:slug/activity',
+  requirePermission('audit.read'),
+  async (req: OrganizationRequest, res) => {
+    const orgId = req.organization!.id
+    const limit = Math.min(Number(req.query.limit) || 50, 200)
+    const offset = Number(req.query.offset) || 0
+    const eventType = req.query.eventType as AuditEventType | undefined
+    const eventCategory = req.query.eventCategory as AuditEventCategory | undefined
+    const actorUserId = req.query.actorUserId as string | undefined
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined
 
-  const result = await auditLogService.getOrgAuditLogs(orgId, {
-    limit,
-    offset,
-    eventType,
-    eventCategory,
-    actorUserId,
-    startDate,
-    endDate,
-  })
+    const result = await auditLogService.getOrgAuditLogs(orgId, {
+      limit,
+      offset,
+      eventType,
+      eventCategory,
+      actorUserId,
+      startDate,
+      endDate,
+    })
 
-  res.json({
-    success: true,
-    data: result.logs,
-    pagination: { total: result.total, limit: result.limit, offset: result.offset },
-  })
-})
+    res.json({
+      success: true,
+      data: result.logs,
+      pagination: { total: result.total, limit: result.limit, offset: result.offset },
+    })
+  }
+)
 
 // GET /:slug/activity/export.csv
-router.get('/:slug/activity/export.csv', requirePermission('audit.export'), async (req: OrganizationRequest, res) => {
-  const orgId = req.organization!.id
-  const eventType = req.query.eventType as AuditEventType | undefined
-  const eventCategory = req.query.eventCategory as AuditEventCategory | undefined
-  const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined
-  const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined
+router.get(
+  '/:slug/activity/export.csv',
+  requirePermission('audit.export'),
+  async (req: OrganizationRequest, res) => {
+    const orgId = req.organization!.id
+    const eventType = req.query.eventType as AuditEventType | undefined
+    const eventCategory = req.query.eventCategory as AuditEventCategory | undefined
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined
 
-  // Fetch up to 50k rows; streaming would be Phase 1 polish
-  const result = await auditLogService.getOrgAuditLogs(orgId, {
-    eventType,
-    eventCategory,
-    startDate,
-    endDate,
-    limit: 50000,
-    offset: 0,
-  })
+    // Fetch up to 50k rows; streaming would be Phase 1 polish
+    const result = await auditLogService.getOrgAuditLogs(orgId, {
+      eventType,
+      eventCategory,
+      startDate,
+      endDate,
+      limit: 50000,
+      offset: 0,
+    })
 
-  await auditLogService.logOrgEvent({
-    orgId,
-    actorUserId: req.user?.id ?? null,
-    actorEmail: req.user?.email ?? null,
-    eventType: 'data_exported',
-    eventCategory: 'data_management',
-    action: 'audit_log_csv_export',
-    metadata: { rows: result.logs.length, filters: { eventType, eventCategory, startDate, endDate } },
-    ipAddress: req.ip,
-    userAgent: req.get('user-agent') ?? undefined,
-  })
+    await auditLogService.logOrgEvent({
+      orgId,
+      actorUserId: req.user?.id ?? null,
+      actorEmail: req.user?.email ?? null,
+      eventType: 'data_exported',
+      eventCategory: 'data_management',
+      action: 'audit_log_csv_export',
+      metadata: {
+        rows: result.logs.length,
+        filters: { eventType, eventCategory, startDate, endDate },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    })
 
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="audit-${req.params.slug}-${new Date().toISOString().slice(0, 10)}.csv"`
-  )
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="audit-${req.params.slug}-${new Date().toISOString().slice(0, 10)}.csv"`
+    )
 
-  const escape = (v: unknown): string => {
-    if (v === null || v === undefined) return ''
-    const s = typeof v === 'string' ? v : JSON.stringify(v)
-    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
-    return s
-  }
+    const escape = (v: unknown): string => {
+      if (v === null || v === undefined) return ''
+      const s = typeof v === 'string' ? v : JSON.stringify(v)
+      if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+      return s
+    }
 
-  const header = [
-    'timestamp',
-    'event_type',
-    'event_category',
-    'action',
-    'actor_user_id',
-    'actor_email',
-    'target_user_id',
-    'target_resource_type',
-    'target_resource_id',
-    'ip_address',
-    'user_agent',
-    'metadata',
-  ]
-  res.write(header.join(',') + '\n')
-  for (const log of result.logs) {
-    const userEmail = (log as unknown as { user?: { email?: string } }).user?.email ?? log.actor_email ?? ''
-    const row = [
-      log.created_at.toISOString(),
-      log.event_type,
-      log.event_category,
-      log.action,
-      log.user_id ?? '',
-      userEmail,
-      log.target_user_id ?? '',
-      log.target_resource_type ?? '',
-      log.target_resource_id ?? '',
-      log.ip_address ?? '',
-      log.user_agent ?? '',
-      log.metadata ?? '',
+    const header = [
+      'timestamp',
+      'event_type',
+      'event_category',
+      'action',
+      'actor_user_id',
+      'actor_email',
+      'target_user_id',
+      'target_resource_type',
+      'target_resource_id',
+      'ip_address',
+      'user_agent',
+      'metadata',
     ]
-      .map(escape)
-      .join(',')
-    res.write(row + '\n')
+    res.write(header.join(',') + '\n')
+    for (const log of result.logs) {
+      const userEmail =
+        (log as unknown as { user?: { email?: string } }).user?.email ?? log.actor_email ?? ''
+      const row = [
+        log.created_at.toISOString(),
+        log.event_type,
+        log.event_category,
+        log.action,
+        log.user_id ?? '',
+        userEmail,
+        log.target_user_id ?? '',
+        log.target_resource_type ?? '',
+        log.target_resource_id ?? '',
+        log.ip_address ?? '',
+        log.user_agent ?? '',
+        log.metadata ?? '',
+      ]
+        .map(escape)
+        .join(',')
+      res.write(row + '\n')
+    }
+    res.end()
   }
-  res.end()
-})
+)
 
 // GET /:slug/members
 router.get('/:slug/members', async (req: OrganizationRequest, res) => {
@@ -215,59 +227,71 @@ router.get('/:slug/integrations-health', async (req: OrganizationRequest, res) =
 })
 
 // POST /:slug/scim/tokens - generate a new SCIM bearer token (returned ONCE)
-router.post('/:slug/scim/tokens', requirePermission('scim.manage'), async (req: OrganizationRequest, res) => {
-  const orgId = req.organization!.id
-  const name = (req.body?.name as string | undefined) ?? null
-  const raw = randomBytes(32).toString('base64url')
-  const hash = createHash('sha256').update(raw).digest('hex')
-  const prefix = raw.slice(0, 8)
-  const token = await prisma.scimAccessToken.create({
-    data: {
-      organization_id: orgId,
-      token_hash: hash,
-      prefix,
-      name,
-      created_by_user_id: req.user?.id ?? null,
-    },
-  })
-  res.json({
-    success: true,
-    data: {
-      id: token.id,
-      prefix,
-      name: token.name,
-      created_at: token.created_at,
-      // Plaintext token returned ONCE. Frontend must show + copy.
-      token: raw,
-    },
-  })
-})
+router.post(
+  '/:slug/scim/tokens',
+  requirePermission('scim.manage'),
+  async (req: OrganizationRequest, res) => {
+    const orgId = req.organization!.id
+    const name = (req.body?.name as string | undefined) ?? null
+    const raw = randomBytes(32).toString('base64url')
+    const hash = createHash('sha256').update(raw).digest('hex')
+    const prefix = raw.slice(0, 8)
+    const token = await prisma.scimAccessToken.create({
+      data: {
+        organization_id: orgId,
+        token_hash: hash,
+        prefix,
+        name,
+        created_by_user_id: req.user?.id ?? null,
+      },
+    })
+    res.json({
+      success: true,
+      data: {
+        id: token.id,
+        prefix,
+        name: token.name,
+        created_at: token.created_at,
+        // Plaintext token returned ONCE. Frontend must show + copy.
+        token: raw,
+      },
+    })
+  }
+)
 
 // GET /:slug/scim/tokens - list (metadata only)
-router.get('/:slug/scim/tokens', requirePermission('scim.manage'), async (req: OrganizationRequest, res) => {
-  const tokens = await prisma.scimAccessToken.findMany({
-    where: { organization_id: req.organization!.id },
-    orderBy: { created_at: 'desc' },
-    select: {
-      id: true,
-      prefix: true,
-      name: true,
-      created_at: true,
-      last_used_at: true,
-      revoked_at: true,
-    },
-  })
-  res.json({ success: true, data: tokens })
-})
+router.get(
+  '/:slug/scim/tokens',
+  requirePermission('scim.manage'),
+  async (req: OrganizationRequest, res) => {
+    const tokens = await prisma.scimAccessToken.findMany({
+      where: { organization_id: req.organization!.id },
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        prefix: true,
+        name: true,
+        created_at: true,
+        last_used_at: true,
+        revoked_at: true,
+      },
+    })
+    res.json({ success: true, data: tokens })
+  }
+)
 
 // DELETE /:slug/scim/tokens/:tokenId - revoke
-router.delete('/:slug/scim/tokens/:tokenId', requirePermission('scim.manage'), async (req: OrganizationRequest, res) => {
-  await prisma.scimAccessToken.update({
-    where: { id: req.params.tokenId },
-    data: { revoked_at: new Date() },
-  })
-  res.json({ success: true })
-})
+router.delete(
+  '/:slug/scim/tokens/:tokenId',
+  requirePermission('scim.manage'),
+  async (req: OrganizationRequest, res) => {
+    await prisma.scimAccessToken.update({
+      where: { id: req.params.tokenId },
+      data: { revoked_at: new Date() },
+    })
+    res.json({ success: true })
+  }
+)
 
 // GET /:slug/webhook-deliveries - inspect webhook delivery rows for this org.
 // Defaults to dead-lettered rows; pass ?status=pending|processed|failed|dead.
@@ -302,113 +326,138 @@ router.post('/:slug/webhook-deliveries/:id/retry', async (req: OrganizationReque
 })
 
 // PUT /:slug/llm-config - set/update BYOK provider + encrypted API key (Enterprise only)
-router.put('/:slug/llm-config', requirePermission('llm.configure'), async (req: OrganizationRequest, res) => {
-  const sub = await prisma.subscription.findUnique({
-    where: { organization_id: req.organization!.id },
-  })
-  const planId = sub?.plan_id ?? 'free'
-  if (planId !== 'enterprise') {
-    return res
-      .status(402)
-      .json({ success: false, code: 'QUOTA_EXCEEDED', message: 'BYOK requires Enterprise plan' })
-  }
-  try {
-    await setOrgLlmConfig(req.organization!.id, {
-      provider: (req.body?.provider as string | null | undefined) ?? null,
-      config: req.body?.config as Record<string, unknown> | undefined,
-      apiKey: req.body?.apiKey as string | null | undefined,
+router.put(
+  '/:slug/llm-config',
+  requirePermission('llm.configure'),
+  async (req: OrganizationRequest, res) => {
+    const sub = await prisma.subscription.findUnique({
+      where: { organization_id: req.organization!.id },
     })
-    await auditLogService
-      .logOrgEvent({
-        orgId: req.organization!.id,
-        actorUserId: req.user?.id ?? null,
-        actorEmail: req.user?.email ?? null,
-        eventType: 'organization_settings_changed',
-        eventCategory: 'security',
-        action: 'byok_config_updated',
-        metadata: { provider: req.body?.provider ?? null, hasKey: req.body?.apiKey != null },
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent') ?? undefined,
+    const planId = sub?.plan_id ?? 'free'
+    if (planId !== 'enterprise') {
+      return res
+        .status(402)
+        .json({ success: false, code: 'QUOTA_EXCEEDED', message: 'BYOK requires Enterprise plan' })
+    }
+    try {
+      await setOrgLlmConfig(req.organization!.id, {
+        provider: (req.body?.provider as string | null | undefined) ?? null,
+        config: req.body?.config as Record<string, unknown> | undefined,
+        apiKey: req.body?.apiKey as string | null | undefined,
       })
-      .catch(() => {})
-    res.json({ success: true })
-  } catch (err) {
-    res.status(400).json({ success: false, message: (err as Error).message })
+      await auditLogService
+        .logOrgEvent({
+          orgId: req.organization!.id,
+          actorUserId: req.user?.id ?? null,
+          actorEmail: req.user?.email ?? null,
+          eventType: 'organization_settings_changed',
+          eventCategory: 'security',
+          action: 'byok_config_updated',
+          metadata: { provider: req.body?.provider ?? null, hasKey: req.body?.apiKey != null },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent') ?? undefined,
+        })
+        .catch(() => {})
+      res.json({ success: true })
+    } catch (err) {
+      res.status(400).json({ success: false, message: (err as Error).message })
+    }
   }
-})
+)
 
 // GET /:slug/llm-config - read current BYOK config (no plaintext key returned)
-router.get('/:slug/llm-config', requirePermission('llm.configure'), async (req: OrganizationRequest, res) => {
-  const org = await prisma.organization.findUnique({
-    where: { id: req.organization!.id },
-    select: { llm_provider: true, llm_config: true, llm_key_encrypted: true },
-  })
-  res.json({
-    success: true,
-    data: {
-      provider: org?.llm_provider ?? null,
-      config: org?.llm_config ?? null,
-      hasKey: !!org?.llm_key_encrypted,
-    },
-  })
-})
+router.get(
+  '/:slug/llm-config',
+  requirePermission('llm.configure'),
+  async (req: OrganizationRequest, res) => {
+    const org = await prisma.organization.findUnique({
+      where: { id: req.organization!.id },
+      select: { llm_provider: true, llm_config: true, llm_key_encrypted: true },
+    })
+    res.json({
+      success: true,
+      data: {
+        provider: org?.llm_provider ?? null,
+        config: org?.llm_config ?? null,
+        hasKey: !!org?.llm_key_encrypted,
+      },
+    })
+  }
+)
 
 // POST /:slug/legal-hold - apply legal hold to org
-router.post('/:slug/legal-hold', requirePermission('legal_hold.apply'), async (req: OrganizationRequest, res) => {
-  const until = new Date(req.body?.until)
-  if (Number.isNaN(until.getTime())) return res.status(400).json({ message: 'Invalid until date' })
-  await applyOrgHold(
-    req.organization!.id,
-    until,
-    req.user!.id,
-    req.user!.email ?? null,
-    req.body?.reason
-  )
-  res.json({ success: true })
-})
+router.post(
+  '/:slug/legal-hold',
+  requirePermission('legal_hold.apply'),
+  async (req: OrganizationRequest, res) => {
+    const until = new Date(req.body?.until)
+    if (Number.isNaN(until.getTime()))
+      return res.status(400).json({ message: 'Invalid until date' })
+    await applyOrgHold(
+      req.organization!.id,
+      until,
+      req.user!.id,
+      req.user!.email ?? null,
+      req.body?.reason
+    )
+    res.json({ success: true })
+  }
+)
 
 // DELETE /:slug/legal-hold - release legal hold
-router.delete('/:slug/legal-hold', requirePermission('legal_hold.apply'), async (req: OrganizationRequest, res) => {
-  await releaseOrgHold(req.organization!.id, req.user!.id, req.user!.email ?? null)
-  res.json({ success: true })
-})
+router.delete(
+  '/:slug/legal-hold',
+  requirePermission('legal_hold.apply'),
+  async (req: OrganizationRequest, res) => {
+    await releaseOrgHold(req.organization!.id, req.user!.id, req.user!.email ?? null)
+    res.json({ success: true })
+  }
+)
 
 // POST /:slug/ediscovery - admin-only cross-org search
-router.post('/:slug/ediscovery', requirePermission('ediscovery.search'), async (req: OrganizationRequest, res) => {
-  const { query, limit, startDate, endDate } = req.body ?? {}
-  if (!query) return res.status(400).json({ message: 'query required' })
-  const out = await searchOrg({
-    orgId: req.organization!.id,
-    query,
-    limit,
-    startDate: startDate ? new Date(startDate) : undefined,
-    endDate: endDate ? new Date(endDate) : undefined,
-    actorUserId: req.user!.id,
-    actorEmail: req.user!.email ?? null,
-    ipAddress: req.ip,
-    userAgent: req.get('user-agent') ?? undefined,
-  })
-  res.json({ success: true, data: out })
-})
-
-// POST /:slug/members/:memberId/offboard
-router.post('/:slug/members/:memberId/offboard', requirePermission('member.remove'), async (req: OrganizationRequest, res) => {
-  try {
-    await offboardMember({
-      organizationId: req.organization!.id,
-      memberId: req.params.memberId,
+router.post(
+  '/:slug/ediscovery',
+  requirePermission('ediscovery.search'),
+  async (req: OrganizationRequest, res) => {
+    const { query, limit, startDate, endDate } = req.body ?? {}
+    if (!query) return res.status(400).json({ message: 'query required' })
+    const out = await searchOrg({
+      orgId: req.organization!.id,
+      query,
+      limit,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
       actorUserId: req.user!.id,
       actorEmail: req.user!.email ?? null,
-      reassignDocsToUserId: req.body?.reassignDocsToUserId,
-      hardDelete: !!req.body?.hardDelete,
-      reason: req.body?.reason,
       ipAddress: req.ip,
       userAgent: req.get('user-agent') ?? undefined,
     })
-    res.json({ success: true })
-  } catch (err) {
-    res.status(400).json({ success: false, message: (err as Error).message })
+    res.json({ success: true, data: out })
   }
-})
+)
+
+// POST /:slug/members/:memberId/offboard
+router.post(
+  '/:slug/members/:memberId/offboard',
+  requirePermission('member.remove'),
+  async (req: OrganizationRequest, res) => {
+    try {
+      await offboardMember({
+        organizationId: req.organization!.id,
+        memberId: req.params.memberId,
+        actorUserId: req.user!.id,
+        actorEmail: req.user!.email ?? null,
+        reassignDocsToUserId: req.body?.reassignDocsToUserId,
+        hardDelete: !!req.body?.hardDelete,
+        reason: req.body?.reason,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      })
+      res.json({ success: true })
+    } catch (err) {
+      res.status(400).json({ success: false, message: (err as Error).message })
+    }
+  }
+)
 
 export default router

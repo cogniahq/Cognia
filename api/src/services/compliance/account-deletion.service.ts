@@ -80,11 +80,11 @@ export async function runScheduledDeletions(): Promise<{ deleted: number; held: 
 let timer: NodeJS.Timeout | null = null
 export function startAccountDeletionWorker(intervalMs = 12 * 60 * 60 * 1000): void {
   if (timer) return
-  void runScheduledDeletions().catch((err) =>
+  void runScheduledDeletions().catch(err =>
     logger.error('[account-deletion] failed', { error: String(err) })
   )
   timer = setInterval(() => {
-    void runScheduledDeletions().catch((err) =>
+    void runScheduledDeletions().catch(err =>
       logger.error('[account-deletion] failed', { error: String(err) })
     )
   }, intervalMs)

@@ -1,9 +1,5 @@
 import { Router, Response, Request } from 'express'
-import {
-  authenticateApiKey,
-  requireScope,
-  ApiKeyRequest,
-} from '../middleware/api-key.middleware'
+import { authenticateApiKey, requireScope, ApiKeyRequest } from '../middleware/api-key.middleware'
 import { createRateLimiter } from '../middleware/rate-limit.middleware'
 import {
   listMemories,
@@ -20,8 +16,7 @@ const apiKeyRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   maxRequests: 100, // configurable per plan in future
   keyPrefix: 'ratelimit:apikey',
-  keyExtractor: (req: Request) =>
-    `apikey:${(req as ApiKeyRequest).apiKey?.id ?? 'unknown'}`,
+  keyExtractor: (req: Request) => `apikey:${(req as ApiKeyRequest).apiKey?.id ?? 'unknown'}`,
 })
 router.use(apiKeyRateLimiter)
 
@@ -37,7 +32,7 @@ router.get(
       q: req.query.q as string | undefined,
     })
     res.json({
-      data: out.items.map((m) => ({
+      data: out.items.map(m => ({
         id: m.id,
         title: m.title,
         content: m.content,
@@ -74,11 +69,7 @@ router.patch(
   requireScope('memories.write'),
   async (req: ApiKeyRequest, res: Response) => {
     try {
-      const updated = await updateMemory(
-        req.apiKey!.userId,
-        req.params.id,
-        req.body ?? {}
-      )
+      const updated = await updateMemory(req.apiKey!.userId, req.params.id, req.body ?? {})
       res.json({ data: updated })
     } catch (err) {
       res.status(400).json({ error: 'bad_request', message: (err as Error).message })
@@ -101,38 +92,34 @@ router.delete(
 )
 
 // POST /v1/search
-router.post(
-  '/search',
-  requireScope('search'),
-  async (req: ApiKeyRequest, res: Response) => {
-    // Minimal stub — wire to real search later. Returns best-effort matches by content substring.
-    const q = req.body?.query as string
-    const limit = Math.min(Number(req.body?.limit ?? 10), 50)
-    if (!q) {
-      res.status(400).json({ error: 'bad_request', message: 'query required' })
-      return
-    }
-    const items = await prisma.memory.findMany({
-      where: {
-        user_id: req.apiKey!.userId,
-        deleted_at: null,
-        OR: [
-          { title: { contains: q, mode: 'insensitive' } },
-          { content: { contains: q, mode: 'insensitive' } },
-        ],
-      },
-      take: limit,
-      orderBy: { created_at: 'desc' },
-    })
-    res.json({
-      data: items.map((m) => ({
-        id: m.id,
-        title: m.title,
-        snippet: m.content?.slice(0, 200),
-        url: m.url,
-      })),
-    })
+router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: Response) => {
+  // Minimal stub — wire to real search later. Returns best-effort matches by content substring.
+  const q = req.body?.query as string
+  const limit = Math.min(Number(req.body?.limit ?? 10), 50)
+  if (!q) {
+    res.status(400).json({ error: 'bad_request', message: 'query required' })
+    return
   }
-)
+  const items = await prisma.memory.findMany({
+    where: {
+      user_id: req.apiKey!.userId,
+      deleted_at: null,
+      OR: [
+        { title: { contains: q, mode: 'insensitive' } },
+        { content: { contains: q, mode: 'insensitive' } },
+      ],
+    },
+    take: limit,
+    orderBy: { created_at: 'desc' },
+  })
+  res.json({
+    data: items.map(m => ({
+      id: m.id,
+      title: m.title,
+      snippet: m.content?.slice(0, 200),
+      url: m.url,
+    })),
+  })
+})
 
 export default router

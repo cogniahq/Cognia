@@ -1,25 +1,25 @@
 import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { useOrganization } from "@/contexts/organization.context"
+import { getPlanTier, type PlanId } from "@/data/plans"
+import {
+  billingService,
+  type BillingResponse,
+} from "@/services/billing.service"
 import { requireAuthToken } from "@/utils/auth"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
+import { openRazorpaySubscriptionCheckout } from "@/lib/razorpay"
+import { DunningBanner } from "@/components/billing/DunningBanner"
+import { PlanComparisonTable } from "@/components/billing/PlanComparisonTable"
+import { UsageBurndownCard } from "@/components/billing/UsageBurndownCard"
 import { PageHeader } from "@/components/shared/PageHeader"
 import {
   fadeUpVariants,
   staggerContainerVariants,
 } from "@/components/shared/site-motion-variants"
-import { DunningBanner } from "@/components/billing/DunningBanner"
-import { PlanComparisonTable } from "@/components/billing/PlanComparisonTable"
-import { UsageBurndownCard } from "@/components/billing/UsageBurndownCard"
-import {
-  billingService,
-  type BillingResponse,
-} from "@/services/billing.service"
-import { getPlanTier, type PlanId } from "@/data/plans"
-import { openRazorpaySubscriptionCheckout } from "@/lib/razorpay"
 
 function formatAmount(paise?: number, currency?: string): string {
   if (paise == null) return "—"
@@ -96,7 +96,9 @@ export function Billing() {
 
   const onCancel = useCallback(async () => {
     if (!slug) return
-    if (!window.confirm("Cancel subscription at the end of the current period?"))
+    if (
+      !window.confirm("Cancel subscription at the end of the current period?")
+    )
       return
     setActionBusy("cancel")
     try {
@@ -304,8 +306,9 @@ export function Billing() {
                       <div className="text-xs text-gray-500 mt-1 font-mono">
                         Status:{" "}
                         {(subscription as { status?: string } | null)?.status}
-                        {(subscription as { current_period_end?: string } | null)
-                          ?.current_period_end && (
+                        {(
+                          subscription as { current_period_end?: string } | null
+                        )?.current_period_end && (
                           <>
                             {" · "}Renews{" "}
                             {formatDate(
@@ -377,9 +380,7 @@ export function Billing() {
                   Recent invoices
                 </h2>
                 {invoices.length === 0 ? (
-                  <div className="text-sm text-gray-500">
-                    No invoices yet.
-                  </div>
+                  <div className="text-sm text-gray-500">No invoices yet.</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -420,7 +421,7 @@ export function Billing() {
                               </span>
                             </td>
                             <td className="py-2 pr-4 text-right">
-                              {inv.hosted_url ?? inv.hostedInvoiceUrl ? (
+                              {(inv.hosted_url ?? inv.hostedInvoiceUrl) ? (
                                 <a
                                   href={
                                     (inv.hosted_url ?? inv.hostedInvoiceUrl) ||
@@ -433,9 +434,7 @@ export function Billing() {
                                   View
                                 </a>
                               ) : (
-                                <span className="text-xs text-gray-400">
-                                  —
-                                </span>
+                                <span className="text-xs text-gray-400">—</span>
                               )}
                             </td>
                           </tr>

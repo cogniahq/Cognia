@@ -1,6 +1,12 @@
 import { Router } from 'express'
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.middleware'
-import { createTag, listTags, deleteTag, attachTag, detachTag } from '../services/memory/tag.service'
+import {
+  createTag,
+  listTags,
+  deleteTag,
+  attachTag,
+  detachTag,
+} from '../services/memory/tag.service'
 
 const router = Router()
 
@@ -28,7 +34,10 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
 router.delete('/:tagId', authenticateToken, async (req: AuthenticatedRequest, res) => {
   if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
   try {
-    await deleteTag(req.params.tagId, { userId: req.user.id, orgId: req.query.organizationId as string | undefined })
+    await deleteTag(req.params.tagId, {
+      userId: req.user.id,
+      orgId: req.query.organizationId as string | undefined,
+    })
     res.json({ success: true })
   } catch (err) {
     res.status(404).json({ success: false, message: (err as Error).message })

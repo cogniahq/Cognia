@@ -178,7 +178,9 @@ test('organization search returns a verbatim highlight excerpt alongside retriev
   const originalCount = prisma.memory.count
   const originalFindMany = prisma.memory.findMany
 
-  aiProvider.generateEmbedding = (async () => [0.1, 0.2, 0.3]) as typeof aiProvider.generateEmbedding
+  aiProvider.generateEmbedding = (async () => [
+    0.1, 0.2, 0.3,
+  ]) as typeof aiProvider.generateEmbedding
 
   qdrantClient.getCollections = (async () => ({
     collections: [{ name: COLLECTION_NAME }],
@@ -263,7 +265,9 @@ test('organization search applies structured metadata filters to organization re
   const originalCount = prisma.memory.count
   const originalFindMany = prisma.memory.findMany
 
-  aiProvider.generateEmbedding = (async () => [0.1, 0.2, 0.3]) as typeof aiProvider.generateEmbedding
+  aiProvider.generateEmbedding = (async () => [
+    0.1, 0.2, 0.3,
+  ]) as typeof aiProvider.generateEmbedding
 
   qdrantClient.getCollections = (async () => ({
     collections: [{ name: COLLECTION_NAME }],
@@ -909,7 +913,10 @@ test('organization answer job completes with a fallback summary when generation 
     assert.equal(updates.length, 1)
     assert.equal(updates[0]?.jobId, 'job-1')
     assert.equal(updates[0]?.data.status, 'completed')
-    assert.match(String(updates[0]?.data.answer), /summary unavailable|rate-limit|retrieved sources/i)
+    assert.match(
+      String(updates[0]?.data.answer),
+      /summary unavailable|rate-limit|retrieved sources/i
+    )
   } finally {
     aiProvider.generateContent = originalGenerateContent
     searchJobService.setSearchJobResult = originalSetSearchJobResult

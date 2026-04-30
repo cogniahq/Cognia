@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { orgAdminService, type ActivityRow } from "@/services/org-admin.service"
 import { Loader2 } from "lucide-react"
-
-import {
-  orgAdminService,
-  type ActivityRow,
-} from "@/services/org-admin.service"
 
 interface ActivityTabProps {
   slug: string

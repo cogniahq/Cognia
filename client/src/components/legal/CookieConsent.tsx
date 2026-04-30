@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-
 import { gdprService } from "@/services/gdpr.service"
 
 const STORAGE_KEY = "cognia.consent.v1"

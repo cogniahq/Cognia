@@ -71,7 +71,7 @@ export async function listUsers(
     totalResults: total,
     startIndex,
     itemsPerPage: members.length,
-    Resources: members.map((m) => memberToScim(m, baseUrl)),
+    Resources: members.map(m => memberToScim(m, baseUrl)),
   }
 }
 
@@ -220,7 +220,7 @@ export async function deleteUser(
 
 // Groups: 3 fixed groups corresponding to OrgRole
 export function listGroups(_orgId: string) {
-  const groups = ['ADMIN', 'EDITOR', 'VIEWER'].map((r) => ({
+  const groups = ['ADMIN', 'EDITOR', 'VIEWER'].map(r => ({
     schemas: [GROUP_SCHEMA],
     id: r,
     displayName: r,

@@ -1,8 +1,8 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Header } from "@/components/landing/Header"
 import { Footer } from "@/components/landing/Footer"
+import { Header } from "@/components/landing/Header"
 
 interface Tier {
   id: "free" | "pro" | "enterprise"
@@ -184,7 +184,14 @@ export const Pricing: React.FC = () => {
         </div>
 
         <div className="text-center text-xs font-mono text-gray-500 mt-10">
-          Need something different? <a href="mailto:sales@cognia.so" className="underline hover:text-gray-900">Email us</a> — we're flexible.
+          Need something different?{" "}
+          <a
+            href="mailto:sales@cognia.so"
+            className="underline hover:text-gray-900"
+          >
+            Email us
+          </a>{" "}
+          — we're flexible.
         </div>
       </section>
 

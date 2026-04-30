@@ -6,11 +6,8 @@ import { generateEncryptionKey } from '../../utils/auth/crypto.util'
 process.env.TWO_FACTOR_ENCRYPTION_KEY = generateEncryptionKey()
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const {
-  encrypt2faSecret,
-  decrypt2faSecret,
-  is2faSecretLegacy,
-} = require('./two-factor.service') as typeof import('./two-factor.service')
+const { encrypt2faSecret, decrypt2faSecret, is2faSecretLegacy } =
+  require('./two-factor.service') as typeof import('./two-factor.service')
 
 test('two-factor: encrypts then decrypts', () => {
   const plain = 'JBSWY3DPEHPK3PXP'

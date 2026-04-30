@@ -59,7 +59,7 @@ function loadWorkerProcessor(): {
       Queue: FakeQueue,
       QueueEvents: FakeQueueEvents,
     },
-    } as unknown as NodeModule
+  } as unknown as NodeModule
 
   delete require.cache[modulePath]
   const { startContentWorker } = require('./content-worker') as {
@@ -88,9 +88,10 @@ function loadMemoryProcessingController() {
   const modulePath = require.resolve('../controller/memory/memory-processing.controller')
 
   delete require.cache[modulePath]
-  const { MemoryProcessingController } = require('../controller/memory/memory-processing.controller') as {
-    MemoryProcessingController: typeof import('../controller/memory/memory-processing.controller').MemoryProcessingController
-  }
+  const { MemoryProcessingController } =
+    require('../controller/memory/memory-processing.controller') as {
+      MemoryProcessingController: typeof import('../controller/memory/memory-processing.controller').MemoryProcessingController
+    }
 
   return {
     MemoryProcessingController,
@@ -115,15 +116,15 @@ test('content worker returns the created memory id, links synced resources, and 
   const originalShouldUpdateProfile = profileUpdateService.shouldUpdateProfile
   const originalUpdateUserProfile = profileUpdateService.updateUserProfile
 
-  let syncedResourceUpdate:
-    | {
-        where: { id: string }
-        data: { memory_id: string }
-      }
-    | null = null
+  let syncedResourceUpdate: {
+    where: { id: string }
+    data: { memory_id: string }
+  } | null = null
   let profileCheckCalls = 0
 
-  prisma.user.findUnique = (async () => ({ id: 'user-1' })) as unknown as typeof prisma.user.findUnique
+  prisma.user.findUnique = (async () => ({
+    id: 'user-1',
+  })) as unknown as typeof prisma.user.findUnique
   prisma.memory.create = (async ({ data }: { data: Record<string, unknown> }) => ({
     id: 'memory-1',
     importance_score: 0,
@@ -171,13 +172,16 @@ test('content worker returns the created memory id, links synced resources, and 
     canonical_hash: input.canonicalHash,
   })) as unknown as typeof memoryIngestionService.buildMemoryCreatePayload
 
-  memoryMeshService.generateEmbeddingsForMemory = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.generateEmbeddingsForMemory
-  memoryMeshService.createMemoryRelations = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.createMemoryRelations
+  memoryMeshService.generateEmbeddingsForMemory = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.generateEmbeddingsForMemory
+  memoryMeshService.createMemoryRelations = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.createMemoryRelations
   profileUpdateService.shouldUpdateProfile = (async (): Promise<boolean> => {
     profileCheckCalls++
     return false
   }) as unknown as typeof profileUpdateService.shouldUpdateProfile
-  profileUpdateService.updateUserProfile = (async (): Promise<void> => undefined) as unknown as typeof profileUpdateService.updateUserProfile
+  profileUpdateService.updateUserProfile = (async (): Promise<void> =>
+    undefined) as unknown as typeof profileUpdateService.updateUserProfile
 
   try {
     const result = await processor({
@@ -239,15 +243,15 @@ test('content worker links synced resources on duplicate hits too', async () => 
   const originalShouldUpdateProfile = profileUpdateService.shouldUpdateProfile
   const originalUpdateUserProfile = profileUpdateService.updateUserProfile
 
-  let syncedResourceUpdate:
-    | {
-        where: { id: string }
-        data: { memory_id: string }
-      }
-    | null = null
+  let syncedResourceUpdate: {
+    where: { id: string }
+    data: { memory_id: string }
+  } | null = null
   let profileCheckCalls = 0
 
-  prisma.user.findUnique = (async () => ({ id: 'user-1' })) as unknown as typeof prisma.user.findUnique
+  prisma.user.findUnique = (async () => ({
+    id: 'user-1',
+  })) as unknown as typeof prisma.user.findUnique
   prisma.memorySnapshot.create = (async () => ({
     id: 'snapshot-1',
   })) as unknown as typeof prisma.memorySnapshot.create
@@ -279,13 +283,16 @@ test('content worker links synced resources on duplicate hits too', async () => 
     content: 'Existing duplicate memory',
   })) as unknown as typeof memoryIngestionService.mergeDuplicateMemory
 
-  memoryMeshService.generateEmbeddingsForMemory = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.generateEmbeddingsForMemory
-  memoryMeshService.createMemoryRelations = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.createMemoryRelations
+  memoryMeshService.generateEmbeddingsForMemory = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.generateEmbeddingsForMemory
+  memoryMeshService.createMemoryRelations = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.createMemoryRelations
   profileUpdateService.shouldUpdateProfile = (async (): Promise<boolean> => {
     profileCheckCalls++
     return false
   }) as unknown as typeof profileUpdateService.shouldUpdateProfile
-  profileUpdateService.updateUserProfile = (async (): Promise<void> => undefined) as unknown as typeof profileUpdateService.updateUserProfile
+  profileUpdateService.updateUserProfile = (async (): Promise<void> =>
+    undefined) as unknown as typeof profileUpdateService.updateUserProfile
 
   try {
     const result = await processor({
@@ -347,7 +354,9 @@ test('content worker defers inline profile updates while a search-priority lease
   let profileCheckCalls = 0
   let profileUpdateCalls = 0
 
-  prisma.user.findUnique = (async () => ({ id: 'user-1' })) as unknown as typeof prisma.user.findUnique
+  prisma.user.findUnique = (async () => ({
+    id: 'user-1',
+  })) as unknown as typeof prisma.user.findUnique
   prisma.memory.create = (async ({ data }: { data: Record<string, unknown> }) => ({
     id: 'memory-search-priority',
     importance_score: 0.95,
@@ -386,8 +395,10 @@ test('content worker defers inline profile updates while a search-priority lease
     importance_score: 0.95,
   })) as unknown as typeof memoryIngestionService.buildMemoryCreatePayload
 
-  memoryMeshService.generateEmbeddingsForMemory = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.generateEmbeddingsForMemory
-  memoryMeshService.createMemoryRelations = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.createMemoryRelations
+  memoryMeshService.generateEmbeddingsForMemory = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.generateEmbeddingsForMemory
+  memoryMeshService.createMemoryRelations = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.createMemoryRelations
   profileUpdateService.shouldUpdateProfile = (async (): Promise<boolean> => {
     profileCheckCalls++
     return true
@@ -396,8 +407,9 @@ test('content worker defers inline profile updates while a search-priority lease
     profileUpdateCalls++
     return undefined
   }) as unknown as typeof profileUpdateService.updateUserProfile
-  backgroundGenerationPriorityService.shouldDeferBackgroundGeneration = (async (): Promise<boolean> =>
-    true) as typeof backgroundGenerationPriorityService.shouldDeferBackgroundGeneration
+  backgroundGenerationPriorityService.shouldDeferBackgroundGeneration =
+    (async (): Promise<boolean> =>
+      true) as typeof backgroundGenerationPriorityService.shouldDeferBackgroundGeneration
 
   try {
     const result = await processor({
@@ -489,8 +501,10 @@ test('memory processing controller defers profile updates while a search-priorit
   prisma.memorySnapshot.create = (async () => ({
     id: 'controller-snapshot-1',
   })) as unknown as typeof prisma.memorySnapshot.create
-  memoryMeshService.processMemoryForMesh = (async (): Promise<void> => undefined) as unknown as typeof memoryMeshService.processMemoryForMesh
-  auditLogService.logMemoryCapture = (async (): Promise<void> => undefined) as unknown as typeof auditLogService.logMemoryCapture
+  memoryMeshService.processMemoryForMesh = (async (): Promise<void> =>
+    undefined) as unknown as typeof memoryMeshService.processMemoryForMesh
+  auditLogService.logMemoryCapture = (async (): Promise<void> =>
+    undefined) as unknown as typeof auditLogService.logMemoryCapture
   profileUpdateService.shouldUpdateProfile = (async (): Promise<boolean> => {
     profileCheckCalls++
     return true
@@ -498,8 +512,9 @@ test('memory processing controller defers profile updates while a search-priorit
   profileUpdateService.updateUserProfile = (async (): Promise<void> => {
     profileUpdateCalls++
   }) as unknown as typeof profileUpdateService.updateUserProfile
-  backgroundGenerationPriorityService.shouldDeferBackgroundGeneration = (async (): Promise<boolean> =>
-    true) as typeof backgroundGenerationPriorityService.shouldDeferBackgroundGeneration
+  backgroundGenerationPriorityService.shouldDeferBackgroundGeneration =
+    (async (): Promise<boolean> =>
+      true) as typeof backgroundGenerationPriorityService.shouldDeferBackgroundGeneration
 
   const req = {
     body: {

@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 
-const DEFAULT_TTL_MS = 15 * 60 * 1000  // 15 min for magic links + verify
+const DEFAULT_TTL_MS = 15 * 60 * 1000 // 15 min for magic links + verify
 const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000
 
 export type TokenPurpose = 'verify_email' | 'magic_link' | 'password_reset'
@@ -15,7 +15,9 @@ function generateToken(): string {
   return randomBytes(32).toString('hex')
 }
 
-interface IssueOptions { ttlMs?: number }
+interface IssueOptions {
+  ttlMs?: number
+}
 
 export async function issueEmailVerificationToken(
   userId: string,
@@ -70,7 +72,12 @@ export async function sendVerificationEmail(
   purpose: TokenPurpose
 ): Promise<void> {
   const baseUrl = process.env.PUBLIC_APP_URL || 'http://localhost:5173'
-  const path = purpose === 'magic_link' ? '/auth/magic' : purpose === 'password_reset' ? '/auth/reset' : '/auth/verify'
+  const path =
+    purpose === 'magic_link'
+      ? '/auth/magic'
+      : purpose === 'password_reset'
+        ? '/auth/reset'
+        : '/auth/verify'
   const url = `${baseUrl}${path}?token=${token}`
   logger.log('[email][stub] would send', { to: email, purpose, url })
 }

@@ -1,8 +1,5 @@
 import { prisma } from '../lib/prisma.lib'
-import {
-  encrypt2faSecret,
-  is2faSecretLegacy,
-} from '../services/auth/two-factor.service'
+import { encrypt2faSecret, is2faSecretLegacy } from '../services/auth/two-factor.service'
 import { logger } from '../utils/core/logger.util'
 
 async function main(): Promise<void> {

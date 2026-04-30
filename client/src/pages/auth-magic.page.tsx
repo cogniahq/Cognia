@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
+import { useAuth } from "@/contexts/auth.context"
+import { identityService } from "@/services/identity.service"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
-import { useAuth } from "@/contexts/auth.context"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { identityService } from "@/services/identity.service"
 
 type MagicState = "loading" | "success" | "error" | "missing"
 

@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+
+import { OrgSwitcher } from "./OrgSwitcher"
 
 // Mock the organization context with a manually-driven module mock so we can
 // drive `selectOrganization` and inspect calls without spinning up the real
@@ -26,7 +28,11 @@ const mockState = {
       userRole: "ADMIN" as const,
     },
   ],
-  currentOrganization: null as null | { id: string; name: string; slug: string },
+  currentOrganization: null as null | {
+    id: string
+    name: string
+    slug: string
+  },
   isLoading: false,
   selectOrganization,
 }
@@ -40,8 +46,6 @@ vi.mock("@/contexts/organization.context", () => ({
 vi.mock("@/components/organization/CreateOrganizationDialog", () => ({
   CreateOrganizationDialog: () => null,
 }))
-
-import { OrgSwitcher } from "./OrgSwitcher"
 
 describe("OrgSwitcher", () => {
   beforeAll(() => {

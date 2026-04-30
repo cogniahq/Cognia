@@ -1,11 +1,11 @@
 import { useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+
 import {
   DOMAIN_PACKS,
-  type DomainPackId,
   getDomainPackDefinition,
+  type DomainPackId,
 } from "@/lib/domain-packs"
-
 import {
   Dialog,
   DialogContent,

@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from "react"
+import { shareService, type Share } from "@/services/share.service"
+import { Copy, Trash2 } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -6,12 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Copy, Trash2 } from "lucide-react"
-import { shareService, type Share } from "@/services/share.service"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface MemoryShareDialogProps {
   open: boolean
@@ -30,15 +31,18 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
   memoryId,
 }) => {
   const [shares, setShares] = useState<Share[]>([])
-  const [linkPermission, setLinkPermission] =
-    useState<"read" | "comment">("read")
+  const [linkPermission, setLinkPermission] = useState<"read" | "comment">(
+    "read"
+  )
   const [linkExpiry, setLinkExpiry] = useState<string>("")
   const [userId, setUserId] = useState("")
-  const [userPermission, setUserPermission] =
-    useState<"read" | "comment" | "edit">("read")
+  const [userPermission, setUserPermission] = useState<
+    "read" | "comment" | "edit"
+  >("read")
   const [orgId, setOrgId] = useState("")
-  const [orgPermission, setOrgPermission] =
-    useState<"read" | "comment" | "edit">("read")
+  const [orgPermission, setOrgPermission] = useState<
+    "read" | "comment" | "edit"
+  >("read")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
@@ -265,9 +269,7 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
           </TabsContent>
         </Tabs>
 
-        {error && (
-          <div className="text-sm text-red-600 font-mono">{error}</div>
-        )}
+        {error && <div className="text-sm text-red-600 font-mono">{error}</div>}
 
         <div className="space-y-2 mt-4">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-700">

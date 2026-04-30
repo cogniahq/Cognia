@@ -60,9 +60,7 @@ test('createMemoryRelations inserts relation candidates with duplicate-safe batc
   const originalGetCollections = qdrantMock.qdrantClient.getCollections.bind(
     qdrantMock.qdrantClient
   )
-  const originalGetCollection = qdrantMock.qdrantClient.getCollection.bind(
-    qdrantMock.qdrantClient
-  )
+  const originalGetCollection = qdrantMock.qdrantClient.getCollection.bind(qdrantMock.qdrantClient)
   const originalCreateCollection = qdrantMock.qdrantClient.createCollection.bind(
     qdrantMock.qdrantClient
   )
@@ -83,8 +81,11 @@ test('createMemoryRelations inserts relation candidates with duplicate-safe batc
       page_metadata: { topics: ['tax'] },
     }) as unknown) as unknown as typeof prisma.memory.findUnique
 
-  prismaMock.memoryRelation.findUnique = (async (): Promise<null> => null) as unknown as typeof prisma.memoryRelation.findUnique
-  prismaMock.memoryRelation.findMany = (async (): Promise<Array<Record<string, unknown>>> => []) as unknown as typeof prisma.memoryRelation.findMany
+  prismaMock.memoryRelation.findUnique = (async (): Promise<null> =>
+    null) as unknown as typeof prisma.memoryRelation.findUnique
+  prismaMock.memoryRelation.findMany = (async (): Promise<
+    Array<Record<string, unknown>>
+  > => []) as unknown as typeof prisma.memoryRelation.findMany
   prismaMock.memoryRelation.create = (async () => {
     perRelationCreateCalls++
     return {}
@@ -99,7 +100,8 @@ test('createMemoryRelations inserts relation candidates with duplicate-safe batc
     }
     return { count: Array.isArray(args.data) ? args.data.length : 0 }
   }) as unknown as typeof prisma.memoryRelation.createMany
-  prismaMock.memoryRelation.update = (async () => ({})) as unknown as typeof prisma.memoryRelation.update
+  prismaMock.memoryRelation.update =
+    (async () => ({})) as unknown as typeof prisma.memoryRelation.update
 
   qdrantMock.qdrantClient.getCollections = (async () => ({
     collections: [{ name: qdrantMock.COLLECTION_NAME }],
@@ -119,34 +121,38 @@ test('createMemoryRelations inserts relation candidates with duplicate-safe batc
       external_document_id: {},
     },
   })) as typeof qdrantMock.qdrantClient.getCollection
-  qdrantMock.qdrantClient.createCollection = (async () =>
-    ({})) as typeof qdrantMock.qdrantClient.createCollection
-  qdrantMock.qdrantClient.createPayloadIndex = (async () =>
-    ({})) as typeof qdrantMock.qdrantClient.createPayloadIndex
-  qdrantMock.qdrantClient.search = (async (): Promise<Array<unknown>> => []) as unknown as typeof qdrantMock.qdrantClient.search
-
-  ;(service as unknown as { findSemanticRelations: () => Promise<MemoryRelationCandidate[]> })
-    .findSemanticRelations = async (): Promise<MemoryRelationCandidate[]> => []
-  ;(service as unknown as { findTopicalRelations: () => Promise<MemoryRelationCandidate[]> })
-    .findTopicalRelations = async (): Promise<MemoryRelationCandidate[]> => [
-      {
-        id: 'related-1',
-        memory: { id: 'related-1' },
-        similarity_score: 0.82,
-        similarity: 0.82,
-        relation_type: RelationType.topical,
-      },
-    ]
-  ;(service as unknown as { findTemporalRelations: () => Promise<MemoryRelationCandidate[]> })
-    .findTemporalRelations = async (): Promise<MemoryRelationCandidate[]> => [
-      {
-        id: 'related-2',
-        memory: { id: 'related-2' },
-        similarity_score: 0.61,
-        similarity: 0.61,
-        relation_type: RelationType.temporal,
-      },
-    ]
+  qdrantMock.qdrantClient.createCollection =
+    (async () => ({})) as typeof qdrantMock.qdrantClient.createCollection
+  qdrantMock.qdrantClient.createPayloadIndex =
+    (async () => ({})) as typeof qdrantMock.qdrantClient.createPayloadIndex
+  qdrantMock.qdrantClient.search = (async (): Promise<
+    Array<unknown>
+  > => []) as unknown as typeof qdrantMock.qdrantClient.search
+  ;(
+    service as unknown as { findSemanticRelations: () => Promise<MemoryRelationCandidate[]> }
+  ).findSemanticRelations = async (): Promise<MemoryRelationCandidate[]> => []
+  ;(
+    service as unknown as { findTopicalRelations: () => Promise<MemoryRelationCandidate[]> }
+  ).findTopicalRelations = async (): Promise<MemoryRelationCandidate[]> => [
+    {
+      id: 'related-1',
+      memory: { id: 'related-1' },
+      similarity_score: 0.82,
+      similarity: 0.82,
+      relation_type: RelationType.topical,
+    },
+  ]
+  ;(
+    service as unknown as { findTemporalRelations: () => Promise<MemoryRelationCandidate[]> }
+  ).findTemporalRelations = async (): Promise<MemoryRelationCandidate[]> => [
+    {
+      id: 'related-2',
+      memory: { id: 'related-2' },
+      similarity_score: 0.61,
+      similarity: 0.61,
+      relation_type: RelationType.temporal,
+    },
+  ]
   ;(
     service as unknown as {
       filterRelationsWithAI: (
@@ -158,8 +164,9 @@ test('createMemoryRelations inserts relation candidates with duplicate-safe batc
     _memory: unknown,
     relations: MemoryRelationCandidate[]
   ): Promise<MemoryRelationCandidate[]> => relations
-  ;(service as unknown as { cleanupLowQualityRelations: () => Promise<void> })
-    .cleanupLowQualityRelations = async (): Promise<void> => undefined
+  ;(
+    service as unknown as { cleanupLowQualityRelations: () => Promise<void> }
+  ).cleanupLowQualityRelations = async (): Promise<void> => undefined
 
   try {
     await service.createMemoryRelations('memory-1', 'user-1')

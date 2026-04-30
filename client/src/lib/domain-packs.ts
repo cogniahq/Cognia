@@ -138,8 +138,7 @@ export const DOMAIN_PACKS: Record<DomainPackId, DomainPackDefinition> = {
     id: "law-firm",
     label: "Law Firm Workspace",
     shortLabel: "Law Firm",
-    description:
-      "Structured for pleadings, precedents, judgments, and forums.",
+    description: "Structured for pleadings, precedents, judgments, and forums.",
     artifactTypeOptions: [
       { value: "pleading", label: "Pleading" },
       { value: "written-submission", label: "Written Submission" },
@@ -271,11 +270,7 @@ export function getDomainMetadataBadges(
   if (domainMetadata.practiceArea) {
     badgeEntries.push([
       "practiceArea",
-      getDomainOptionLabel(
-        packId,
-        "practiceArea",
-        domainMetadata.practiceArea
-      ),
+      getDomainOptionLabel(packId, "practiceArea", domainMetadata.practiceArea),
     ])
   }
 

@@ -62,12 +62,9 @@ export const SampleDataBanner: React.FC<SampleDataBannerProps> = ({
           />
         </svg>
         <div className="text-sm text-amber-900">
-          <span className="font-medium">These are demo memories</span> —
-          capture your own as you browse, or dismiss the demo data to start
-          fresh.
-          {error && (
-            <div className="mt-1 text-xs text-red-700">{error}</div>
-          )}
+          <span className="font-medium">These are demo memories</span> — capture
+          your own as you browse, or dismiss the demo data to start fresh.
+          {error && <div className="mt-1 text-xs text-red-700">{error}</div>}
         </div>
       </div>
       <button

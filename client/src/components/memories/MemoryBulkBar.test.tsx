@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
+import { describe, expect, it, vi } from "vitest"
 
 import { MemoryBulkBar } from "./MemoryBulkBar"
 
@@ -20,10 +20,7 @@ describe("MemoryBulkBar", () => {
   it("renders the selection count and triggers onCleared via the Clear button", () => {
     const onCleared = vi.fn()
     render(
-      <MemoryBulkBar
-        selectedIds={["a", "b", "c"]}
-        onCleared={onCleared}
-      />
+      <MemoryBulkBar selectedIds={["a", "b", "c"]} onCleared={onCleared} />
     )
 
     expect(screen.getByText("3")).toBeInTheDocument()

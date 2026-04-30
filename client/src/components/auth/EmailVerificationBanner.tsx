@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { toast } from "sonner"
-
 import { useAuth } from "@/contexts/auth.context"
 import { identityService } from "@/services/identity.service"
+import { toast } from "sonner"
 
 interface EmailVerificationBannerProps {
   /** Allow callers to suppress the banner on specific pages. */

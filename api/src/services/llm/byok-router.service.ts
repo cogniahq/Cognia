@@ -54,10 +54,7 @@ export interface SetOrgLlmConfigInput {
  * - apiKey === undefined: leave existing key untouched
  * - apiKey === string: encrypt with TOKEN_ENCRYPTION_KEY and store
  */
-export async function setOrgLlmConfig(
-  orgId: string,
-  input: SetOrgLlmConfigInput
-): Promise<void> {
+export async function setOrgLlmConfig(orgId: string, input: SetOrgLlmConfigInput): Promise<void> {
   const tokenKey = process.env.TOKEN_ENCRYPTION_KEY
   if (input.apiKey && !tokenKey) {
     throw new Error('TOKEN_ENCRYPTION_KEY required to set BYOK key')

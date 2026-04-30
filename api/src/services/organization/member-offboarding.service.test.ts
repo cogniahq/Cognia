@@ -5,7 +5,9 @@ import { offboardMember } from './member-offboarding.service'
 import { prisma } from '../../lib/prisma.lib'
 import { randomUUID } from 'node:crypto'
 
-after(async () => { await prisma.$disconnect() })
+after(async () => {
+  await prisma.$disconnect()
+})
 
 async function makeOrgWithMembers() {
   const admin = await prisma.user.create({ data: { email: `a-${randomUUID()}@x.io` } })
@@ -14,11 +16,15 @@ async function makeOrgWithMembers() {
   const org = await prisma.organization.create({
     data: { name: `o-${randomUUID()}`, slug: `o-${randomUUID()}` },
   })
-  await prisma.organizationMember.create({ data: { organization_id: org.id, user_id: admin.id, role: 'ADMIN' } })
+  await prisma.organizationMember.create({
+    data: { organization_id: org.id, user_id: admin.id, role: 'ADMIN' },
+  })
   const leaverMembership = await prisma.organizationMember.create({
     data: { organization_id: org.id, user_id: leaver.id, role: 'EDITOR' },
   })
-  await prisma.organizationMember.create({ data: { organization_id: org.id, user_id: successor.id, role: 'EDITOR' } })
+  await prisma.organizationMember.create({
+    data: { organization_id: org.id, user_id: successor.id, role: 'EDITOR' },
+  })
   return { admin, leaver, successor, org, leaverMembership }
 }
 

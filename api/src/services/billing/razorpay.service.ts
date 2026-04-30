@@ -145,7 +145,9 @@ export function verifyWebhookSignature(rawBody: string | Buffer, signature: stri
   return timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(signature, 'utf8'))
 }
 
-export function planIdFromRazorpayPlan(razorpayPlanId: string | undefined | null): 'free' | 'pro' | 'enterprise' {
+export function planIdFromRazorpayPlan(
+  razorpayPlanId: string | undefined | null
+): 'free' | 'pro' | 'enterprise' {
   if (!razorpayPlanId) return 'free'
   if (razorpayPlanId === process.env.RAZORPAY_PLAN_PRO) return 'pro'
   if (razorpayPlanId === process.env.RAZORPAY_PLAN_ENTERPRISE) return 'enterprise'

@@ -1,3 +1,5 @@
+import type { SsoDiscoveryResult } from "@/services/identity.service"
+
 import {
   Dialog,
   DialogContent,
@@ -6,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { SsoDiscoveryResult } from "@/services/identity.service"
 
 interface DomainCaptureModalProps {
   open: boolean

@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react"
+import { formatLimit } from "@/data/plans"
+import {
+  QUOTA_EXCEEDED_EVENT,
+  type QuotaExceededDetail,
+  type QuotaExceededKind,
+} from "@/services/billing.service"
 import { useNavigate } from "react-router-dom"
 
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -9,13 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { formatLimit } from "@/data/plans"
-import {
-  QUOTA_EXCEEDED_EVENT,
-  type QuotaExceededDetail,
-  type QuotaExceededKind,
-} from "@/services/billing.service"
 
 const HEADLINES: Record<QuotaExceededKind, string> = {
   seats: "You've hit your seat limit",
@@ -59,7 +59,7 @@ export const QuotaExceededModal: React.FC<QuotaExceededModalProps> = ({
   const [internalOpen, setInternalOpen] = useState(false)
 
   const isControlled = detailProp !== undefined || openProp !== undefined
-  const detail = isControlled ? detailProp ?? null : internalDetail
+  const detail = isControlled ? (detailProp ?? null) : internalDetail
   const open = isControlled ? !!openProp : internalOpen
 
   useEffect(() => {
@@ -72,10 +72,7 @@ export const QuotaExceededModal: React.FC<QuotaExceededModalProps> = ({
     }
     window.addEventListener(QUOTA_EXCEEDED_EVENT, handler as EventListener)
     return () => {
-      window.removeEventListener(
-        QUOTA_EXCEEDED_EVENT,
-        handler as EventListener
-      )
+      window.removeEventListener(QUOTA_EXCEEDED_EVENT, handler as EventListener)
     }
   }, [isControlled])
 

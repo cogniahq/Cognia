@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import type { onboardingService as Service } from "@/services/onboarding.service"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { describe, expect, it, vi } from "vitest"
 
 import { SampleDataBanner } from "./SampleDataBanner"
-import type { onboardingService as Service } from "@/services/onboarding.service"
 
 type ServiceShape = typeof Service
 
@@ -22,11 +22,13 @@ describe("SampleDataBanner", () => {
       <SampleDataBanner
         demoMemoryCount={5}
         onDismissed={onDismissed}
-        service={{
-          dismissDemo,
-          tourCompleted,
-          getState,
-        } as unknown as ServiceShape}
+        service={
+          {
+            dismissDemo,
+            tourCompleted,
+            getState,
+          } as unknown as ServiceShape
+        }
       />
     )
 

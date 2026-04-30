@@ -57,9 +57,9 @@ export function extractProfile(
   const email =
     (p[attributeEmail] as string | undefined) ??
     (p['email'] as string | undefined) ??
-    (p[
-      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'
-    ] as string | undefined) ??
+    (p['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] as
+      | string
+      | undefined) ??
     (p['nameID'] as string | undefined)
   const externalId =
     (p['nameID'] as string | undefined) ??
@@ -76,9 +76,7 @@ export function extractProfile(
       ? [String(rawGroups)]
       : []
   const name =
-    (p['displayName'] as string | undefined) ??
-    (p['cn'] as string | undefined) ??
-    undefined
+    (p['displayName'] as string | undefined) ?? (p['cn'] as string | undefined) ?? undefined
   if (!email) throw new Error('SAML assertion missing email')
   return {
     email: String(email),

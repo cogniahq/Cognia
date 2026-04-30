@@ -20,8 +20,9 @@ test('profile worker defers updates while search priority is active', async () =
   profileUpdateService.updateUserProfile = (async (): Promise<void> => {
     updateCalls++
   }) as unknown as typeof profileUpdateService.updateUserProfile
-  backgroundGenerationPriorityService.shouldDeferBackgroundGeneration = (async (): Promise<boolean> =>
-    true) as typeof backgroundGenerationPriorityService.shouldDeferBackgroundGeneration
+  backgroundGenerationPriorityService.shouldDeferBackgroundGeneration =
+    (async (): Promise<boolean> =>
+      true) as typeof backgroundGenerationPriorityService.shouldDeferBackgroundGeneration
 
   try {
     const result = await startProfileWorker(7, 1)

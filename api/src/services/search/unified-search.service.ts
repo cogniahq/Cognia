@@ -83,7 +83,9 @@ export interface UnifiedSearchResult {
 }
 
 export class UnifiedSearchService {
-  private pickResultMetadata(pageMetadata: Record<string, unknown>): Record<string, unknown> | undefined {
+  private pickResultMetadata(
+    pageMetadata: Record<string, unknown>
+  ): Record<string, unknown> | undefined {
     const metadataEntries = SEARCH_METADATA_KEYS.flatMap(key => {
       const value = pageMetadata[key]
       if (value === undefined || value === null) {
@@ -104,10 +106,7 @@ export class UnifiedSearchService {
     return metadataEntries.length > 0 ? Object.fromEntries(metadataEntries) : undefined
   }
 
-  private matchesMetadataFilter(
-    candidate: unknown,
-    allowedValues: string[] | undefined
-  ): boolean {
+  private matchesMetadataFilter(candidate: unknown, allowedValues: string[] | undefined): boolean {
     if (!allowedValues || allowedValues.length === 0) {
       return true
     }
@@ -160,14 +159,12 @@ export class UnifiedSearchService {
     results: InternalSearchResult[]
   ): InternalSearchResult[] {
     const queryTokens = this.getAnswerQueryTerms(query)
-    const scoredCandidates = results
-      .slice(0, MAX_ANSWER_CANDIDATES)
-      .map((result, index) => ({
-        result,
-        originalIndex: index,
-        sourceKey: this.getAnswerSourceKey(result),
-        score: this.scoreAnswerCandidate(query, queryTokens, result),
-      }))
+    const scoredCandidates = results.slice(0, MAX_ANSWER_CANDIDATES).map((result, index) => ({
+      result,
+      originalIndex: index,
+      sourceKey: this.getAnswerSourceKey(result),
+      score: this.scoreAnswerCandidate(query, queryTokens, result),
+    }))
 
     const groupedCandidates = new Map<
       string,
@@ -264,14 +261,9 @@ export class UnifiedSearchService {
     return selectedResults
   }
 
-  private buildAnswerContextSnippet(
-    query: string,
-    result: InternalSearchResult
-  ): string {
+  private buildAnswerContextSnippet(query: string, result: InternalSearchResult): string {
     const normalizedContent = result.content.replace(/\s+/g, ' ').trim()
-    const normalizedAnswerContent = (result.answerContent || '')
-      .replace(/\s+/g, ' ')
-      .trim()
+    const normalizedAnswerContent = (result.answerContent || '').replace(/\s+/g, ' ').trim()
     const normalizedPreview = result.contentPreview.replace(/\s+/g, ' ').trim()
     const answerSourceContent = normalizedAnswerContent || normalizedContent
 
@@ -419,11 +411,14 @@ export class UnifiedSearchService {
     results: Array<PublicSearchResult & { authorEmail?: string | null; capturedAt?: string | null }>
   ): { answer: string; citations: UnifiedSearchResult['citations'] } {
     const message =
-      error instanceof Error && error.message ? error.message.toLowerCase() : String(error).toLowerCase()
+      error instanceof Error && error.message
+        ? error.message.toLowerCase()
+        : String(error).toLowerCase()
 
     let reasonLine = 'The AI summary could not be generated right now.'
     if (message.includes('request too large') || message.includes('tokens per min')) {
-      reasonLine = 'The AI summary is temporarily unavailable because the retrieved context exceeded the provider limit.'
+      reasonLine =
+        'The AI summary is temporarily unavailable because the retrieved context exceeded the provider limit.'
     } else if (isRateLimitError(error) || message.includes('rate limit')) {
       reasonLine = 'The AI summary is temporarily unavailable because the provider is rate-limited.'
     } else if (message.includes('timeout')) {

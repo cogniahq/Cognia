@@ -79,9 +79,7 @@ router.post('/integrations/:provider', async (req: Request, res: Response) => {
             provider,
             eventId: deriveEventId(ev),
             payload: ev,
-          }).catch(err =>
-            logger.error('[webhook] ingest failed', { provider, error: String(err) })
-          )
+          }).catch(err => logger.error('[webhook] ingest failed', { provider, error: String(err) }))
         }
       } catch (error) {
         logger.error(`Error processing ${provider} webhook`, error)

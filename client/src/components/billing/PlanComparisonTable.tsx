@@ -1,5 +1,4 @@
 import React from "react"
-
 import { PLAN_TIERS, type PlanId } from "@/data/plans"
 
 interface PlanComparisonTableProps {

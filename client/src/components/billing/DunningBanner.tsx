@@ -1,5 +1,4 @@
 import React, { useState } from "react"
-
 import type { BillingSubscription } from "@/services/billing.service"
 
 interface DunningBannerProps {
@@ -59,9 +58,7 @@ export const DunningBanner: React.FC<DunningBannerProps> = ({
         />
       </svg>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium">
-          Your payment failed
-        </div>
+        <div className="text-sm font-medium">Your payment failed</div>
         <div className="text-xs sm:text-sm text-amber-800 mt-0.5">
           Update your payment method to avoid service interruption.
         </div>

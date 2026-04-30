@@ -18,10 +18,7 @@ async function getHeaders(): Promise<Record<string, string>> {
 
 test('security headers: HSTS', async () => {
   const h = await getHeaders()
-  assert.match(
-    h['strict-transport-security'] ?? '',
-    /max-age=\d+; includeSubDomains; preload/
-  )
+  assert.match(h['strict-transport-security'] ?? '', /max-age=\d+; includeSubDomains; preload/)
 })
 
 test('security headers: X-Content-Type-Options', async () => {

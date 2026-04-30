@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react"
+import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
+
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -7,10 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
 import { TagPicker } from "@/components/tags/TagPicker"
 
 interface MemoryEditDialogProps {

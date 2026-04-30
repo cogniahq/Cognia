@@ -4,9 +4,6 @@ import { useOrganization } from "@/contexts/organization.context"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 
-import { fadeUpVariants } from "@/components/shared/site-motion-variants"
-import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner"
-import { OrgSwitcher } from "@/components/shared/OrgSwitcher"
 import { useHasPermission } from "@/hooks/use-permissions"
 import {
   DropdownMenu,
@@ -15,6 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner"
+import { OrgSwitcher } from "@/components/shared/OrgSwitcher"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
 interface UserMenuProps {
   email?: string

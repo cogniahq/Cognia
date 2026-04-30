@@ -200,10 +200,7 @@ function buildAllowedValueSet(
   return new Set((filterDefinition?.options || []).map(option => option.value))
 }
 
-function normalizeAllowedValue(
-  value: unknown,
-  allowedValues: Set<string>
-): string | undefined {
+function normalizeAllowedValue(value: unknown, allowedValues: Set<string>): string | undefined {
   const normalized = normalizeOptionalString(value)
   if (!normalized) {
     return undefined
@@ -233,9 +230,10 @@ export function sanitizeDomainDocumentMetadata(
   input: unknown,
   packId: DomainPackId
 ): DomainDocumentMetadata {
-  const metadata = input && typeof input === 'object' && !Array.isArray(input)
-    ? (input as Record<string, unknown>)
-    : {}
+  const metadata =
+    input && typeof input === 'object' && !Array.isArray(input)
+      ? (input as Record<string, unknown>)
+      : {}
   const definition = getDomainPackDefinition(packId)
 
   return {
@@ -251,10 +249,7 @@ export function sanitizeDomainDocumentMetadata(
       buildAllowedValueSet(definition, 'authority')
     ),
     forum: normalizeAllowedValue(metadata.forum, buildAllowedValueSet(definition, 'forum')),
-    outcome: normalizeAllowedValue(
-      metadata.outcome,
-      buildAllowedValueSet(definition, 'outcome')
-    ),
+    outcome: normalizeAllowedValue(metadata.outcome, buildAllowedValueSet(definition, 'outcome')),
     practiceArea: normalizeAllowedValue(
       metadata.practiceArea,
       buildAllowedValueSet(definition, 'practiceArea')

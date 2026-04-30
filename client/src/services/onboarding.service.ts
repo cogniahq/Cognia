@@ -15,7 +15,11 @@ export interface OnboardingState {
 
 function unwrap<T>(response: { data?: { data?: T } | T }): T {
   const root = response?.data
-  if (root && typeof root === "object" && "data" in (root as Record<string, unknown>)) {
+  if (
+    root &&
+    typeof root === "object" &&
+    "data" in (root as Record<string, unknown>)
+  ) {
     return (root as { data: T }).data
   }
   return root as T

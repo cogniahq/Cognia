@@ -173,10 +173,7 @@ export function findSearchHighlightTextMatch(
   return null
 }
 
-export function findSearchHighlightTextMatchFromSegments(
-  segments: string[],
-  candidates: string[]
-) {
+export function findSearchHighlightTextMatchFromSegments(segments: string[], candidates: string[]) {
   const rawText = segments.reduce(
     (combinedText, segment) => appendSearchableTextSegment(combinedText, segment),
     ''

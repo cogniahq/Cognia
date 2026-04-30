@@ -30,12 +30,8 @@ export function OrgSwitcher({
   onNavigate,
 }: OrgSwitcherProps) {
   const navigate = useNavigate()
-  const {
-    organizations,
-    currentOrganization,
-    selectOrganization,
-    isLoading,
-  } = useOrganization()
+  const { organizations, currentOrganization, selectOrganization, isLoading } =
+    useOrganization()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const go = (path: string) => {

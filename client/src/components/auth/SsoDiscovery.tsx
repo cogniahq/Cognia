@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-
-import { cn } from "@/lib/utils.lib"
 import {
   identityService,
   type SsoDiscoveryResult,
 } from "@/services/identity.service"
+
+import { cn } from "@/lib/utils.lib"
 
 interface SsoDiscoveryProps {
   email: string

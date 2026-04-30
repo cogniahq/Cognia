@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
+import { describe, expect, it } from "vitest"
 
 import UsageBurndownCard from "./UsageBurndownCard"
 
@@ -20,9 +20,7 @@ describe("UsageBurndownCard", () => {
   })
 
   it("renders count and limit normally below the limit", () => {
-    render(
-      <UsageBurndownCard label="Integrations" current={2} limit={5} />
-    )
+    render(<UsageBurndownCard label="Integrations" current={2} limit={5} />)
     expect(screen.getByText("2")).toBeInTheDocument()
     expect(screen.getByText(/\/\s*5/)).toBeInTheDocument()
     expect(screen.queryByTestId("at-limit-badge")).not.toBeInTheDocument()

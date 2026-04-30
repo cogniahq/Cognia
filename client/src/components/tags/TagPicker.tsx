@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { tagService, type Tag } from "@/services/tag.service"
+
 import { TagBadge } from "./TagBadge"
 
 interface TagPickerProps {

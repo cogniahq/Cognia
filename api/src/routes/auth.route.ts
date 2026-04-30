@@ -14,10 +14,7 @@ import {
   revokeAllForUser as revokeRefreshForUser,
 } from '../services/auth/refresh-token.service'
 import { hashPassword, comparePassword } from '../utils/core/password.util'
-import {
-  validatePasswordWithBreachCheck,
-  PasswordPolicy,
-} from '../utils/auth/password-policy.util'
+import { validatePasswordWithBreachCheck, PasswordPolicy } from '../utils/auth/password-policy.util'
 import {
   generateSecret,
   generateTOTPUri,
@@ -77,7 +74,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
     })
 
     const orgPermissions = await Promise.all(
-      memberships.map(async (m) => ({
+      memberships.map(async m => ({
         organizationId: m.organization.id,
         orgSlug: m.organization.slug,
         role: m.role,
@@ -137,10 +134,7 @@ router.post('/logout-all', authenticateToken, async (req: AuthenticatedRequest, 
     if (!req.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' })
     }
-    await Promise.all([
-      revokeAllForUser(req.user.id),
-      revokeRefreshForUser(req.user.id),
-    ])
+    await Promise.all([revokeAllForUser(req.user.id), revokeRefreshForUser(req.user.id)])
     await auditLogService
       .logEvent({
         userId: req.user.id,

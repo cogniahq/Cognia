@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react"
+import { identityService } from "@/services/identity.service"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { identityService } from "@/services/identity.service"
 
 type VerifyState = "loading" | "success" | "error" | "missing"
 
@@ -104,8 +104,8 @@ export function VerifyEmail() {
                 Missing token
               </h1>
               <p className="text-sm text-gray-600">
-                This URL doesn't include a verification token. Use the link
-                from your email.
+                This URL doesn't include a verification token. Use the link from
+                your email.
               </p>
               <button
                 type="button"

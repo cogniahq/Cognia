@@ -61,14 +61,14 @@ export const BugBounty: React.FC = () => {
         <ul className="list-disc pl-6 space-y-1">
           <li>Denial-of-service, volumetric attacks, or rate-limit testing</li>
           <li>
-            Vulnerabilities in third-party services and subprocessors —
-            please report those directly to the vendor
+            Vulnerabilities in third-party services and subprocessors — please
+            report those directly to the vendor
           </li>
           <li>Social engineering of Cognia employees or customers</li>
           <li>Physical attacks against Cognia property or personnel</li>
           <li>
-            Issues that require a rooted/jailbroken device, a custom
-            browser build, or pre-existing local access
+            Issues that require a rooted/jailbroken device, a custom browser
+            build, or pre-existing local access
           </li>
           <li>Self-XSS that requires victim cooperation to exploit</li>
           <li>Missing best-practice headers without a demonstrable impact</li>
@@ -112,9 +112,9 @@ export const BugBounty: React.FC = () => {
           </table>
         </div>
         <p className="text-sm text-gray-600 mt-3">
-          Final severity is determined by the Cognia security team using
-          CVSS 3.1 as a guide. Duplicate reports are awarded to the first
-          submitter with a working proof of concept.
+          Final severity is determined by the Cognia security team using CVSS
+          3.1 as a guide. Duplicate reports are awarded to the first submitter
+          with a working proof of concept.
         </p>
       </section>
 
@@ -123,11 +123,10 @@ export const BugBounty: React.FC = () => {
           Disclosure window
         </h2>
         <p>
-          We aim to remediate confirmed reports within 90 days. We ask that
-          you withhold public disclosure until we have shipped a fix or the
-          90-day window has elapsed, whichever comes first. If you need a
-          longer or shorter window, tell us and we will negotiate in good
-          faith.
+          We aim to remediate confirmed reports within 90 days. We ask that you
+          withhold public disclosure until we have shipped a fix or the 90-day
+          window has elapsed, whichever comes first. If you need a longer or
+          shorter window, tell us and we will negotiate in good faith.
         </p>
       </section>
 
@@ -137,10 +136,10 @@ export const BugBounty: React.FC = () => {
         </h2>
         <p>
           Research conducted within the scope and rules of this program is
-          authorized; we will not pursue or support legal action against
-          you for that research. Please do not access more data than is
-          needed to demonstrate the vulnerability, and do not exfiltrate,
-          destroy, or modify customer data.
+          authorized; we will not pursue or support legal action against you for
+          that research. Please do not access more data than is needed to
+          demonstrate the vulnerability, and do not exfiltrate, destroy, or
+          modify customer data.
         </p>
       </section>
 

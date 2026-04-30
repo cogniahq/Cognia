@@ -1,4 +1,10 @@
 import type {
+  DomainDocumentMetadata,
+  DomainPackId,
+  SearchMetadataFilters,
+} from "@/lib/domain-packs"
+
+import type {
   CreateOrganizationRequest,
   Document,
   InviteMemberRequest,
@@ -8,11 +14,6 @@ import type {
   OrganizationWithRole,
   UpdateMemberRoleRequest,
 } from "../../types/organization"
-import type {
-  DomainDocumentMetadata,
-  DomainPackId,
-  SearchMetadataFilters,
-} from "@/lib/domain-packs"
 import { requireAuthToken } from "../../utils/auth"
 import {
   deleteRequest,

@@ -85,8 +85,5 @@ test('organization search open url prefers a verbatim highlight excerpt over ret
     parsed.searchParams.get('cognia_hl') || '',
     /captures Zoom meetings, stores transcripts, and syncs the resulting notes/i
   )
-  assert.doesNotMatch(
-    parsed.searchParams.get('cognia_hl') || '',
-    /Structured summary:/i
-  )
+  assert.doesNotMatch(parsed.searchParams.get('cognia_hl') || '', /Structured summary:/i)
 })

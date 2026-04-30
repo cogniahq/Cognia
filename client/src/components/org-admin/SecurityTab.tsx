@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
-
 import {
   orgAdminService,
   type SecurityStatus,
 } from "@/services/org-admin.service"
+import { Loader2 } from "lucide-react"
 
 interface SecurityTabProps {
   slug: string
@@ -71,7 +70,9 @@ export default function SecurityTab({ slug }: SecurityTabProps) {
       const data = await orgAdminService.getSecurityStatus(slug)
       setStatus(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load security status")
+      setError(
+        err instanceof Error ? err.message : "Failed to load security status"
+      )
     } finally {
       setIsLoading(false)
     }
@@ -85,7 +86,9 @@ export default function SecurityTab({ slug }: SecurityTabProps) {
     return (
       <div className="flex items-center justify-center py-16 gap-2">
         <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-        <span className="text-xs text-gray-500">Loading security status...</span>
+        <span className="text-xs text-gray-500">
+          Loading security status...
+        </span>
       </div>
     )
   }
@@ -166,9 +169,7 @@ export default function SecurityTab({ slug }: SecurityTabProps) {
         <MetricCard
           label="Session timeout"
           value={
-            status.session.timeout
-              ? `${status.session.timeout} min`
-              : "Default"
+            status.session.timeout ? `${status.session.timeout} min` : "Default"
           }
           hint="Idle sessions auto-logout after this window"
         />

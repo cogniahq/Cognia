@@ -101,8 +101,7 @@ export const Trust: React.FC = () => {
           >
             status.cogniahq.com
           </a>
-          . Subscribe there to receive incident notifications by email or
-          RSS.
+          . Subscribe there to receive incident notifications by email or RSS.
         </p>
       </section>
 
@@ -111,8 +110,8 @@ export const Trust: React.FC = () => {
           Reports
         </h2>
         <p className="text-sm sm:text-base text-gray-700 mb-4">
-          Our SOC 2 Type 1 audit letter is available under NDA. Enter your
-          work email and a member of our security team will follow up.
+          Our SOC 2 Type 1 audit letter is available under NDA. Enter your work
+          email and a member of our security team will follow up.
         </p>
         <form
           onSubmit={handleSoc2Request}
@@ -141,9 +140,9 @@ export const Trust: React.FC = () => {
           Penetration testing
         </h2>
         <p className="text-sm sm:text-base text-gray-700">
-          We perform an annual third-party penetration test of our public
-          API, web application, and authentication surfaces. Cure53 is our
-          target partner; pen-test summary letters are available under NDA.
+          We perform an annual third-party penetration test of our public API,
+          web application, and authentication surfaces. Cure53 is our target
+          partner; pen-test summary letters are available under NDA.
         </p>
       </section>
     </LegalPageLayout>

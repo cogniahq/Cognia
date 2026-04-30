@@ -288,8 +288,13 @@ export class SearchController {
    */
   static async searchOrganization(req: OrganizationRequest, res: Response, next: NextFunction) {
     try {
-      const { query, limit, sourceTypes, includeAnswer, metadataFilters: rawMetadataFilters } =
-        req.body || {}
+      const {
+        query,
+        limit,
+        sourceTypes,
+        includeAnswer,
+        metadataFilters: rawMetadataFilters,
+      } = req.body || {}
 
       if (!query) {
         return next(new AppError('query is required', 400))

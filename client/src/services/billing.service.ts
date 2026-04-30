@@ -132,9 +132,7 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const billingService = {
   get: (slug: string) =>
-    fetchJSON<{ success: boolean; data: BillingResponse }>(
-      `/billing/${slug}`
-    ),
+    fetchJSON<{ success: boolean; data: BillingResponse }>(`/billing/${slug}`),
 
   // Razorpay flow: server creates a subscription, returns its id + public key.
   // The client opens Razorpay Checkout JS with these values to collect payment.

@@ -1,7 +1,7 @@
 import React, { useRef } from "react"
+import type { MemoryV2 } from "@/services/memory-v2.service"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Pencil, Share2, Trash2 } from "lucide-react"
-import type { MemoryV2 } from "@/services/memory-v2.service"
 
 interface VirtualizedMemoryListProps {
   memories: MemoryV2[]

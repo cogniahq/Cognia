@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
+
+import type { Document } from "@/types/organization"
 import {
   getDomainPackDefinition,
   type DomainDocumentMetadata,
 } from "@/lib/domain-packs"
-
-import type { Document } from "@/types/organization"
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -298,10 +298,7 @@ export function DocumentUpload() {
               <select
                 value={(metadata[filter.key] as string | undefined) || ""}
                 onChange={(e) =>
-                  updateMetadataField(
-                    filter.key,
-                    e.target.value || undefined
-                  )
+                  updateMetadataField(filter.key, e.target.value || undefined)
                 }
                 className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
               >
@@ -323,7 +320,10 @@ export function DocumentUpload() {
               type="text"
               value={metadata.engagementName || ""}
               onChange={(e) =>
-                updateMetadataField("engagementName", e.target.value || undefined)
+                updateMetadataField(
+                  "engagementName",
+                  e.target.value || undefined
+                )
               }
               placeholder="e.g., Section 148 reopening for cash deposits"
               className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
@@ -338,7 +338,10 @@ export function DocumentUpload() {
               type="text"
               value={metadata.engagementType || ""}
               onChange={(e) =>
-                updateMetadataField("engagementType", e.target.value || undefined)
+                updateMetadataField(
+                  "engagementType",
+                  e.target.value || undefined
+                )
               }
               placeholder="e.g., Appeal, research, defence, advisory"
               className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"

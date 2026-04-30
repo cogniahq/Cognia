@@ -524,7 +524,9 @@ export class OrganizationService {
         ...(input.name && { name: input.name }),
         ...(input.slug && { slug: input.slug }),
         ...(input.description !== undefined && { description: input.description }),
-        ...(input.domainPack !== undefined && { domain_pack: normalizeDomainPack(input.domainPack) }),
+        ...(input.domainPack !== undefined && {
+          domain_pack: normalizeDomainPack(input.domainPack),
+        }),
         ...(input.logo !== undefined && { logo: input.logo }),
         ...(input.website !== undefined && { website: input.website }),
         ...(input.streetAddress !== undefined && { street_address: input.streetAddress }),
@@ -618,7 +620,8 @@ export class OrganizationService {
     if (input.ssoIdpSsoUrl !== undefined) data.sso_idp_sso_url = input.ssoIdpSsoUrl
     if (input.ssoIdpCert !== undefined) data.sso_idp_cert = input.ssoIdpCert
     if (input.ssoIdpOidcIssuer !== undefined) data.sso_idp_oidc_issuer = input.ssoIdpOidcIssuer
-    if (input.ssoIdpOidcClientId !== undefined) data.sso_idp_oidc_client_id = input.ssoIdpOidcClientId
+    if (input.ssoIdpOidcClientId !== undefined)
+      data.sso_idp_oidc_client_id = input.ssoIdpOidcClientId
     if (input.ssoIdpOidcClientSecret !== undefined) {
       if (input.ssoIdpOidcClientSecret === null) {
         data.sso_idp_oidc_client_secret = null

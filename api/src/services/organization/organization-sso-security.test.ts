@@ -6,7 +6,9 @@ import { prisma } from '../../lib/prisma.lib'
 import { decryptString } from '../../utils/auth/crypto.util'
 import { randomUUID } from 'node:crypto'
 
-after(async () => { await prisma.$disconnect() })
+after(async () => {
+  await prisma.$disconnect()
+})
 
 test('updateSecurity: writes typed SSO columns and encrypts client_secret', async () => {
   const org = await prisma.organization.create({

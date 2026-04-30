@@ -33,13 +33,9 @@ let timer: NodeJS.Timeout | null = null
 
 export function startTrashPurgeWorker(intervalMs = 12 * 60 * 60 * 1000): void {
   if (timer) return
-  void runTrashPurge().catch((err) =>
-    logger.error('[trash-purge] failed', { error: String(err) }),
-  )
+  void runTrashPurge().catch(err => logger.error('[trash-purge] failed', { error: String(err) }))
   timer = setInterval(() => {
-    void runTrashPurge().catch((err) =>
-      logger.error('[trash-purge] failed', { error: String(err) }),
-    )
+    void runTrashPurge().catch(err => logger.error('[trash-purge] failed', { error: String(err) }))
   }, intervalMs)
   timer.unref?.()
 }

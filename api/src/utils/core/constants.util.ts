@@ -11,16 +11,27 @@ export const MEMORY_CONSTANTS = {
 
 // Search constants
 export const SEARCH_CONSTANTS = {
-  DEFAULT_LIMIT: 10, // Default search results limit
-  MAX_LIMIT: 100, // Maximum search results limit
-  MIN_SIMILARITY_SCORE: 0.15, // Minimum similarity score for search results
-  MIN_KEYWORD_SCORE: 0.3, // Minimum keyword score for search results
-  MIN_COVERAGE_RATIO: 0.5, // Minimum token coverage ratio
-  SEMANTIC_WEIGHT: 0.6, // Weight for semantic score in hybrid search
-  KEYWORD_WEIGHT: 0.4, // Weight for keyword score in hybrid search
-  EMBEDDING_TIMEOUT: 600000, // 10 minutes in milliseconds
-  AI_GENERATION_TIMEOUT: 120000, // 2 minutes in milliseconds
-  AI_ANSWER_TIMEOUT: 180000, // 3 minutes in milliseconds
+  DEFAULT_LIMIT: 10,
+  MAX_LIMIT: 100,
+  // First-stage retrieval pool size before reranking. Bounded so HNSW recall
+  // stays cheap even when the tenant has millions of vectors.
+  FIRST_STAGE_K: 200,
+  // Cap on rerank candidates passed to the cross-encoder.
+  RERANK_CANDIDATES: 50,
+  // Cap on user-extension supplemental retrieval.
+  USER_STAGE_K: 80,
+  MIN_SIMILARITY_SCORE: 0.15,
+  MIN_KEYWORD_SCORE: 0.3,
+  MIN_COVERAGE_RATIO: 0.5,
+  SEMANTIC_WEIGHT: 0.6,
+  KEYWORD_WEIGHT: 0.4,
+  EMBEDDING_TIMEOUT: 600000,
+  AI_GENERATION_TIMEOUT: 120000,
+  AI_ANSWER_TIMEOUT: 180000,
+  // Redis TTL for query result cache (seconds).
+  QUERY_CACHE_TTL_SECONDS: 60,
+  // RRF k constant for reciprocal-rank fusion of dense + sparse stages.
+  RRF_K: 60,
 } as const
 
 // Mesh and relation constants

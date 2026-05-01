@@ -1,12 +1,14 @@
-import { UMAP } from 'umap-js'
 import { prisma } from '../../lib/prisma.lib'
 import { aiProvider } from '../ai/ai-provider.service'
 import {
-  qdrantClient,
-  COLLECTION_NAME,
   ensureCollection,
-  EMBEDDING_DIMENSION,
+  DENSE_VECTOR_NAME,
+  searchDense,
+  scrollMemoryPoints,
+  upsertMemoryPoint,
+  upsertMemoryPointsBatch,
 } from '../../lib/qdrant.lib'
+import { encodeSparse } from '../../lib/sparse-encoder.lib'
 import { randomUUID } from 'crypto'
 import { logger } from '../../utils/core/logger.util'
 import { getActiveEmbeddingModelName } from '../ai/ai-config'
@@ -57,45 +59,81 @@ export class MemoryMeshService {
         throw new Error(`Memory ${memoryId} not found`)
       }
 
-      const embeddingPromises = []
-
       const retrievalText = buildMemoryRetrievalText({
         title: memory.title,
         content: memory.content || memory.canonical_text,
         pageMetadata: normalizePageMetadata(memory.page_metadata),
       })
 
-      if (retrievalText) {
-        embeddingPromises.push(this.createEmbedding(memory, retrievalText, 'content'))
-      }
+      if (!retrievalText) return
 
-      if (memory.title) {
-        embeddingPromises.push(this.createEmbedding(memory, memory.title, 'title'))
-      }
+      const denseEmbedding = await aiProvider.generateEmbedding(retrievalText)
+      const dense: number[] =
+        typeof denseEmbedding === 'object' && 'embedding' in denseEmbedding
+          ? (denseEmbedding as { embedding: number[] }).embedding
+          : (denseEmbedding as number[])
 
-      await Promise.all(embeddingPromises)
+      await this.persistMemoryPoint(memory, retrievalText, dense)
     } catch (error) {
       logger.error(`Error generating embeddings for memory ${memoryId}:`, error)
       throw error
     }
   }
 
-  private async createEmbedding(
-    memory: {
-      id: string
-      user_id: string
-      organization_id: string | null
-      source_type: string | null
-      page_metadata: unknown
-      document_chunks: Array<{
-        document_id: string | null
-      }>
-    },
-    text: string,
-    type: string
-  ): Promise<void> {
-    try {
-      const metadata = (memory?.page_metadata as Record<string, unknown> | null) || {}
+  /**
+   * Batched embedding generation. Used by the document-ingest pipeline so a
+   * single OpenAI call covers many chunks instead of one call per chunk.
+   *
+   * Returns the IDs of memories successfully indexed; failed memories are
+   * logged and skipped so a single bad chunk doesn't poison the batch.
+   */
+  async generateEmbeddingsForMemoriesBatch(memoryIds: string[]): Promise<string[]> {
+    if (memoryIds.length === 0) return []
+    await ensureCollection()
+
+    const memories = await prisma.memory.findMany({
+      where: { id: { in: memoryIds } },
+      select: {
+        id: true,
+        user_id: true,
+        title: true,
+        content: true,
+        canonical_text: true,
+        organization_id: true,
+        source_type: true,
+        page_metadata: true,
+        document_chunks: { select: { document_id: true }, take: 1 },
+      },
+    })
+
+    type Pending = {
+      memory: (typeof memories)[number]
+      retrievalText: string
+    }
+
+    const pending: Pending[] = []
+    for (const memory of memories) {
+      const retrievalText = buildMemoryRetrievalText({
+        title: memory.title,
+        content: memory.content || memory.canonical_text,
+        pageMetadata: normalizePageMetadata(memory.page_metadata),
+      })
+      if (retrievalText) pending.push({ memory, retrievalText })
+    }
+
+    if (pending.length === 0) return []
+
+    const texts = pending.map(item => item.retrievalText)
+    const denseVectors = await aiProvider.generateEmbeddingsBatch(texts)
+
+    if (denseVectors.length !== pending.length) {
+      throw new Error(
+        `Embedding count mismatch: expected ${pending.length}, got ${denseVectors.length}`
+      )
+    }
+
+    const points = pending.map((item, idx) => {
+      const metadata = (item.memory.page_metadata as Record<string, unknown> | null) || {}
       const matterIds = Array.isArray(metadata.matterIds)
         ? metadata.matterIds.filter((value): value is string => typeof value === 'string')
         : typeof metadata.matterId === 'string'
@@ -105,48 +143,87 @@ export class MemoryMeshService {
         ? metadata.securityTags.filter((value): value is string => typeof value === 'string')
         : []
 
-      const embeddingResult = await aiProvider.generateEmbedding(text)
-      const embedding: number[] =
-        typeof embeddingResult === 'object' && 'embedding' in embeddingResult
-          ? (embeddingResult as { embedding: number[] }).embedding
-          : (embeddingResult as number[])
+      return {
+        id: randomUUID(),
+        dense: denseVectors[idx],
+        sparse: encodeSparse(item.retrievalText),
+        payload: {
+          memory_id: item.memory.id,
+          user_id: item.memory.user_id,
+          model_name: getActiveEmbeddingModelName(),
+          created_at: new Date().toISOString(),
+          organization_id: item.memory.organization_id || null,
+          source_type: item.memory.source_type || 'EXTENSION',
+          document_id:
+            item.memory.document_chunks[0]?.document_id ||
+            (typeof metadata.documentId === 'string' ? metadata.documentId : null),
+          matter_id: typeof metadata.matterId === 'string' ? metadata.matterId : null,
+          matter_ids: matterIds,
+          client_id: typeof metadata.clientId === 'string' ? metadata.clientId : null,
+          privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
+          security_tags: securityTags,
+          external_document_id:
+            typeof metadata.externalDocumentId === 'string' ? metadata.externalDocumentId : null,
+        },
+      }
+    })
 
-      const pointId = randomUUID()
-      await qdrantClient.upsert(COLLECTION_NAME, {
-        wait: true,
-        points: [
-          {
-            id: pointId,
-            vector: embedding,
-            payload: {
-              memory_id: memory.id,
-              user_id: memory.user_id,
-              embedding_type: type,
-              model_name: getActiveEmbeddingModelName(),
-              created_at: new Date().toISOString(),
-              // Document intelligence fields
-              organization_id: memory?.organization_id || null,
-              source_type: memory?.source_type || 'EXTENSION',
-              document_id:
-                memory?.document_chunks[0]?.document_id ||
-                (typeof metadata.documentId === 'string' ? metadata.documentId : null),
-              matter_id: typeof metadata.matterId === 'string' ? metadata.matterId : null,
-              matter_ids: matterIds,
-              client_id: typeof metadata.clientId === 'string' ? metadata.clientId : null,
-              privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
-              security_tags: securityTags,
-              external_document_id:
-                typeof metadata.externalDocumentId === 'string'
-                  ? metadata.externalDocumentId
-                  : null,
-            },
-          },
-        ],
-      })
-    } catch (error) {
-      logger.error(`Error creating ${type} embedding for memory ${memory.id}:`, error)
-      throw error
-    }
+    await upsertMemoryPointsBatch(points)
+    return pending.map(item => item.memory.id)
+  }
+
+  /**
+   * Persist a memory point with both dense and sparse vectors. The sparse
+   * vector is derived from the same retrieval text the dense embedding sees,
+   * so query-side BM25 and dense ANN are aligned.
+   */
+  private async persistMemoryPoint(
+    memory: {
+      id: string
+      user_id: string
+      organization_id: string | null
+      source_type: string | null
+      page_metadata: unknown
+      document_chunks: Array<{ document_id: string | null }>
+    },
+    retrievalText: string,
+    dense: number[]
+  ): Promise<void> {
+    const metadata = (memory?.page_metadata as Record<string, unknown> | null) || {}
+    const matterIds = Array.isArray(metadata.matterIds)
+      ? metadata.matterIds.filter((value): value is string => typeof value === 'string')
+      : typeof metadata.matterId === 'string'
+        ? [metadata.matterId]
+        : []
+    const securityTags = Array.isArray(metadata.securityTags)
+      ? metadata.securityTags.filter((value): value is string => typeof value === 'string')
+      : []
+
+    const sparse = encodeSparse(retrievalText)
+
+    await upsertMemoryPoint({
+      id: randomUUID(),
+      dense,
+      sparse,
+      payload: {
+        memory_id: memory.id,
+        user_id: memory.user_id,
+        model_name: getActiveEmbeddingModelName(),
+        created_at: new Date().toISOString(),
+        organization_id: memory?.organization_id || null,
+        source_type: memory?.source_type || 'EXTENSION',
+        document_id:
+          memory?.document_chunks[0]?.document_id ||
+          (typeof metadata.documentId === 'string' ? metadata.documentId : null),
+        matter_id: typeof metadata.matterId === 'string' ? metadata.matterId : null,
+        matter_ids: matterIds,
+        client_id: typeof metadata.clientId === 'string' ? metadata.clientId : null,
+        privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
+        security_tags: securityTags,
+        external_document_id:
+          typeof metadata.externalDocumentId === 'string' ? metadata.externalDocumentId : null,
+      },
+    })
   }
 
   async findRelatedMemories(
@@ -165,39 +242,20 @@ export class MemoryMeshService {
         return []
       }
 
-      const contentEmbeddingResult = await qdrantClient.search(COLLECTION_NAME, {
-        vector: new Array(EMBEDDING_DIMENSION).fill(0),
-        filter: {
-          must: [
-            { key: 'memory_id', match: { value: memoryId } },
-            { key: 'embedding_type', match: { value: 'content' } },
-          ],
-        },
+      const { points } = await scrollMemoryPoints({
+        filter: { must: [{ key: 'memory_id', match: { value: memoryId } }] },
         limit: 1,
-        with_payload: true,
-        with_vector: true,
-        score_threshold: 0,
+        withPayload: true,
+        withVector: [DENSE_VECTOR_NAME],
       })
 
-      if (!contentEmbeddingResult || contentEmbeddingResult.length === 0) {
-        return []
-      }
+      if (points.length === 0) return []
 
-      const contentEmbeddingPoint = contentEmbeddingResult[0]
-      if (!contentEmbeddingPoint.vector || !Array.isArray(contentEmbeddingPoint.vector)) {
-        return []
-      }
+      const vectors = points[0].vector as Record<string, number[]> | undefined
+      const dense = vectors?.[DENSE_VECTOR_NAME]
+      if (!Array.isArray(dense) || dense.length === 0) return []
 
-      const similarMemories = await this.findSimilarMemories(
-        contentEmbeddingPoint.vector as number[],
-        userId,
-        memoryId,
-        limit,
-        undefined,
-        memory
-      )
-
-      return similarMemories
+      return await this.findSimilarMemories(dense, userId, memoryId, limit, undefined, memory)
     } catch (error) {
       logger.error(`Error finding related memories for ${memoryId}:`, error)
       throw error
@@ -216,10 +274,7 @@ export class MemoryMeshService {
       await ensureCollection()
 
       const filter: QdrantFilter = {
-        must: [
-          { key: 'embedding_type', match: { value: 'content' } },
-          { key: 'user_id', match: { value: userId } },
-        ],
+        must: [{ key: 'user_id', match: { value: userId } }],
         must_not: [{ key: 'memory_id', match: { value: excludeMemoryId } }],
       }
 
@@ -232,11 +287,10 @@ export class MemoryMeshService {
         }
       }
 
-      const searchResult = await qdrantClient.search(COLLECTION_NAME, {
+      const searchResult = await searchDense({
         vector: queryVector,
         filter,
         limit: limit * 3,
-        with_payload: true,
       })
 
       if (!searchResult || searchResult.length === 0) {
@@ -363,316 +417,6 @@ export class MemoryMeshService {
     return meshRelationsService.createMemoryRelations(memoryId, userId)
   }
 
-  private pruneEdgesMutualKNN_DEPRECATED(
-    edges: MemoryEdge[],
-    k: number,
-    similarityThreshold: number
-  ): MemoryEdge[] {
-    // Build adjacency lists with weighted scores
-    type WeightedEdge = MemoryEdge & { weighted: number }
-    const bySource = new Map<string, WeightedEdge[]>()
-    const edgeMap = new Map<string, MemoryEdge>()
-
-    const weightForType: Record<string, number> = {
-      semantic: 0.05,
-      topical: 0.02,
-      temporal: 0,
-    }
-
-    const keyFor = (a: string, b: string) => (a < b ? `${a}__${b}` : `${b}__${a}`)
-
-    edges.forEach((e: MemoryEdge) => {
-      if (e.source === e.target) return
-      // Weighted score to gently prioritize semantic links
-      const weighted = (e.similarity_score || 0) + (weightForType[e.relationship_type || ''] || 0)
-      if (weighted < similarityThreshold) return
-
-      if (!bySource.has(e.source)) bySource.set(e.source, [])
-      if (!bySource.has(e.target)) bySource.set(e.target, [])
-
-      bySource.get(e.source)!.push({ ...e, weighted })
-      bySource.get(e.target)!.push({ ...e, source: e.target, target: e.source, weighted })
-
-      edgeMap.set(keyFor(e.source, e.target), e)
-    })
-
-    // Keep top-k per node
-    const topKPerNode = new Map<string, Set<string>>()
-    for (const [node, list] of bySource.entries()) {
-      const top = list
-        .sort((a, b) => b.weighted - a.weighted)
-        .slice(0, k)
-        .map(e => e.target)
-      topKPerNode.set(node, new Set(top))
-    }
-
-    // Mutual condition: A in topK(B) and B in topK(A)
-    const kept = new Map<string, MemoryEdge>()
-    for (const e of edges) {
-      if (e.source === e.target) continue
-      const aTop = topKPerNode.get(e.source)
-      const bTop = topKPerNode.get(e.target)
-      if (!aTop || !bTop) continue
-      if (!aTop.has(e.target) || !bTop.has(e.source)) continue
-      const kkey = keyFor(e.source, e.target)
-      const existing = kept.get(kkey)
-      if (!existing || (e.similarity_score || 0) > (existing.similarity_score || 0)) {
-        kept.set(kkey, e)
-      }
-    }
-
-    // Degree cap to avoid hubs
-    const degreeCap = Math.max(2, Math.min(5, k + 1))
-    const degree = new Map<string, number>()
-    const finalEdges: MemoryEdge[] = []
-    const sorted = Array.from(kept.values()).sort(
-      (a, b) => (b.similarity_score || 0) - (a.similarity_score || 0)
-    )
-
-    for (const e of sorted) {
-      const da = degree.get(e.source) || 0
-      const db = degree.get(e.target) || 0
-      if (da >= degreeCap || db >= degreeCap) continue
-      finalEdges.push(e)
-      degree.set(e.source, da + 1)
-      degree.set(e.target, db + 1)
-    }
-
-    return finalEdges
-  }
-
-  private getSourceOffset_DEPRECATED(source: string): { x: number; y: number } {
-    // Create natural clusters based on source type
-    const offsets: { [key: string]: { x: number; y: number } } = {
-      extension: { x: -300, y: -200 },
-      github: { x: 200, y: -100 },
-      meet: { x: -200, y: 300 },
-      default: { x: 0, y: 0 },
-    }
-
-    return offsets[source] || offsets.default
-  }
-
-  private applyForceDirectedLayout_DEPRECATED(
-    nodes: Array<{ id: string; x: number; y: number; z?: number }>,
-    edges: MemoryEdge[]
-  ): Array<{ id: string; x: number; y: number; z?: number }> {
-    // Improved force-directed layout with non-circular constraints
-    const iterations = 150
-    const k = 400 // Spring constant
-    const c = 0.008 // Damping factor
-    const maxForce = 50 // Limit maximum force to prevent wild movements
-
-    // Initialize forces
-    const forces = new Map<string, { x: number; y: number }>()
-    nodes.forEach(node => {
-      forces.set(node.id, { x: 0, y: 0 })
-    })
-
-    // Run simulation
-    for (let iter = 0; iter < iterations; iter++) {
-      // Reset forces
-      forces.forEach(force => {
-        force.x = 0
-        force.y = 0
-      })
-
-      // Repulsive forces between all nodes (weaker to avoid circular formation)
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const nodeA = nodes[i]
-          const nodeB = nodes[j]
-          const dx = nodeA.x - nodeB.x
-          const dy = nodeA.y - nodeB.y
-          const distance = Math.sqrt(dx * dx + dy * dy) || 1
-
-          // Weaker repulsive force to allow more natural clustering
-          const force = Math.min((k * k) / (distance * 1.5), maxForce)
-          const fx = (dx / distance) * force
-          const fy = (dy / distance) * force
-
-          forces.get(nodeA.id)!.x += fx
-          forces.get(nodeA.id)!.y += fy
-          forces.get(nodeB.id)!.x -= fx
-          forces.get(nodeB.id)!.y -= fy
-        }
-      }
-
-      // Stronger attractive forces for connected nodes
-      edges.forEach(edge => {
-        const sourceNode = nodes.find(n => n.id === edge.source)
-        const targetNode = nodes.find(n => n.id === edge.target)
-
-        if (sourceNode && targetNode) {
-          const dx = targetNode.x - sourceNode.x
-          const dy = targetNode.y - sourceNode.y
-          const distance = Math.sqrt(dx * dx + dy * dy) || 1
-
-          // Stronger attractive force to pull related nodes together
-          const force = Math.min((distance * distance) / (k * 0.8), maxForce)
-          const fx = (dx / distance) * force
-          const fy = (dy / distance) * force
-
-          forces.get(sourceNode.id)!.x += fx
-          forces.get(sourceNode.id)!.y += fy
-          forces.get(targetNode.id)!.x -= fx
-          forces.get(targetNode.id)!.y -= fy
-        }
-      })
-
-      // Apply forces with adaptive damping
-      const adaptiveDamping = c * (1 - iter / iterations) // Reduce damping over time
-      nodes.forEach(node => {
-        const force = forces.get(node.id)!
-        node.x += Math.max(-maxForce, Math.min(maxForce, force.x)) * adaptiveDamping
-        node.y += Math.max(-maxForce, Math.min(maxForce, force.y)) * adaptiveDamping
-
-        // Keep nodes within rectangular bounds instead of circular
-        const maxX = 1200
-        const maxY = 800
-        node.x = Math.max(-maxX, Math.min(maxX, node.x))
-        node.y = Math.max(-maxY, Math.min(maxY, node.y))
-      })
-    }
-
-    return nodes
-  }
-
-  private async computeLatentSpaceProjection_DEPRECATED(
-    memories: MemoryWithMetadata[]
-  ): Promise<Map<string, { x: number; y: number; z: number }>> {
-    try {
-      await ensureCollection()
-
-      if (memories.length < 3) {
-        return new Map()
-      }
-
-      const memoryIds = memories.map(m => m.id)
-      const userId = memories.length > 0 ? memories[0].user_id : undefined
-
-      const filter: QdrantFilter = {
-        must: [
-          { key: 'memory_id', match: { any: memoryIds } },
-          { key: 'embedding_type', match: { value: 'content' } },
-        ],
-      }
-
-      if (userId) {
-        filter.must.push({ key: 'user_id', match: { value: userId } })
-      }
-
-      const embeddingResult = await qdrantClient.scroll(COLLECTION_NAME, {
-        filter,
-        limit: memoryIds.length * 3,
-        with_payload: true,
-        with_vector: true,
-      })
-
-      if (!embeddingResult.points || embeddingResult.points.length < 3) {
-        return new Map()
-      }
-
-      let embeddingData: { id: string; vector: number[] }[] = []
-      for (const point of embeddingResult.points) {
-        const memoryId = point.payload?.memory_id as string
-        if (memoryId && point.vector && Array.isArray(point.vector)) {
-          embeddingData.push({ id: memoryId, vector: point.vector as number[] })
-        }
-      }
-
-      if (embeddingData.length < 3) {
-        return new Map()
-      }
-
-      embeddingData = embeddingData.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-
-      const embeddingMatrix = embeddingData.map(e => e.vector)
-
-      const makeSeed = (ids: string[]): number => {
-        let h = 2166136261
-        for (const id of ids) {
-          for (let i = 0; i < id.length; i++) {
-            h ^= id.charCodeAt(i)
-            h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)
-          }
-        }
-        return h >>> 0
-      }
-      const mulberry32 = (seed: number) => () => {
-        let t = (seed += 0x6d2b79f5)
-        t = Math.imul(t ^ (t >>> 15), t | 1)
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-      }
-      const seededRandom = mulberry32(makeSeed(embeddingData.map(e => e.id)))
-
-      const datasetSize = embeddingMatrix.length
-      let nEpochs = 50
-      if (datasetSize > 2000) {
-        nEpochs = 30
-      } else if (datasetSize > 1000) {
-        nEpochs = 50
-      } else if (datasetSize > 500) {
-        nEpochs = 75
-      } else if (datasetSize > 200) {
-        nEpochs = 100
-      }
-
-      const umap = new UMAP({
-        nComponents: 3,
-        nEpochs: nEpochs,
-        nNeighbors: Math.min(10, Math.max(3, Math.floor(Math.sqrt(datasetSize)))),
-        minDist: 0.1,
-        spread: 1.5,
-        random: seededRandom,
-      })
-
-      const projection = umap.fit(embeddingMatrix)
-
-      let xMin = Infinity
-      let xMax = -Infinity
-      let yMin = Infinity
-      let yMax = -Infinity
-      let zMin = Infinity
-      let zMax = -Infinity
-
-      const coords = projection.map(p => {
-        const x = p[0]
-        const y = p[1]
-        const z = p[2] ?? 0
-        xMin = Math.min(xMin, x)
-        xMax = Math.max(xMax, x)
-        yMin = Math.min(yMin, y)
-        yMax = Math.max(yMax, y)
-        zMin = Math.min(zMin, z)
-        zMax = Math.max(zMax, z)
-        return { x, y, z }
-      })
-
-      const scale = 1200
-      const xSpan = xMax - xMin || 1
-      const ySpan = yMax - yMin || 1
-      const zSpan = zMax - zMin || 1
-
-      const normalized = coords.map((c: { x: number; y: number; z: number }) => ({
-        x: ((c.x - xMin) / xSpan - 0.5) * scale,
-        y: ((c.y - yMin) / ySpan - 0.5) * scale,
-        z: ((c.z - zMin) / zSpan - 0.5) * (scale * 0.6),
-      }))
-
-      const coordMap = new Map<string, { x: number; y: number; z: number }>()
-      embeddingData.forEach((data, index) => {
-        coordMap.set(data.id, normalized[index])
-      })
-
-      return coordMap
-    } catch (error) {
-      logger.error('Error computing latent space projection:', error)
-      return new Map()
-    }
-  }
-
   async getMemoryMeshForMemoryIds(
     memoryIds: string[],
     limit: number = Infinity,
@@ -787,7 +531,7 @@ export class MemoryMeshService {
         preview,
         url: memory.url,
         source: memory.source || 'extension',
-        timestamp: memory.timestamp,
+        timestamp: memory.timestamp != null ? Number(memory.timestamp) : null,
         importance_score: memory.importance_score || 0.5,
         x,
         y,
@@ -1162,11 +906,10 @@ export class MemoryMeshService {
           })
         }
 
-        const searchResult = await qdrantClient.search(COLLECTION_NAME, {
+        const searchResult = await searchDense({
           vector: queryEmbedding,
           filter,
           limit: limit * 2,
-          with_payload: true,
         })
 
         if (!searchResult || searchResult.length === 0) {

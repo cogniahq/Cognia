@@ -1,0 +1,4 @@
+services:
+  redis:
+    ports: !override
+      - '6380:6379'

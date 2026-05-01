@@ -112,6 +112,46 @@ class OpenAIService {
   }
 
   /**
+   * Batched embedding. OpenAI accepts up to 2048 inputs per request and is the
+   * preferred ingest path — one round-trip per chunk batch instead of N.
+   */
+  async generateEmbeddingsBatch(
+    texts: string[]
+  ): Promise<{ embeddings: number[][]; modelUsed: string }> {
+    if (texts.length === 0) return { embeddings: [], modelUsed: getOpenAIEmbeddingModel() }
+
+    const client = this.getClient()
+    const startTime = Date.now()
+    const embeddingModel = getOpenAIEmbeddingModel()
+    const truncated = texts.map(t => (t.length > 8000 ? t.substring(0, 8000) : t))
+
+    try {
+      const response = await client.embeddings.create({
+        model: embeddingModel,
+        input: truncated,
+      })
+
+      const sorted = [...response.data].sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      const embeddings = sorted.map(item => item.embedding || [])
+
+      logger.log('[openai] batch embedding generated', {
+        model: embeddingModel,
+        batchSize: texts.length,
+        elapsedMs: Date.now() - startTime,
+      })
+
+      return { embeddings, modelUsed: embeddingModel }
+    } catch (error) {
+      logger.error('[openai] batch embedding failed', {
+        batchSize: texts.length,
+        error: error instanceof Error ? error.message : String(error),
+        elapsedMs: Date.now() - startTime,
+      })
+      throw error
+    }
+  }
+
+  /**
    * Generate content with image (vision)
    */
   async generateContentWithImage(

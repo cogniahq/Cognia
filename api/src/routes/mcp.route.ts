@@ -13,6 +13,7 @@
 import { Router, Response } from 'express'
 import { authenticateApiKey, ApiKeyRequest } from '../middleware/api-key.middleware'
 import { listMemories } from '../services/memory/memory-crud.service'
+import { unifiedSearchService } from '../services/search/unified-search.service'
 import { prisma } from '../lib/prisma.lib'
 
 const router = Router()
@@ -105,24 +106,47 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
       if (name === 'cognia.search') {
         const query = String(args?.query ?? '')
         const limit = Math.min(Number(args?.limit ?? 10), 50)
-        const items = await prisma.memory.findMany({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            OR: [
-              { title: { contains: query, mode: 'insensitive' } },
-              { content: { contains: query, mode: 'insensitive' } },
-            ],
-          },
-          take: limit,
-          orderBy: { created_at: 'desc' },
-        })
-        resultPayload = items.map(m => ({
-          id: m.id,
-          title: m.title,
-          snippet: m.content?.slice(0, 200),
-          url: m.url,
-        }))
+        const organizationId = req.apiKey!.organizationId
+
+        if (organizationId) {
+          const search = await unifiedSearchService.search({
+            organizationId,
+            query,
+            limit,
+            includeAnswer: false,
+            userId,
+          })
+          resultPayload = search.results.map(result => ({
+            id: result.memoryId,
+            title: result.title,
+            snippet: result.contentPreview,
+            url: result.url,
+            score: result.score,
+            documentId: result.documentId,
+            documentName: result.documentName,
+            pageNumber: result.pageNumber,
+          }))
+        } else {
+          // Personal API key without org context — fall back to user-scoped memory listing
+          const items = await prisma.memory.findMany({
+            where: {
+              user_id: userId,
+              deleted_at: null,
+              OR: [
+                { title: { contains: query, mode: 'insensitive' } },
+                { content: { contains: query, mode: 'insensitive' } },
+              ],
+            },
+            take: limit,
+            orderBy: { created_at: 'desc' },
+          })
+          resultPayload = items.map(m => ({
+            id: m.id,
+            title: m.title,
+            snippet: m.content?.slice(0, 200),
+            url: m.url,
+          }))
+        }
       } else if (name === 'cognia.get_memory') {
         const m = await prisma.memory.findFirst({
           where: { id: String(args?.id ?? ''), user_id: userId, deleted_at: null },

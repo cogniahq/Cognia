@@ -1,9 +1,9 @@
 import { prisma } from '../../lib/prisma.lib'
 import {
-  qdrantClient,
-  COLLECTION_NAME,
   ensureCollection,
-  EMBEDDING_DIMENSION,
+  searchDense,
+  scrollMemoryPoints,
+  DENSE_VECTOR_NAME,
 } from '../../lib/qdrant.lib'
 import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
@@ -259,18 +259,14 @@ export class MeshRelationsService {
 
       await ensureCollection()
 
-      const embeddingResult = await qdrantClient.search(COLLECTION_NAME, {
-        vector: new Array(EMBEDDING_DIMENSION).fill(0),
-        filter: {
-          must: [{ key: 'memory_id', match: { value: memoryId } }],
-        },
+      const memoryPoint = await scrollMemoryPoints({
+        filter: { must: [{ key: 'memory_id', match: { value: memoryId } }] },
         limit: 1,
-        with_payload: true,
-        with_vector: true,
-        score_threshold: 0,
+        withPayload: true,
+        withVector: [DENSE_VECTOR_NAME],
       })
 
-      const hasEmbeddings = embeddingResult.length > 0 && embeddingResult[0]?.payload
+      const hasEmbeddings = memoryPoint.points.length > 0 && memoryPoint.points[0]?.payload
       const hasMetadata = !!memory.page_metadata
       const hasContent = !!memory.content
       if (!hasEmbeddings && !hasMetadata && !hasContent) {
@@ -286,39 +282,27 @@ export class MeshRelationsService {
         const mem = await prisma.memory.findUnique({ where: { id: memId } })
         if (!mem) return []
 
-        const contentEmbeddingResult = await qdrantClient.search(COLLECTION_NAME, {
-          vector: new Array(EMBEDDING_DIMENSION).fill(0),
-          filter: {
-            must: [
-              { key: 'memory_id', match: { value: memId } },
-              { key: 'embedding_type', match: { value: 'content' } },
-            ],
-          },
+        const { points } = await scrollMemoryPoints({
+          filter: { must: [{ key: 'memory_id', match: { value: memId } }] },
           limit: 1,
-          with_payload: true,
-          with_vector: true,
-          score_threshold: 0,
+          withPayload: true,
+          withVector: [DENSE_VECTOR_NAME],
         })
 
-        if (!contentEmbeddingResult || contentEmbeddingResult.length === 0) {
-          return []
-        }
+        if (points.length === 0) return []
 
-        const contentEmbeddingPoint = contentEmbeddingResult[0]
-        if (!contentEmbeddingPoint.vector || !Array.isArray(contentEmbeddingPoint.vector)) {
-          return []
-        }
+        const vectors = points[0].vector as Record<string, number[]> | undefined
+        const dense = vectors?.[DENSE_VECTOR_NAME]
+        if (!Array.isArray(dense) || dense.length === 0) return []
 
-        const similarMemories = await this.findSimilarMemories(
-          contentEmbeddingPoint.vector as number[],
+        return await this.findSimilarMemories(
+          dense,
           uId,
           memId,
           lim,
           undefined,
           mem as MemoryWithMetadata
         )
-
-        return similarMemories
       }
 
       const [semanticRelations, topicalRelations, temporalRelations] = await Promise.all([
@@ -453,10 +437,7 @@ export class MeshRelationsService {
       await ensureCollection()
 
       const filter: QdrantFilter = {
-        must: [
-          { key: 'embedding_type', match: { value: 'content' } },
-          { key: 'user_id', match: { value: userId } },
-        ],
+        must: [{ key: 'user_id', match: { value: userId } }],
         must_not: [{ key: 'memory_id', match: { value: excludeMemoryId } }],
       }
 
@@ -469,11 +450,10 @@ export class MeshRelationsService {
         }
       }
 
-      const searchResult = await qdrantClient.search(COLLECTION_NAME, {
+      const searchResult = await searchDense({
         vector: queryVector,
         filter,
         limit: limit * 3,
-        with_payload: true,
       })
 
       if (!searchResult || searchResult.length === 0) {

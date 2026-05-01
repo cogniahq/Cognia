@@ -1,4 +1,4 @@
-export type DomainPackId = 'general' | 'ca-firm' | 'law-firm'
+export type DomainPackId = 'general' | 'ca-firm' | 'law-firm' | 'tax-audit-firm'
 
 export interface DomainOption {
   value: string
@@ -97,6 +97,46 @@ const LAW_PRACTICE_AREAS: DomainOption[] = [
   { value: 'tax', label: 'Tax' },
 ]
 
+const TAX_AUDIT_ARTIFACT_TYPES: DomainOption[] = [
+  { value: 'notice', label: 'Notice' },
+  { value: 'assessment-order', label: 'Assessment Order' },
+  { value: 'appeal-memo', label: 'Appeal Memo' },
+  { value: 'written-submission', label: 'Written Submission' },
+  { value: 'tax-opinion', label: 'Tax Opinion' },
+  { value: 'audit-opinion', label: 'Audit Opinion' },
+  { value: 'case-law', label: 'Case Law' },
+  { value: 'circular-notification', label: 'Circular / Notification' },
+  { value: 'workpaper', label: 'Workpaper' },
+  { value: 'audit-checklist', label: 'Audit Checklist' },
+  { value: 'trial-balance', label: 'Trial Balance' },
+  { value: 'ledger', label: 'Ledger' },
+  { value: 'financial-statement', label: 'Financial Statement' },
+  { value: 'firm-precedent', label: 'Firm Precedent' },
+]
+
+const TAX_AUDIT_AUTHORITIES: DomainOption[] = [
+  { value: 'assessing-officer', label: 'Assessing Officer' },
+  { value: 'cit-a', label: 'CIT(A)' },
+  { value: 'itat', label: 'ITAT' },
+  { value: 'high-court', label: 'High Court' },
+  { value: 'supreme-court', label: 'Supreme Court' },
+  { value: 'gst-officer', label: 'GST Officer' },
+  { value: 'gst-appellate-authority', label: 'GST Appellate Authority' },
+  { value: 'roc', label: 'ROC / MCA' },
+  { value: 'management', label: 'Management' },
+  { value: 'audit-committee', label: 'Audit Committee' },
+]
+
+const TAX_AUDIT_PRACTICE_AREAS: DomainOption[] = [
+  { value: 'income-tax', label: 'Income Tax' },
+  { value: 'gst', label: 'GST' },
+  { value: 'tds', label: 'TDS' },
+  { value: 'transfer-pricing', label: 'Transfer Pricing' },
+  { value: 'statutory-audit', label: 'Statutory Audit' },
+  { value: 'internal-audit', label: 'Internal Audit' },
+  { value: 'financial-diligence', label: 'Financial Diligence' },
+]
+
 export const DOMAIN_PACKS: Record<DomainPackId, DomainPackDefinition> = {
   general: {
     id: 'general',
@@ -162,6 +202,36 @@ export const DOMAIN_PACKS: Record<DomainPackId, DomainPackDefinition> = {
         key: 'practiceArea',
         label: 'Practice Area',
         options: LAW_PRACTICE_AREAS,
+      },
+    ],
+  },
+  'tax-audit-firm': {
+    id: 'tax-audit-firm',
+    label: 'Tax & Audit Firm Workspace',
+    shortLabel: 'Tax & Audit',
+    description:
+      'Structured for notices, opinions, sections, standards, workpapers, and firm precedents.',
+    artifactTypeOptions: TAX_AUDIT_ARTIFACT_TYPES,
+    filterDefinitions: [
+      {
+        key: 'artifactType',
+        label: 'Artifact Type',
+        options: TAX_AUDIT_ARTIFACT_TYPES,
+      },
+      {
+        key: 'authority',
+        label: 'Authority',
+        options: TAX_AUDIT_AUTHORITIES,
+      },
+      {
+        key: 'outcome',
+        label: 'Outcome',
+        options: OUTCOMES,
+      },
+      {
+        key: 'practiceArea',
+        label: 'Practice Area',
+        options: TAX_AUDIT_PRACTICE_AREAS,
       },
     ],
   },

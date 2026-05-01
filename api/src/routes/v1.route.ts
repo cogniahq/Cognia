@@ -6,6 +6,7 @@ import {
   updateMemory,
   softDeleteMemory,
 } from '../services/memory/memory-crud.service'
+import { unifiedSearchService } from '../services/search/unified-search.service'
 import { prisma } from '../lib/prisma.lib'
 
 const router = Router()
@@ -91,15 +92,44 @@ router.delete(
   }
 )
 
-// POST /v1/search
+// POST /v1/search — hybrid (dense + sparse) retrieval with cross-encoder rerank
 router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: Response) => {
-  // Minimal stub — wire to real search later. Returns best-effort matches by content substring.
   const q = req.body?.query as string
   const limit = Math.min(Number(req.body?.limit ?? 10), 50)
   if (!q) {
     res.status(400).json({ error: 'bad_request', message: 'query required' })
     return
   }
+
+  const organizationId = req.apiKey!.organizationId
+  if (organizationId) {
+    const out = await unifiedSearchService.search({
+      organizationId,
+      query: q,
+      limit,
+      includeAnswer: false,
+      userId: req.apiKey!.userId,
+    })
+    res.json({
+      data: out.results.map(result => ({
+        id: result.memoryId,
+        title: result.title,
+        snippet: result.contentPreview,
+        url: result.url,
+        score: result.score,
+        document: result.documentName
+          ? {
+              id: result.documentId,
+              name: result.documentName,
+              page_number: result.pageNumber,
+            }
+          : undefined,
+      })),
+    })
+    return
+  }
+
+  // Personal API key (no org): fall back to user-scoped substring match.
   const items = await prisma.memory.findMany({
     where: {
       user_id: req.apiKey!.userId,

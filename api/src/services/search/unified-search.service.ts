@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma.lib'
-import { qdrantClient, COLLECTION_NAME, ensureCollection } from '../../lib/qdrant.lib'
+import { ensureCollection } from '../../lib/qdrant.lib'
 import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
 import { SourceType } from '@prisma/client'
@@ -10,8 +10,12 @@ import {
   normalizePageMetadata,
 } from '../memory/memory-structure.service'
 import { generateQueryEmbedding } from './embedding-search.service'
+import { hybridSearch, type HybridSearchHit } from './hybrid-search.service'
+import { rerankProvider } from './rerank-provider.service'
+import { searchCache } from './search-cache.service'
 import { tokenizeQuery } from './query-processor.service'
 import { isRateLimitError } from '../../utils/core/retry.util'
+import { SEARCH_CONSTANTS } from '../../utils/core/constants.util'
 import type { SearchMetadataFilters } from '../../config/domain-packs'
 
 const ANSWER_CONTEXT_CHARS = 320
@@ -447,52 +451,21 @@ export class UnifiedSearchService {
     }
   }
 
-  private async resolveResultLimits(options: {
-    organizationId: string
-    sourceTypes?: SourceType[]
-    requestedLimit?: number
-    userId?: string
-  }): Promise<{
+  private resolveResultLimits(options: { requestedLimit?: number; hasUserContext: boolean }): {
     finalLimit: number
     organizationSearchLimit: number
     userSearchLimit: number
-  }> {
-    const { organizationId, sourceTypes, requestedLimit, userId } = options
-
-    if (
-      typeof requestedLimit === 'number' &&
-      Number.isFinite(requestedLimit) &&
-      requestedLimit > 0
-    ) {
-      const finalLimit = Math.floor(requestedLimit)
-      return {
-        finalLimit,
-        organizationSearchLimit: Math.max(finalLimit * 2, 1),
-        userSearchLimit: Math.max(Math.ceil(finalLimit / 2), 1),
-      }
-    }
-
-    const [organizationResultCount, userResultCount] = await Promise.all([
-      prisma.memory.count({
-        where: {
-          organization_id: organizationId,
-          ...(sourceTypes && sourceTypes.length > 0 ? { source_type: { in: sourceTypes } } : {}),
-        },
-      }),
-      userId
-        ? prisma.memory.count({
-            where: {
-              user_id: userId,
-              source_type: SourceType.EXTENSION,
-            },
-          })
-        : Promise.resolve(0),
-    ])
+  } {
+    const { requestedLimit, hasUserContext } = options
+    const requested =
+      typeof requestedLimit === 'number' && Number.isFinite(requestedLimit) && requestedLimit > 0
+        ? Math.min(Math.floor(requestedLimit), SEARCH_CONSTANTS.MAX_LIMIT)
+        : SEARCH_CONSTANTS.DEFAULT_LIMIT
 
     return {
-      finalLimit: Math.max(organizationResultCount + userResultCount, 1),
-      organizationSearchLimit: Math.max(organizationResultCount, 1),
-      userSearchLimit: Math.max(userResultCount, 1),
+      finalLimit: requested,
+      organizationSearchLimit: SEARCH_CONSTANTS.FIRST_STAGE_K,
+      userSearchLimit: hasUserContext ? SEARCH_CONSTANTS.USER_STAGE_K : 0,
     }
   }
 
@@ -512,78 +485,54 @@ export class UnifiedSearchService {
 
     await ensureCollection()
 
-    const queryEmbedding = await generateQueryEmbedding(query)
-    const { finalLimit, organizationSearchLimit, userSearchLimit } = await this.resolveResultLimits(
-      {
-        organizationId,
-        sourceTypes,
-        requestedLimit: limit,
-        userId,
-      }
-    )
-
-    // Build Qdrant filter for organization content
-    const orgFilter: {
-      must: Array<{ key: string; match: { value?: string; any?: string[] } }>
-    } = {
-      must: [{ key: 'organization_id', match: { value: organizationId } }],
-    }
-
-    if (sourceTypes && sourceTypes.length > 0) {
-      orgFilter.must.push({
-        key: 'source_type',
-        match: { any: sourceTypes },
-      })
-    }
-
-    // Search organization content
-    const orgSearchResult = await qdrantClient.search(COLLECTION_NAME, {
-      vector: queryEmbedding,
-      filter: orgFilter,
-      limit: organizationSearchLimit,
-      with_payload: true,
-      score_threshold: 0.2,
+    const { finalLimit, organizationSearchLimit, userSearchLimit } = this.resolveResultLimits({
+      requestedLimit: limit,
+      hasUserContext: Boolean(userId),
     })
 
-    // If userId provided, also search user's extension data
-    let userSearchResult: typeof orgSearchResult = []
-    if (userId) {
-      const userFilter: {
-        must: Array<{ key: string; match: { value?: string; any?: string[] } }>
-      } = {
-        must: [
-          { key: 'user_id', match: { value: userId } },
-          { key: 'source_type', match: { any: [SourceType.EXTENSION] } },
-        ],
-      }
+    const cacheKey = searchCache.buildKey({
+      organizationId,
+      userId,
+      query,
+      sourceTypes,
+      metadataFilters,
+      finalLimit,
+    })
 
-      userSearchResult = await qdrantClient.search(COLLECTION_NAME, {
-        vector: queryEmbedding,
-        filter: userFilter,
-        limit: userSearchLimit,
-        with_payload: true,
-        score_threshold: 0.25, // Slightly higher threshold for user content
+    const cachedHits = await searchCache.get(cacheKey)
+    let hits: HybridSearchHit[]
+
+    if (cachedHits) {
+      hits = cachedHits
+    } else {
+      const queryEmbedding = await generateQueryEmbedding(query)
+
+      hits = await hybridSearch({
+        organizationId,
+        userId,
+        sourceTypes,
+        query,
+        queryEmbedding,
+        organizationLimit: organizationSearchLimit,
+        userLimit: userSearchLimit,
       })
+
+      if (hits.length > 0) {
+        await searchCache.set(cacheKey, hits)
+      }
     }
 
-    // Combine results
-    const searchResult = [...orgSearchResult, ...userSearchResult]
-
-    if (!searchResult || searchResult.length === 0) {
+    if (hits.length === 0) {
       return {
         results: [],
         totalResults: 0,
       }
     }
 
-    // Extract unique memory IDs
     const memoryScores = new Map<string, number>()
-    for (const result of searchResult) {
-      const memoryId = result.payload?.memory_id as string
-      if (memoryId) {
-        const existingScore = memoryScores.get(memoryId) || 0
-        memoryScores.set(memoryId, Math.max(existingScore, result.score || 0))
-      }
+    for (const hit of hits) {
+      const existingScore = memoryScores.get(hit.memoryId) || 0
+      memoryScores.set(hit.memoryId, Math.max(existingScore, hit.score))
     }
 
     const memoryIds = Array.from(memoryScores.keys())
@@ -620,8 +569,7 @@ export class UnifiedSearchService {
       },
     })
 
-    // Build results with document info
-    const internalResults: InternalSearchResult[] = memories
+    const candidateResults: InternalSearchResult[] = memories
       .map(memory => {
         const chunk = memory.document_chunks[0]
         const score = memoryScores.get(memory.id) || 0
@@ -664,6 +612,32 @@ export class UnifiedSearchService {
         }
       })
       .filter(result => this.matchesMetadataFilters(result.metadata, metadataFilters))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, SEARCH_CONSTANTS.RERANK_CANDIDATES)
+
+    const rerankInputs = candidateResults.map(result => ({
+      id: result.memoryId,
+      text: [result.title, result.contentPreview, result.content]
+        .filter(part => typeof part === 'string' && part.length > 0)
+        .join('\n\n'),
+    }))
+
+    const rerankRanking = await rerankProvider.rerank({
+      query,
+      documents: rerankInputs,
+      topN: finalLimit,
+    })
+
+    const rerankScoreById = new Map(rerankRanking.map(item => [item.id, item.score]))
+    const internalResults: InternalSearchResult[] = candidateResults
+      .map(result => {
+        const newScore = rerankScoreById.get(result.memoryId)
+        if (typeof newScore === 'number') {
+          return { ...result, score: newScore }
+        }
+        return result
+      })
+      .filter(result => rerankScoreById.has(result.memoryId))
       .sort((a, b) => b.score - a.score)
       .slice(0, finalLimit)
 

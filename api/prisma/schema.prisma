@@ -618,6 +618,23 @@ model MemorySnapshot {
   @@map("memory_snapshots")
 }
 
+/// Cached output of the nightly mesh recompute. Reading this row should
+/// give the front-end a complete graph in one query without recomputing
+/// UMAP / clustering on the request path.
+model MeshSnapshot {
+  id              String   @id @default(uuid()) @db.Uuid
+  scope_type      String   // 'user' | 'organization'
+  scope_id        String   @db.Uuid
+  node_count      Int
+  edge_count      Int
+  payload         Json     // { nodes: [...], edges: [...], clusters: [...] }
+  computed_at     DateTime @default(now())
+
+  @@unique([scope_type, scope_id])
+  @@index([scope_type, scope_id, computed_at])
+  @@map("mesh_snapshots")
+}
+
 /// Each search query event (stores only hashed embedding reference)
 model QueryEvent {
   id             String               @id @default(uuid()) @db.Uuid

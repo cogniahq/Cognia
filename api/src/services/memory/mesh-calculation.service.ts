@@ -1,5 +1,5 @@
 import { UMAP } from 'umap-js'
-import { qdrantClient, COLLECTION_NAME, ensureCollection } from '../../lib/qdrant.lib'
+import { ensureCollection, scrollMemoryPoints, DENSE_VECTOR_NAME } from '../../lib/qdrant.lib'
 import { logger } from '../../utils/core/logger.util'
 import { Prisma } from '@prisma/client'
 
@@ -52,32 +52,31 @@ export class MeshCalculationService {
       const userId = memories.length > 0 ? memories[0].user_id : undefined
 
       const filter: QdrantFilter = {
-        must: [
-          { key: 'memory_id', match: { any: memoryIds } },
-          { key: 'embedding_type', match: { value: 'content' } },
-        ],
+        must: [{ key: 'memory_id', match: { any: memoryIds } }],
       }
 
       if (userId) {
         filter.must.push({ key: 'user_id', match: { value: userId } })
       }
 
-      const embeddingResult = await qdrantClient.scroll(COLLECTION_NAME, {
+      const embeddingResult = await scrollMemoryPoints({
         filter,
-        limit: memoryIds.length * 3,
-        with_payload: true,
-        with_vector: true,
+        limit: memoryIds.length,
+        withPayload: true,
+        withVector: [DENSE_VECTOR_NAME],
       })
 
-      if (!embeddingResult.points || embeddingResult.points.length < 3) {
+      if (embeddingResult.points.length < 3) {
         return new Map()
       }
 
       let embeddingData: { id: string; vector: number[] }[] = []
       for (const point of embeddingResult.points) {
         const memoryId = point.payload?.memory_id as string
-        if (memoryId && point.vector && Array.isArray(point.vector)) {
-          embeddingData.push({ id: memoryId, vector: point.vector as number[] })
+        const vectors = point.vector as Record<string, number[]> | undefined
+        const dense = vectors?.[DENSE_VECTOR_NAME]
+        if (memoryId && Array.isArray(dense) && dense.length > 0) {
+          embeddingData.push({ id: memoryId, vector: dense })
         }
       }
 
@@ -171,81 +170,6 @@ export class MeshCalculationService {
       logger.error('Error computing latent space projection:', error)
       return new Map()
     }
-  }
-
-  applyForceDirectedLayout(
-    nodes: Array<{ id: string; x: number; y: number; z?: number }>,
-    edges: MemoryEdge[]
-  ): Array<{ id: string; x: number; y: number; z?: number }> {
-    const iterations = 150
-    const k = 400
-    const c = 0.008
-    const maxForce = 50
-
-    const forces = new Map<string, { x: number; y: number }>()
-    nodes.forEach(node => {
-      forces.set(node.id, { x: 0, y: 0 })
-    })
-
-    for (let iter = 0; iter < iterations; iter++) {
-      forces.forEach(force => {
-        force.x = 0
-        force.y = 0
-      })
-
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const nodeA = nodes[i]
-          const nodeB = nodes[j]
-          const dx = nodeA.x - nodeB.x
-          const dy = nodeA.y - nodeB.y
-          const distance = Math.sqrt(dx * dx + dy * dy) || 1
-
-          const force = Math.min((k * k) / (distance * 1.5), maxForce)
-          const fx = (dx / distance) * force
-          const fy = (dy / distance) * force
-
-          forces.get(nodeA.id)!.x += fx
-          forces.get(nodeA.id)!.y += fy
-          forces.get(nodeB.id)!.x -= fx
-          forces.get(nodeB.id)!.y -= fy
-        }
-      }
-
-      edges.forEach(edge => {
-        const sourceNode = nodes.find(n => n.id === edge.source)
-        const targetNode = nodes.find(n => n.id === edge.target)
-
-        if (sourceNode && targetNode) {
-          const dx = targetNode.x - sourceNode.x
-          const dy = targetNode.y - sourceNode.y
-          const distance = Math.sqrt(dx * dx + dy * dy) || 1
-
-          const force = Math.min((distance * distance) / (k * 0.8), maxForce)
-          const fx = (dx / distance) * force
-          const fy = (dy / distance) * force
-
-          forces.get(sourceNode.id)!.x += fx
-          forces.get(sourceNode.id)!.y += fy
-          forces.get(targetNode.id)!.x -= fx
-          forces.get(targetNode.id)!.y -= fy
-        }
-      })
-
-      const adaptiveDamping = c * (1 - iter / iterations)
-      nodes.forEach(node => {
-        const force = forces.get(node.id)!
-        node.x += Math.max(-maxForce, Math.min(maxForce, force.x)) * adaptiveDamping
-        node.y += Math.max(-maxForce, Math.min(maxForce, force.y)) * adaptiveDamping
-
-        const maxX = 1200
-        const maxY = 800
-        node.x = Math.max(-maxX, Math.min(maxX, node.x))
-        node.y = Math.max(-maxY, Math.min(maxY, node.y))
-      })
-    }
-
-    return nodes
   }
 
   getSourceOffset(source: string): { x: number; y: number } {

@@ -32,10 +32,12 @@ services:
     volumes:
       - cognia_qdrant_data:/qdrant/storage
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:6333/health']
+      # The qdrant image has no curl/wget/nc, so use bash's TCP self-test.
+      test: ['CMD-SHELL', "bash -c '</dev/tcp/127.0.0.1/6333' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
     networks:
       - cognia_network
 
@@ -56,7 +58,102 @@ services:
     networks:
       - cognia_network
 
+  # One-shot migration container. Runs `prisma migrate deploy` against the
+  # postgres service and exits. The `api` service waits for this to succeed.
+  # Activate with: `docker compose --profile app up`
+  migrate:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+      secrets:
+        - npmrc
+    container_name: cognia_migrate
+    command: ['npx', 'prisma', 'migrate', 'deploy']
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cognia
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cognia_network
+    restart: 'no'
+
+  api:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - npmrc
+    container_name: cognia_api
+    restart: unless-stopped
+    ports:
+      # Defaults to 3100 to avoid colliding with a host dev server on 3000.
+      # Override with: API_HOST_PORT=3000 docker compose --profile app up
+      - '${API_HOST_PORT:-3100}:3000'
+    # Inherit local secrets (OPENAI_API_KEY, COHERE_API_KEY, etc.) from .env.
+    # Service-name URLs below override the localhost values in that file.
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cognia
+      REDIS_URL: redis://redis:6379
+      QDRANT_URL: http://qdrant:6333
+      LOG_FILE_PATH: /app/logs/app.log
+      LOCAL_STORAGE_PATH: /app/uploads
+      COOKIE_SECURE: 'false'
+      COOKIE_DOMAIN: localhost
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+    volumes:
+      - cognia_uploads:/app/uploads
+      - cognia_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - cognia_network
+
+  client:
+    profiles: ['app']
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+      args:
+        # Empty VITE_API_URL means the front-end uses relative URLs, which
+        # nginx then proxies to the api service (see nginx.conf).
+        VITE_API_URL: ''
+        VITE_SERVER_URL: ''
+        VITE_HTTPS_ENABLE: 'false'
+        VITE_ENABLE_INTERNAL_ROUTES: 'true'
+    container_name: cognia_client
+    restart: unless-stopped
+    ports:
+      - '${CLIENT_HOST_PORT:-5173}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - cognia_network
+
+secrets:
+  npmrc:
+    # Pull from the host's home .npmrc (fresh GitHub Packages token).
+    # The project-local ./.npmrc is gitignored elsewhere and may be stale.
+    file: ${HOME}/.npmrc
+
 volumes:
+  cognia_logs:
+    driver: local
   cognia_data:
     driver: local
   cognia_qdrant_data:

@@ -218,7 +218,8 @@ export async function searchMemories(params: {
     {
       userId: user.id,
     },
-    searchParams
+    searchParams,
+    normalized
   )
 
   if (!qdrantSearchResult || qdrantSearchResult.length === 0) {

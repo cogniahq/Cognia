@@ -32,8 +32,8 @@ export const aiProvider = {
     return embeddingProviderService.generateEmbedding(text, userId)
   },
 
-  generateFallbackEmbedding(text: string): number[] {
-    return embeddingProviderService.generateFallbackEmbedding(text)
+  async generateEmbeddingsBatch(texts: string[], userId?: string): Promise<number[][]> {
+    return embeddingProviderService.generateEmbeddingsBatch(texts, userId)
   },
 
   async generateContent(

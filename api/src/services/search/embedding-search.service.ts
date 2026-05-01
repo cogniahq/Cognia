@@ -1,4 +1,5 @@
-import { qdrantClient, COLLECTION_NAME, ensureCollection } from '../../lib/qdrant.lib'
+import { searchHybrid } from '../../lib/qdrant.lib'
+import { encodeSparse } from '../../lib/sparse-encoder.lib'
 import { aiProvider } from '../ai/ai-provider.service'
 import { logger } from '../../utils/core/logger.util'
 import { getActiveEmbeddingModelName } from '../ai/ai-config'
@@ -33,34 +34,15 @@ export async function generateQueryEmbedding(
     throw new Error('AI provider not configured. Set OPENAI_API_KEY or adjust provider settings.')
   }
 
-  try {
-    logger.log('[embedding-search] generating embedding', {
-      ts: new Date().toISOString(),
-      queryLength: query.length,
-    })
-    const embeddingResult = await withTimeout(aiProvider.generateEmbedding(query), timeoutMs)
-    if (
-      typeof embeddingResult === 'object' &&
-      embeddingResult !== null &&
-      'embedding' in embeddingResult
-    ) {
-      return (embeddingResult as { embedding: number[] }).embedding
-    } else {
-      return embeddingResult as number[]
-    }
-  } catch (error) {
-    logger.warn('[embedding-search] embedding generation failed, using fallback', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-    try {
-      return aiProvider.generateFallbackEmbedding(query)
-    } catch (fallbackError) {
-      logger.error('[embedding-search] fallback embedding also failed', {
-        error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
-      })
-      throw new Error('Failed to generate embedding')
-    }
+  const embeddingResult = await withTimeout(aiProvider.generateEmbedding(query), timeoutMs)
+  if (
+    typeof embeddingResult === 'object' &&
+    embeddingResult !== null &&
+    'embedding' in embeddingResult
+  ) {
+    return (embeddingResult as { embedding: number[] }).embedding
   }
+  return embeddingResult as number[]
 }
 
 export function getEmbeddingHash(embedding: number[]): string {
@@ -77,11 +59,9 @@ export function getEmbeddingHash(embedding: number[]): string {
 export async function searchQdrant(
   embedding: number[],
   scope: SearchScope,
-  searchParams: DynamicSearchParams
+  searchParams: DynamicSearchParams,
+  rawQuery?: string
 ): Promise<Array<{ score?: number; payload?: { memory_id?: string } }>> {
-  await ensureCollection()
-
-  let qdrantSearchResult: Array<{ score?: number; payload?: { memory_id?: string } }> = []
   const must: Array<{ key: string; match: { value?: string; any?: string[] } }> = []
 
   if (scope.userId) {
@@ -96,54 +76,31 @@ export async function searchQdrant(
     must.push({ key: 'memory_id', match: { any: scope.memoryIds } })
   }
 
-  if (searchParams.searchStrategy === 'broad') {
-    logger.log('[embedding-search] performing broad search', {
-      ts: new Date().toISOString(),
-      qdrantLimit: searchParams.qdrantLimit,
-    })
-    qdrantSearchResult = await qdrantClient.search(COLLECTION_NAME, {
-      vector: embedding,
-      filter: {
-        must,
-      },
-      limit: searchParams.qdrantLimit,
-      with_payload: true,
-      score_threshold: 0.1,
-    })
+  const sparse = rawQuery ? encodeSparse(rawQuery) : null
 
-    if (qdrantSearchResult.length > searchParams.maxResults * 2) {
-      const highQualityResults = qdrantSearchResult.filter(r => (r.score || 0) > 0.3)
-      if (highQualityResults.length >= searchParams.maxResults) {
-        qdrantSearchResult = highQualityResults
-        logger.log('[embedding-search] narrowed to high-quality results', {
-          ts: new Date().toISOString(),
-          filteredCount: qdrantSearchResult.length,
-        })
-      }
-    }
-  } else {
-    logger.log('[embedding-search] searching qdrant', {
-      ts: new Date().toISOString(),
-      userId: scope.userId,
-      organizationId: scope.organizationId,
-      memoryIdCount: scope.memoryIds?.length ?? 0,
-      qdrantLimit: searchParams.qdrantLimit,
-      strategy: searchParams.searchStrategy,
-    })
-    qdrantSearchResult = await qdrantClient.search(COLLECTION_NAME, {
-      vector: embedding,
-      filter: {
-        must,
-      },
-      limit: searchParams.qdrantLimit,
-      with_payload: true,
-    })
-  }
+  const qdrantSearchResult = await searchHybrid({
+    dense: embedding,
+    sparse,
+    filter: { must },
+    prefetchLimit: searchParams.qdrantLimit,
+    limit: searchParams.qdrantLimit,
+  })
 
   logger.log('[embedding-search] qdrant search completed', {
-    ts: new Date().toISOString(),
     resultCount: qdrantSearchResult.length,
+    strategy: searchParams.searchStrategy,
+    sparseEnabled: Boolean(sparse),
   })
+
+  if (
+    searchParams.searchStrategy === 'broad' &&
+    qdrantSearchResult.length > searchParams.maxResults * 2
+  ) {
+    const highQualityResults = qdrantSearchResult.filter(r => (r.score || 0) > 0.3)
+    if (highQualityResults.length >= searchParams.maxResults) {
+      return highQualityResults
+    }
+  }
 
   return qdrantSearchResult
 }

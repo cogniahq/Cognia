@@ -132,16 +132,24 @@ export class MemoryCrudController {
       }
 
       try {
-        const { qdrantClient, COLLECTION_NAME } = await import('../../lib/qdrant.lib')
-        await qdrantClient.delete(COLLECTION_NAME, {
-          filter: {
-            must: [{ key: 'memory_id', match: { value: memoryId } }],
-          },
-        })
+        const { deleteMemoryPoints } = await import('../../lib/qdrant.lib')
+        await deleteMemoryPoints([memoryId])
         logger.log('[memory/delete] qdrant_deleted', { memoryId })
       } catch (qdrantError) {
         logger.warn('[memory/delete] qdrant_delete_failed', {
           error: qdrantError instanceof Error ? qdrantError.message : String(qdrantError),
+          memoryId,
+        })
+      }
+
+      try {
+        const { searchCache } = await import('../../services/search/search-cache.service')
+        if (memory.organization_id) {
+          await searchCache.invalidateOrganization(memory.organization_id)
+        }
+      } catch (cacheError) {
+        logger.warn('[memory/delete] search_cache_invalidate_failed', {
+          error: cacheError instanceof Error ? cacheError.message : String(cacheError),
           memoryId,
         })
       }

@@ -78,7 +78,6 @@ export const startDocumentWorker = () => {
           summary: `Processing ${textChunks.length} chunks`,
         })
 
-        // Create Memory entries for each chunk and get embeddings
         const chunksWithMemories: Array<{
           content: string
           chunkIndex: number
@@ -88,9 +87,11 @@ export const startDocumentWorker = () => {
           memoryId?: string
         }> = []
 
-        // Process chunks with embeddings inline (not async) for reliability
-        for (let i = 0; i < textChunks.length; i++) {
-          const chunk = textChunks[i]
+        const EMBEDDING_BATCH_SIZE = 64
+        const memoryIdsToEmbed: string[] = []
+
+        // Pass 1: create Memory rows in a single tight loop, no Qdrant calls.
+        for (const chunk of textChunks) {
           try {
             const structuredMetadata = memoryStructureService.extract({
               title: `${filename} - Chunk ${chunk.chunkIndex + 1}`,
@@ -98,7 +99,7 @@ export const startDocumentWorker = () => {
               metadata: documentMetadata as Record<string, unknown>,
               source: 'document',
             })
-            // Create Memory entry with source_type=DOCUMENT
+
             const memory = await prisma.memory.create({
               data: {
                 user_id: uploaderId,
@@ -130,18 +131,6 @@ export const startDocumentWorker = () => {
               },
             })
 
-            // Generate embeddings synchronously for reliability
-            try {
-              await memoryMeshService.generateEmbeddingsForMemory(memory.id)
-            } catch (embeddingError) {
-              logger.error('[document-worker] embedding error', {
-                documentId,
-                memoryId: memory.id,
-                error:
-                  embeddingError instanceof Error ? embeddingError.message : String(embeddingError),
-              })
-            }
-
             chunksWithMemories.push({
               content: chunk.content,
               chunkIndex: chunk.chunkIndex,
@@ -150,15 +139,7 @@ export const startDocumentWorker = () => {
               charEnd: chunk.charEnd,
               memoryId: memory.id,
             })
-
-            // Update progress every 5 chunks
-            if ((i + 1) % 5 === 0 || i === textChunks.length - 1) {
-              await documentService.updateProcessingStage(documentId, 'generating_embeddings', {
-                current: i + 1,
-                total: textChunks.length,
-                summary: `Indexed ${i + 1} of ${textChunks.length} chunks`,
-              })
-            }
+            memoryIdsToEmbed.push(memory.id)
           } catch (chunkError) {
             logger.error('[document-worker] chunk processing error', {
               documentId,
@@ -166,7 +147,6 @@ export const startDocumentWorker = () => {
               error: chunkError instanceof Error ? chunkError.message : String(chunkError),
             })
 
-            // Still add the chunk without memory linkage
             chunksWithMemories.push({
               content: chunk.content,
               chunkIndex: chunk.chunkIndex,
@@ -175,6 +155,27 @@ export const startDocumentWorker = () => {
               charEnd: chunk.charEnd,
             })
           }
+        }
+
+        // Pass 2: batched embedding + Qdrant upsert.
+        for (let i = 0; i < memoryIdsToEmbed.length; i += EMBEDDING_BATCH_SIZE) {
+          const batch = memoryIdsToEmbed.slice(i, i + EMBEDDING_BATCH_SIZE)
+          try {
+            await memoryMeshService.generateEmbeddingsForMemoriesBatch(batch)
+          } catch (embeddingError) {
+            logger.error('[document-worker] batch embedding error', {
+              documentId,
+              batchSize: batch.length,
+              error:
+                embeddingError instanceof Error ? embeddingError.message : String(embeddingError),
+            })
+          }
+
+          await documentService.updateProcessingStage(documentId, 'generating_embeddings', {
+            current: Math.min(i + batch.length, memoryIdsToEmbed.length),
+            total: memoryIdsToEmbed.length,
+            summary: `Indexed ${Math.min(i + batch.length, memoryIdsToEmbed.length)} of ${memoryIdsToEmbed.length} chunks`,
+          })
         }
 
         // Stage 4: Indexing

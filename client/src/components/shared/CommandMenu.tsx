@@ -26,8 +26,6 @@ const CommandMenuComponent = () => {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
-  const enableInternalRoutes =
-    import.meta.env.VITE_ENABLE_INTERNAL_ROUTES !== "false"
 
   const handleSelect = (callback: () => void) => {
     callback()
@@ -35,9 +33,6 @@ const CommandMenuComponent = () => {
   }
 
   useEffect(() => {
-    if (!enableInternalRoutes) {
-      return
-    }
     const down = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       const isInput =
@@ -141,11 +136,7 @@ const CommandMenuComponent = () => {
 
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
-  }, [navigate, location.pathname, open, enableInternalRoutes])
-
-  if (!enableInternalRoutes) {
-    return null
-  }
+  }, [navigate, location.pathname, open])
 
   return (
     <>

@@ -132,9 +132,7 @@ services:
         # Empty VITE_API_URL means the front-end uses relative URLs, which
         # nginx then proxies to the api service (see nginx.conf).
         VITE_API_URL: ''
-        VITE_SERVER_URL: ''
         VITE_HTTPS_ENABLE: 'false'
-        VITE_ENABLE_INTERNAL_ROUTES: 'true'
     container_name: cognia_client
     restart: unless-stopped
     ports:

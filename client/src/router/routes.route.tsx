@@ -140,8 +140,6 @@ const AuthRedirectLanding = () => {
 }
 
 const AppRoutes = () => {
-  const enableInternalRoutes =
-    import.meta.env.VITE_ENABLE_INTERNAL_ROUTES !== "false"
   const location = useLocation()
 
   return (
@@ -152,7 +150,7 @@ const AppRoutes = () => {
             <Route path="/" element={<AuthRedirectLanding />} />
             <Route path="/pricing" element={<Pricing />} />
 
-            {/* Public trust & legal pages — always available */}
+            {/* Public trust & legal pages */}
             <Route path="/security" element={<Security />} />
             <Route path="/security/bug-bounty" element={<BugBounty />} />
             <Route path="/trust" element={<Trust />} />
@@ -160,70 +158,23 @@ const AppRoutes = () => {
             <Route path="/terms" element={<Terms />} />
             <Route path="/subprocessors" element={<SubprocessorsPage />} />
             <Route path="/dpa" element={<DPAPage />} />
-            {enableInternalRoutes ? (
-              <>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Login />} />
-                <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                <Route path="/auth/magic" element={<AuthMagic />} />
-                <Route path="/memories" element={<Memories />} />
-                <Route path="/memories/v2" element={<MemoriesV2 />} />
-                <Route path="/memories/trash" element={<MemoriesTrash />} />
-                <Route path="/docs" element={<Docs />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/organization" element={<Organization />} />
-                <Route path="/integrations" element={<Integrations />} />
-                <Route path="/mesh-showcase" element={<MeshShowcase />} />
-                <Route path="/org-admin/:slug" element={<OrgAdmin />} />
-                <Route path="/billing" element={<Billing />} />
-              </>
-            ) : (
-              <>
-                <Route path="/login" element={<Navigate to="/" replace />} />
-                <Route path="/signup" element={<Navigate to="/" replace />} />
-                <Route
-                  path="/auth/verify-email"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route
-                  path="/auth/magic"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route path="/memories" element={<Navigate to="/" replace />} />
-                <Route
-                  path="/memories/v2"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route
-                  path="/memories/trash"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route path="/docs" element={<Navigate to="/" replace />} />
-                <Route
-                  path="/analytics"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route path="/profile" element={<Navigate to="/" replace />} />
-                <Route
-                  path="/organization"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route
-                  path="/integrations"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route
-                  path="/mesh-showcase"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route
-                  path="/org-admin/:slug"
-                  element={<Navigate to="/" replace />}
-                />
-                <Route path="/billing" element={<Navigate to="/" replace />} />
-              </>
-            )}
+
+            {/* App routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Login />} />
+            <Route path="/auth/verify-email" element={<VerifyEmail />} />
+            <Route path="/auth/magic" element={<AuthMagic />} />
+            <Route path="/memories" element={<Memories />} />
+            <Route path="/memories/v2" element={<MemoriesV2 />} />
+            <Route path="/memories/trash" element={<MemoriesTrash />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/organization" element={<Organization />} />
+            <Route path="/integrations" element={<Integrations />} />
+            <Route path="/mesh-showcase" element={<MeshShowcase />} />
+            <Route path="/org-admin/:slug" element={<OrgAdmin />} />
+            <Route path="/billing" element={<Billing />} />
 
             <Route path="*" element={<AuthRedirectLanding />} />
           </Routes>

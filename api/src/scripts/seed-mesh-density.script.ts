@@ -5,7 +5,7 @@
  * Each memory has unique, specific content (real-feeling names, numbers,
  * dates, quotes) so embeddings spread out instead of clustering tightly.
  *
- * Idempotent — deletes everything tagged `mesh-density` before re-inserting.
+ * Idempotent - deletes everything tagged `mesh-density` before re-inserting.
  *
  * Prereq: Blit Labs org + alex/sarah/bob users exist (run seed:polaris first).
  *
@@ -75,7 +75,7 @@ const buildFallbackUrl = (m: MemoryDef, i: number): string => {
 // ── 1. Polaris technical & product (60) ─────────────────────────────────────
 const POLARIS: MemoryDef[] = [
   {
-    title: 'Y.js memory leak — undo stacks retained forever',
+    title: 'Y.js memory leak - undo stacks retained forever',
     content:
       'Reproduces with 50+ concurrent Y.Doc instances on a single tab. Each Y.UndoManager retains operation history indefinitely; at ~12k ops the heap hits 1.4GB. Fix: configure trackedOrigins more narrowly and add a 5-minute idle GC. Patch in PR #501.',
     owner: 'bob',
@@ -111,7 +111,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'alb', 'sticky-session', 'aws'],
   },
   {
-    title: "POLARIS-23: offline >7 days — Bob's recommendation",
+    title: "POLARIS-23: offline >7 days - Bob's recommendation",
     content:
       'Bob\'s last comment before sabbatical: "Option B (snapshot client on disconnect, diff on reconnect) is the only one that\'s correct AND tractable. Plan: extend `IDBStore` to hold a Y.Doc snapshot per offline session; reconnect handshake replays the diff. ~2 weeks of work."',
     owner: 'bob',
@@ -122,7 +122,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Cursor lerp interpolation tuning',
     content:
-      'Receiver-side interpolation between cursor updates uses a fixed 50ms lerp. Felt sluggish in dogfood. Lowered to 24ms — feels native, but 60Hz devices see micro-jitter. Compromise: 30ms with cubic easing. Sarah signed off.',
+      'Receiver-side interpolation between cursor updates uses a fixed 50ms lerp. Felt sluggish in dogfood. Lowered to 24ms - feels native, but 60Hz devices see micro-jitter. Compromise: 30ms with cubic easing. Sarah signed off.',
     owner: 'sarah',
     source: 'github',
     daysAgo: 88,
@@ -138,7 +138,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'northwind', 'saml', 'enterprise'],
   },
   {
-    title: 'Y.js v14 upgrade — what breaks',
+    title: 'Y.js v14 upgrade - what breaks',
     content:
       'v14 introduces strict types on XmlFragment. Our patch (we maintain a fork for nested-fragment handling) needs reapplication: 6-line diff. Test failures: `awareness.test.ts` expects v13 ordering. Plan: pin v13 for GA, upgrade in v1.1 + retire the patch.',
     owner: 'bob',
@@ -147,7 +147,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'yjs', 'upgrade', 'tech-debt'],
   },
   {
-    title: 'Globex pilot — 5 users, then ghosted',
+    title: 'Globex pilot - 5 users, then ghosted',
     content:
       "Globex piloted with 5 users for 2 weeks. NPS: +8 (mediocre). They went silent on follow-ups. Theory: their internal champion left for Stripe. Don't prioritize re-engagement until next quarter unless inbound.",
     owner: 'alex',
@@ -174,7 +174,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'postgres', 'snapshot', 'storage'],
   },
   {
-    title: 'Acme expansion — they want comments-on-canvas next',
+    title: 'Acme expansion - they want comments-on-canvas next',
     content:
       'Acme demo with their VP design last Wed. Polaris is locked. Their next ask: persistent comments anchored to canvas regions, with thread + resolve. Scope: a separate feature, not Polaris extension. Sales committed to Q3.',
     owner: 'sarah',
@@ -183,9 +183,9 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'acme', 'comments', 'expansion'],
   },
   {
-    title: "Sarah's farewell scratchpad — gotchas only she knew",
+    title: "Sarah's farewell scratchpad - gotchas only she knew",
     content:
-      'Pinned in #eng-realtime: (1) gateway shard config in `infra/polaris-shards.json` — secret-rotated quarterly with the AWS key; (2) `awareness.ts` line 142 has a workaround for a v13 bug that v14 fixes; (3) the snapshot worker assumes UTC, breaks on AWS instances configured differently.',
+      'Pinned in #eng-realtime: (1) gateway shard config in `infra/polaris-shards.json` - secret-rotated quarterly with the AWS key; (2) `awareness.ts` line 142 has a workaround for a v13 bug that v14 fixes; (3) the snapshot worker assumes UTC, breaks on AWS instances configured differently.',
     owner: 'sarah',
     source: 'slack',
     daysAgo: 21,
@@ -201,7 +201,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'snapshot', 'interval', 'tradeoff'],
   },
   {
-    title: "Initech evaluation — they're building in-house",
+    title: "Initech evaluation - they're building in-house",
     content:
       "Initech's eng lead admitted they're prototyping their own collab in Yjs. Saw our pricing as too high. Don't expect them to convert. Filed for follow-up in 6 months when they realize how hard it is.",
     owner: 'alex',
@@ -210,7 +210,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'initech', 'build-vs-buy', 'prospect'],
   },
   {
-    title: 'Cursor color collision at 50 users — fix shipped',
+    title: 'Cursor color collision at 50 users - fix shipped',
     content:
       'Generated colors via golden-angle in HSL, locked S=72%, L=58%. At 50 users, 2 perceived collisions (purple/violet) but no exact dupes. At 100, 5 perceived collisions; flag for v1.1 to add user color override.',
     owner: 'sarah',
@@ -219,7 +219,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'cursor', 'color', 'ux'],
   },
   {
-    title: 'Stress test — 1000 simulated users single doc',
+    title: 'Stress test - 1000 simulated users single doc',
     content:
       'k6 + a custom Y.js client simulator. Setup: 1000 users joining over 30s, each making 0.5 ops/sec for 10 min. Single-shard CPU sustained 92%. Reconnects: 0.4%. p99 op latency: 720ms (above SLO). Confirmed: 700-user single-shard ceiling.',
     owner: 'bob',
@@ -228,7 +228,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'stress-test', 'scaling', 'performance'],
   },
   {
-    title: 'Why we picked Y.js over Automerge — long version',
+    title: 'Why we picked Y.js over Automerge - long version',
     content:
       'Y.js: faster on our doc shape (avg 12k nodes), better awareness primitives, bigger community. Automerge: cleaner API, but 3.4x slower at 1M ops, less mature awareness. Dealbreaker for Automerge: no support for partial document loading. We need to load 1 frame without loading the whole canvas.',
     owner: 'sarah',
@@ -239,7 +239,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Beta-1 NPS breakdown',
     content:
-      "ACME 14 users: NPS +51 (top promoters: VP Design, Lead Designer). Northwind 8 users: NPS +28 (lower because of cursor flicker bug — fixed). Globex 5 users: NPS +8 (silent users; can't tell what they actually felt). Overall: +37 weighted.",
+      "ACME 14 users: NPS +51 (top promoters: VP Design, Lead Designer). Northwind 8 users: NPS +28 (lower because of cursor flicker bug - fixed). Globex 5 users: NPS +8 (silent users; can't tell what they actually felt). Overall: +37 weighted.",
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 56,
@@ -293,14 +293,14 @@ const POLARIS: MemoryDef[] = [
   {
     title: "Slack: Bob's last code review",
     content:
-      'Bob\'s final approved PR was #618 (Sarah\'s palette override for Acme). His comment: "This is exactly the right shape — config, not code. Nice." Filed under "things that mattered."',
+      'Bob\'s final approved PR was #618 (Sarah\'s palette override for Acme). His comment: "This is exactly the right shape - config, not code. Nice." Filed under "things that mattered."',
     owner: 'bob',
     source: 'slack',
     daysAgo: 22,
     topics: ['polaris', 'code-review', 'bob', 'culture'],
   },
   {
-    title: 'On testing CRDTs — our approach',
+    title: 'On testing CRDTs - our approach',
     content:
       'Property-based tests via fast-check. We assert convergence: random sequences of ops applied in different orders to N replicas all converge. Found 2 real bugs this way (an awareness ordering issue, a delete-then-recreate ordering). Worth the slow CI.',
     owner: 'sarah',
@@ -327,7 +327,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'ga', 'launch', 'checklist'],
   },
   {
-    title: 'Hooli evaluation — POC stalled on data residency',
+    title: 'Hooli evaluation - POC stalled on data residency',
     content:
       'Hooli evaluated Polaris for 3 weeks. Loved the latency. Killed the deal because we don\'t have EU data residency at GA. Sarah\'s response: "We will at v1.2; happy to design the rollout with you." Hooli: "Talk again in Q4."',
     owner: 'sarah',
@@ -338,7 +338,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Why our delta log retention is 7 days',
     content:
-      'Calculated from offline UX expectations (95% of users come back within 7 days), AWS storage cost ($0.023/GB-month for ~50GB delta logs), and replay perf (a 7-day delta replays in <500ms even for active rooms). 30-day retention discussed and rejected — 4x cost for 2% UX gain.',
+      'Calculated from offline UX expectations (95% of users come back within 7 days), AWS storage cost ($0.023/GB-month for ~50GB delta logs), and replay perf (a 7-day delta replays in <500ms even for active rooms). 30-day retention discussed and rejected - 4x cost for 2% UX gain.',
     owner: 'bob',
     source: 'notion',
     daysAgo: 110,
@@ -347,16 +347,16 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Why awareness uses ephemeral state, not persistent',
     content:
-      "Awareness (cursors, selections, presence) lives in Y.js's ephemeral protocol — never persisted. If you reload, your cursor is gone. Considered persisting; rejected because the data is meaningless 30s after the fact and would explode storage. Standard Y.js convention.",
+      "Awareness (cursors, selections, presence) lives in Y.js's ephemeral protocol - never persisted. If you reload, your cursor is gone. Considered persisting; rejected because the data is meaningless 30s after the fact and would explode storage. Standard Y.js convention.",
     owner: 'sarah',
     source: 'notion',
     daysAgo: 158,
     topics: ['polaris', 'awareness', 'persistence', 'design'],
   },
   {
-    title: 'Customer Success — Polaris training plan',
+    title: 'Customer Success - Polaris training plan',
     content:
-      "Each new Polaris customer gets: 30-min onboarding call, recorded walkthrough of admin panel, slack channel for support, monthly check-in for first 90 days. Owner: customer success (we don't have CS yet — Alex covers).",
+      "Each new Polaris customer gets: 30-min onboarding call, recorded walkthrough of admin panel, slack channel for support, monthly check-in for first 90 days. Owner: customer success (we don't have CS yet - Alex covers).",
     owner: 'alex',
     source: 'notion',
     daysAgo: 12,
@@ -399,7 +399,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'unit-economics', 'pricing', 'infra-cost'],
   },
   {
-    title: 'Wayne Enterprises — strange request',
+    title: 'Wayne Enterprises - strange request',
     content:
       'Wayne Enterprises asked: "Can we have Polaris with no cloud component?" They want everything air-gapped. Sarah: "That\'s self-hosted edition. Not in our v1 plan." Filed under enterprise-self-host as a 2027 question.',
     owner: 'sarah',
@@ -428,7 +428,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Acme data export request',
     content:
-      'Acme legal asked: can users export their canvas + Polaris collab metadata at any time? Yes — we surface a JSON export of all docs + audit trail per workspace. GET /api/exports/full. Documented for their legal team.',
+      'Acme legal asked: can users export their canvas + Polaris collab metadata at any time? Yes - we surface a JSON export of all docs + audit trail per workspace. GET /api/exports/full. Documented for their legal team.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 50,
@@ -446,7 +446,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: "Why we don't support Internet Explorer",
     content:
-      "Polaris uses WebSocket, ES modules, and CSS grid. IE11 is pre-WebSocket-extension support. We deprecated IE in 2024. Acme uses Edge company-wide. Initech still has IE pockets — they're aware.",
+      "Polaris uses WebSocket, ES modules, and CSS grid. IE11 is pre-WebSocket-extension support. We deprecated IE in 2024. Acme uses Edge company-wide. Initech still has IE pockets - they're aware.",
     owner: 'sarah',
     source: 'notion',
     daysAgo: 118,
@@ -455,7 +455,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Document size at which Polaris starts to lag',
     content:
-      'At 50k Y.js operations on a doc, initial load takes 1.8s. At 100k, 4.2s — perceptibly slow. Plan: snapshot+gc operations older than 30 days, replaying as a "compacted snapshot" + deltas for recent. POLARIS-72.',
+      'At 50k Y.js operations on a doc, initial load takes 1.8s. At 100k, 4.2s - perceptibly slow. Plan: snapshot+gc operations older than 30 days, replaying as a "compacted snapshot" + deltas for recent. POLARIS-72.',
     owner: 'bob',
     source: 'notion',
     daysAgo: 88,
@@ -489,7 +489,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'open-source', 'awareness', 'community'],
   },
   {
-    title: 'GitHub Issue #634 — iOS Safari WS stall',
+    title: 'GitHub Issue #634 - iOS Safari WS stall',
     content:
       "iOS Safari's ServiceWorker suspends WS during page transitions. Connection appears alive, but messages stall 2-30s. Workaround: detect via heartbeat-miss, force reconnect on resume. Fix in PR #639.",
     owner: 'sarah',
@@ -516,7 +516,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'dogfood', 'feedback', 'ux'],
   },
   {
-    title: 'Stark Industries — strange compliance ask',
+    title: 'Stark Industries - strange compliance ask',
     content:
       'Stark requested: "All Polaris collab data must be queryable by an internal AI system for IP protection." They want a real-time stream. Sarah: "That\'s a webhooks-on-edit feature, not GA." Filed for v1.2.',
     owner: 'sarah',
@@ -554,7 +554,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'POLARIS-78: encrypted CRDT state at rest',
     content:
-      'Compliance ask from healthcare prospect (not closed yet — code-named "MedTrack"). Need column-level encryption on `documents.crdt_state`. Options: pgcrypto (slow), app-level (faster, more code). Investigate for v1.2.',
+      'Compliance ask from healthcare prospect (not closed yet - code-named "MedTrack"). Need column-level encryption on `documents.crdt_state`. Options: pgcrypto (slow), app-level (faster, more code). Investigate for v1.2.',
     owner: 'sarah',
     source: 'linear',
     daysAgo: 65,
@@ -570,7 +570,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'liveblocks', 'build-vs-buy', 'economics'],
   },
   {
-    title: 'Acme rollout phase 1 — 14 users for 30 days',
+    title: 'Acme rollout phase 1 - 14 users for 30 days',
     content:
       "Started day 0 with 14 users on Acme's design team. After 30 days: zero data-loss reports, NPS +51, 3 feature requests (filed). Phase 2 (50 users) starts in 2 weeks. They're excited.",
     owner: 'sarah',
@@ -588,7 +588,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'selection', 'nested-groups', 'design'],
   },
   {
-    title: 'Pied Piper feedback — they want voice',
+    title: 'Pied Piper feedback - they want voice',
     content:
       'PP: "Polaris is great but we want voice over the canvas." Out of scope. Filed under voice-canvas as 2027 exploration. PP: "We\'ll wait."',
     owner: 'alex',
@@ -597,7 +597,7 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'pied-piper', 'voice', 'future'],
   },
   {
-    title: 'GA blast radius — what could go wrong',
+    title: 'GA blast radius - what could go wrong',
     content:
       'Worst case scenarios: (1) shard crash → 700 users disconnected, reconnect storm overwhelms gateway → cascading failure. Mitigation: jittered reconnect (done), per-shard rate limit on accept (done). (2) Y.js update bug corrupts CRDT state. Mitigation: snapshots replay-able to last good state.',
     owner: 'sarah',
@@ -610,7 +610,7 @@ const POLARIS: MemoryDef[] = [
 // ── 2. Customer interactions (50) ───────────────────────────────────────────
 const CUSTOMERS: MemoryDef[] = [
   {
-    title: 'Acme intro call — designer Priya leads pitch',
+    title: 'Acme intro call - designer Priya leads pitch',
     content:
       "First call with Acme. Their design lead Priya Kapoor pitched her team's collab pain to her CTO, who's on the call. They use Figma + Slack screen-share + lots of swearing. Demo went 12 min over because she demoed her own use case live. Verdict: hot prospect.",
     owner: 'sarah',
@@ -637,7 +637,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'onboarding', 'admin', 'rbac'],
   },
   {
-    title: 'Acme — security questionnaire returned',
+    title: 'Acme - security questionnaire returned',
     content:
       'Acme legal returned 86 questions answered. Two open items: (1) where exactly is data stored physically (we said us-east-1; they want us-west-2 backup), (2) encryption key rotation cadence (we said quarterly; they want monthly). Negotiating.',
     owner: 'sarah',
@@ -646,7 +646,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'security', 'questionnaire', 'compliance'],
   },
   {
-    title: 'Acme expansion plan — 600 users by Q4',
+    title: 'Acme expansion plan - 600 users by Q4',
     content:
       "Priya's expansion plan: design team (14) → product team (40 total) → engineering & marketing (140) → company-wide (600) by Q4. Each phase has gates: NPS > 30, no data-loss in 30 days. We have the spec.",
     owner: 'sarah',
@@ -655,7 +655,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'expansion', 'rollout', 'roadmap'],
   },
   {
-    title: 'Northwind first call — 8 designers, no PM',
+    title: 'Northwind first call - 8 designers, no PM',
     content:
       "Northwind's design head, Aisha, runs an 8-person team. They're unhappy with Figma's comment threading. Want better realtime + comments. Polaris fits realtime; comments are next.",
     owner: 'sarah',
@@ -664,7 +664,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['northwind', 'customer-discovery', 'figma', 'comments'],
   },
   {
-    title: 'Northwind — switching from Miro for whiteboarding',
+    title: 'Northwind - switching from Miro for whiteboarding',
     content:
       "After 3 weeks of Polaris, Aisha's team switched off Miro for design workshops too. \"It's your canvas + collab; we don't need a separate whiteboard tool.\" Implication: Miro displacement is a pitch we can use elsewhere.",
     owner: 'sarah',
@@ -673,7 +673,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['northwind', 'miro', 'displacement', 'use-case'],
   },
   {
-    title: 'Northwind — request for Slack notifications on @mention',
+    title: 'Northwind - request for Slack notifications on @mention',
     content:
       'Northwind designers want a Slack notification when @-mentioned in a Polaris comment. Comments aren\'t in Polaris yet. Filed as comment-feature dependency. Aisha: "Take your time; we\'ll wait."',
     owner: 'sarah',
@@ -691,7 +691,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['globex', 'evaluation', 'crdt', 'technical'],
   },
   {
-    title: 'Globex — they went silent',
+    title: 'Globex - they went silent',
     content:
       "Sent 3 follow-ups over 3 weeks. No response. Theory: their internal champion is no longer there (LinkedIn shows him at Stripe now). Don't prioritize. Move to nurture sequence.",
     owner: 'alex',
@@ -702,14 +702,14 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Hooli evaluation summary',
     content:
-      'Hooli tested Polaris for 3 weeks across 6 designers. Liked: latency, cursor smoothness, cleanliness of UI. Killed deal because they\'re EU-based and need data residency in Frankfurt — not at GA. Sarah: "v1.2." Hooli: "Talk Q4."',
+      'Hooli tested Polaris for 3 weeks across 6 designers. Liked: latency, cursor smoothness, cleanliness of UI. Killed deal because they\'re EU-based and need data residency in Frankfurt - not at GA. Sarah: "v1.2." Hooli: "Talk Q4."',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 38,
     topics: ['hooli', 'eu', 'data-residency', 'prospect'],
   },
   {
-    title: "Initech eval — they're building it themselves",
+    title: "Initech eval - they're building it themselves",
     content:
       "Initech's eng lead, Marco, said quietly that they're prototyping their own collab in Y.js. Saw our pricing as 4x what they'd build for. Don't expect them to convert this year. Set Q3 follow-up to see if they realize how hard it is.",
     owner: 'alex',
@@ -718,7 +718,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['initech', 'build-vs-buy', 'prospect', 'self-build'],
   },
   {
-    title: 'Pied Piper outreach — they found us via HN',
+    title: 'Pied Piper outreach - they found us via HN',
     content:
       'Cold outreach: "Saw your HN post about CRDT for design tools. We have a different problem (compression) but love your tech." 30-min call. They\'re too small to be a customer ($300 ARR potential) but interesting tech network.',
     owner: 'alex',
@@ -727,7 +727,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['pied-piper', 'hacker-news', 'tech-network', 'outreach'],
   },
   {
-    title: 'Stark Industries first call — they want air-gapped',
+    title: 'Stark Industries first call - they want air-gapped',
     content:
       'Stark CISO and design lead on the call. Their requirement: "We can\'t have anything leave our datacenter." That\'s self-hosted Polaris, which we don\'t offer. Sarah: "We don\'t do air-gapped today; not on roadmap until v2." Stark: "Then we can\'t use this." Polite end.',
     owner: 'sarah',
@@ -736,7 +736,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['stark', 'air-gapped', 'self-host', 'no-fit'],
   },
   {
-    title: 'Wayne Enterprises — odd fit',
+    title: 'Wayne Enterprises - odd fit',
     content:
       'Wayne wants Polaris. They want it to integrate with their internal AI system for "IP scanning." Design lead is enthusiastic; their CISO is wary. Sarah: "Let\'s talk to your CISO directly." Pending.',
     owner: 'sarah',
@@ -754,7 +754,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'cursor', 'branding', 'quick-win'],
   },
   {
-    title: 'Acme: bug report — cursor flicker',
+    title: 'Acme: bug report - cursor flicker',
     content:
       'Priya filed a bug: cursor flickers when 5+ users have overlapping selections. Sarah reproduced, Bob fixed (PR #523), shipped to Acme within 4 days. Priya: "This is what good vendor support looks like."',
     owner: 'alex',
@@ -763,7 +763,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'bug-report', 'quick-fix', 'customer-love'],
   },
   {
-    title: 'Acme: feature request — comment threads',
+    title: 'Acme: feature request - comment threads',
     content:
       'Acme\'s next ask after Polaris GA: comment threads anchored to canvas regions. Sarah: "On Q3 roadmap as a separate feature." Acme: "How early in Q3?" Sarah: "July." Acme: "We\'ll commit to expanded contract on July delivery."',
     owner: 'sarah',
@@ -772,7 +772,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'comments', 'q3', 'expansion-deal'],
   },
   {
-    title: 'Acme: bug — undo across user actions',
+    title: 'Acme: bug - undo across user actions',
     content:
       'Priya filed: "User A creates a frame, user B deletes it, user A presses Cmd+Z and nothing happens." Per CRDT design, undo is per-user. Documented & shipped a help-text in the editor. Priya: "OK, that\'s actually correct behavior."',
     owner: 'sarah',
@@ -781,7 +781,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'undo', 'crdt-design', 'expected-behavior'],
   },
   {
-    title: 'Northwind: feature request — palette override',
+    title: 'Northwind: feature request - palette override',
     content:
       'Aisha asked the same as Acme: per-org cursor color override. Already shipping. Aisha thrilled. Took 1 week.',
     owner: 'sarah',
@@ -792,7 +792,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Globex: question about export',
     content:
-      'Before they went silent, Globex asked: "How do we export everything if we leave?" Sarah: "GET /api/exports/full — returns a tar of canvas + audit + collab metadata." Filed for documentation.',
+      'Before they went silent, Globex asked: "How do we export everything if we leave?" Sarah: "GET /api/exports/full - returns a tar of canvas + audit + collab metadata." Filed for documentation.',
     owner: 'alex',
     source: 'gmail',
     daysAgo: 165,
@@ -808,7 +808,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['hooli', 'data-residency', 'eu', 'technical'],
   },
   {
-    title: 'New prospect: Massive Dynamic — 90 designers',
+    title: 'New prospect: Massive Dynamic - 90 designers',
     content:
       'Inbound from Massive Dynamic. Their design org: 90 designers across 12 sub-teams. Looking for one tool to consolidate Figma + Miro + Slack collab. Sarah scheduled discovery call. Big potential ($300k+ ARR).',
     owner: 'sarah',
@@ -817,7 +817,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['massive-dynamic', 'inbound', 'enterprise', 'high-ticket'],
   },
   {
-    title: 'Q1 win — Acme contract signed',
+    title: 'Q1 win - Acme contract signed',
     content:
       'After 2 months of pilot + procurement, Acme\'s 14-seat $48k contract signed Tuesday. Their CTO sent a personal email: "Looking forward to expansion." Champagne in the office.',
     owner: 'sarah',
@@ -826,7 +826,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'contract-signed', 'win', 'q1'],
   },
   {
-    title: 'Q1 loss — Hooli lost to a competitor',
+    title: 'Q1 loss - Hooli lost to a competitor',
     content:
       'Hooli had been evaluating us and Notion AI. They went with Notion AI for their wider product needs. Polaris was good but they wanted everything in one tool. Lesson: lead with platform story, not single feature.',
     owner: 'sarah',
@@ -864,7 +864,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: "Quote from Acme that we're using in marketing",
     content:
-      '"Polaris is the feature we\'ve been waiting two years for. It\'s like having my designers in the same room." — Priya Kapoor, VP Design, Acme Inc.',
+      '"Polaris is the feature we\'ve been waiting two years for. It\'s like having my designers in the same room." - Priya Kapoor, VP Design, Acme Inc.',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 50,
@@ -873,7 +873,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Customer ask: API access for their internal tools',
     content:
-      'Acme wants programmatic access — "create rooms via API; manage members via API." We have docs API; Polaris API exists. Filed: write a Polaris API doc page.',
+      'Acme wants programmatic access - "create rooms via API; manage members via API." We have docs API; Polaris API exists. Filed: write a Polaris API doc page.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 65,
@@ -898,7 +898,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'renewal', 'expansion', 'arr'],
   },
   {
-    title: 'Win/loss interview — Globex',
+    title: 'Win/loss interview - Globex',
     content:
       'Reached out to Globex for a win/loss interview. Their CTO: "Honestly? We thought we could build this. After 2 weeks of trying, we know we can\'t." Maybe re-engage Q3.',
     owner: 'alex',
@@ -907,7 +907,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['globex', 'win-loss', 're-engagement', 'build-vs-buy'],
   },
   {
-    title: 'Customer dashboard mockup — what to show',
+    title: 'Customer dashboard mockup - what to show',
     content:
       'Customer wants: "Show me activity, MAU, top contributors, busy times." Mockup in Figma. Owner: customer success (which is alex). Ship in v1.1.',
     owner: 'alex',
@@ -916,7 +916,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['customer-dashboard', 'mockup', 'analytics', 'v1.1'],
   },
   {
-    title: 'Onboarding email sequence — V2',
+    title: 'Onboarding email sequence - V2',
     content:
       'Day 0: welcome + first room link. Day 1: "have you tried inviting a teammate?" Day 3: case study (Acme). Day 7: customer success contact. Day 14: NPS prompt. Owner: alex.',
     owner: 'alex',
@@ -943,7 +943,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['massive-dynamic', 'pricing', 'enterprise', 'negotiation'],
   },
   {
-    title: 'Customer use case — design system management',
+    title: 'Customer use case - design system management',
     content:
       'Several customers (Acme, Northwind) use Polaris to manage their design system docs. Specifically: changes to component definitions land in Polaris first, then propagate to Figma. Pattern worth productizing.',
     owner: 'sarah',
@@ -970,7 +970,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['sales-playbook', 'icp', 'target-customer'],
   },
   {
-    title: 'Customer Q from Hooli — encryption keys',
+    title: 'Customer Q from Hooli - encryption keys',
     content:
       '"Who controls the encryption keys for our Polaris collab data?" Today: AWS KMS, our account. They want BYOK (customer-managed keys). Filed for v1.2 enterprise tier.',
     owner: 'sarah',
@@ -979,7 +979,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['hooli', 'byok', 'encryption', 'enterprise'],
   },
   {
-    title: 'Polaris ABM list — top 10 prospects Q2',
+    title: 'Polaris ABM list - top 10 prospects Q2',
     content:
       '1. Acme (already converting); 2. Northwind (already converting); 3. Massive Dynamic (in discovery); 4. Hooli (waiting on data residency); 5. Stark (no fit, air-gapped); 6. Wayne (still pending); 7. Initech (build-vs-buy); 8. Pied Piper (too small); 9. Globex (silent); 10. Tinhead (cold).',
     owner: 'sarah',
@@ -988,7 +988,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['abm', 'prospects', 'q2', 'sales'],
   },
   {
-    title: 'Tinhead — cold outreach response',
+    title: 'Tinhead - cold outreach response',
     content:
       'Tinhead\'s design VP replied: "We use Figma + custom internal tooling. Open to a demo if you can show 30% productivity uplift." Sarah scheduled discovery in 2 weeks. Long-cycle.',
     owner: 'alex',
@@ -997,7 +997,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['tinhead', 'cold-outreach', 'prospect', 'long-cycle'],
   },
   {
-    title: 'Customer onboarding playbook — v1.0',
+    title: 'Customer onboarding playbook - v1.0',
     content:
       '1. Welcome email + admin panel walkthrough; 2. Demo room with sample data; 3. Live training (30 min); 4. Slack channel for support; 5. 30-day NPS survey; 6. Quarterly business review. Drafted in /docs/onboarding-playbook.',
     owner: 'sarah',
@@ -1015,9 +1015,9 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'rbac', 'guest', 'permissions'],
   },
   {
-    title: 'NPS data summary — Q1',
+    title: 'NPS data summary - Q1',
     content:
-      'Q1 NPS across 3 beta customers: average +37 (weighted by users). Promoters: Priya (Acme), Aisha (Northwind), VP Design at Hooli. Detractors: 1 Northwind designer (cursor flicker — fixed). Promoter rate: 64%.',
+      'Q1 NPS across 3 beta customers: average +37 (weighted by users). Promoters: Priya (Acme), Aisha (Northwind), VP Design at Hooli. Detractors: 1 Northwind designer (cursor flicker - fixed). Promoter rate: 64%.',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 50,
@@ -1033,7 +1033,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['support', 'sla', 'response-time', 'customer-success'],
   },
   {
-    title: 'Customer churn risk analysis — Q1 cohort',
+    title: 'Customer churn risk analysis - Q1 cohort',
     content:
       'Of 3 beta customers, Globex went silent (churn risk: high). Acme + Northwind committed to GA. Globex churn cost: $0 (no contract yet). Lessons: identify champion + their leverage early.',
     owner: 'sarah',
@@ -1042,7 +1042,7 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['churn', 'q1', 'globex', 'customer-success'],
   },
   {
-    title: 'Demo script v3 — what works',
+    title: 'Demo script v3 - what works',
     content:
       'Updated demo script after 8 customer demos. New flow: live multi-user editing → cursor magic → conflict resolution → permissions → security & audit. Conversion rate: 60% (was 40%).',
     owner: 'sarah',
@@ -1064,7 +1064,7 @@ const CUSTOMERS: MemoryDef[] = [
 // ── 3. Hiring (40) ──────────────────────────────────────────────────────────
 const HIRING: MemoryDef[] = [
   {
-    title: 'Senior Engineer JD — final draft',
+    title: 'Senior Engineer JD - final draft',
     content:
       "Updated JD after Sarah's departure. New phrasing: \"You'll own a major feature end-to-end with the founder. We don't do tickets-by-PM; we do problem-by-engineer.\" Sourcing target: 5 yrs+ in distributed systems or design tools.",
     owner: 'alex',
@@ -1082,7 +1082,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'priya-m', 'phone-screen', 'sre'],
   },
   {
-    title: 'Priya M. system design — multi-region read replicas',
+    title: 'Priya M. system design - multi-region read replicas',
     content:
       '60-min interview. Design a globally-distributed Polaris with EU/US replicas, eventual consistency, conflict resolution. She nailed it: identified write-master-per-region, CRDT-friendly partitioning, async replication with read-your-writes. Strong hire.',
     owner: 'alex',
@@ -1118,7 +1118,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'priya-m', 'accepted', 'team-news'],
   },
   {
-    title: 'James K. phone screen — eng role',
+    title: 'James K. phone screen - eng role',
     content:
       'James, 4 yrs at Google, embedded system experience. Strong on type systems but less hands-on on async. Felt eager. Advance to technical.',
     owner: 'alex',
@@ -1136,9 +1136,9 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'james-k', 'take-home', 'code-quality'],
   },
   {
-    title: 'James K. decline — went to Anthropic',
+    title: 'James K. decline - went to Anthropic',
     content:
-      'James withdrew — got a competing offer at Anthropic for a system role. We were a close second. Lesson: speed up the process; we lost him to a 1-week-faster pipeline.',
+      'James withdrew - got a competing offer at Anthropic for a system role. We were a close second. Lesson: speed up the process; we lost him to a 1-week-faster pipeline.',
     owner: 'alex',
     source: 'gmail',
     daysAgo: 35,
@@ -1181,7 +1181,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'aditi-s', 'decline', 'market-rate'],
   },
   {
-    title: 'Marco F. — referral from Sarah',
+    title: 'Marco F. - referral from Sarah',
     content:
       'Sarah referred Marco F. from her old team at Anthropic. Backend, 3 yrs, looking for smaller. Phone screen scheduled.',
     owner: 'alex',
@@ -1199,7 +1199,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'marco-f', 'phone-screen', 'leveling'],
   },
   {
-    title: 'Marco F. decision — hire as mid-level',
+    title: 'Marco F. decision - hire as mid-level',
     content:
       'Decision: hire at mid-level title with senior IC trajectory. He accepted (fast process, less risk). Start: 3 weeks.',
     owner: 'alex',
@@ -1208,7 +1208,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'marco-f', 'accepted', 'mid-level'],
   },
   {
-    title: 'Hiring funnel — Q1 numbers',
+    title: 'Hiring funnel - Q1 numbers',
     content:
       'Q1: 240 inbound applications, 60 phone screens, 22 take-homes, 12 finals, 3 offers, 2 accepts (Priya M. + Marco F.). Acceptance rate: 67%. Sourcing: most from referrals + LinkedIn. Plan to scale Q2.',
     owner: 'alex',
@@ -1217,7 +1217,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'funnel', 'q1', 'metrics'],
   },
   {
-    title: "Sarah's farewell — what she'd look for in her replacement",
+    title: "Sarah's farewell - what she'd look for in her replacement",
     content:
       'From her exit interview: "Find someone who treats CRDTs as first-class infra knowledge, not a fun toy. They\'ll inherit a tricky codebase. They need patience for edge cases." Filed for hiring rubric.',
     owner: 'sarah',
@@ -1235,7 +1235,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'ladder', 'leveling', 'engineering-culture'],
   },
   {
-    title: 'Take-home design — what we ask',
+    title: 'Take-home design - what we ask',
     content:
       'Standard prompt: "Build a small collaborative app that demonstrates conflict resolution. Use any tech. Time-bound to 4 hours of focused work. Submit a Loom or written walkthrough." 4 hours forces tradeoffs; reveals style.',
     owner: 'alex',
@@ -1244,7 +1244,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'take-home', 'rubric', 'collaborative-skill'],
   },
   {
-    title: 'Hiring debate — should we ask LeetCode?',
+    title: 'Hiring debate - should we ask LeetCode?',
     content:
       'Sarah: "No." Bob: "Maybe one easy." Alex: "Take-home demonstrates real ability better." Decision: no LeetCode. Take-home + system design + collab interview = signal.',
     owner: 'alex',
@@ -1253,9 +1253,9 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'leetcode', 'interview-style', 'culture'],
   },
   {
-    title: 'Hiring decision — pass on Eleanor',
+    title: 'Hiring decision - pass on Eleanor',
     content:
-      'Eleanor: 8 yrs, big-company senior. Strong technically. Cultural fit weak — wanted predictable process, big ownership-of-team. We\'re flat & messy. Pass with regret. Filed: "good in 5 yrs when we have process."',
+      'Eleanor: 8 yrs, big-company senior. Strong technically. Cultural fit weak - wanted predictable process, big ownership-of-team. We\'re flat & messy. Pass with regret. Filed: "good in 5 yrs when we have process."',
     owner: 'alex',
     source: 'notion',
     daysAgo: 78,
@@ -1271,7 +1271,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'q3', 'senior-eng', 'recruiter'],
   },
   {
-    title: 'Reference check — Priya M. with Stripe colleague',
+    title: 'Reference check - Priya M. with Stripe colleague',
     content:
       'Reference, ex-Stripe staff engineer. "Priya is a force multiplier. She raised the bar on observability for our team. Solid IC; not a manager." Strong reference.',
     owner: 'alex',
@@ -1280,7 +1280,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'priya-m', 'reference', 'stripe'],
   },
   {
-    title: 'Designer hiring — when?',
+    title: 'Designer hiring - when?',
     content:
       "Sarah suggested we hire a designer Q3. Currently Bob has been doing UI design (he's OK at it). Designer would unblock Polaris UX polish. Approved for Q3 hiring.",
     owner: 'sarah',
@@ -1289,7 +1289,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'designer', 'q3', 'team-design'],
   },
   {
-    title: 'Customer Success hiring — when?',
+    title: 'Customer Success hiring - when?',
     content:
       'Currently alex is doing customer success. As we approach 10 customers, this becomes the constraint. Q3: hire CS Manager. Profile: ex-Linear, ex-Notion, or similar. Strong process orientation.',
     owner: 'alex',
@@ -1298,7 +1298,7 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'customer-success', 'q3', 'team-design'],
   },
   {
-    title: 'Engineering org design — 6-month vision',
+    title: 'Engineering org design - 6-month vision',
     content:
       'Today: alex (founder, full-stack), Marco (mid). Sarah replacement: Priya M. (senior). Next: + 1 senior backend, + 1 senior frontend. Target: 6 ICs by EOY. Specialization later.',
     owner: 'alex',
@@ -1318,7 +1318,7 @@ const HIRING: MemoryDef[] = [
   {
     title: 'Onboarding plan for Priya M.',
     content:
-      'Week 1: pair on Polaris GA prep. Week 2: ship POLARIS-23 (offline) — solo with code review. Week 3: own her first incident (theoretical). Week 4: 1:1 review.',
+      'Week 1: pair on Polaris GA prep. Week 2: ship POLARIS-23 (offline) - solo with code review. Week 3: own her first incident (theoretical). Week 4: 1:1 review.',
     owner: 'alex',
     source: 'notion',
     daysAgo: 8,
@@ -1370,7 +1370,7 @@ const HIRING: MemoryDef[] = [
     topics: ['diversity', 'q1', 'hiring', 'reflection'],
   },
   {
-    title: 'Interview rubric — culture fit',
+    title: 'Interview rubric - culture fit',
     content:
       'Culture fit signal: (1) curiosity (do they ask hard questions?), (2) ownership (do they own outcomes?), (3) directness (can they push back?). Avoid: "vibes". Always specific examples.',
     owner: 'alex',
@@ -1379,7 +1379,7 @@ const HIRING: MemoryDef[] = [
     topics: ['culture-fit', 'rubric', 'interview', 'signal'],
   },
   {
-    title: 'Hiring outreach experiment — open-ended posts',
+    title: 'Hiring outreach experiment - open-ended posts',
     content:
       'Tested: rather than "we\'re hiring," wrote a deep technical post about a Polaris challenge. Got 12 inbound: 8 strong. Lesson: substance attracts.',
     owner: 'alex',
@@ -1388,9 +1388,9 @@ const HIRING: MemoryDef[] = [
     topics: ['hiring', 'sourcing', 'content', 'experiment'],
   },
   {
-    title: 'Compensation benchmark — Q1',
+    title: 'Compensation benchmark - Q1',
     content:
-      "Looked at Levels.fyi for senior eng in our region. Base $200-260k, equity 0.3-0.5%. We're paying $220k + 0.35% — middle of range. Can flex up for top candidates.",
+      "Looked at Levels.fyi for senior eng in our region. Base $200-260k, equity 0.3-0.5%. We're paying $220k + 0.35% - middle of range. Can flex up for top candidates.",
     owner: 'alex',
     source: 'google_docs',
     daysAgo: 50,
@@ -1446,7 +1446,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['okrs', 'q2', 'nps', 'customer-experience'],
   },
   {
-    title: 'Competitive analysis — Notion AI',
+    title: 'Competitive analysis - Notion AI',
     content:
       'Notion shipped Notion AI as their wedge into our space. Different angle: their AI is for writing/summarizing within Notion. Ours is for retrieval across all sources. Less direct conflict than feared. Watch for them adding multiplayer canvas.',
     owner: 'sarah',
@@ -1455,7 +1455,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['competitive', 'notion-ai', 'strategy', 'analysis'],
   },
   {
-    title: "Competitive analysis — Linear's collab moves",
+    title: "Competitive analysis - Linear's collab moves",
     content:
       "Linear added comments-on-tickets-with-realtime-edit. Similar approach to Polaris. Linear focuses on issues; we focus on canvas. Different domains, but they're building the muscle.",
     owner: 'sarah',
@@ -1464,7 +1464,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['competitive', 'linear', 'strategy', 'realtime'],
   },
   {
-    title: 'Competitive analysis — Figma multiplayer evolution',
+    title: 'Competitive analysis - Figma multiplayer evolution',
     content:
       "Figma's multiplayer is industry-leading. They have ~5 yrs head-start. Our wedge: smaller teams, deeper Polaris-style features (cursor presence + selection awareness) without Figma's scale-tax. Sustainable because Figma is enterprise-priced.",
     owner: 'sarah',
@@ -1473,7 +1473,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['competitive', 'figma', 'wedge', 'positioning'],
   },
   {
-    title: 'Series A fundraising plan — early notes',
+    title: 'Series A fundraising plan - early notes',
     content:
       "Targeting Q3 close. Need: $5M+ ARR run rate (we're at $3.2M), 120% net retention (we're at 115%), 18 months runway post-close. Investor target: 2-3 VC term sheets.",
     owner: 'alex',
@@ -1482,7 +1482,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['series-a', 'fundraising', 'q3', 'metrics'],
   },
   {
-    title: 'Investor update — March',
+    title: 'Investor update - March',
     content:
       "ARR $3.2M (+18% MoM). Polaris in beta with 3 customers. Hiring: 2 hires in pipeline. Burn $200k/mo. Runway 18 months. Highlights: Acme contract signed, Polaris stable in beta. Lowlights: Sarah's departure.",
     owner: 'alex',
@@ -1491,7 +1491,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['investor', 'update', 'march', 'metrics'],
   },
   {
-    title: 'Investor update — April',
+    title: 'Investor update - April',
     content:
       'ARR $3.5M (+9%). Polaris GA on track for May 30. Acme contract signed, Northwind contract signed. New hire: Priya M. (senior eng). Burn $200k. Runway 18 months. Highlights: customer momentum, GA on track.',
     owner: 'alex',
@@ -1500,7 +1500,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['investor', 'update', 'april', 'metrics'],
   },
   {
-    title: "Roadmap planning — what we're NOT doing",
+    title: "Roadmap planning - what we're NOT doing",
     content:
       'Decided to drop: AI-suggestions feature (consensus tabled), real-time chat (out of scope), advanced commenting (Q3 separate feature). Focus = Polaris GA + foundational hardening.',
     owner: 'sarah',
@@ -1509,7 +1509,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['roadmap', 'prioritization', 'focus', 'no-list'],
   },
   {
-    title: 'Pricing experiment — $20 vs $30 vs $45',
+    title: 'Pricing experiment - $20 vs $30 vs $45',
     content:
       'Tested in Q1. $20: 16% conversion, 40% 90-day retention. $30: 12% conversion, 75% retention. $45: 6% conversion, 65% retention. $30 wins on LTV. Settling.',
     owner: 'sarah',
@@ -1529,14 +1529,14 @@ const STRATEGY: MemoryDef[] = [
   {
     title: 'Hacker News timing strategy',
     content:
-      'Best HN time for B2B SaaS: Tuesday 8am PT. We\'ll post May 31 with title "We built realtime collab from scratch — here\'s what we learned." Substance > marketing language.',
+      'Best HN time for B2B SaaS: Tuesday 8am PT. We\'ll post May 31 with title "We built realtime collab from scratch - here\'s what we learned." Substance > marketing language.',
     owner: 'alex',
     source: 'notion',
     daysAgo: 18,
     topics: ['marketing', 'hacker-news', 'timing', 'launch'],
   },
   {
-    title: 'Customer case study — Acme',
+    title: 'Customer case study - Acme',
     content:
       'Drafted case study with Priya from Acme. Title: "How Acme\'s 14-person design team replaced Figma + Slack screen-share with one tool." 800 words, 2 quotes, 1 metric. Approved by Acme. Publishing on May 30.',
     owner: 'sarah',
@@ -1563,7 +1563,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['okrs', 'q1', 'retro', 'metrics'],
   },
   {
-    title: 'Vision doc — 5-year',
+    title: 'Vision doc - 5-year',
     content:
       'By 2030: 100k+ orgs using Cognia, every major AI assistant integrates with us via MCP, $50M+ ARR, IPO-track or strategic acquirer. Path: become the team-knowledge graph that every AI grounds itself on.',
     owner: 'alex',
@@ -1590,7 +1590,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['offsite', 'planning', 'annual', 'strategy'],
   },
   {
-    title: 'Burn rate analysis — May',
+    title: 'Burn rate analysis - May',
     content:
       'Burn: $215k/mo (was $200k). Increase: Priya M. + Marco F. salaries kicking in. Runway: 17 months at current burn. Series A close needed in 12 months. Stable.',
     owner: 'alex',
@@ -1599,7 +1599,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['burn', 'runway', 'finance', 'series-a'],
   },
   {
-    title: 'Sales pipeline — week 18',
+    title: 'Sales pipeline - week 18',
     content:
       'Pipeline: $1.8M qualified opportunities. Hot: Acme expansion ($240k), Massive Dynamic ($300k). Warm: Northwind expansion, Hooli (waiting). Cold: 5 ABM targets. Win rate Q1: 28%.',
     owner: 'sarah',
@@ -1617,7 +1617,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['sales', 'channel', 'strategy', 'direct'],
   },
   {
-    title: 'Customer Advisory Board — recap',
+    title: 'Customer Advisory Board - recap',
     content:
       'Met with 6 enterprise customers: Acme, Northwind, Massive Dynamic, Hooli, Stark, Initech. Top asks: SOC2, custom RBAC, data residency. We have all 3 on roadmap. Reassured them.',
     owner: 'sarah',
@@ -1680,7 +1680,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['mcp', 'partnership', 'distribution', 'ai-tools'],
   },
   {
-    title: "Competitive intel — Glean's pricing leak",
+    title: "Competitive intel - Glean's pricing leak",
     content:
       'Glean (enterprise search) prices at $30-50/seat for 1000+ employee companies. They target up-market; we target bottom-up smaller teams. Different ICP, less direct competition.',
     owner: 'sarah',
@@ -1689,7 +1689,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['competitive', 'glean', 'enterprise', 'pricing'],
   },
   {
-    title: 'Distribution channel — content marketing',
+    title: 'Distribution channel - content marketing',
     content:
       'Plan: 1 deep technical post per 2 weeks. Topics: how Polaris works, hybrid search internals, MCP server build. Goal: signal-to-noise ratio that attracts senior engineers.',
     owner: 'alex',
@@ -1698,7 +1698,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['marketing', 'content', 'distribution', 'seo'],
   },
   {
-    title: 'Startup philosophy — what we believe',
+    title: 'Startup philosophy - what we believe',
     content:
       'Drafted founder essay (unpublished). Core beliefs: (1) memory is the bottleneck for AI utility, (2) team knowledge belongs to the team, not Google or Slack, (3) the future of work is grounded AI, not fast AI.',
     owner: 'alex',
@@ -1707,7 +1707,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['philosophy', 'founder', 'beliefs', 'vision'],
   },
   {
-    title: 'Customer Discovery sprint — recap',
+    title: 'Customer Discovery sprint - recap',
     content:
       '1-week sprint. 12 customer calls (8 existing, 4 prospects). Top themes: (1) cursor smoothness as product moat, (2) audit trail as enterprise gate, (3) integration with Slack/Notion as table stakes.',
     owner: 'sarah',
@@ -1752,7 +1752,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['razorpay', 'stripe', 'migration', 'billing'],
   },
   {
-    title: "Founder mode — what I'm doing this quarter",
+    title: "Founder mode - what I'm doing this quarter",
     content:
       'Founder check-in: 50% on Polaris GA, 25% on customer (Acme, Massive Dynamic), 15% on hiring, 10% on Series A prep. Saying no to: speaking events, advisory roles, podcasts.',
     owner: 'alex',
@@ -1761,7 +1761,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['founder', 'prioritization', 'quarter', 'focus'],
   },
   {
-    title: 'Slack: customer feedback theme — feels like Figma but ours',
+    title: 'Slack: customer feedback theme - feels like Figma but ours',
     content:
       'Across multiple customers: "Polaris feels like our own version of Figma\'s collab." Implication: we\'re a credible alternative for design-tool-curious teams.',
     owner: 'alex',
@@ -1770,7 +1770,7 @@ const STRATEGY: MemoryDef[] = [
     topics: ['feedback', 'figma', 'positioning', 'customer-voice'],
   },
   {
-    title: 'Pricing model debate — usage-based?',
+    title: 'Pricing model debate - usage-based?',
     content:
       'Considered: usage-based (per Polaris room created or per CRDT op). Killed: too unpredictable for customers. Stuck with seat-based. Re-evaluate at $5M ARR.',
     owner: 'sarah',
@@ -1779,9 +1779,9 @@ const STRATEGY: MemoryDef[] = [
     topics: ['pricing', 'usage-based', 'seat-based', 'decision'],
   },
   {
-    title: 'YC application — what we said about Polaris',
+    title: 'YC application - what we said about Polaris',
     content:
-      'YC application essay: "Cognia is the team knowledge graph. Polaris is our wedge — realtime collab on canvas. We\'ll be the data layer for every AI tool." 350 words. Filed for re-use.',
+      'YC application essay: "Cognia is the team knowledge graph. Polaris is our wedge - realtime collab on canvas. We\'ll be the data layer for every AI tool." 350 words. Filed for re-use.',
     owner: 'alex',
     source: 'google_docs',
     daysAgo: 90,
@@ -1792,7 +1792,7 @@ const STRATEGY: MemoryDef[] = [
 // ── 5. Engineering knowledge & lessons (60) ─────────────────────────────────
 const ENG: MemoryDef[] = [
   {
-    title: 'Postgres connection pool — what blew up',
+    title: 'Postgres connection pool - what blew up',
     content:
       'On May 12, ran out of pool connections at 600 active users. Default pool was 20. Increased to 50, set max_idle to 5, idle_timeout to 30s. Now stable at 1500 users.',
     owner: 'bob',
@@ -1810,7 +1810,7 @@ const ENG: MemoryDef[] = [
     topics: ['retry', 'backoff', 'jitter', 'reliability'],
   },
   {
-    title: 'BullMQ stalled jobs — how to debug',
+    title: 'BullMQ stalled jobs - how to debug',
     content:
       "Stalled means: worker started, didn't finish, didn't crash visibly. Causes: process suspended (Heroku scale-down), network partition, infinite loop. Fix: increase stalledInterval, use job.heartbeat() in long jobs.",
     owner: 'bob',
@@ -1821,7 +1821,7 @@ const ENG: MemoryDef[] = [
   {
     title: 'Prisma N+1 query bug we shipped',
     content:
-      "Memory list endpoint returned each memory's tags as a separate query — N+1. Fixed with `include: { tags: true }`. Reduced p99 latency from 800ms to 95ms. Sentry caught it; metrics confirmed.",
+      "Memory list endpoint returned each memory's tags as a separate query - N+1. Fixed with `include: { tags: true }`. Reduced p99 latency from 800ms to 95ms. Sentry caught it; metrics confirmed.",
     owner: 'sarah',
     source: 'github',
     daysAgo: 78,
@@ -1846,7 +1846,7 @@ const ENG: MemoryDef[] = [
     topics: ['bcrypt', 'password', 'security', 'tuning'],
   },
   {
-    title: '2FA TOTP — what we ship',
+    title: '2FA TOTP - what we ship',
     content:
       'Standard RFC 6238 TOTP. 30-sec window, 6 digits. Secret stored encrypted at rest. App support: any TOTP app (Google Authenticator, 1Password, Authy). Recovery codes: 10 single-use.',
     owner: 'sarah',
@@ -1855,16 +1855,16 @@ const ENG: MemoryDef[] = [
     topics: ['2fa', 'totp', 'rfc-6238', 'recovery-codes'],
   },
   {
-    title: 'OIDC client implementation — gotchas',
+    title: 'OIDC client implementation - gotchas',
     content:
-      "(1) Always validate `aud` claim matches our client ID. (2) PKCE is required for public clients (mobile/SPA). (3) `nonce` prevents replay. (4) Don't trust `iss` blindly — check against your IdP's known issuer.",
+      "(1) Always validate `aud` claim matches our client ID. (2) PKCE is required for public clients (mobile/SPA). (3) `nonce` prevents replay. (4) Don't trust `iss` blindly - check against your IdP's known issuer.",
     owner: 'sarah',
     source: 'github',
     daysAgo: 84,
     topics: ['oidc', 'sso', 'security', 'spec'],
   },
   {
-    title: "SCIM 2.0 — what's actually required",
+    title: "SCIM 2.0 - what's actually required",
     content:
       'Spec is dense. We implement: /Users (CRUD), /Groups (read), bulk = no, search filter = limited. Most enterprise customers only use Users + role mapping. Filed scope as MVP.',
     owner: 'sarah',
@@ -1873,9 +1873,9 @@ const ENG: MemoryDef[] = [
     topics: ['scim', 'sso', 'spec', 'mvp'],
   },
   {
-    title: 'Hybrid search — RRF fusion math',
+    title: 'Hybrid search - RRF fusion math',
     content:
-      'Reciprocal Rank Fusion: each result gets 1/(k+rank) where k=60. Sum across rankings. Result with highest sum wins. We use k=60 because spec recommends. Tested smaller k — too aggressive on rank-1.',
+      'Reciprocal Rank Fusion: each result gets 1/(k+rank) where k=60. Sum across rankings. Result with highest sum wins. We use k=60 because spec recommends. Tested smaller k - too aggressive on rank-1.',
     owner: 'bob',
     source: 'notion',
     daysAgo: 98,
@@ -1891,7 +1891,7 @@ const ENG: MemoryDef[] = [
     topics: ['search', 'hybrid', 'bm25', 'dense'],
   },
   {
-    title: 'Cross-encoder reranking — Cohere vs Voyage',
+    title: 'Cross-encoder reranking - Cohere vs Voyage',
     content:
       'Cohere rerank-2: 50ms p99, $0.001/1k docs. Voyage rerank-2: 80ms p99, $0.0008/1k docs. Quality nearly identical. Cost is close. Decision: Cohere for ease of integration.',
     owner: 'bob',
@@ -1918,7 +1918,7 @@ const ENG: MemoryDef[] = [
     topics: ['qdrant', 'pinecone', 'vector-db', 'cost'],
   },
   {
-    title: 'Embedding cache — what to cache',
+    title: 'Embedding cache - what to cache',
     content:
       'Cache rules: (1) embedding for same text, (2) sparse vector for same text. TTL: 7 days. Hit rate currently: 12%. Saves $200/mo on embedding API. Worth it.',
     owner: 'bob',
@@ -1999,7 +1999,7 @@ const ENG: MemoryDef[] = [
     topics: ['tailwind', 'css', 'frontend', 'bundle'],
   },
   {
-    title: "React Server Components — why we don't use them",
+    title: "React Server Components - why we don't use them",
     content:
       "Considered RSC for our app shell. Killed because: (1) our SPA model serves us well, (2) no SEO need (auth-walled product), (3) RSC adds Next.js complexity we don't need. Vite + lazy routes is simpler.",
     owner: 'sarah',
@@ -2008,7 +2008,7 @@ const ENG: MemoryDef[] = [
     topics: ['rsc', 'react', 'frontend', 'architecture'],
   },
   {
-    title: 'Three.js performance — 1000 nodes',
+    title: 'Three.js performance - 1000 nodes',
     content:
       'Renders 1000 mesh nodes at 60fps on M1 Mac. Tradeoff: simplified node geometry (sphere with 6 segments). Camera frustum culling helps. At 5000+ nodes, drops to 30fps.',
     owner: 'sarah',
@@ -2017,7 +2017,7 @@ const ENG: MemoryDef[] = [
     topics: ['threejs', 'performance', '3d', 'frontend'],
   },
   {
-    title: 'CSP policy — what we allow',
+    title: 'CSP policy - what we allow',
     content:
       'Default-src self. Script-src self + nonce for inline scripts. Style-src self + unsafe-inline (radix needs it). Img-src self + data + https. Loud and clear.',
     owner: 'sarah',
@@ -2035,7 +2035,7 @@ const ENG: MemoryDef[] = [
     topics: ['postgres', 'listen-notify', 'caching', 'realtime'],
   },
   {
-    title: 'Webhook DLQ — when jobs fail repeatedly',
+    title: 'Webhook DLQ - when jobs fail repeatedly',
     content:
       'After 5 retries with backoff, push job to DLQ (separate queue). Alert on DLQ growth. Manual ops can replay if needed. We have ~3 jobs in DLQ across all of Q1.',
     owner: 'bob',
@@ -2044,7 +2044,7 @@ const ENG: MemoryDef[] = [
     topics: ['webhook', 'dlq', 'reliability', 'queue'],
   },
   {
-    title: 'Idempotency — request keys',
+    title: 'Idempotency - request keys',
     content:
       'Every webhook delivery includes Idempotency-Key. Server stores response in Redis for 24h. Re-sends with same key get cached response. Prevents duplicate side effects.',
     owner: 'bob',
@@ -2080,9 +2080,9 @@ const ENG: MemoryDef[] = [
     topics: ['gdpr', 'delete', 'user-flow', 'legal-hold'],
   },
   {
-    title: 'OWASP top 10 review — Q1',
+    title: 'OWASP top 10 review - Q1',
     content:
-      "Reviewed all 10. Findings: (1) we're good on A01, A02, A03 (auth, crypto, injection — already covered). (2) A06 (component vulnerabilities) — added Snyk scans to CI. (3) A09 (logging) — improved structured logs.",
+      "Reviewed all 10. Findings: (1) we're good on A01, A02, A03 (auth, crypto, injection - already covered). (2) A06 (component vulnerabilities) - added Snyk scans to CI. (3) A09 (logging) - improved structured logs.",
     owner: 'sarah',
     source: 'notion',
     daysAgo: 95,
@@ -2091,7 +2091,7 @@ const ENG: MemoryDef[] = [
   {
     title: 'Multi-tenant isolation in Qdrant',
     content:
-      'Each org gets its own collection? No — too much collection management overhead. Use payload field `organization_id` + index it. Query always filters by org_id. Verified no cross-tenant leakage in tests.',
+      'Each org gets its own collection? No - too much collection management overhead. Use payload field `organization_id` + index it. Query always filters by org_id. Verified no cross-tenant leakage in tests.',
     owner: 'bob',
     source: 'notion',
     daysAgo: 105,
@@ -2125,7 +2125,7 @@ const ENG: MemoryDef[] = [
     topics: ['backup', 'qdrant', 'disaster-recovery', 'rpo'],
   },
   {
-    title: 'CI parallelization — 4 min to 90 sec',
+    title: 'CI parallelization - 4 min to 90 sec',
     content:
       'Was: serial test, lint, build = 4 min. After: parallelized into 4 jobs (test, lint, build:api, build:client) = 90 sec. Cache npm, cache prisma client. Worth a sprint.',
     owner: 'sarah',
@@ -2145,7 +2145,7 @@ const ENG: MemoryDef[] = [
   {
     title: 'Bun runtime evaluation',
     content:
-      "Tested Bun for our API. 30% faster cold start. Postgres driver issues — Bun's lib lacked LISTEN/NOTIFY. Stuck with Node 20. Revisit Bun in 6 months.",
+      "Tested Bun for our API. 30% faster cold start. Postgres driver issues - Bun's lib lacked LISTEN/NOTIFY. Stuck with Node 20. Revisit Bun in 6 months.",
     owner: 'bob',
     source: 'notion',
     daysAgo: 70,
@@ -2161,7 +2161,7 @@ const ENG: MemoryDef[] = [
     topics: ['kubernetes', 'infra', 'complexity', 'tradeoff'],
   },
   {
-    title: 'Trunk-based dev — what works',
+    title: 'Trunk-based dev - what works',
     content:
       'Long-lived branches die slowly. Merge to main daily. Feature flags for unfinished work. CI on every PR. Has scaled with our team (5 ICs).',
     owner: 'alex',
@@ -2251,7 +2251,7 @@ const ENG: MemoryDef[] = [
     topics: ['property-testing', 'fast-check', 'crdt', 'testing'],
   },
   {
-    title: 'Snapshot testing — when it helps',
+    title: 'Snapshot testing - when it helps',
     content:
       'Useful for: API response shapes, generated SQL queries. NOT useful for: rendered components (too brittle). We have 12 snapshot tests; review on every change.',
     owner: 'sarah',
@@ -2269,7 +2269,7 @@ const ENG: MemoryDef[] = [
     topics: ['pagination', 'cursor', 'api', 'design'],
   },
   {
-    title: 'API versioning — /v1 first',
+    title: 'API versioning - /v1 first',
     content:
       'All public API at /v1/. No /v0 for beta. Breaking changes go to /v2 with 6-month deprecation notice. Standard.',
     owner: 'bob',
@@ -2345,7 +2345,7 @@ const ARTICLES: MemoryDef[] = [
     topics: ['figma', 'multiplayer', 'article', 'ot'],
   },
   {
-    title: 'Designing Data-Intensive Applications — Ch 5',
+    title: 'Designing Data-Intensive Applications - Ch 5',
     content:
       "Replication chapter. Useful framing for our snapshot/delta approach. Single-leader vs multi-leader vs leaderless. We're single-leader (per shard). Trade-offs documented in our system design.",
     owner: 'bob',
@@ -2543,7 +2543,7 @@ const ARTICLES: MemoryDef[] = [
     topics: ['llama', 'local-llm', 'article', 'embeddings'],
   },
   {
-    title: "Model Context Protocol — Anthropic's New Standard",
+    title: "Model Context Protocol - Anthropic's New Standard",
     content:
       'MCP is open. Allows AI tools to integrate with external knowledge sources via JSON-RPC. We built our MCP server day 2 of the spec landing.',
     owner: 'alex',
@@ -2889,7 +2889,7 @@ const ARTICLES: MemoryDef[] = [
 // ── 7. Internal team & culture (35) ─────────────────────────────────────────
 const INTERNAL: MemoryDef[] = [
   {
-    title: 'All-hands deck — March 2026',
+    title: 'All-hands deck - March 2026',
     content:
       "March all-hands. Highlights: Acme contract signed, Polaris alpha shipped, hiring update (Priya M. + Marco F.), $3.5M ARR. Lowlights: Sarah's departure, Bob's sabbatical. Goals for April.",
     owner: 'alex',
@@ -2898,7 +2898,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['all-hands', 'march', 'company', 'metrics'],
   },
   {
-    title: 'All-hands deck — April 2026',
+    title: 'All-hands deck - April 2026',
     content:
       'April all-hands. Polaris GA on track for May 30. Massive Dynamic discovery call went well. Priya M. starts Monday. Q2 OKRs reviewed. AMA after.',
     owner: 'alex',
@@ -2907,7 +2907,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['all-hands', 'april', 'company', 'okrs'],
   },
   {
-    title: "Q1 retro — what worked, what didn't",
+    title: "Q1 retro - what worked, what didn't",
     content:
       "Worked: speed of execution, customer momentum (Acme), team cohesion. Didn't: handoff process when Sarah left (lost some context), too few hires. Action: better handoff doc template.",
     owner: 'alex',
@@ -2934,7 +2934,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['onboarding', 'week-1', 'process', 'new-hire'],
   },
   {
-    title: 'Onboarding: week 2 — first PR',
+    title: 'Onboarding: week 2 - first PR',
     content:
       "By Friday of week 2, new hire has shipped a small PR (bug fix, doc update) and reviewed someone else's PR. Sets the bar: code review is part of the job.",
     owner: 'alex',
@@ -3096,7 +3096,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['coffee', 'bandra', 'team-culture', 'fun'],
   },
   {
-    title: 'Engineering retro — sprint 14',
+    title: 'Engineering retro - sprint 14',
     content:
       "Sprint 14 retro. Worked: shipped 4 PRs ahead of estimate. Didn't: 1 PR rebased twice due to migration conflicts. Action: mention migrations in standup.",
     owner: 'alex',
@@ -3105,7 +3105,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['retro', 'sprint-14', 'team', 'process'],
   },
   {
-    title: 'Engineering retro — sprint 15',
+    title: 'Engineering retro - sprint 15',
     content:
       "Sprint 15 retro. Worked: cross-pair on Polaris. Didn't: ran out of OpenAI quota mid-sprint. Action: better quota monitoring.",
     owner: 'alex',
@@ -3114,7 +3114,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['retro', 'sprint-15', 'team', 'process'],
   },
   {
-    title: 'Engineering retro — sprint 16',
+    title: 'Engineering retro - sprint 16',
     content:
       "Sprint 16 retro. Worked: shipped Polaris alpha to Acme. Didn't: missed selection-flicker bug for a week. Action: better customer escalation path.",
     owner: 'alex',
@@ -3123,7 +3123,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['retro', 'sprint-16', 'team', 'process'],
   },
   {
-    title: 'Engineering retro — sprint 17',
+    title: 'Engineering retro - sprint 17',
     content:
       "Sprint 17 retro. Worked: Sarah's smooth handoff. Didn't: not enough customer-facing demos this sprint. Action: 1 customer demo per week.",
     owner: 'alex',
@@ -3132,7 +3132,7 @@ const INTERNAL: MemoryDef[] = [
     topics: ['retro', 'sprint-17', 'team', 'process'],
   },
   {
-    title: 'Engineering retro — sprint 18',
+    title: 'Engineering retro - sprint 18',
     content:
       "Sprint 18 retro. Worked: closed Polaris GA blockers (5/5). Didn't: deploy on prod broke for 4 min. Action: deploy in low-traffic windows.",
     owner: 'alex',

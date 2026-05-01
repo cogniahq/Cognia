@@ -2,10 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
 
 import type { Document } from "@/types/organization"
-import {
-  getDomainMetadataBadges,
-  normalizeDomainPack,
-} from "@/lib/domain-packs"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const FILE_TYPE_LABELS: Record<string, string> = {
@@ -188,16 +184,11 @@ export function DocumentList() {
           // Get uploader info from metadata if available
           const uploaderName = doc.metadata?.uploader_name as string | undefined
           const uploaderRole = doc.metadata?.uploader_role as string | undefined
-          const domainPack = normalizeDomainPack(
-            currentOrganization?.domain_pack
-          )
-          const metadataBadges = getDomainMetadataBadges(
-            domainPack,
-            doc.metadata
-          )
-          const engagementName = doc.metadata?.engagementName as
-            | string
-            | undefined
+          const tags = Array.isArray(doc.metadata?.tags)
+            ? (doc.metadata?.tags as string[]).filter(
+                (tag) => typeof tag === "string"
+              )
+            : []
 
           return (
             <div
@@ -233,21 +224,16 @@ export function DocumentList() {
                     {doc.page_count} page{doc.page_count !== 1 && "s"}
                   </div>
                 )}
-                {(metadataBadges.length > 0 || engagementName) && (
+                {tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {metadataBadges.map((badge) => (
+                    {tags.map((tag) => (
                       <span
-                        key={`${doc.id}-${badge.key}`}
+                        key={`${doc.id}-${tag}`}
                         className="border border-gray-200 px-2 py-1 text-[10px] font-mono uppercase tracking-wide text-gray-500"
                       >
-                        {badge.label}
+                        {tag}
                       </span>
                     ))}
-                    {engagementName && (
-                      <span className="text-xs text-gray-500 truncate">
-                        {engagementName}
-                      </span>
-                    )}
                   </div>
                 )}
               </div>

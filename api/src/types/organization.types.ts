@@ -1,5 +1,4 @@
 import { OrgRole, DocumentStatus, SourceType, Prisma } from '@prisma/client'
-import type { DomainPackId, SearchMetadataFilters } from '../config/domain-packs'
 
 export { OrgRole, DocumentStatus, SourceType }
 
@@ -9,7 +8,6 @@ export interface CreateOrganizationInput {
   description?: string
   industry?: string
   teamSize?: string
-  domainPack?: DomainPackId
 }
 
 export interface UpdateOrganizationInput {
@@ -23,7 +21,6 @@ export interface UpdateOrganizationProfileInput {
   name?: string
   slug?: string
   description?: string
-  domainPack?: DomainPackId
   logo?: string
   website?: string
   streetAddress?: string
@@ -110,7 +107,6 @@ export interface OrganizationWithMembers {
   name: string
   slug: string
   description?: string | null
-  domain_pack?: string | null
   created_at: Date
   updated_at: Date
   members: OrganizationMemberInfo[]
@@ -204,7 +200,6 @@ export interface OrganizationSearchInput {
   limit?: number
   includeAnswer?: boolean
   userId?: string
-  metadataFilters?: SearchMetadataFilters
 }
 
 export interface DocumentInfo {

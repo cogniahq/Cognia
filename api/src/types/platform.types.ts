@@ -45,13 +45,7 @@ export interface PlatformMembershipRef {
 }
 
 export interface PlatformDocumentMetadata {
-  clientId?: string
-  matterId?: string
-  matterIds?: string[]
   documentType?: string
-  privileged?: boolean
-  securityTags?: string[]
-  externalDocumentId?: string
   [key: string]: unknown
 }
 
@@ -80,10 +74,7 @@ export interface PlatformCitation {
 
 export interface PlatformSearchRequest {
   tenantExternalId: string
-  mode: 'matter' | 'firm'
   query: string
-  allowedMatterIds: string[]
-  currentMatterId?: string
   limit?: number
   includeAnswer?: boolean
   includeCitations?: boolean
@@ -92,7 +83,6 @@ export interface PlatformSearchRequest {
 
 export interface PlatformSearchResult {
   query: string
-  mode: 'matter' | 'firm'
   totalResults: number
   answer?: string
   citations?: PlatformCitation[]

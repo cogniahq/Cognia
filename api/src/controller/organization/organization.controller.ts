@@ -17,7 +17,7 @@ export class OrganizationController {
   static async createOrganization(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id
-      const { name, description, industry, teamSize, domainPack } = req.body
+      const { name, description, industry, teamSize } = req.body
       let { slug } = req.body
 
       if (!name) {
@@ -57,7 +57,6 @@ export class OrganizationController {
         description,
         industry,
         teamSize,
-        domainPack,
       })
 
       await auditLogService

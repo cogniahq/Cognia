@@ -2,11 +2,6 @@ import { useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
 
 import {
-  DOMAIN_PACKS,
-  getDomainPackDefinition,
-  type DomainPackId,
-} from "@/lib/domain-packs"
-import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -47,7 +42,6 @@ export function CreateOrganizationDialog({
   onOpenChange,
 }: CreateOrganizationDialogProps) {
   const [name, setName] = useState("")
-  const [domainPack, setDomainPack] = useState<DomainPackId>("general")
   const [industry, setIndustry] = useState("")
   const [teamSize, setTeamSize] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -74,15 +68,8 @@ export function CreateOrganizationDialog({
     setError("")
 
     try {
-      await createOrganization(
-        name.trim(),
-        undefined,
-        industry,
-        teamSize,
-        domainPack
-      )
+      await createOrganization(name.trim(), undefined, industry, teamSize)
       setName("")
-      setDomainPack("general")
       setIndustry("")
       setTeamSize("")
       onOpenChange(false)
@@ -98,7 +85,6 @@ export function CreateOrganizationDialog({
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setName("")
-      setDomainPack("general")
       setIndustry("")
       setTeamSize("")
       setError("")
@@ -140,48 +126,6 @@ export function CreateOrganizationDialog({
                 className="w-full px-3 py-2 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
                 autoFocus
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono text-gray-600 uppercase tracking-wide mb-2">
-                Workspace Type
-              </label>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {Object.values(DOMAIN_PACKS).map((pack) => {
-                  const isActive = domainPack === pack.id
-
-                  return (
-                    <button
-                      key={pack.id}
-                      type="button"
-                      onClick={() => {
-                        setDomainPack(pack.id)
-                        setError("")
-                      }}
-                      disabled={isSubmitting}
-                      className={`border px-3 py-3 text-left transition-colors ${
-                        isActive
-                          ? "border-gray-900 bg-gray-900 text-white"
-                          : "border-gray-300 bg-white text-gray-700 hover:border-gray-500"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      <div className="text-xs font-mono uppercase tracking-wide">
-                        {pack.shortLabel}
-                      </div>
-                      <div
-                        className={`mt-2 text-xs leading-relaxed ${
-                          isActive ? "text-gray-100" : "text-gray-500"
-                        }`}
-                      >
-                        {pack.description}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="mt-2 text-xs text-gray-500">
-                {getDomainPackDefinition(domainPack).label}
-              </p>
             </div>
 
             {/* Industry */}

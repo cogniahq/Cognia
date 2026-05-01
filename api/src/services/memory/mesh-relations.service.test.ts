@@ -115,10 +115,6 @@ test('createMemoryRelations inserts relation candidates with duplicate-safe batc
       organization_id: {},
       source_type: {},
       document_id: {},
-      matter_id: {},
-      matter_ids: {},
-      client_id: {},
-      external_document_id: {},
     },
   })) as typeof qdrantMock.qdrantClient.getCollection
   qdrantMock.qdrantClient.createCollection =

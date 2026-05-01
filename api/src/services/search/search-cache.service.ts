@@ -4,7 +4,6 @@ import { getRedisClient, scanKeys } from '../../lib/redis.lib'
 import { logger } from '../../utils/core/logger.util'
 import { SEARCH_CONSTANTS } from '../../utils/core/constants.util'
 import type { HybridSearchHit } from './hybrid-search.service'
-import type { SearchMetadataFilters } from '../../config/domain-packs'
 
 const CACHE_PREFIX = 'search_cache:v1'
 
@@ -13,7 +12,6 @@ interface CacheKeyInput {
   userId?: string
   query: string
   sourceTypes?: SourceType[]
-  metadataFilters?: SearchMetadataFilters
   finalLimit: number
 }
 
@@ -24,18 +22,8 @@ function hashCanonical(input: unknown): string {
 function buildKey(input: CacheKeyInput): string {
   const queryNorm = input.query.trim().toLowerCase().replace(/\s+/g, ' ')
 
-  let normalizedMetadata: Record<string, string[]> | null = null
-  if (input.metadataFilters) {
-    const entries = Object.entries(input.metadataFilters)
-      .map(([key, value]) => [key, [...(value || [])].sort()] as [string, string[]])
-      .filter(([, value]) => Array.isArray(value) && value.length > 0)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    if (entries.length > 0) normalizedMetadata = Object.fromEntries(entries)
-  }
-
   const filters = {
     sourceTypes: [...(input.sourceTypes || [])].sort(),
-    metadataFilters: normalizedMetadata,
     finalLimit: input.finalLimit,
   }
   const queryHash = hashCanonical(queryNorm)

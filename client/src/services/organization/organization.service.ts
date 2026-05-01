@@ -1,10 +1,4 @@
 import type {
-  DomainDocumentMetadata,
-  DomainPackId,
-  SearchMetadataFilters,
-} from "@/lib/domain-packs"
-
-import type {
   CreateOrganizationRequest,
   Document,
   InviteMemberRequest,
@@ -142,7 +136,7 @@ export async function getOrganizationDocuments(
 export async function uploadDocument(
   slug: string,
   file: File,
-  metadata?: DomainDocumentMetadata
+  metadata?: Record<string, unknown>
 ): Promise<Document> {
   requireAuthToken()
   const formData = new FormData()
@@ -237,7 +231,6 @@ export async function searchOrganization(
     limit?: number
     sourceTypes?: string[]
     includeAnswer?: boolean
-    metadataFilters?: SearchMetadataFilters
   }
 ): Promise<OrganizationSearchResponse> {
   requireAuthToken()
@@ -248,7 +241,6 @@ export async function searchOrganization(
       limit: options?.limit,
       sourceTypes: options?.sourceTypes,
       includeAnswer: options?.includeAnswer !== false,
-      metadataFilters: options?.metadataFilters,
     },
     undefined,
     undefined,
@@ -538,7 +530,6 @@ export interface UpdateProfileRequest {
   name?: string
   slug?: string
   description?: string
-  domainPack?: DomainPackId
   logo?: string
   website?: string
   streetAddress?: string

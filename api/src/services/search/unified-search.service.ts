@@ -16,7 +16,6 @@ import { searchCache } from './search-cache.service'
 import { tokenizeQuery } from './query-processor.service'
 import { isRateLimitError } from '../../utils/core/retry.util'
 import { SEARCH_CONSTANTS } from '../../utils/core/constants.util'
-import type { SearchMetadataFilters } from '../../config/domain-packs'
 
 const ANSWER_CONTEXT_CHARS = 320
 const MAX_ANSWER_RESULTS = 12
@@ -33,17 +32,7 @@ type InternalSearchResult = PublicSearchResult & {
   capturedAt?: string | null
 }
 
-const SEARCH_METADATA_KEYS = [
-  'domainPack',
-  'artifactType',
-  'engagementName',
-  'engagementType',
-  'authority',
-  'forum',
-  'outcome',
-  'practiceArea',
-  'tags',
-] as const
+const SEARCH_METADATA_KEYS = ['tags'] as const
 
 export interface UnifiedSearchOptions {
   organizationId: string
@@ -52,7 +41,6 @@ export interface UnifiedSearchOptions {
   limit?: number
   includeAnswer?: boolean
   userId?: string // Include user's personal extension data in search
-  metadataFilters?: SearchMetadataFilters
 }
 
 export interface UnifiedSearchResult {
@@ -108,35 +96,6 @@ export class UnifiedSearchService {
     })
 
     return metadataEntries.length > 0 ? Object.fromEntries(metadataEntries) : undefined
-  }
-
-  private matchesMetadataFilter(candidate: unknown, allowedValues: string[] | undefined): boolean {
-    if (!allowedValues || allowedValues.length === 0) {
-      return true
-    }
-
-    if (typeof candidate !== 'string') {
-      return false
-    }
-
-    return allowedValues.includes(candidate.toLowerCase())
-  }
-
-  private matchesMetadataFilters(
-    metadata: Record<string, unknown> | undefined,
-    filters: SearchMetadataFilters | undefined
-  ): boolean {
-    if (!filters) {
-      return true
-    }
-
-    return (
-      this.matchesMetadataFilter(metadata?.artifactType, filters.artifactTypes) &&
-      this.matchesMetadataFilter(metadata?.authority, filters.authorities) &&
-      this.matchesMetadataFilter(metadata?.forum, filters.forums) &&
-      this.matchesMetadataFilter(metadata?.outcome, filters.outcomes) &&
-      this.matchesMetadataFilter(metadata?.practiceArea, filters.practiceAreas)
-    )
   }
 
   private getAnswerQueryTerms(query: string): string[] {
@@ -473,15 +432,7 @@ export class UnifiedSearchService {
    * Search across organization documents and memories
    */
   async search(options: UnifiedSearchOptions): Promise<UnifiedSearchResult> {
-    const {
-      organizationId,
-      query,
-      sourceTypes,
-      limit,
-      includeAnswer = true,
-      userId,
-      metadataFilters,
-    } = options
+    const { organizationId, query, sourceTypes, limit, includeAnswer = true, userId } = options
 
     await ensureCollection()
 
@@ -495,7 +446,6 @@ export class UnifiedSearchService {
       userId,
       query,
       sourceTypes,
-      metadataFilters,
       finalLimit,
     })
 
@@ -611,7 +561,6 @@ export class UnifiedSearchService {
           capturedAt: memory.created_at ? memory.created_at.toISOString() : null,
         }
       })
-      .filter(result => this.matchesMetadataFilters(result.metadata, metadataFilters))
       .sort((a, b) => b.score - a.score)
       .slice(0, SEARCH_CONSTANTS.RERANK_CANDIDATES)
 

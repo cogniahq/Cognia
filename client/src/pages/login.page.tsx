@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import type { SsoDiscoveryResult } from "@/services/identity.service"
-import { identityService } from "@/services/identity.service"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { cn } from "@/lib/utils.lib"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { DomainCaptureModal } from "@/components/auth/DomainCaptureModal"
 import { MagicLinkForm } from "@/components/auth/MagicLinkForm"
 import { OAuthButton } from "@/components/auth/OAuthButton"
 import { SsoDiscovery } from "@/components/auth/SsoDiscovery"
@@ -134,13 +132,11 @@ export const Login = () => {
   const [totpCode, setTotpCode] = useState("")
   const [useBackupCode, setUseBackupCode] = useState(false)
 
-  // Phase 2: SSO discovery + magic link + domain capture
+  // Phase 2: SSO discovery + magic link
   const [ssoDiscovery, setSsoDiscovery] = useState<SsoDiscoveryResult | null>(
     null
   )
   const [showMagicLink, setShowMagicLink] = useState(false)
-  const [showDomainCapture, setShowDomainCapture] = useState(false)
-  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
 
   // Capture token from OAuth callback redirect (?token=...)
   useEffect(() => {
@@ -212,21 +208,6 @@ export const Login = () => {
     try {
       let resultUser
       if (isRegister) {
-        // Domain capture: best-effort check if this email's domain matches an
-        // existing org's sso_email_domains; if so, surface the modal so the
-        // user can join instead of starting a fresh personal workspace.
-        try {
-          const discovery = await identityService.discoverSso(email.trim())
-          if (discovery?.ssoAvailable && discovery.orgSlug) {
-            setSsoDiscovery(discovery)
-            setRegisteredEmail(email.trim())
-            setShowDomainCapture(true)
-            setIsLoading(false)
-            return
-          }
-        } catch {
-          // Discovery is best-effort; fall through to normal register.
-        }
         resultUser = await register(
           email.trim(),
           password.trim(),
@@ -894,39 +875,6 @@ export const Login = () => {
           </div>
         </div>
       </div>
-
-      {/* Domain capture modal — appears post-register if email domain
-           matches an existing org's sso_email_domains */}
-      <DomainCaptureModal
-        open={showDomainCapture}
-        onOpenChange={setShowDomainCapture}
-        email={registeredEmail ?? email}
-        discovery={ssoDiscovery}
-        onCreateOwn={async () => {
-          setShowDomainCapture(false)
-          // Continue with the original registration
-          setIsLoading(true)
-          try {
-            const resultUser = await register(
-              (registeredEmail ?? email).trim(),
-              password.trim(),
-              selectedAccountType
-            )
-            const dashboardPath = getDashboardPath(resultUser.account_type)
-            setTimeout(() => navigate(dashboardPath), 500)
-          } catch (err) {
-            const e = err as {
-              response?: { data?: { message?: string } }
-              message?: string
-            }
-            setError(
-              e.response?.data?.message || e.message || "Failed to register"
-            )
-          } finally {
-            setIsLoading(false)
-          }
-        }}
-      />
     </div>
   )
 }

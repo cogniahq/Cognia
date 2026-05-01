@@ -425,8 +425,8 @@ export class PlatformController {
     try {
       const body = req.body as PlatformSearchRequest
 
-      if (!body.query || !body.mode || !Array.isArray(body.allowedMatterIds)) {
-        return next(new AppError('query, mode, and allowedMatterIds are required', 400))
+      if (!body.query) {
+        return next(new AppError('query is required', 400))
       }
 
       if (body.tenantExternalId !== req.platform!.actor.tenantExternalId) {
@@ -439,7 +439,6 @@ export class PlatformController {
       )
 
       await PlatformController.logEventIfPossible(req, 'platform_search', 'queried', {
-        mode: body.mode,
         query: body.query.slice(0, 200),
         resultCount: result.totalResults,
       })

@@ -5,7 +5,6 @@ import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
 import AppError from '../../utils/http/app-error.util'
 import { DocumentStatus, SourceType } from '@prisma/client'
-import { sanitizeDomainDocumentMetadata, type DomainPackId } from '../../config/domain-packs'
 
 // Supported MIME types for document upload
 const SUPPORTED_MIME_TYPES = [
@@ -21,14 +20,26 @@ const SUPPORTED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
-function parseUploadMetadata(input: unknown, packId: DomainPackId) {
+function normalizeOptionalStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const normalized = value
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item): item is string => item.length > 0)
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function parseUploadMetadata(input: unknown): Record<string, unknown> {
   if (typeof input !== 'string' || !input.trim()) {
-    return sanitizeDomainDocumentMetadata({}, packId)
+    return {}
   }
 
   try {
     const parsed = JSON.parse(input) as Record<string, unknown>
-    return sanitizeDomainDocumentMetadata(parsed, packId)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {}
+    }
+    const tags = normalizeOptionalStringArray(parsed.tags)
+    return tags ? { tags } : {}
   } catch {
     throw new AppError('metadata must be valid JSON', 400)
   }
@@ -60,7 +71,7 @@ export class DocumentController {
         return next(new AppError('File size exceeds maximum limit of 50MB', 400))
       }
 
-      const metadata = parseUploadMetadata(req.body?.metadata, req.organization!.domain_pack)
+      const metadata = parseUploadMetadata(req.body?.metadata)
 
       const document = await documentService.uploadDocument({
         organizationId: req.organization!.id,

@@ -17,7 +17,7 @@ test('search cache key is deterministic across query whitespace and case', () =>
   assert.equal(a, b)
 })
 
-test('search cache key changes with org, user scope, sourceTypes, and metadata filters', () => {
+test('search cache key changes with org, user scope, and sourceTypes', () => {
   const base = {
     organizationId: 'org-1',
     query: 'q',
@@ -27,24 +27,23 @@ test('search cache key changes with org, user scope, sourceTypes, and metadata f
   const k2 = searchCache.buildKey({ ...base, organizationId: 'org-2' })
   const k3 = searchCache.buildKey({ ...base, userId: 'user-1' })
   const k4 = searchCache.buildKey({ ...base, sourceTypes: [SourceType.DOCUMENT] })
-  const k5 = searchCache.buildKey({ ...base, metadataFilters: { authorities: ['california'] } })
 
-  const keys = new Set([k1, k2, k3, k4, k5])
-  assert.equal(keys.size, 5)
+  const keys = new Set([k1, k2, k3, k4])
+  assert.equal(keys.size, 4)
 })
 
-test('search cache key is stable regardless of metadataFilters insertion order', () => {
+test('search cache key is stable regardless of sourceTypes order', () => {
   const a = searchCache.buildKey({
     organizationId: 'org-1',
     query: 'q',
     finalLimit: 10,
-    metadataFilters: { authorities: ['ny', 'ca'], practiceAreas: ['ip'] },
+    sourceTypes: [SourceType.DOCUMENT, SourceType.INTEGRATION],
   })
   const b = searchCache.buildKey({
     organizationId: 'org-1',
     query: 'q',
     finalLimit: 10,
-    metadataFilters: { practiceAreas: ['ip'], authorities: ['ca', 'ny'] },
+    sourceTypes: [SourceType.INTEGRATION, SourceType.DOCUMENT],
   })
   assert.equal(a, b)
 })

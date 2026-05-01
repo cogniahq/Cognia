@@ -44,12 +44,6 @@ const PAYLOAD_INDEXES: Array<{
   { field: 'user_id', schema: 'keyword' },
   { field: 'source_type', schema: 'keyword' },
   { field: 'document_id', schema: 'keyword' },
-  { field: 'matter_id', schema: 'keyword' },
-  { field: 'matter_ids', schema: 'keyword' },
-  { field: 'client_id', schema: 'keyword' },
-  { field: 'external_document_id', schema: 'keyword' },
-  { field: 'privileged', schema: 'bool' },
-  { field: 'security_tags', schema: 'keyword' },
 ]
 
 export async function ensureCollection(): Promise<void> {
@@ -161,12 +155,6 @@ export interface MemoryPointPayload {
   organization_id?: string | null
   source_type?: string | null
   document_id?: string | null
-  matter_id?: string | null
-  matter_ids?: string[]
-  client_id?: string | null
-  privileged?: boolean | null
-  security_tags?: string[]
-  external_document_id?: string | null
   model_name?: string
   created_at?: string
   [key: string]: unknown

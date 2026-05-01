@@ -28,10 +28,6 @@ test('memory search uses indexed user filters in Qdrant instead of enumerating m
       organization_id: {},
       source_type: {},
       document_id: {},
-      matter_id: {},
-      matter_ids: {},
-      client_id: {},
-      external_document_id: {},
     },
   })) as unknown as typeof qdrantClient.getCollection
 

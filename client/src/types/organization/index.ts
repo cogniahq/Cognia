@@ -1,5 +1,3 @@
-import type { DomainDocumentMetadata, DomainPackId } from "@/lib/domain-packs"
-
 export type OrgRole = "ADMIN" | "EDITOR" | "VIEWER"
 
 export type DocumentStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED"
@@ -9,7 +7,6 @@ export interface Organization {
   name: string
   slug: string
   description?: string
-  domain_pack?: DomainPackId
   created_at: string
   updated_at: string
   // Enterprise profile fields
@@ -100,7 +97,6 @@ export interface CreateOrganizationRequest {
   description?: string
   industry?: string
   teamSize?: string
-  domainPack?: DomainPackId
 }
 
 export interface InviteMemberRequest {
@@ -125,7 +121,7 @@ export interface OrganizationSearchResult {
   sourceType: string
   title?: string
   url?: string
-  metadata?: DomainDocumentMetadata
+  metadata?: Record<string, unknown>
 }
 
 export interface OrganizationSearchResponse {

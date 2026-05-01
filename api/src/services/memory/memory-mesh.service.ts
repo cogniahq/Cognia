@@ -134,14 +134,6 @@ export class MemoryMeshService {
 
     const points = pending.map((item, idx) => {
       const metadata = (item.memory.page_metadata as Record<string, unknown> | null) || {}
-      const matterIds = Array.isArray(metadata.matterIds)
-        ? metadata.matterIds.filter((value): value is string => typeof value === 'string')
-        : typeof metadata.matterId === 'string'
-          ? [metadata.matterId]
-          : []
-      const securityTags = Array.isArray(metadata.securityTags)
-        ? metadata.securityTags.filter((value): value is string => typeof value === 'string')
-        : []
 
       return {
         id: randomUUID(),
@@ -157,13 +149,6 @@ export class MemoryMeshService {
           document_id:
             item.memory.document_chunks[0]?.document_id ||
             (typeof metadata.documentId === 'string' ? metadata.documentId : null),
-          matter_id: typeof metadata.matterId === 'string' ? metadata.matterId : null,
-          matter_ids: matterIds,
-          client_id: typeof metadata.clientId === 'string' ? metadata.clientId : null,
-          privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
-          security_tags: securityTags,
-          external_document_id:
-            typeof metadata.externalDocumentId === 'string' ? metadata.externalDocumentId : null,
         },
       }
     })
@@ -190,14 +175,6 @@ export class MemoryMeshService {
     dense: number[]
   ): Promise<void> {
     const metadata = (memory?.page_metadata as Record<string, unknown> | null) || {}
-    const matterIds = Array.isArray(metadata.matterIds)
-      ? metadata.matterIds.filter((value): value is string => typeof value === 'string')
-      : typeof metadata.matterId === 'string'
-        ? [metadata.matterId]
-        : []
-    const securityTags = Array.isArray(metadata.securityTags)
-      ? metadata.securityTags.filter((value): value is string => typeof value === 'string')
-      : []
 
     const sparse = encodeSparse(retrievalText)
 
@@ -215,13 +192,6 @@ export class MemoryMeshService {
         document_id:
           memory?.document_chunks[0]?.document_id ||
           (typeof metadata.documentId === 'string' ? metadata.documentId : null),
-        matter_id: typeof metadata.matterId === 'string' ? metadata.matterId : null,
-        matter_ids: matterIds,
-        client_id: typeof metadata.clientId === 'string' ? metadata.clientId : null,
-        privileged: typeof metadata.privileged === 'boolean' ? metadata.privileged : null,
-        security_tags: securityTags,
-        external_document_id:
-          typeof metadata.externalDocumentId === 'string' ? metadata.externalDocumentId : null,
       },
     })
   }

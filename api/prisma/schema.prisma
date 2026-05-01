@@ -154,7 +154,6 @@ model Organization {
   name        String
   slug        String               @unique
   description String?
-  domain_pack String               @default("general")
   created_at  DateTime             @default(now())
   updated_at  DateTime             @updatedAt
 

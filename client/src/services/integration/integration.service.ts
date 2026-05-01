@@ -58,8 +58,7 @@ export async function connectIntegration(
   requireAuthToken()
   try {
     // Use API base URL for OAuth callback - Google redirects to API, which then redirects to frontend
-    const apiBaseUrl =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000"
+    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
     const redirectUri = `${apiBaseUrl}/api/integrations/${provider}/callback`
     const response = await postRequest(`/integrations/${provider}/connect`, {
       redirectUri,

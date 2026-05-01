@@ -4,7 +4,7 @@
 
 const API_BASE = import.meta.env.DEV
   ? "/api"
-  : `${import.meta.env.VITE_SERVER_URL || ""}/api`
+  : `${import.meta.env.VITE_API_URL || ""}/api`
 
 function getAuthHeader(): Record<string, string> {
   try {

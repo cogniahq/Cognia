@@ -2,7 +2,7 @@
 
 interface ImportMeta {
   env: {
-    VITE_SERVER_URL: string
+    VITE_API_URL: string
     VITE_DEV_HOST: string
     VITE_DEV_PORT: number
     VITE_FIREBASE_API_KEY: string

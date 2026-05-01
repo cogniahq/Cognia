@@ -122,10 +122,10 @@ export const orgAdminService = {
     slug: string,
     params: Record<string, string | undefined>
   ): string => {
-    // The dev server proxies /api to the backend. In prod we use VITE_SERVER_URL.
+    // The dev server proxies /api to the backend. In prod we use VITE_API_URL.
     const base = import.meta.env.DEV
       ? "/api"
-      : `${import.meta.env.VITE_SERVER_URL || ""}/api`
+      : `${import.meta.env.VITE_API_URL || ""}/api`
     return `${base}/org-admin/${slug}/activity/export.csv${buildQuery(params)}`
   },
 

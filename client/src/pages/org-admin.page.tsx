@@ -137,13 +137,13 @@ export function OrgAdmin() {
             </motion.div>
           </LayoutGroup>
 
-          {/* Tab content */}
+          {/* Tab content - opacity-only fade to avoid layout jump */}
           <motion.div
             key={activeTab}
             className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-6 min-h-[500px]"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18 }}
           >
             {activeTab === "activity" && <ActivityTab slug={slug} />}
             {activeTab === "members" && <MembersTab slug={slug} />}

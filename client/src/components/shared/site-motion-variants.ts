@@ -1,30 +1,25 @@
 import type { Variants } from "framer-motion"
 
 const MOTION_EASE = [0.22, 1, 0.36, 1] as const
-const PAGE_REVEAL_Y = 22
 const SECTION_REVEAL_Y = 20
 
+// Route-level transitions: opacity-only. translateY/scale shifts on every
+// navigation caused visible layout jumps on tab/route switches.
 export const pageVariants: Variants = {
   initial: {
     opacity: 0,
-    y: PAGE_REVEAL_Y,
-    scale: 0.995,
   },
   animate: {
     opacity: 1,
-    y: 0,
-    scale: 1,
     transition: {
-      duration: 0.48,
+      duration: 0.22,
       ease: MOTION_EASE,
     },
   },
   exit: {
     opacity: 0,
-    y: 14,
-    scale: 0.998,
     transition: {
-      duration: 0.24,
+      duration: 0.14,
       ease: MOTION_EASE,
     },
   },
@@ -58,26 +53,22 @@ export const staggerContainerVariants: Variants = {
 }
 
 export const tabContentVariants: Variants = {
+  // Opacity-only on tab switch. Removed y/scale shifts because the
+  // translateY caused a visible layout jump on every tab change.
   initial: {
     opacity: 0,
-    y: 12,
-    scale: 0.998,
   },
   animate: {
     opacity: 1,
-    y: 0,
-    scale: 1,
     transition: {
-      duration: 0.32,
+      duration: 0.18,
       ease: MOTION_EASE,
     },
   },
   exit: {
     opacity: 0,
-    y: -8,
-    scale: 0.998,
     transition: {
-      duration: 0.2,
+      duration: 0.12,
       ease: MOTION_EASE,
     },
   },

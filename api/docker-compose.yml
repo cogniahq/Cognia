@@ -93,8 +93,11 @@ services:
       # Defaults to 3100 to avoid colliding with a host dev server on 3000.
       # Override with: API_HOST_PORT=3000 docker compose --profile app up
       - '${API_HOST_PORT:-3100}:3000'
-    # Inherit local secrets (OPENAI_API_KEY, COHERE_API_KEY, etc.) from .env.
-    # Service-name URLs below override the localhost values in that file.
+    # Inherit application secrets and config from .env. The container-network
+    # URLs below override the localhost values in that file. Cookie/CORS
+    # settings are inherited from .env so dev (.env COOKIE_SECURE=false,
+    # COOKIE_DOMAIN=localhost) and prod (.env COOKIE_SECURE=true,
+    # COOKIE_DOMAIN=.your-domain.tld, CORS_ALLOWED_ORIGINS=https://...) both work.
     env_file:
       - .env
     environment:
@@ -105,9 +108,6 @@ services:
       QDRANT_URL: http://qdrant:6333
       LOG_FILE_PATH: /app/logs/app.log
       LOCAL_STORAGE_PATH: /app/uploads
-      COOKIE_SECURE: 'false'
-      COOKIE_DOMAIN: localhost
-      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
     volumes:
       - cognia_uploads:/app/uploads
       - cognia_logs:/app/logs

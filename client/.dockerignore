@@ -12,8 +12,5 @@ coverage
 **/*.log
 *.tsbuildinfo
 README.md
-Dockerfile
-.dockerignore
-nginx.conf
 test-results
 playwright-report

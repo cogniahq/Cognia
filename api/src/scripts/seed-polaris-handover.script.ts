@@ -14,12 +14,21 @@
  * Usage:
  *   npm run seed:polaris
  */
+import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.lib'
 import { memoryMeshService } from '../services/memory/memory-mesh.service'
 import { logger } from '../utils/core/logger.util'
 
 const ORG_SLUG = 'blit-labs'
+const ORG_NAME = 'Blit Labs'
+const DEMO_PASSWORD = 'DemoPassword2026!'
 const POLARIS_TAG = 'polaris-handover'
+
+const SEED_USERS: Record<Owner, { email: string; name: string }> = {
+  alex: { email: 'alex@blitlabs.com', name: 'Alex Chen' },
+  sarah: { email: 'sarah@blitlabs.com', name: 'Sarah Patel' },
+  bob: { email: 'bob@blitlabs.com', name: 'Bob Kim' },
+}
 
 type Owner = 'alex' | 'sarah' | 'bob'
 
@@ -337,20 +346,43 @@ const MEMORIES: PolarisMemory[] = [
   },
 ]
 
-async function findOrFail(orgSlug: string) {
-  const org = await prisma.organization.findUnique({ where: { slug: orgSlug } })
-  if (!org) {
-    throw new Error(
-      `Org "${orgSlug}" not found. Create the Blit Labs workspace and its users (alex/sarah/bob @blitlabs.com) before running this seed.`
-    )
-  }
-  return org
+async function ensureUser(email: string): Promise<{ id: string; email: string }> {
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing) return existing
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12)
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password_hash: passwordHash,
+      account_type: 'ORGANIZATION',
+      email_verified_at: new Date(),
+    },
+  })
+  return user
 }
 
-async function findUsersByEmail(emails: string[]) {
-  const rows = await prisma.user.findMany({ where: { email: { in: emails } } })
-  const byEmail = new Map(rows.map(r => [r.email, r]))
-  return byEmail
+async function ensureOrg(
+  alexId: string,
+  sarahId: string,
+  bobId: string
+): Promise<{ id: string; slug: string }> {
+  const existing = await prisma.organization.findUnique({ where: { slug: ORG_SLUG } })
+  if (existing) return existing
+  return prisma.organization.create({
+    data: {
+      name: ORG_NAME,
+      slug: ORG_SLUG,
+      industry: 'Software / AI',
+      team_size: '1-10',
+      members: {
+        create: [
+          { user_id: alexId, role: 'ADMIN' },
+          { user_id: sarahId, role: 'EDITOR' },
+          { user_id: bobId, role: 'EDITOR' },
+        ],
+      },
+    },
+  })
 }
 
 async function purgePolaris(orgId: string): Promise<number> {
@@ -427,21 +459,15 @@ async function embedBatch(memoryIds: string[]): Promise<void> {
 async function main(): Promise<void> {
   logger.log('[seed:polaris] starting')
 
-  const org = await findOrFail(ORG_SLUG)
-  const users = await findUsersByEmail([
-    'alex@blitlabs.com',
-    'sarah@blitlabs.com',
-    'bob@blitlabs.com',
-  ])
-
-  const alex = users.get('alex@blitlabs.com')
-  const sarah = users.get('sarah@blitlabs.com')
-  const bob = users.get('bob@blitlabs.com')
-  if (!alex || !sarah || !bob) {
-    throw new Error(
-      'One or more seed users (alex/sarah/bob @blitlabs.com) missing. Create them in the Blit Labs workspace before running this seed.'
-    )
-  }
+  // Bootstrap: create users + org if they don't exist (idempotent).
+  const alex = await ensureUser(SEED_USERS.alex.email)
+  const sarah = await ensureUser(SEED_USERS.sarah.email)
+  const bob = await ensureUser(SEED_USERS.bob.email)
+  const org = await ensureOrg(alex.id, sarah.id, bob.id)
+  logger.log('[seed:polaris] workspace ready', {
+    orgSlug: org.slug,
+    users: { alex: alex.email, sarah: sarah.email, bob: bob.email },
+  })
 
   const purged = await purgePolaris(org.id)
   if (purged > 0) {

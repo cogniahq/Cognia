@@ -1,0 +1,92 @@
+name: Deploy API to production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to deploy (branch, tag, or SHA)'
+        required: false
+        default: ''
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/cognia.pem
+          chmod 600 ~/.ssh/cognia.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Rsync repo to EC2
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '**/dist' \
+            --exclude '**/build' \
+            --exclude '*.log' \
+            --exclude 'logs' \
+            --exclude '.env' \
+            --exclude '.env.bak' \
+            --exclude '.DS_Store' \
+            --exclude 'coverage' \
+            --exclude 'docs/.vitepress/cache' \
+            --exclude 'docs/.vitepress/dist' \
+            --exclude 'DEMO_SCRIPT.md' \
+            -e "ssh -i ~/.ssh/cognia.pem -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/cognia/
+
+      - name: Refresh ~/.npmrc on EC2 (GitHub Packages auth)
+        run: |
+          # Docker build mounts ${HOME}/.npmrc as a secret to authenticate with
+          # npm.pkg.github.com for the @cogniahq scope. We write a fresh token
+          # on every deploy so it never goes stale.
+          ssh -i ~/.ssh/cognia.pem -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "umask 077 && cat > ~/.npmrc <<'EOF'
+          @cogniahq:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_TOKEN }}
+          EOF
+          chmod 600 ~/.npmrc"
+
+      - name: Rebuild and restart API container
+        run: |
+          ssh -i ~/.ssh/cognia.pem -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "cd /home/${{ secrets.EC2_USER }}/cognia/api && \
+             sudo HOME=/home/${{ secrets.EC2_USER }} docker compose --profile app up -d --build api migrate && \
+             sudo docker image prune -f"
+
+      - name: Wait for healthy
+        run: |
+          for i in $(seq 1 60); do
+            if ssh -i ~/.ssh/cognia.pem -o StrictHostKeyChecking=no \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "curl -fsS -m 3 http://localhost:3100/health" >/dev/null 2>&1; then
+              echo "API healthy after ${i} attempts"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API failed to come back healthy in 5 minutes"
+          ssh -i ~/.ssh/cognia.pem -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "sudo docker logs cognia_api --tail 80"
+          exit 1
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/cognia.pem

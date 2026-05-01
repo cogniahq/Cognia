@@ -121,9 +121,11 @@ export class MeshCalculationService {
       const umap = new UMAP({
         nComponents: 3,
         nEpochs: nEpochs,
-        nNeighbors: Math.min(10, Math.max(3, Math.floor(Math.sqrt(datasetSize)))),
-        minDist: 0.1,
-        spread: 1.5,
+        nNeighbors: Math.min(15, Math.max(5, Math.floor(Math.sqrt(datasetSize)))),
+        // Higher minDist = points push apart in the projection so the mesh
+        // looks spread out rather than collapsed into tight blobs.
+        minDist: 0.5,
+        spread: 2.5,
         random: seededRandom,
       })
 

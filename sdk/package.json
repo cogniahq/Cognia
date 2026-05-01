@@ -1,0 +1,54 @@
+{
+  "name": "@cogniahq/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for the Cognia API — typed memory, search, and document intelligence.",
+  "license": "Apache-2.0",
+  "author": "Cognia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cogniahq/cognia.git",
+    "directory": "Cognia/sdk"
+  },
+  "keywords": [
+    "cognia",
+    "memory",
+    "search",
+    "rag",
+    "vector",
+    "ai",
+    "sdk"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --sourcemap",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "test": "node --test --import tsx test/*.test.ts",
+    "lint": "eslint src --ext ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "eslint": "^9.0.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5"
+  }
+}

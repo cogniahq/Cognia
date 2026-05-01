@@ -1,0 +1,52 @@
+{
+  "name": "@cogniahq/mcp",
+  "version": "0.1.0",
+  "description": "Cognia MCP server — exposes hybrid search and memory retrieval to Claude Desktop, Cursor, Cline, and any other MCP-compatible client.",
+  "license": "Apache-2.0",
+  "author": "Cognia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cogniahq/cognia.git",
+    "directory": "Cognia/mcp"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cognia",
+    "claude",
+    "cursor",
+    "cline",
+    "ai"
+  ],
+  "type": "module",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "bin": {
+    "cognia-mcp": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/server.ts src/cli.ts --format esm --dts --clean --sourcemap --target node18",
+    "dev": "tsx src/cli.ts",
+    "test": "node --test --import tsx test/*.test.ts",
+    "lint": "eslint src --ext ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@cogniahq/sdk": "file:../sdk",
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -147,13 +147,13 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'yjs', 'upgrade', 'tech-debt'],
   },
   {
-    title: 'Globex pilot - 5 users, then ghosted',
+    title: 'Halcyon pilot - 5 users, then ghosted',
     content:
-      "Globex piloted with 5 users for 2 weeks. NPS: +8 (mediocre). They went silent on follow-ups. Theory: their internal champion left for Stripe. Don't prioritize re-engagement until next quarter unless inbound.",
+      "Halcyon piloted with 5 users for 2 weeks. NPS: +8 (mediocre). They went silent on follow-ups. Theory: their internal champion left for Stripe. Don't prioritize re-engagement until next quarter unless inbound.",
     owner: 'alex',
     source: 'gmail',
     daysAgo: 33,
-    topics: ['polaris', 'globex', 'pilot', 'customer'],
+    topics: ['polaris', 'halcyon', 'pilot', 'customer'],
   },
   {
     title: 'Selection-flicker fix (PR #523) deep dive',
@@ -201,13 +201,13 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'snapshot', 'interval', 'tradeoff'],
   },
   {
-    title: "Initech evaluation - they're building in-house",
+    title: "Caldera evaluation - they're building in-house",
     content:
-      "Initech's eng lead admitted they're prototyping their own collab in Yjs. Saw our pricing as too high. Don't expect them to convert. Filed for follow-up in 6 months when they realize how hard it is.",
+      "Caldera's eng lead admitted they're prototyping their own collab in Yjs. Saw our pricing as too high. Don't expect them to convert. Filed for follow-up in 6 months when they realize how hard it is.",
     owner: 'alex',
     source: 'gmail',
     daysAgo: 41,
-    topics: ['polaris', 'initech', 'build-vs-buy', 'prospect'],
+    topics: ['polaris', 'caldera', 'build-vs-buy', 'prospect'],
   },
   {
     title: 'Cursor color collision at 50 users - fix shipped',
@@ -239,7 +239,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Beta-1 NPS breakdown',
     content:
-      "ACME 14 users: NPS +51 (top promoters: VP Design, Lead Designer). Northwind 8 users: NPS +28 (lower because of cursor flicker bug - fixed). Globex 5 users: NPS +8 (silent users; can't tell what they actually felt). Overall: +37 weighted.",
+      "ACME 14 users: NPS +51 (top promoters: VP Design, Lead Designer). Northwind 8 users: NPS +28 (lower because of cursor flicker bug - fixed). Halcyon 5 users: NPS +8 (silent users; can't tell what they actually felt). Overall: +37 weighted.",
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 56,
@@ -275,7 +275,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Why server-side persistence not just WebRTC?',
     content:
-      "Considered P2P via WebRTC + DHT. Killed because (1) NAT traversal blocked at Acme/Globex corporate networks, (2) compliance requires server-side audit log, (3) we'd need TURN servers anyway. Server-mediated WS won.",
+      "Considered P2P via WebRTC + DHT. Killed because (1) NAT traversal blocked at Acme/Halcyon corporate networks, (2) compliance requires server-side audit log, (3) we'd need TURN servers anyway. Server-mediated WS won.",
     owner: 'bob',
     source: 'slack',
     daysAgo: 138,
@@ -327,13 +327,13 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'ga', 'launch', 'checklist'],
   },
   {
-    title: 'Hooli evaluation - POC stalled on data residency',
+    title: 'Loomis evaluation - POC stalled on data residency',
     content:
-      'Hooli evaluated Polaris for 3 weeks. Loved the latency. Killed the deal because we don\'t have EU data residency at GA. Sarah\'s response: "We will at v1.2; happy to design the rollout with you." Hooli: "Talk again in Q4."',
+      'Loomis evaluated Polaris for 3 weeks. Loved the latency. Killed the deal because we don\'t have EU data residency at GA. Sarah\'s response: "We will at v1.2; happy to design the rollout with you." Loomis: "Talk again in Q4."',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 38,
-    topics: ['polaris', 'hooli', 'data-residency', 'prospect'],
+    topics: ['polaris', 'loomis', 'data-residency', 'prospect'],
   },
   {
     title: 'Why our delta log retention is 7 days',
@@ -383,7 +383,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: 'Customer asked: can two cursors share a color?',
     content:
-      'Pied Piper noticed when 50+ users editing, occasionally two cursors look identical. Confirmed: golden-angle palette gives perceived collisions past ~30 users. Workaround: each user can override their cursor color. Long-term: switch to OKLab for better color separation.',
+      'Beacon Tech noticed when 50+ users editing, occasionally two cursors look identical. Confirmed: golden-angle palette gives perceived collisions past ~30 users. Workaround: each user can override their cursor color. Long-term: switch to OKLab for better color separation.',
     owner: 'alex',
     source: 'slack',
     daysAgo: 14,
@@ -399,13 +399,13 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'unit-economics', 'pricing', 'infra-cost'],
   },
   {
-    title: 'Wayne Enterprises - strange request',
+    title: 'Concord Studios - strange request',
     content:
-      'Wayne Enterprises asked: "Can we have Polaris with no cloud component?" They want everything air-gapped. Sarah: "That\'s self-hosted edition. Not in our v1 plan." Filed under enterprise-self-host as a 2027 question.',
+      'Concord Studios asked: "Can we have Polaris with no cloud component?" They want everything air-gapped. Sarah: "That\'s self-hosted edition. Not in our v1 plan." Filed under enterprise-self-host as a 2027 question.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 51,
-    topics: ['polaris', 'self-host', 'wayne', 'enterprise'],
+    topics: ['polaris', 'self-host', 'concord', 'enterprise'],
   },
   {
     title: 'Loom: Bob walking through the gateway code',
@@ -446,7 +446,7 @@ const POLARIS: MemoryDef[] = [
   {
     title: "Why we don't support Internet Explorer",
     content:
-      "Polaris uses WebSocket, ES modules, and CSS grid. IE11 is pre-WebSocket-extension support. We deprecated IE in 2024. Acme uses Edge company-wide. Initech still has IE pockets - they're aware.",
+      "Polaris uses WebSocket, ES modules, and CSS grid. IE11 is pre-WebSocket-extension support. We deprecated IE in 2024. Acme uses Edge company-wide. Caldera still has IE pockets - they're aware.",
     owner: 'sarah',
     source: 'notion',
     daysAgo: 118,
@@ -516,13 +516,13 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'dogfood', 'feedback', 'ux'],
   },
   {
-    title: 'Stark Industries - strange compliance ask',
+    title: 'Voltaire Inc - strange compliance ask',
     content:
-      'Stark requested: "All Polaris collab data must be queryable by an internal AI system for IP protection." They want a real-time stream. Sarah: "That\'s a webhooks-on-edit feature, not GA." Filed for v1.2.',
+      'Voltaire requested: "All Polaris collab data must be queryable by an internal AI system for IP protection." They want a real-time stream. Sarah: "That\'s a webhooks-on-edit feature, not GA." Filed for v1.2.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 28,
-    topics: ['polaris', 'stark', 'compliance', 'webhook'],
+    topics: ['polaris', 'voltaire', 'compliance', 'webhook'],
   },
   {
     title: 'Slack: should we GA without offline?',
@@ -588,13 +588,13 @@ const POLARIS: MemoryDef[] = [
     topics: ['polaris', 'selection', 'nested-groups', 'design'],
   },
   {
-    title: 'Pied Piper feedback - they want voice',
+    title: 'Beacon Tech feedback - they want voice',
     content:
       'PP: "Polaris is great but we want voice over the canvas." Out of scope. Filed under voice-canvas as 2027 exploration. PP: "We\'ll wait."',
     owner: 'alex',
     source: 'gmail',
     daysAgo: 19,
-    topics: ['polaris', 'pied-piper', 'voice', 'future'],
+    topics: ['polaris', 'beacon-tech', 'voice', 'future'],
   },
   {
     title: 'GA blast radius - what could go wrong',
@@ -657,7 +657,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Northwind first call - 8 designers, no PM',
     content:
-      "Northwind's design head, Aisha, runs an 8-person team. They're unhappy with Figma's comment threading. Want better realtime + comments. Polaris fits realtime; comments are next.",
+      "Northwind's design head, Mira, runs an 8-person team. They're unhappy with Figma's comment threading. Want better realtime + comments. Polaris fits realtime; comments are next.",
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 174,
@@ -666,7 +666,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Northwind - switching from Miro for whiteboarding',
     content:
-      "After 3 weeks of Polaris, Aisha's team switched off Miro for design workshops too. \"It's your canvas + collab; we don't need a separate whiteboard tool.\" Implication: Miro displacement is a pitch we can use elsewhere.",
+      "After 3 weeks of Polaris, Mira's team switched off Miro for design workshops too. \"It's your canvas + collab; we don't need a separate whiteboard tool.\" Implication: Miro displacement is a pitch we can use elsewhere.",
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 52,
@@ -675,74 +675,74 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Northwind - request for Slack notifications on @mention',
     content:
-      'Northwind designers want a Slack notification when @-mentioned in a Polaris comment. Comments aren\'t in Polaris yet. Filed as comment-feature dependency. Aisha: "Take your time; we\'ll wait."',
+      'Northwind designers want a Slack notification when @-mentioned in a Polaris comment. Comments aren\'t in Polaris yet. Filed as comment-feature dependency. Mira: "Take your time; we\'ll wait."',
     owner: 'sarah',
     source: 'slack',
     daysAgo: 44,
     topics: ['northwind', 'slack', 'notifications', 'feature-request'],
   },
   {
-    title: 'Globex pilot scoping call',
+    title: 'Halcyon pilot scoping call',
     content:
-      'Globex CTO + 4 engineers on the call. Asked detailed questions about CRDT internals, data ownership, export. They\'re evaluating Polaris vs building in-house. Demo went well; verdict from Globex side: "impressive but we\'ll talk to our team."',
+      'Halcyon CTO + 4 engineers on the call. Asked detailed questions about CRDT internals, data ownership, export. They\'re evaluating Polaris vs building in-house. Demo went well; verdict from Halcyon side: "impressive but we\'ll talk to our team."',
     owner: 'alex',
     source: 'google_docs',
     daysAgo: 169,
-    topics: ['globex', 'evaluation', 'crdt', 'technical'],
+    topics: ['halcyon', 'evaluation', 'crdt', 'technical'],
   },
   {
-    title: 'Globex - they went silent',
+    title: 'Halcyon - they went silent',
     content:
       "Sent 3 follow-ups over 3 weeks. No response. Theory: their internal champion is no longer there (LinkedIn shows him at Stripe now). Don't prioritize. Move to nurture sequence.",
     owner: 'alex',
     source: 'gmail',
     daysAgo: 40,
-    topics: ['globex', 'silent', 'churn-risk', 'nurture'],
+    topics: ['halcyon', 'silent', 'churn-risk', 'nurture'],
   },
   {
-    title: 'Hooli evaluation summary',
+    title: 'Loomis evaluation summary',
     content:
-      'Hooli tested Polaris for 3 weeks across 6 designers. Liked: latency, cursor smoothness, cleanliness of UI. Killed deal because they\'re EU-based and need data residency in Frankfurt - not at GA. Sarah: "v1.2." Hooli: "Talk Q4."',
+      'Loomis tested Polaris for 3 weeks across 6 designers. Liked: latency, cursor smoothness, cleanliness of UI. Killed deal because they\'re EU-based and need data residency in Frankfurt - not at GA. Sarah: "v1.2." Loomis: "Talk Q4."',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 38,
-    topics: ['hooli', 'eu', 'data-residency', 'prospect'],
+    topics: ['loomis', 'eu', 'data-residency', 'prospect'],
   },
   {
-    title: "Initech eval - they're building it themselves",
+    title: "Caldera eval - they're building it themselves",
     content:
-      "Initech's eng lead, Marco, said quietly that they're prototyping their own collab in Y.js. Saw our pricing as 4x what they'd build for. Don't expect them to convert this year. Set Q3 follow-up to see if they realize how hard it is.",
+      "Caldera's eng lead, Marco, said quietly that they're prototyping their own collab in Y.js. Saw our pricing as 4x what they'd build for. Don't expect them to convert this year. Set Q3 follow-up to see if they realize how hard it is.",
     owner: 'alex',
     source: 'gmail',
     daysAgo: 41,
-    topics: ['initech', 'build-vs-buy', 'prospect', 'self-build'],
+    topics: ['caldera', 'build-vs-buy', 'prospect', 'self-build'],
   },
   {
-    title: 'Pied Piper outreach - they found us via HN',
+    title: 'Beacon Tech outreach - they found us via HN',
     content:
       'Cold outreach: "Saw your HN post about CRDT for design tools. We have a different problem (compression) but love your tech." 30-min call. They\'re too small to be a customer ($300 ARR potential) but interesting tech network.',
     owner: 'alex',
     source: 'gmail',
     daysAgo: 56,
-    topics: ['pied-piper', 'hacker-news', 'tech-network', 'outreach'],
+    topics: ['beacon-tech', 'hacker-news', 'tech-network', 'outreach'],
   },
   {
-    title: 'Stark Industries first call - they want air-gapped',
+    title: 'Voltaire Inc first call - they want air-gapped',
     content:
-      'Stark CISO and design lead on the call. Their requirement: "We can\'t have anything leave our datacenter." That\'s self-hosted Polaris, which we don\'t offer. Sarah: "We don\'t do air-gapped today; not on roadmap until v2." Stark: "Then we can\'t use this." Polite end.',
+      'Voltaire CISO and design lead on the call. Their requirement: "We can\'t have anything leave our datacenter." That\'s self-hosted Polaris, which we don\'t offer. Sarah: "We don\'t do air-gapped today; not on roadmap until v2." Voltaire: "Then we can\'t use this." Polite end.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 51,
-    topics: ['stark', 'air-gapped', 'self-host', 'no-fit'],
+    topics: ['voltaire', 'air-gapped', 'self-host', 'no-fit'],
   },
   {
-    title: 'Wayne Enterprises - odd fit',
+    title: 'Concord Studios - odd fit',
     content:
-      'Wayne wants Polaris. They want it to integrate with their internal AI system for "IP scanning." Design lead is enthusiastic; their CISO is wary. Sarah: "Let\'s talk to your CISO directly." Pending.',
+      'Concord wants Polaris. They want it to integrate with their internal AI system for "IP scanning." Design lead is enthusiastic; their CISO is wary. Sarah: "Let\'s talk to your CISO directly." Pending.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 39,
-    topics: ['wayne', 'ai-integration', 'ciso', 'prospect'],
+    topics: ['concord', 'ai-integration', 'ciso', 'prospect'],
   },
   {
     title: 'Acme: complaint about cursor color',
@@ -783,38 +783,38 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Northwind: feature request - palette override',
     content:
-      'Aisha asked the same as Acme: per-org cursor color override. Already shipping. Aisha thrilled. Took 1 week.',
+      'Mira asked the same as Acme: per-org cursor color override. Already shipping. Mira thrilled. Took 1 week.',
     owner: 'sarah',
     source: 'slack',
     daysAgo: 100,
     topics: ['northwind', 'cursor', 'palette', 'feature-request'],
   },
   {
-    title: 'Globex: question about export',
+    title: 'Halcyon: question about export',
     content:
-      'Before they went silent, Globex asked: "How do we export everything if we leave?" Sarah: "GET /api/exports/full - returns a tar of canvas + audit + collab metadata." Filed for documentation.',
+      'Before they went silent, Halcyon asked: "How do we export everything if we leave?" Sarah: "GET /api/exports/full - returns a tar of canvas + audit + collab metadata." Filed for documentation.',
     owner: 'alex',
     source: 'gmail',
     daysAgo: 165,
-    topics: ['globex', 'export', 'data-portability', 'vendor-lock'],
+    topics: ['halcyon', 'export', 'data-portability', 'vendor-lock'],
   },
   {
-    title: 'Hooli: technical deep-dive on data residency',
+    title: 'Loomis: technical deep-dive on data residency',
     content:
-      'Hooli\'s lead engineer asked: "What changes if you offer EU data residency? Region-specific S3? Per-region Postgres? Cross-region failover behavior?" Sarah\'s answer: dedicated EU postgres, EU-only S3, no cross-region failover at v1.2. Hooli accepted; we just need to ship.',
+      'Loomis\'s lead engineer asked: "What changes if you offer EU data residency? Region-specific S3? Per-region Postgres? Cross-region failover behavior?" Sarah\'s answer: dedicated EU postgres, EU-only S3, no cross-region failover at v1.2. Loomis accepted; we just need to ship.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 28,
-    topics: ['hooli', 'data-residency', 'eu', 'technical'],
+    topics: ['loomis', 'data-residency', 'eu', 'technical'],
   },
   {
-    title: 'New prospect: Massive Dynamic - 90 designers',
+    title: 'New prospect: Atlas Robotics - 90 designers',
     content:
-      'Inbound from Massive Dynamic. Their design org: 90 designers across 12 sub-teams. Looking for one tool to consolidate Figma + Miro + Slack collab. Sarah scheduled discovery call. Big potential ($300k+ ARR).',
+      'Inbound from Atlas Robotics. Their design org: 90 designers across 12 sub-teams. Looking for one tool to consolidate Figma + Miro + Slack collab. Sarah scheduled discovery call. Big potential ($300k+ ARR).',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 14,
-    topics: ['massive-dynamic', 'inbound', 'enterprise', 'high-ticket'],
+    topics: ['atlas-robotics', 'inbound', 'enterprise', 'high-ticket'],
   },
   {
     title: 'Q1 win - Acme contract signed',
@@ -826,13 +826,13 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'contract-signed', 'win', 'q1'],
   },
   {
-    title: 'Q1 loss - Hooli lost to a competitor',
+    title: 'Q1 loss - Loomis lost to a competitor',
     content:
-      'Hooli had been evaluating us and Notion AI. They went with Notion AI for their wider product needs. Polaris was good but they wanted everything in one tool. Lesson: lead with platform story, not single feature.',
+      'Loomis had been evaluating us and Notion AI. They went with Notion AI for their wider product needs. Polaris was good but they wanted everything in one tool. Lesson: lead with platform story, not single feature.',
     owner: 'sarah',
     source: 'notion',
     daysAgo: 38,
-    topics: ['hooli', 'loss', 'notion-ai', 'platform'],
+    topics: ['loomis', 'loss', 'notion-ai', 'platform'],
   },
   {
     title: 'Customer success metric: time-to-first-collab-edit',
@@ -855,7 +855,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Northwind: their workflow without Polaris',
     content:
-      'How they used to work: 1 designer would record a Loom of changes, post to Slack with @mentions; 30+ min iteration loop. With Polaris: 0 latency. Aisha: "It\'s like getting back 4 hours a week per person."',
+      'How they used to work: 1 designer would record a Loom of changes, post to Slack with @mentions; 30+ min iteration loop. With Polaris: 0 latency. Mira: "It\'s like getting back 4 hours a week per person."',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 48,
@@ -882,7 +882,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Beta-2 cohort selection criteria',
     content:
-      'After Beta-1 (Acme/Northwind/Globex), Beta-2 will include: 5-10 customers, mix of design + product + eng use cases, mix of company sizes (50-500 employees). No more enterprise pilots until v1.1.',
+      'After Beta-1 (Acme/Northwind/Halcyon), Beta-2 will include: 5-10 customers, mix of design + product + eng use cases, mix of company sizes (50-500 employees). No more enterprise pilots until v1.1.',
     owner: 'sarah',
     source: 'notion',
     daysAgo: 55,
@@ -898,13 +898,13 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['acme', 'renewal', 'expansion', 'arr'],
   },
   {
-    title: 'Win/loss interview - Globex',
+    title: 'Win/loss interview - Halcyon',
     content:
-      'Reached out to Globex for a win/loss interview. Their CTO: "Honestly? We thought we could build this. After 2 weeks of trying, we know we can\'t." Maybe re-engage Q3.',
+      'Reached out to Halcyon for a win/loss interview. Their CTO: "Honestly? We thought we could build this. After 2 weeks of trying, we know we can\'t." Maybe re-engage Q3.',
     owner: 'alex',
     source: 'google_docs',
     daysAgo: 18,
-    topics: ['globex', 'win-loss', 're-engagement', 'build-vs-buy'],
+    topics: ['halcyon', 'win-loss', 're-engagement', 'build-vs-buy'],
   },
   {
     title: 'Customer dashboard mockup - what to show',
@@ -925,22 +925,22 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['onboarding', 'email', 'sequence', 'customer-success'],
   },
   {
-    title: 'Massive Dynamic discovery call',
+    title: 'Atlas Robotics discovery call',
     content:
       'Their design lead, Marcus, brought 4 senior designers. Polaris demo went 22 min, all questions about scaling. They have 90 designers across timezones; they specifically asked: "Can you handle that we\'re US/EU/Asia?" Yes.',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 11,
-    topics: ['massive-dynamic', 'discovery', 'scale', 'timezones'],
+    topics: ['atlas-robotics', 'discovery', 'scale', 'timezones'],
   },
   {
-    title: 'Massive Dynamic: pricing for 90 seats',
+    title: 'Atlas Robotics: pricing for 90 seats',
     content:
       'At $30/seat × 90 = $32.4k ARR. Sarah pitched annual prepay at $324k for 100% of designers + admin tools. Marcus: "Talk to procurement."',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 7,
-    topics: ['massive-dynamic', 'pricing', 'enterprise', 'negotiation'],
+    topics: ['atlas-robotics', 'pricing', 'enterprise', 'negotiation'],
   },
   {
     title: 'Customer use case - design system management',
@@ -970,31 +970,31 @@ const CUSTOMERS: MemoryDef[] = [
     topics: ['sales-playbook', 'icp', 'target-customer'],
   },
   {
-    title: 'Customer Q from Hooli - encryption keys',
+    title: 'Customer Q from Loomis - encryption keys',
     content:
       '"Who controls the encryption keys for our Polaris collab data?" Today: AWS KMS, our account. They want BYOK (customer-managed keys). Filed for v1.2 enterprise tier.',
     owner: 'sarah',
     source: 'gmail',
     daysAgo: 31,
-    topics: ['hooli', 'byok', 'encryption', 'enterprise'],
+    topics: ['loomis', 'byok', 'encryption', 'enterprise'],
   },
   {
     title: 'Polaris ABM list - top 10 prospects Q2',
     content:
-      '1. Acme (already converting); 2. Northwind (already converting); 3. Massive Dynamic (in discovery); 4. Hooli (waiting on data residency); 5. Stark (no fit, air-gapped); 6. Wayne (still pending); 7. Initech (build-vs-buy); 8. Pied Piper (too small); 9. Globex (silent); 10. Tinhead (cold).',
+      '1. Acme (already converting); 2. Northwind (already converting); 3. Atlas Robotics (in discovery); 4. Loomis (waiting on data residency); 5. Voltaire (no fit, air-gapped); 6. Concord (still pending); 7. Caldera (build-vs-buy); 8. Beacon Tech (too small); 9. Halcyon (silent); 10. Plexus (cold).',
     owner: 'sarah',
     source: 'notion',
     daysAgo: 34,
     topics: ['abm', 'prospects', 'q2', 'sales'],
   },
   {
-    title: 'Tinhead - cold outreach response',
+    title: 'Plexus - cold outreach response',
     content:
-      'Tinhead\'s design VP replied: "We use Figma + custom internal tooling. Open to a demo if you can show 30% productivity uplift." Sarah scheduled discovery in 2 weeks. Long-cycle.',
+      'Plexus\'s design VP replied: "We use Figma + custom internal tooling. Open to a demo if you can show 30% productivity uplift." Sarah scheduled discovery in 2 weeks. Long-cycle.',
     owner: 'alex',
     source: 'gmail',
     daysAgo: 9,
-    topics: ['tinhead', 'cold-outreach', 'prospect', 'long-cycle'],
+    topics: ['plexus', 'cold-outreach', 'prospect', 'long-cycle'],
   },
   {
     title: 'Customer onboarding playbook - v1.0',
@@ -1017,7 +1017,7 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'NPS data summary - Q1',
     content:
-      'Q1 NPS across 3 beta customers: average +37 (weighted by users). Promoters: Priya (Acme), Aisha (Northwind), VP Design at Hooli. Detractors: 1 Northwind designer (cursor flicker - fixed). Promoter rate: 64%.',
+      'Q1 NPS across 3 beta customers: average +37 (weighted by users). Promoters: Priya (Acme), Mira (Northwind), VP Design at Loomis. Detractors: 1 Northwind designer (cursor flicker - fixed). Promoter rate: 64%.',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 50,
@@ -1035,11 +1035,11 @@ const CUSTOMERS: MemoryDef[] = [
   {
     title: 'Customer churn risk analysis - Q1 cohort',
     content:
-      'Of 3 beta customers, Globex went silent (churn risk: high). Acme + Northwind committed to GA. Globex churn cost: $0 (no contract yet). Lessons: identify champion + their leverage early.',
+      'Of 3 beta customers, Halcyon went silent (churn risk: high). Acme + Northwind committed to GA. Halcyon churn cost: $0 (no contract yet). Lessons: identify champion + their leverage early.',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 40,
-    topics: ['churn', 'q1', 'globex', 'customer-success'],
+    topics: ['churn', 'q1', 'halcyon', 'customer-success'],
   },
   {
     title: 'Demo script v3 - what works',
@@ -1601,7 +1601,7 @@ const STRATEGY: MemoryDef[] = [
   {
     title: 'Sales pipeline - week 18',
     content:
-      'Pipeline: $1.8M qualified opportunities. Hot: Acme expansion ($240k), Massive Dynamic ($300k). Warm: Northwind expansion, Hooli (waiting). Cold: 5 ABM targets. Win rate Q1: 28%.',
+      'Pipeline: $1.8M qualified opportunities. Hot: Acme expansion ($240k), Atlas Robotics ($300k). Warm: Northwind expansion, Loomis (waiting). Cold: 5 ABM targets. Win rate Q1: 28%.',
     owner: 'sarah',
     source: 'google_docs',
     daysAgo: 50,
@@ -1619,7 +1619,7 @@ const STRATEGY: MemoryDef[] = [
   {
     title: 'Customer Advisory Board - recap',
     content:
-      'Met with 6 enterprise customers: Acme, Northwind, Massive Dynamic, Hooli, Stark, Initech. Top asks: SOC2, custom RBAC, data residency. We have all 3 on roadmap. Reassured them.',
+      'Met with 6 enterprise customers: Acme, Northwind, Atlas Robotics, Loomis, Voltaire, Caldera. Top asks: SOC2, custom RBAC, data residency. We have all 3 on roadmap. Reassured them.',
     owner: 'sarah',
     source: 'notion',
     daysAgo: 38,
@@ -1655,7 +1655,7 @@ const STRATEGY: MemoryDef[] = [
   {
     title: 'Website re-positioning project',
     content:
-      "Redo homepage hero around team-collab story. Polaris demo above the fold. Customer logos: Acme, Northwind, Globex. Pricing tier: Team plan as default. Owner: marketing (sarah's ex-network helping).",
+      "Redo homepage hero around team-collab story. Polaris demo above the fold. Customer logos: Acme, Northwind, Halcyon. Pricing tier: Team plan as default. Owner: marketing (sarah's ex-network helping).",
     owner: 'alex',
     source: 'notion',
     daysAgo: 25,
@@ -1754,7 +1754,7 @@ const STRATEGY: MemoryDef[] = [
   {
     title: "Founder mode - what I'm doing this quarter",
     content:
-      'Founder check-in: 50% on Polaris GA, 25% on customer (Acme, Massive Dynamic), 15% on hiring, 10% on Series A prep. Saying no to: speaking events, advisory roles, podcasts.',
+      'Founder check-in: 50% on Polaris GA, 25% on customer (Acme, Atlas Robotics), 15% on hiring, 10% on Series A prep. Saying no to: speaking events, advisory roles, podcasts.',
     owner: 'alex',
     source: 'notion',
     daysAgo: 30,
@@ -2900,7 +2900,7 @@ const INTERNAL: MemoryDef[] = [
   {
     title: 'All-hands deck - April 2026',
     content:
-      'April all-hands. Polaris GA on track for May 30. Massive Dynamic discovery call went well. Priya M. starts Monday. Q2 OKRs reviewed. AMA after.',
+      'April all-hands. Polaris GA on track for May 30. Atlas Robotics discovery call went well. Priya M. starts Monday. Q2 OKRs reviewed. AMA after.',
     owner: 'alex',
     source: 'google_docs',
     daysAgo: 25,

@@ -121,7 +121,7 @@ const MEMORIES: PolarisMemory[] = [
     topics: ['polaris', 'project-tracking', 'milestones'],
     url: 'https://linear.app/blit/issue/POLARIS-1',
     content:
-      'Master ticket for Project Polaris. Phases: (1) Spike & arch decision [done], (2) Y.js integration on canvas v3 [in progress], (3) Server persistence + presence [in progress], (4) Conflict resolution + offline mode [open], (5) Beta with ACME, Northwind, Globex [planned], (6) GA. Sub-tickets POLARIS-2 through POLARIS-47. Risk register tracked separately in Notion.',
+      'Master ticket for Project Polaris. Phases: (1) Spike & arch decision [done], (2) Y.js integration on canvas v3 [in progress], (3) Server persistence + presence [in progress], (4) Conflict resolution + offline mode [open], (5) Beta with ACME, Northwind, Halcyon [planned], (6) GA. Sub-tickets POLARIS-2 through POLARIS-47. Risk register tracked separately in Notion.',
   },
   {
     title: 'Slack #announcements: Polaris kickoff',
@@ -267,7 +267,7 @@ const MEMORIES: PolarisMemory[] = [
     topics: ['polaris', 'beta', 'customer-feedback', 'acme'],
     url: 'https://docs.google.com/document/d/polaris-beta-1-feedback',
     content:
-      "Beta cohort: ACME (14 users), Northwind (8), Globex (5). **Wins**: cursor sync feels 'native' (Priya, ACME), conflict resolution 'just works' for online-only flow (3 mentions), presence avatars are a hit. **Pain points**: (1) cursor disappears on page-scroll for ~500ms, (2) when 2 users select the same group, the group flickers between selection borders [bug], (3) offline >24h triggers a 'document recovered' modal that customers find confusing, (4) ACME hit the 700-user limit during a company-wide brainstorm and got rate-limit errors. Customer NPS for the feature: +51 (high but with caveats).",
+      "Beta cohort: ACME (14 users), Northwind (8), Halcyon (5). **Wins**: cursor sync feels 'native' (Priya, ACME), conflict resolution 'just works' for online-only flow (3 mentions), presence avatars are a hit. **Pain points**: (1) cursor disappears on page-scroll for ~500ms, (2) when 2 users select the same group, the group flickers between selection borders [bug], (3) offline >24h triggers a 'document recovered' modal that customers find confusing, (4) ACME hit the 700-user limit during a company-wide brainstorm and got rate-limit errors. Customer NPS for the feature: +51 (high but with caveats).",
   },
   {
     title: 'Slack: ACME loves it, 2 critical bugs',
@@ -309,7 +309,7 @@ const MEMORIES: PolarisMemory[] = [
     topics: ['polaris', 'handoff', 'departure', 'incomplete'],
     url: 'https://notion.so/blit/polaris-handoff-sarah',
     content:
-      "**Polaris handoff** - what's done, what's open, what's risky. **Done**: Y.js integration, ws gateway, snapshots, presence, beta-1 with ACME/Northwind/Globex. **In flight**: sharding (Bob's branch `polaris/sharding`, ~60% complete), selection-flicker fix (no PR yet), snapshot-worker-thread move (PR #612 open). **Open / Risky**: POLARIS-23 (offline >7d), 700-user single-shard ceiling, ACME GA committed for May 30. **Things only I/Bob know**: how the Y.js awareness layer was customized for our selection semantics - see Loom + read `crdt/awareness.ts` carefully, the comments are sparse. **Things only Bob knows**: the Postgres snapshot encoding and how to recover from a corrupted delta log. Bob's notes on this are in his Notion workspace at /bob/polaris-internals - **MAY BE DELETED ON HIS OFFBOARDING**. ⚠️ Pull these before his last day.",
+      "**Polaris handoff** - what's done, what's open, what's risky. **Done**: Y.js integration, ws gateway, snapshots, presence, beta-1 with ACME/Northwind/Halcyon. **In flight**: sharding (Bob's branch `polaris/sharding`, ~60% complete), selection-flicker fix (no PR yet), snapshot-worker-thread move (PR #612 open). **Open / Risky**: POLARIS-23 (offline >7d), 700-user single-shard ceiling, ACME GA committed for May 30. **Things only I/Bob know**: how the Y.js awareness layer was customized for our selection semantics - see Loom + read `crdt/awareness.ts` carefully, the comments are sparse. **Things only Bob knows**: the Postgres snapshot encoding and how to recover from a corrupted delta log. Bob's notes on this are in his Notion workspace at /bob/polaris-internals - **MAY BE DELETED ON HIS OFFBOARDING**. ⚠️ Pull these before his last day.",
   },
   {
     title: "Email - Sarah's farewell + Polaris status",

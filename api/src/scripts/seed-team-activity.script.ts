@@ -107,7 +107,7 @@ const COMMENTS: CommentSeed[] = [
   {
     titleMatch: 'Beta-1 NPS breakdown',
     authorEmail: 'aisha@blitlabs.com',
-    body: 'Globex feedback gap is concerning. Setting up a customer call to investigate. May not be salvageable but worth one more try.',
+    body: 'Halcyon feedback gap is concerning. Setting up a customer call to investigate. May not be salvageable but worth one more try.',
   },
   {
     titleMatch: 'Y.js memory leak',
@@ -125,7 +125,7 @@ const COMMENTS: CommentSeed[] = [
     body: 'Phase 2 (50 users) gate met. Greenlighting ramp.',
   },
   {
-    titleMatch: 'Massive Dynamic discovery call',
+    titleMatch: 'Atlas Robotics discovery call',
     authorEmail: 'ravi@blitlabs.com',
     body: '$300k+ ARR potential. Personal involvement on the next call. Marcus is the buyer.',
   },
@@ -235,7 +235,7 @@ const COMMENTS: CommentSeed[] = [
     body: 'Auditor onboarded. Q4 audit window booked. Pre-audit checklist 60% done.',
   },
   {
-    titleMatch: 'Initech eval',
+    titleMatch: 'Caldera eval',
     authorEmail: 'jordan@blitlabs.com',
     body: 'Marking as cold. Re-engage Q3 if we hear back; otherwise nurture quarterly.',
   },
@@ -402,7 +402,7 @@ const TAGS: TagSeed[] = [
   {
     name: 'customer',
     color: '#10b981',
-    matchPattern: /Acme|Northwind|Globex|Hooli|Stark|Massive Dynamic|customer/i,
+    matchPattern: /Acme|Northwind|Halcyon|Loomis|Voltaire|Atlas Robotics|customer/i,
   },
   { name: 'handoff', color: '#f59e0b', matchPattern: /handoff|Sarah|Bob|sabbatical|farewell/i },
   {

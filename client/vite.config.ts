@@ -3,7 +3,9 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
 export default defineConfig({
-  base: "./",
+  // Absolute base so deep routes (e.g. /billing) load /assets/... correctly.
+  // With "./" the SPA fallback served HTML for /billing/assets/*.js and pages broke.
+  base: "/",
   server: {
     host: process.env.VITE_DEV_HOST || "localhost",
     port: Number(process.env.VITE_DEV_PORT || 5173),

@@ -60,6 +60,17 @@ typings/
 .env
 .env.development
 .env.production
+.env.bak
+*.env.bak
+
+# Local-only Claude Code settings
+.claude/
+
+# Personal demo notes — not for repo
+DEMO_SCRIPT.md
+
+# Internal AI-agent planning docs — not for product docs site
+docs/superpowers/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

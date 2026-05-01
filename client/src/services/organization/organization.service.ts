@@ -291,7 +291,7 @@ export function subscribeToAnswerJob(
   // SSE needs direct connection to avoid proxy buffering
   const baseUrl = import.meta.env.DEV
     ? "http://localhost:3000/api" // Direct connection in dev
-    : `${import.meta.env.VITE_SERVER_URL || ""}/api`
+    : `${import.meta.env.VITE_API_URL || ""}/api`
 
   // Note: EventSource doesn't support custom headers, so we pass token as query param
   const token = localStorage.getItem("auth_token") || ""

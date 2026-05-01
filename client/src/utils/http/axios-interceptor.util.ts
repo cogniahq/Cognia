@@ -2,7 +2,7 @@ import axios from "axios"
 
 const baseURL = import.meta.env.DEV
   ? "/api"
-  : `${import.meta.env.VITE_SERVER_URL || ""}/api`
+  : `${import.meta.env.VITE_API_URL || ""}/api`
 
 const axiosInstance = axios.create({
   baseURL: baseURL,

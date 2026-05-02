@@ -76,6 +76,11 @@ async function sendContextToBackground() {
     }
 
     ;(contextData as any).privacy_extension_info = privacyInfo
+    // Continuous monitoring is an auto-capture: it must always go to the
+    // user's personal vault, regardless of the picker's destination override.
+    // This avoids silently exfiltrating sensitive pages (e.g. mail, banking)
+    // to a workspace.
+    ;(contextData as any).auto_capture = true
     runtime.sendMessage({ type: MESSAGE_TYPES.CAPTURE_CONTEXT, data: contextData }, _response => {
       // Capture sent silently
     })

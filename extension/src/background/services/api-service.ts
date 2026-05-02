@@ -1,4 +1,5 @@
 import { getApiEndpoint } from './storage-service'
+import { getEffectiveCaptureTarget } from './capture-target.service'
 import { DEFAULT_API_BASE } from '@/utils/core/constants.util'
 import { requireAuthToken, clearAuthToken } from '@/utils/auth'
 import { storage } from '@/lib/browser'
@@ -189,6 +190,16 @@ export async function sendToBackend(data: ContextData): Promise<void> {
       return
     }
 
+    // Resolve the destination for this capture. Manual captures honor the
+    // session override (set by the popup picker) and fall back to the user's
+    // stored default. Auto-captures (continuous monitoring) always go to
+    // Personal — see context-handler / capture-target.service for the
+    // rationale.
+    const isAutoCapture = (data as { auto_capture?: boolean }).auto_capture === true
+    const target = isAutoCapture
+      ? { organizationId: null, workspaceId: null }
+      : await getEffectiveCaptureTarget()
+
     const payload = {
       content: content,
       url: data.url,
@@ -230,6 +241,11 @@ export async function sendToBackend(data: ContextData): Promise<void> {
         privacy_extension_conflicts: hasPrivacyConflicts,
         privacy_extension_type: privacyInfo?.type || 'none',
         compatibility_mode: privacyInfo?.compatibility_mode || false,
+        // Capture destination — null/undefined means personal vault. Server
+        // ignores either when none is set. P1 wired the ingestion side to
+        // honor these and validate workspace_id belongs to the org.
+        organization_id: target.organizationId ?? undefined,
+        workspace_id: target.workspaceId ?? undefined,
       },
     }
 

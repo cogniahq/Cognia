@@ -23,7 +23,8 @@ export class MeshRelationsService {
   private cacheExpiry = 24 * 60 * 60 * 1000
 
   constructor() {
-    setInterval(() => this.cleanCache(), 60 * 60 * 1000)
+    const cleanupInterval = setInterval(() => this.cleanCache(), 60 * 60 * 1000)
+    cleanupInterval.unref?.()
   }
 
   private cleanCache(): void {

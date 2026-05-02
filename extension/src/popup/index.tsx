@@ -9,7 +9,7 @@ import { ExternalLinkIcon } from './components/Icons'
 import { useExtensionSettings } from './hooks/useExtensionSettings'
 import { useStatus } from './hooks/useStatus'
 
-const DASHBOARD_URL = 'https://cognia.com'
+const DASHBOARD_URL = 'https://cogniahq.tech'
 
 const Header: React.FC = () => {
   const openDashboard = () => {

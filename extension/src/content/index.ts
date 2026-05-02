@@ -31,6 +31,51 @@ function announceExtensionPresence(): void {
 }
 announceExtensionPresence()
 
+// Bridge the web app's auth_token from page localStorage into the extension's
+// background storage. The web app calls chrome.runtime.sendMessage from a
+// non-extension context where chrome.runtime.id is undefined, so the direct
+// SYNC_AUTH_TOKEN message it tries to send never arrives. The content script
+// runs in an isolated world but shares page storage, so it can read the
+// token here and forward it to the background, which is the only context
+// that can sign API requests for capture/process.
+function syncAuthTokenFromPage(): void {
+  try {
+    const host = window.location.hostname
+    const isFirstParty =
+      host === 'cogniahq.tech' ||
+      host.endsWith('.cogniahq.tech') ||
+      host === 'localhost' ||
+      host === '127.0.0.1'
+    if (!isFirstParty) return
+
+    const pushToken = (token: string | null): void => {
+      try {
+        runtime.sendMessage({ type: MESSAGE_TYPES.SYNC_AUTH_TOKEN, token }, () => {
+          // ignore — best-effort signal
+        })
+      } catch {
+        // background may be cold-starting; the next nav will retry
+      }
+    }
+
+    const initialToken = (() => {
+      try {
+        return window.localStorage.getItem('auth_token')
+      } catch {
+        return null
+      }
+    })()
+    if (initialToken) pushToken(initialToken)
+
+    window.addEventListener('storage', e => {
+      if (e.key === 'auth_token') pushToken(e.newValue)
+    })
+  } catch {
+    // never break the host page over an auth bridge failure
+  }
+}
+syncAuthTokenFromPage()
+
 function isLocalhost(): boolean {
   const hostname = window.location.hostname
   return (

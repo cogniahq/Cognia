@@ -52,9 +52,12 @@
       "matches": ["<all_urls>"]
     }
   ],
+  "externally_connectable": {
+    "matches": ["*://cogniahq.tech/*", "*://*.cogniahq.tech/*", "http://localhost:*/*"]
+  },
   "browser_specific_settings": {
     "gecko": {
-      "id": "cognia@cognia.com",
+      "id": "cognia@cogniahq.tech",
       "strict_min_version": "109.0"
     }
   }

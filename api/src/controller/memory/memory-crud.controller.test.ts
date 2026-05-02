@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import type { Response } from 'express'
 import { MemoryCrudController } from './memory-crud.controller'
+import { MemoryController } from './memory.controller'
 import type { AuthenticatedRequest } from '../../middleware/auth.middleware'
 import { prisma } from '../../lib/prisma.lib'
 
@@ -182,4 +183,55 @@ test('memory-crud: getUserMemoryCount rejects foreign org with 403', async () =>
     res
   )
   assert.equal(captured.statusCode, 403)
+})
+
+test('memory.debugMemories: rejects foreign organizationId with 403', async () => {
+  const user = await makeUser()
+  const foreignOrg = await makeOrg()
+  // user is NOT a member of foreignOrg
+  await makeMemory(user.id, 'personal-only', null)
+
+  const { res, captured } = makeRes()
+  await MemoryController.debugMemories(
+    makeReq(user.id, { organizationId: foreignOrg.id }),
+    res
+  )
+
+  assert.equal(captured.statusCode, 403)
+  const body = captured.body as { success: boolean; error: string }
+  assert.equal(body.success, false)
+  assert.match(body.error, /Not a member/)
+})
+
+test('memory.debugMemories: scopes by personal vs valid org context', async () => {
+  const user = await makeUser()
+  const org = await makeOrg()
+  await addMember(org.id, user.id)
+  const personal = await makeMemory(user.id, 'debug-personal', null)
+  const orgMem = await makeMemory(user.id, 'debug-org', org.id)
+
+  // Personal: only personal-vault rows
+  const personalCall = makeRes()
+  await MemoryController.debugMemories(makeReq(user.id), personalCall.res)
+  assert.equal(personalCall.captured.statusCode, 200)
+  const personalBody = personalCall.captured.body as {
+    data: { recent_memories: Array<{ id: string }> }
+  }
+  const personalIds = personalBody.data.recent_memories.map(m => m.id)
+  assert.ok(personalIds.includes(personal.id))
+  assert.ok(!personalIds.includes(orgMem.id))
+
+  // Org: only that-org rows
+  const orgCall = makeRes()
+  await MemoryController.debugMemories(
+    makeReq(user.id, { organizationId: org.id }),
+    orgCall.res
+  )
+  assert.equal(orgCall.captured.statusCode, 200)
+  const orgBody = orgCall.captured.body as {
+    data: { recent_memories: Array<{ id: string }> }
+  }
+  const orgIds = orgBody.data.recent_memories.map(m => m.id)
+  assert.ok(orgIds.includes(orgMem.id))
+  assert.ok(!orgIds.includes(personal.id))
 })

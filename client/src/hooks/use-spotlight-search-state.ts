@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { useOrganization } from "../contexts/organization.context"
 import { MemoryService } from "../services/memory.service"
 import { SearchService } from "../services/search.service"
 import type { MemorySearchResponse } from "../types/memory"
 import { requireAuthToken } from "../utils/auth"
 
 export function useSpotlightSearchState() {
+  const { currentOrganization } = useOrganization()
+  const orgId = currentOrganization?.id ?? null
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false)
   const [spotlightSearchQuery, setSpotlightSearchQuery] = useState("")
   const [spotlightSearchResults, setSpotlightSearchResults] =
@@ -56,7 +59,8 @@ export function useSpotlightSearchState() {
           50,
           signal,
           undefined,
-          spotlightEmbeddingOnly
+          spotlightEmbeddingOnly,
+          orgId
         )
 
         if (signal?.aborted) return
@@ -80,7 +84,7 @@ export function useSpotlightSearchState() {
         }
       }
     },
-    [spotlightEmbeddingOnly]
+    [spotlightEmbeddingOnly, orgId]
   )
 
   useEffect(() => {

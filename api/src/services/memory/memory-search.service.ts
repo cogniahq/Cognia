@@ -34,9 +34,15 @@ import type { SearchResult } from '../../types/search.types'
 const SEARCH_CACHE_PREFIX = 'search_cache:'
 const SEARCH_CACHE_TTL = 5 * 60
 
-function getCacheKey(userId: string, query: string, limit: number): string {
+function getCacheKey(
+  userId: string,
+  query: string,
+  limit: number,
+  organizationId: string | null | undefined
+): string {
   const normalized = normalizeText(query)
-  const hash = sha256Hex(`${userId}:${normalized}:${limit}`)
+  const orgScope = organizationId === null ? 'personal' : (organizationId ?? 'unscoped')
+  const hash = sha256Hex(`${userId}:${orgScope}:${normalized}:${limit}`)
   return `${SEARCH_CACHE_PREFIX}${hash}`
 }
 
@@ -45,6 +51,13 @@ export { withTimeout }
 export async function searchMemories(params: {
   userId: string
   query: string
+  /**
+   * Active org context. `null` => personal vault (organization_id IS NULL),
+   * a UUID => scope to that org, `undefined` => unscoped (legacy/internal).
+   * Membership enforcement is the caller's responsibility — this service
+   * trusts what it receives.
+   */
+  organizationId?: string | null
   limit?: number
   enableReasoning?: boolean
   contextOnly?: boolean
@@ -63,6 +76,7 @@ export async function searchMemories(params: {
   const {
     userId,
     query,
+    organizationId,
     limit,
     enableReasoning = process.env.SEARCH_ENABLE_REASONING !== 'false',
     contextOnly = false,
@@ -70,6 +84,15 @@ export async function searchMemories(params: {
     jobId,
     policy,
   } = params
+
+  // Build a Prisma `where` fragment that scopes any DB read by active org.
+  // Note: explicit `null` is the personal-vault filter; `undefined` skips it.
+  const orgFilter: { organization_id: string | null } | object =
+    organizationId === null
+      ? { organization_id: null }
+      : typeof organizationId === 'string' && organizationId.length > 0
+        ? { organization_id: organizationId }
+        : {}
 
   const normalized = normalizeText(query)
 
@@ -120,7 +143,7 @@ export async function searchMemories(params: {
   }
 
   const userMemoryCount = await prisma.memory.count({
-    where: { user_id: user.id },
+    where: { user_id: user.id, ...orgFilter },
   })
 
   if (userMemoryCount === 0) {
@@ -157,7 +180,7 @@ export async function searchMemories(params: {
 
   if (shouldCache) {
     try {
-      const cacheKey = getCacheKey(userId, query, searchParams.maxResults)
+      const cacheKey = getCacheKey(userId, query, searchParams.maxResults, organizationId)
       const client = getRedisClient()
       const cached = await client.get(cacheKey)
 
@@ -249,7 +272,7 @@ export async function searchMemories(params: {
   }
 
   const memories = await prisma.memory.findMany({
-    where: { id: { in: searchMemoryIds } },
+    where: { id: { in: searchMemoryIds }, user_id: user.id, ...orgFilter },
     select: {
       id: true,
       title: true,
@@ -590,7 +613,7 @@ ${bullets}`
   // Cache the results if caching is enabled
   if (shouldCache) {
     try {
-      const cacheKey = getCacheKey(userId, query, searchParams.maxResults)
+      const cacheKey = getCacheKey(userId, query, searchParams.maxResults, organizationId)
       const client = getRedisClient()
       await client.setex(cacheKey, SEARCH_CACHE_TTL, JSON.stringify(searchResult))
       logger.log('[search] cache write', {

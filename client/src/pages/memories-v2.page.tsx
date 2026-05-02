@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { useOrganization } from "@/contexts/organization.context"
 import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
 import type { SavedSearch } from "@/services/saved-search.service"
 import { requireAuthToken } from "@/utils/auth"
@@ -45,6 +46,9 @@ export const MemoriesV2: React.FC = () => {
   const canDeleteMemory = useHasPermission("memory.delete")
   const canShareMemory = useHasPermission("memory.share")
 
+  const { currentOrganization } = useOrganization()
+  const orgId = currentOrganization?.id ?? null
+
   useEffect(() => {
     try {
       requireAuthToken()
@@ -61,6 +65,7 @@ export const MemoriesV2: React.FC = () => {
       const res = await memoryV2Service.list({
         limit: 100,
         q: activeQuery || undefined,
+        organizationId: orgId,
       })
       setMemories(res.data || [])
     } catch (err) {
@@ -68,7 +73,9 @@ export const MemoriesV2: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [activeQuery])
+    // Re-fire on workspace switch and pass the active org id; the server
+    // treats absent as personal vault and a present id as org-scoped.
+  }, [activeQuery, orgId])
 
   useEffect(() => {
     if (!authed) return

@@ -34,6 +34,18 @@ export async function createShare(input: CreateShareInput) {
       throw new Error('Sharer is not a member of the recipient organization')
     }
   }
+  if (input.recipientType === 'USER') {
+    if (!input.recipientUserId) {
+      throw new Error('recipientUserId is required when recipientType is USER')
+    }
+    const recipient = await prisma.user.findUnique({
+      where: { id: input.recipientUserId },
+      select: { id: true },
+    })
+    if (!recipient) {
+      throw new Error('Recipient user not found')
+    }
+  }
   let linkToken: string | undefined
   if (input.recipientType === 'LINK') {
     linkToken = randomBytes(24).toString('base64url')

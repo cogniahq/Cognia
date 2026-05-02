@@ -7,6 +7,7 @@ import { createSearchJob, getSearchJob } from '../../services/search/search-job.
 import { unifiedSearchService } from '../../services/search/unified-search.service'
 import { auditLogService } from '../../services/core/audit-log.service'
 import { logger } from '../../utils/core/logger.util'
+import { resolveActiveOrgContext } from '../../utils/org/active-context.util'
 import { MemorySearchController } from './memory-search.controller'
 import { SearchEndpointsController } from './search-endpoints.controller'
 import { SourceType } from '@prisma/client'
@@ -16,7 +17,7 @@ export class SearchController {
   static async postSearch(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     let job: { id: string } | null = null
     try {
-      const { query, limit, contextOnly, policy, embeddingOnly } = req.body || {}
+      const { query, limit, contextOnly, policy, embeddingOnly, organizationId } = req.body || {}
       if (!query) return next(new AppError('query is required', 400))
 
       if (!req.user) {
@@ -26,6 +27,16 @@ export class SearchController {
       const userId = req.user.id
       const embeddingOnlyBool = Boolean(embeddingOnly)
 
+      // Personal-context search: optional org scoping. Absent => personal vault
+      // (organization_id IS NULL). Present => caller must be an active member.
+      const ctx = await resolveActiveOrgContext(
+        userId,
+        typeof organizationId === 'string' ? organizationId : undefined
+      )
+      if (!ctx.authorized) {
+        return next(new AppError('Not a member of organization', 403))
+      }
+
       logger.log('[search/controller] request received', {
         ts: new Date().toISOString(),
         userId: userId,
@@ -33,10 +44,12 @@ export class SearchController {
         limit,
         contextOnly,
         embeddingOnly: embeddingOnlyBool,
+        organizationId: ctx.organizationId,
       })
 
       const data = await searchMemories({
         userId: userId,
+        organizationId: ctx.organizationId,
         query,
         limit,
         contextOnly,
@@ -233,7 +246,7 @@ export class SearchController {
 
   static async getContext(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const { query, limit } = req.body || {}
+      const { query, limit, organizationId } = req.body || {}
       if (!query) return next(new AppError('query is required', 400))
 
       if (!req.user) {
@@ -241,7 +254,20 @@ export class SearchController {
       }
 
       const userId = req.user.id
-      const data = await searchMemories({ userId: userId, query, limit, contextOnly: true })
+      const ctx = await resolveActiveOrgContext(
+        userId,
+        typeof organizationId === 'string' ? organizationId : undefined
+      )
+      if (!ctx.authorized) {
+        return next(new AppError('Not a member of organization', 403))
+      }
+      const data = await searchMemories({
+        userId: userId,
+        organizationId: ctx.organizationId,
+        query,
+        limit,
+        contextOnly: true,
+      })
 
       res.status(200).json({
         query: data.query,

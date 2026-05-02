@@ -6,6 +6,7 @@ import { memoryMeshService } from '../../services/memory/memory-mesh.service'
 import { profileUpdateService } from '../../services/profile/profile-update.service'
 import { auditLogService } from '../../services/core/audit-log.service'
 import { backgroundGenerationPriorityService } from '../../services/core/background-generation-priority.service'
+import { isOpenAISearchOnlyModeEnabled } from '../../services/ai/ai-config'
 import { logger } from '../../utils/core/logger.util'
 import { createHash } from 'crypto'
 
@@ -112,7 +113,7 @@ export class MemoryProcessingController {
       const dbCreateStart = Date.now()
       let memory
       try {
-        const memoryCreateInput = memoryIngestionService.buildMemoryCreatePayload({
+        const memoryCreateInput = await memoryIngestionService.buildMemoryCreatePayload({
           userId,
           title,
           url,
@@ -219,6 +220,15 @@ export class MemoryProcessingController {
         }
 
         try {
+          if (isOpenAISearchOnlyModeEnabled()) {
+            logger.log('[memory/process] profile update skipped', {
+              reason: 'OPENAI_SEARCH_ONLY_MODE',
+              memoryId: memory.id,
+              userId,
+            })
+            return
+          }
+
           if ((memory.importance_score || 0) >= PROFILE_IMPORTANCE_THRESHOLD) {
             if (await isSearchPriorityLeaseActive()) {
               logger.log('[memory/process] profile update deferred for search priority lease', {

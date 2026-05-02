@@ -4,7 +4,13 @@ import { auditLogService } from '../core/audit-log.service'
 
 export interface MemoryListOptions {
   userId: string
-  organizationId?: string
+  /**
+   * Active org context. Use `null` to scope to personal vault
+   * (`organization_id IS NULL`). Use a UUID to scope to that org. Use
+   * `undefined` to disable the filter entirely (callers should rarely do this
+   * — it bypasses isolation and exists only for legacy unscoped paths).
+   */
+  organizationId?: string | null
   cursor?: string // base64 of "<timestamp>:<id>"
   limit?: number
   includeDeleted?: boolean
@@ -36,7 +42,9 @@ export async function listMemories(opts: MemoryListOptions) {
   const limit = Math.min(opts.limit ?? 50, 200)
   const cursor = opts.cursor ? decodeCursor(opts.cursor) : null
   const where: Prisma.MemoryWhereInput = { user_id: opts.userId }
-  if (opts.organizationId) where.organization_id = opts.organizationId
+  if (opts.organizationId === null) where.organization_id = null
+  else if (typeof opts.organizationId === 'string' && opts.organizationId.length > 0)
+    where.organization_id = opts.organizationId
   if (opts.onlyDeleted) where.deleted_at = { not: null }
   else if (!opts.includeDeleted) where.deleted_at = null
   if (opts.q) {

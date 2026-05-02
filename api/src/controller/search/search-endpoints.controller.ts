@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma.lib'
 import { searchMemories } from '../../services/memory/memory-search.service'
 import { memoryMeshService } from '../../services/memory/memory-mesh.service'
 import { logger } from '../../utils/core/logger.util'
+import { resolveActiveOrgContext } from '../../utils/org/active-context.util'
 import { Prisma } from '@prisma/client'
 import { RetrievalPolicyName } from '../../services/search/retrieval-policy.service'
 
@@ -57,8 +58,20 @@ export class SearchEndpointsController {
         })
       }
 
+      const ctx = await resolveActiveOrgContext(
+        user.id,
+        req.query.organizationId as string | undefined
+      )
+      if (!ctx.authorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not a member of organization',
+        })
+      }
+
       const searchResults = await searchMemories({
         userId: user.id,
+        organizationId: ctx.organizationId,
         query: query as string,
         limit: parseInt(limit as string),
         enableReasoning: true,
@@ -141,8 +154,20 @@ export class SearchEndpointsController {
         })
       }
 
+      const ctx = await resolveActiveOrgContext(
+        user.id,
+        req.query.organizationId as string | undefined
+      )
+      if (!ctx.authorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not a member of organization',
+        })
+      }
+
       const whereConditions: Prisma.MemoryWhereInput = {
         user_id: user.id,
+        organization_id: ctx.organizationId,
       }
 
       if (source && typeof source === 'string') {
@@ -285,8 +310,20 @@ export class SearchEndpointsController {
         })
       }
 
+      const ctx = await resolveActiveOrgContext(
+        user.id,
+        req.query.organizationId as string | undefined
+      )
+      if (!ctx.authorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not a member of organization',
+        })
+      }
+
       const whereConditions: Prisma.MemoryWhereInput = {
         user_id: user.id,
+        organization_id: ctx.organizationId,
       }
 
       if (source && typeof source === 'string') {

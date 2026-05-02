@@ -14,6 +14,7 @@ import {
   restoreMemory,
   hardDeleteMemory,
 } from '../services/memory/memory-crud.service'
+import { resolveActiveOrgContext } from '../utils/org/active-context.util'
 
 const router = Router()
 
@@ -37,8 +38,18 @@ router.get('/debug', authenticateToken, MemoryController.debugMemories)
 // Phase 4 Slice A: Memory CRUD with soft-delete + cursor pagination
 router.get('/v2', authenticateToken, async (req: AuthenticatedRequest, res) => {
   if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
+  // Personal-context endpoint: scope by active org. Absent => personal vault
+  // (organization_id IS NULL). Present => caller must be an active member.
+  const ctx = await resolveActiveOrgContext(
+    req.user.id,
+    req.query.organizationId as string | undefined
+  )
+  if (!ctx.authorized) {
+    return res.status(403).json({ message: 'Not a member of organization' })
+  }
   const out = await listMemories({
     userId: req.user.id,
+    organizationId: ctx.organizationId,
     cursor: req.query.cursor as string | undefined,
     limit: req.query.limit ? Number(req.query.limit) : undefined,
     includeDeleted: req.query.includeDeleted === 'true',

@@ -55,11 +55,7 @@ async function addMember(orgId: string, userId: string) {
   })
 }
 
-async function makeMemory(
-  userId: string,
-  title: string,
-  organizationId: string | null = null
-) {
+async function makeMemory(userId: string, title: string, organizationId: string | null = null) {
   return prisma.memory.create({
     data: {
       user_id: userId,
@@ -88,7 +84,10 @@ test('memory-crud: getRecentMemories without organizationId returns only persona
   const body = captured.body as { data: { memories: Array<{ id: string; title: string }> } }
   const ids = body.data.memories.map(m => m.id)
   assert.ok(ids.includes(personal.id))
-  assert.equal(body.data.memories.every(m => m.title === 'personal-only'), true)
+  assert.equal(
+    body.data.memories.every(m => m.title === 'personal-only'),
+    true
+  )
 })
 
 test('memory-crud: getRecentMemories with valid organizationId returns only that org memories', async () => {
@@ -99,10 +98,7 @@ test('memory-crud: getRecentMemories with valid organizationId returns only that
   const orgMem = await makeMemory(user.id, 'org-only', org.id)
 
   const { res, captured } = makeRes()
-  await MemoryCrudController.getRecentMemories(
-    makeReq(user.id, { organizationId: org.id }),
-    res
-  )
+  await MemoryCrudController.getRecentMemories(makeReq(user.id, { organizationId: org.id }), res)
 
   assert.equal(captured.statusCode, 200)
   const body = captured.body as { data: { memories: Array<{ id: string; title: string }> } }
@@ -141,10 +137,7 @@ test('memory-crud: getRecentMemories with deactivated membership returns 403', a
   })
 
   const { res, captured } = makeRes()
-  await MemoryCrudController.getRecentMemories(
-    makeReq(user.id, { organizationId: org.id }),
-    res
-  )
+  await MemoryCrudController.getRecentMemories(makeReq(user.id, { organizationId: org.id }), res)
 
   assert.equal(captured.statusCode, 403)
 })
@@ -192,10 +185,7 @@ test('memory.debugMemories: rejects foreign organizationId with 403', async () =
   await makeMemory(user.id, 'personal-only', null)
 
   const { res, captured } = makeRes()
-  await MemoryController.debugMemories(
-    makeReq(user.id, { organizationId: foreignOrg.id }),
-    res
-  )
+  await MemoryController.debugMemories(makeReq(user.id, { organizationId: foreignOrg.id }), res)
 
   assert.equal(captured.statusCode, 403)
   const body = captured.body as { success: boolean; error: string }
@@ -223,10 +213,7 @@ test('memory.debugMemories: scopes by personal vs valid org context', async () =
 
   // Org: only that-org rows
   const orgCall = makeRes()
-  await MemoryController.debugMemories(
-    makeReq(user.id, { organizationId: org.id }),
-    orgCall.res
-  )
+  await MemoryController.debugMemories(makeReq(user.id, { organizationId: org.id }), orgCall.res)
   assert.equal(orgCall.captured.statusCode, 200)
   const orgBody = orgCall.captured.body as {
     data: { recent_memories: Array<{ id: string }> }

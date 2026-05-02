@@ -113,9 +113,7 @@ describe("ApiKeyManager", () => {
       expect(screen.getByText("No API keys yet")).toBeInTheDocument()
     })
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /\+ Create API key/i })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /\+ Create API key/i }))
 
     await waitFor(() => {
       expect(screen.getByLabelText(/^Name$/i)).toBeInTheDocument()
@@ -135,9 +133,9 @@ describe("ApiKeyManager", () => {
 
     // Plaintext token revealed exactly once
     await waitFor(() => {
-      expect(
-        screen.getByTestId("plaintext-api-key")
-      ).toHaveTextContent("ck_live_demoabcd_full_secret_value")
+      expect(screen.getByTestId("plaintext-api-key")).toHaveTextContent(
+        "ck_live_demoabcd_full_secret_value"
+      )
     })
 
     // Done button is disabled until acknowledged
@@ -186,9 +184,7 @@ describe("ApiKeyManager", () => {
 
     // Confirm dialog explains the action is irreversible
     await waitFor(() => {
-      expect(
-        screen.getByText(/cannot be undone/i)
-      ).toBeInTheDocument()
+      expect(screen.getByText(/cannot be undone/i)).toBeInTheDocument()
     })
 
     // Service has NOT been called yet (we haven't confirmed)
@@ -223,15 +219,15 @@ describe("ApiKeyManager", () => {
     })
     listApiKeys.mockResolvedValue([])
 
-    render(<ApiKeyManager organizationId="org-uuid-123" organizationLabel="acme" />)
+    render(
+      <ApiKeyManager organizationId="org-uuid-123" organizationLabel="acme" />
+    )
 
     await waitFor(() => {
       expect(listApiKeys).toHaveBeenCalledWith("org-uuid-123")
     })
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /\+ Create API key/i })
-    )
+    fireEvent.click(screen.getByRole("button", { name: /\+ Create API key/i }))
     await waitFor(() => {
       expect(screen.getByLabelText(/^Name$/i)).toBeInTheDocument()
     })

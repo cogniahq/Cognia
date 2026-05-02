@@ -63,10 +63,7 @@ test('GET /v1/memories clamps ?limit=10000 to <= 100', async () => {
     assert.equal(r.status, 200)
     const body = (await r.json()) as { data: unknown[] }
     assert.ok(Array.isArray(body.data))
-    assert.ok(
-      body.data.length <= 100,
-      `expected <= 100 items after clamp, got ${body.data.length}`
-    )
+    assert.ok(body.data.length <= 100, `expected <= 100 items after clamp, got ${body.data.length}`)
   } finally {
     server.close()
   }

@@ -44,9 +44,7 @@ export async function authenticateApiKey(
   const now = new Date()
   const last = row.last_used_at
   if (!last || now.getTime() - new Date(last).getTime() > 60_000) {
-    prisma.apiKey
-      .update({ where: { id: row.id }, data: { last_used_at: now } })
-      .catch(() => {})
+    prisma.apiKey.update({ where: { id: row.id }, data: { last_used_at: now } }).catch(() => {})
   }
   req.apiKey = {
     id: row.id,

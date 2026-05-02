@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
-  type ApiKeyMetadata,
-  type ApiKeyScope,
-  type ApiKeyWithPlaintext,
   createApiKey,
   listApiKeys,
   revokeApiKey,
   SCOPE_DESCRIPTIONS,
   VALID_SCOPES,
+  type ApiKeyMetadata,
+  type ApiKeyScope,
+  type ApiKeyWithPlaintext,
 } from "@/services/api-keys/api-keys.service"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -253,9 +253,7 @@ export function ApiKeyManager({
           </div>
         ) : visibleKeys.length === 0 ? (
           <div className="px-5 py-12 text-center">
-            <p className="text-sm font-medium text-gray-900">
-              No API keys yet
-            </p>
+            <p className="text-sm font-medium text-gray-900">No API keys yet</p>
             <p className="text-xs text-gray-500 mt-1">
               Mint your first key to start hitting{" "}
               <code className="font-mono">/v1</code>.

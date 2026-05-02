@@ -181,8 +181,7 @@ export class ProfileController {
       const body = req.body ?? {}
       const organizationId: string | null =
         body.organizationId === undefined ? null : body.organizationId
-      const workspaceId: string | null =
-        body.workspaceId === undefined ? null : body.workspaceId
+      const workspaceId: string | null = body.workspaceId === undefined ? null : body.workspaceId
 
       if (organizationId !== null && typeof organizationId !== 'string') {
         return res

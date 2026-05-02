@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react"
+import { lazy, Suspense, useRef } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { AnimatePresence } from "framer-motion"
 import { Navigate, Route, Routes, useLocation } from "react-router-dom"
@@ -122,6 +122,9 @@ const LoadingFallback = () => (
 // Redirect authenticated users to their respective dashboard
 const AuthRedirectLanding = () => {
   const { isAuthenticated, isLoading, accountType } = useAuth()
+  const hadTokenAtMount = useRef(
+    typeof window !== "undefined" && !!localStorage.getItem("auth_token")
+  )
 
   if (isLoading) {
     return <LoadingFallback />
@@ -134,6 +137,13 @@ const AuthRedirectLanding = () => {
     }
     // Default to memories for personal accounts
     return <Navigate to="/memories" replace />
+  }
+
+  // Returning user with a stored token that failed auth (expired locally,
+  // /auth/me network error, etc.) — send to /login instead of the public
+  // marketing landing so they can re-authenticate.
+  if (hadTokenAtMount.current) {
+    return <Navigate to="/login" replace />
   }
 
   return <Landing />

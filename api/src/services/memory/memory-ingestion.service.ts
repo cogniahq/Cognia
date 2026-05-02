@@ -270,7 +270,7 @@ export class MemoryIngestionService {
     }
   }
 
-  buildMemoryCreatePayload(payload: MemoryCreatePayload): Prisma.MemoryCreateInput {
+  async buildMemoryCreatePayload(payload: MemoryCreatePayload): Promise<Prisma.MemoryCreateInput> {
     const metadata = payload.metadata || {}
     const metadataTimestamp = (metadata as { timestamp?: unknown }).timestamp
     const sanitizedContent = sanitizeContentForStorage(payload.content)
@@ -346,7 +346,16 @@ export class MemoryIngestionService {
     }
 
     // Get organization_id from metadata if provided
-    const organizationId = metadata.organization_id as string | undefined
+    const rawOrganizationId = metadata.organization_id
+    const organizationId =
+      typeof rawOrganizationId === 'string' && rawOrganizationId.trim() !== ''
+        ? rawOrganizationId.trim()
+        : undefined
+    const rawWorkspaceId = (metadata as { workspace_id?: unknown }).workspace_id
+    const workspaceId =
+      typeof rawWorkspaceId === 'string' && rawWorkspaceId.trim() !== ''
+        ? rawWorkspaceId.trim()
+        : undefined
 
     const result: Prisma.MemoryCreateInput = {
       user: { connect: { id: payload.userId } },
@@ -365,9 +374,40 @@ export class MemoryIngestionService {
       memory_type: memoryType,
     }
 
-    // Add organization connection if provided
+    // If an organization is provided, verify the user is an active member of
+    // that org before scoping the memory there. Mirrors the active-member
+    // predicate (`deactivated_at: null`) used in OrganizationMember checks
+    // throughout the codebase.
     if (organizationId) {
+      const membership = await prisma.organizationMember.findFirst({
+        where: {
+          user_id: payload.userId,
+          organization_id: organizationId,
+          deactivated_at: null,
+        },
+        select: { id: true },
+      })
+      if (!membership) {
+        throw new Error('User is not an active member of the specified organization')
+      }
       result.organization = { connect: { id: organizationId } }
+    }
+
+    // workspace_id is only valid when an organization is set and the workspace
+    // belongs to that organization. The schema allows workspace_id without
+    // organization_id, but we reject that here to avoid orphaned scoping.
+    if (workspaceId) {
+      if (!organizationId) {
+        throw new Error('workspace_id requires organization_id to be set')
+      }
+      const workspace = await prisma.workspace.findFirst({
+        where: { id: workspaceId, organization_id: organizationId },
+        select: { id: true },
+      })
+      if (!workspace) {
+        throw new Error('Workspace not found in the specified organization')
+      }
+      result.workspace = { connect: { id: workspaceId } }
     }
 
     return result

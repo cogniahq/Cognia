@@ -15,6 +15,7 @@ import { memoryScoringService } from '../services/memory/memory-scoring.service'
 import { logger } from '../utils/core/logger.util'
 import { backgroundGenerationPriorityService } from '../services/core/background-generation-priority.service'
 import { getRedisClient } from '../lib/redis.lib'
+import { isOpenAISearchOnlyModeEnabled } from '../services/ai/ai-config'
 
 type PrismaError = {
   code?: string
@@ -29,7 +30,9 @@ const getStringMetadataValue = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined
 
 const shouldSkipProfileUpdate = (metadata: ContentJobData['metadata']) =>
-  metadata?.skip_profile_update === true || metadata?.source_type === 'INTEGRATION'
+  isOpenAISearchOnlyModeEnabled() ||
+  metadata?.skip_profile_update === true ||
+  metadata?.source_type === 'INTEGRATION'
 
 const isSearchPriorityLeaseActive = async (): Promise<boolean> => {
   try {
@@ -286,7 +289,7 @@ export const startContentWorker = () => {
           if (!canonicalData) {
             canonicalData = memoryIngestionService.canonicalizeContent(raw_text, baseUrl)
           }
-          const memoryCreateInput = memoryIngestionService.buildMemoryCreatePayload({
+          const memoryCreateInput = await memoryIngestionService.buildMemoryCreatePayload({
             userId: user_id,
             title: memoryTitle,
             url: baseUrl,

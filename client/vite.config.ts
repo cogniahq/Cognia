@@ -24,6 +24,13 @@ export default defineConfig({
           })
         },
       },
+      // OpenAPI spec is mounted at root (not /api) by api/src/routes/index.route.ts.
+      // Proxy it so the Stoplight viewer on /docs can fetch it in dev.
+      "/openapi.json": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   build: {

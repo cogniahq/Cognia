@@ -18,6 +18,22 @@ export async function createShare(input: CreateShareInput) {
     where: { id: input.memoryId, user_id: input.sharerUserId, deleted_at: null },
   })
   if (!memory) throw new Error('Memory not found or not owned')
+  if (input.recipientType === 'ORG') {
+    if (!input.recipientOrgId) {
+      throw new Error('recipientOrgId is required when recipientType is ORG')
+    }
+    const membership = await prisma.organizationMember.findFirst({
+      where: {
+        user_id: input.sharerUserId,
+        organization_id: input.recipientOrgId,
+        deactivated_at: null,
+      },
+      select: { id: true },
+    })
+    if (!membership) {
+      throw new Error('Sharer is not a member of the recipient organization')
+    }
+  }
   let linkToken: string | undefined
   if (input.recipientType === 'LINK') {
     linkToken = randomBytes(24).toString('base64url')

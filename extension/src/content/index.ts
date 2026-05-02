@@ -24,9 +24,7 @@ function announceExtensionPresence(): void {
         ? chrome.runtime.getManifest().version
         : ''
     document.documentElement.setAttribute('data-cognia-extension', version || 'installed')
-    document.dispatchEvent(
-      new CustomEvent('cognia:extension-ready', { detail: { version } })
-    )
+    document.dispatchEvent(new CustomEvent('cognia:extension-ready', { detail: { version } }))
   } catch {
     // Best-effort signal only. Failures here must never break the page.
   }

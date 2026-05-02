@@ -885,7 +885,7 @@ export class IntegrationService {
       // Queue not available, create memory directly with embeddings
       const memory = await prisma.memory.create({
         data: {
-          ...memoryIngestionService.buildMemoryCreatePayload({
+          ...(await memoryIngestionService.buildMemoryCreatePayload({
             userId,
             title: content.title,
             url: content.url,
@@ -904,7 +904,7 @@ export class IntegrationService {
             },
             canonicalText,
             canonicalHash,
-          }),
+          })),
           source_type: SourceType.INTEGRATION,
           organization: organizationId ? { connect: { id: organizationId } } : undefined,
           timestamp: normalizedTimestamp,

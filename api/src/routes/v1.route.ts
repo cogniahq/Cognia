@@ -118,6 +118,7 @@ router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: R
       userId: req.apiKey!.userId,
     })
     res.json({
+      mode: 'hybrid',
       data: out.results.map(result => ({
         id: result.memoryId,
         title: result.title,
@@ -136,7 +137,11 @@ router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: R
     return
   }
 
-  // Personal API key (no org): fall back to user-scoped substring match.
+  // Personal API key (no org): substring match against the user's own
+  // memories. This is intentionally lower-quality than the org-scoped
+  // hybrid retrieval — the response advertises mode='substring' and a
+  // Warning header so clients can detect the degraded quality and
+  // surface an org-key upgrade path.
   const items = await prisma.memory.findMany({
     where: {
       user_id: req.apiKey!.userId,
@@ -149,7 +154,12 @@ router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: R
     take: limit,
     orderBy: { created_at: 'desc' },
   })
+  res.setHeader(
+    'Warning',
+    '299 - "Personal API keys use substring search. For hybrid retrieval, mint a key inside an organization."'
+  )
   res.json({
+    mode: 'substring',
     data: items.map(m => ({
       id: m.id,
       title: m.title,

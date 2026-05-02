@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../../middleware/auth.middleware'
 import { prisma } from '../../lib/prisma.lib'
 import { memoryRedactionService } from '../../services/memory/memory-redaction.service'
 import { logger } from '../../utils/core/logger.util'
+import { resolveActiveOrgContext } from '../../utils/org/active-context.util'
 import { MemoryCrudController } from './memory-crud.controller'
 import { MemoryProcessingController } from './memory-processing.controller'
 
@@ -46,8 +47,21 @@ export class MemoryController {
 
       const userId = req.user.id
 
+      // Same scoping rule as getRecentMemories: optional ?organizationId scopes
+      // to the active org (caller must be a member); absent => personal vault.
+      const ctx = await resolveActiveOrgContext(
+        userId,
+        req.query.organizationId as string | undefined
+      )
+      if (!ctx.authorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not a member of organization',
+        })
+      }
+
       const memories = await prisma.memory.findMany({
-        where: { user_id: userId },
+        where: { user_id: userId, organization_id: ctx.organizationId },
         select: {
           id: true,
           title: true,

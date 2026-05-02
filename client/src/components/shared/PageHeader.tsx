@@ -114,50 +114,53 @@ function CommandMenuTrigger() {
 export const PageHeader = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { accountType, user } = useAuth()
+  const { user } = useAuth()
   const { currentOrganization } = useOrganization()
 
   const canSeeAdminLink = useHasPermission("audit.read")
   const canSeeBillingLink = useHasPermission("billing.read")
 
+  // Nav is now driven by `currentOrganization` presence, not the legacy
+  // account_type column. Memories/Analytics/Integrations always show; the
+  // org-only links (Workspace, Admin, Billing) appear only when an org is
+  // active. Admin remains role-gated via `audit.read`.
+  const inOrgContext = !!currentOrganization
   const showAdminNav =
-    accountType === "ORGANIZATION" &&
-    !!currentOrganization?.slug &&
-    canSeeAdminLink
+    inOrgContext && !!currentOrganization?.slug && canSeeAdminLink
   const showBillingNav =
-    accountType === "ORGANIZATION" &&
-    !!currentOrganization?.slug &&
-    canSeeBillingLink
+    inOrgContext && !!currentOrganization?.slug && canSeeBillingLink
 
-  const navItems: NavItem[] =
-    accountType === "ORGANIZATION"
-      ? [
-          {
-            label: "Workspace",
-            path: "/organization",
-            matchPrefixes: ["/organization", "/memories"],
-          },
-          { label: "Integrations", path: "/integrations" },
-          ...(showAdminNav
-            ? [
-                {
-                  label: "Admin",
-                  path: `/org-admin/${currentOrganization!.slug}`,
-                  matchPrefixes: ["/org-admin"],
-                },
-              ]
-            : []),
-          ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
-        ]
-      : [
-          {
-            label: "Memories",
-            path: "/memories",
-            matchPrefixes: ["/memories"],
-          },
-          { label: "Analytics", path: "/analytics" },
-          { label: "Integrations", path: "/integrations" },
-        ]
+  const baseNavItems: NavItem[] = [
+    {
+      label: "Memories",
+      path: "/memories",
+      matchPrefixes: ["/memories"],
+    },
+    { label: "Analytics", path: "/analytics" },
+    { label: "Integrations", path: "/integrations" },
+  ]
+
+  const orgNavItems: NavItem[] = inOrgContext
+    ? [
+        {
+          label: "Workspace",
+          path: "/organization",
+          matchPrefixes: ["/organization"],
+        },
+        ...(showAdminNav
+          ? [
+              {
+                label: "Admin",
+                path: `/org-admin/${currentOrganization!.slug}`,
+                matchPrefixes: ["/org-admin"],
+              },
+            ]
+          : []),
+        ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
+      ]
+    : []
+
+  const navItems: NavItem[] = [...baseNavItems, ...orgNavItems]
 
   const isActive = (item: NavItem) => {
     const prefixes = item.matchPrefixes ?? [item.path]
@@ -168,8 +171,9 @@ export const PageHeader = () => {
     )
   }
 
-  const dashboardPath =
-    accountType === "ORGANIZATION" ? "/organization" : "/memories"
+  // Brand button always lands on /memories; the org context provider will
+  // surface org-scoped data when one is active.
+  const dashboardPath = "/memories"
 
   return (
     <>

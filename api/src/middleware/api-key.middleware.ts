@@ -37,9 +37,17 @@ export async function authenticateApiKey(
     res.status(401).json({ error: 'unauthorized', message: 'Invalid or revoked key' })
     return
   }
-  prisma.apiKey
-    .update({ where: { id: row.id }, data: { last_used_at: new Date() } })
-    .catch(() => {})
+  // Throttle last_used_at writes: at 100 RPM/key the naive update fires 100x/min
+  // per key, which is pure write amplification on a column used only for
+  // observability. Bucket to one update per 60s per key. Fire-and-forget; if
+  // it fails we still serve the request (best-effort telemetry).
+  const now = new Date()
+  const last = row.last_used_at
+  if (!last || now.getTime() - new Date(last).getTime() > 60_000) {
+    prisma.apiKey
+      .update({ where: { id: row.id }, data: { last_used_at: now } })
+      .catch(() => {})
+  }
   req.apiKey = {
     id: row.id,
     userId: row.user_id,

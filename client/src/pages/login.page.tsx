@@ -12,9 +12,10 @@ import { ConsoleButton } from "@/components/landing/ConsoleButton"
 
 type AccountType = "PERSONAL" | "ORGANIZATION"
 
-const getDashboardPath = (type: AccountType | null | undefined): string => {
-  return type === "ORGANIZATION" ? "/organization" : "/memories"
-}
+// Phase 3 dropped the personal/team selector at signup; everyone lands on
+// /memories. The OrganizationProvider picks up a stored currentOrgSlug
+// (if any) and scopes queries on top of that.
+const POST_LOGIN_PATH = "/memories"
 
 // Password requirement indicator
 const PasswordRequirement: React.FC<{
@@ -109,7 +110,6 @@ export const Login = () => {
     login,
     register,
     logout,
-    accountType,
   } = useAuth()
 
   // Default to register mode if user landed via /signup (or /signup?plan=...)
@@ -206,15 +206,9 @@ export const Login = () => {
     setError("")
 
     try {
-      let resultUser
       if (isRegister) {
-        resultUser = await register(
-          email.trim(),
-          password.trim(),
-          selectedAccountType
-        )
-        const dashboardPath = getDashboardPath(resultUser.account_type)
-        setTimeout(() => navigate(dashboardPath), 500)
+        await register(email.trim(), password.trim(), selectedAccountType)
+        setTimeout(() => navigate(POST_LOGIN_PATH), 500)
       } else {
         // Handle login with optional 2FA
         const result = await login(
@@ -232,8 +226,7 @@ export const Login = () => {
         }
 
         if (result.user) {
-          const dashboardPath = getDashboardPath(result.user.account_type)
-          setTimeout(() => navigate(dashboardPath), 500)
+          setTimeout(() => navigate(POST_LOGIN_PATH), 500)
         }
       }
     } catch (err) {
@@ -303,17 +296,12 @@ export const Login = () => {
                       {user.email}
                     </span>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {accountType === "ORGANIZATION"
-                      ? "Team Workspace"
-                      : "Personal Account"}
-                  </p>
                 </div>
                 <div className="space-y-3 pt-4">
                   <ConsoleButton
                     variant="console_key"
                     className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md"
-                    onClick={() => navigate(getDashboardPath(accountType))}
+                    onClick={() => navigate(POST_LOGIN_PATH)}
                   >
                     <span className="relative z-10 text-sm font-medium">
                       Continue to Dashboard

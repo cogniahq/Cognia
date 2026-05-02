@@ -4,9 +4,14 @@
  * Implements a minimal subset of the MCP spec
  * (https://modelcontextprotocol.io) over JSON-RPC 2.0 + HTTP, authenticated
  * via Cognia API keys. Exposes three tools backed by the user's memory store:
- *   - cognia.search        : full-text search across user memories
- *   - cognia.get_memory    : fetch a single memory by id
- *   - cognia.list_memories : paginated listing
+ *   - cognia_search        : full-text search across user memories
+ *   - cognia_get_memory    : fetch a single memory by id
+ *   - cognia_list_memories : paginated listing
+ *
+ * Tool names use snake_case to align with the standalone @cogniahq/mcp server
+ * and the public docs. The legacy dotted form (cognia.search, etc.) is still
+ * accepted by tools/call for back-compat with in-flight integrations and is
+ * planned to be removed in a future release.
  *
  * The transport is HTTP POST so the same endpoint serves all JSON-RPC methods.
  */
@@ -61,7 +66,7 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
       result: {
         tools: [
           {
-            name: 'cognia.search',
+            name: 'cognia_search',
             description: "Search the user's memories by query string.",
             inputSchema: {
               type: 'object',
@@ -73,7 +78,7 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
             },
           },
           {
-            name: 'cognia.get_memory',
+            name: 'cognia_get_memory',
             description: 'Fetch a single memory by id.',
             inputSchema: {
               type: 'object',
@@ -82,7 +87,7 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
             },
           },
           {
-            name: 'cognia.list_memories',
+            name: 'cognia_list_memories',
             description: 'List recent memories (paginated, opaque cursor).',
             inputSchema: {
               type: 'object',
@@ -101,9 +106,19 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
     const userId = req.apiKey!.userId
     const params = (body.params ?? {}) as unknown as ToolCallParams
     const { name, arguments: args } = params
+    // Accept both snake_case (canonical, what tools/list returns) and the legacy
+    // dotted form for back-compat. Normalise once so the switch below is simple.
+    const canonicalName =
+      name === 'cognia.search'
+        ? 'cognia_search'
+        : name === 'cognia.get_memory'
+          ? 'cognia_get_memory'
+          : name === 'cognia.list_memories'
+            ? 'cognia_list_memories'
+            : name
     try {
       let resultPayload: unknown
-      if (name === 'cognia.search') {
+      if (canonicalName === 'cognia_search') {
         const query = String(args?.query ?? '')
         const limit = Math.min(Number(args?.limit ?? 10), 50)
         const organizationId = req.apiKey!.organizationId
@@ -147,12 +162,12 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
             url: m.url,
           }))
         }
-      } else if (name === 'cognia.get_memory') {
+      } else if (canonicalName === 'cognia_get_memory') {
         const m = await prisma.memory.findFirst({
           where: { id: String(args?.id ?? ''), user_id: userId, deleted_at: null },
         })
         resultPayload = m ?? null
-      } else if (name === 'cognia.list_memories') {
+      } else if (canonicalName === 'cognia_list_memories') {
         const out = await listMemories({
           userId,
           limit: Number(args?.limit ?? 50),

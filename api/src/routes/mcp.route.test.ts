@@ -51,7 +51,7 @@ test('mcp: initialize returns server info', async () => {
   assert.equal(body.result.serverInfo.name, 'cognia-mcp')
 })
 
-test('mcp: tools/list returns 3 tools', async () => {
+test('mcp: tools/list returns 3 tools in snake_case', async () => {
   const { token } = await makeKey(['*'])
   const app = makeApp()
   const server = app.listen(0)
@@ -68,9 +68,13 @@ test('mcp: tools/list returns 3 tools', async () => {
   server.close()
   assert.equal(body.result.tools.length, 3)
   const names = body.result.tools.map(t => t.name)
-  assert.ok(names.includes('cognia.search'))
-  assert.ok(names.includes('cognia.get_memory'))
-  assert.ok(names.includes('cognia.list_memories'))
+  assert.ok(names.includes('cognia_search'))
+  assert.ok(names.includes('cognia_get_memory'))
+  assert.ok(names.includes('cognia_list_memories'))
+  // None of the legacy dotted names should appear in the canonical registry
+  assert.ok(!names.includes('cognia.search'))
+  assert.ok(!names.includes('cognia.get_memory'))
+  assert.ok(!names.includes('cognia.list_memories'))
 })
 
 test('mcp: missing auth returns 401', async () => {
@@ -86,7 +90,7 @@ test('mcp: missing auth returns 401', async () => {
   assert.equal(r.status, 401)
 })
 
-test('mcp: tools/call cognia.search returns wrapped result', async () => {
+test('mcp: tools/call cognia_search returns wrapped result', async () => {
   const { token, userId } = await makeKey(['*'])
   // seed a memory the search should find
   await prisma.memory.create({
@@ -112,7 +116,7 @@ test('mcp: tools/call cognia.search returns wrapped result', async () => {
       jsonrpc: '2.0',
       id: 7,
       method: 'tools/call',
-      params: { name: 'cognia.search', arguments: { query: 'pamplemousse', limit: 5 } },
+      params: { name: 'cognia_search', arguments: { query: 'pamplemousse', limit: 5 } },
     }),
   })
   const body = (await r.json()) as {
@@ -122,6 +126,47 @@ test('mcp: tools/call cognia.search returns wrapped result', async () => {
   assert.equal(body.result.content[0].type, 'text')
   const parsed = JSON.parse(body.result.content[0].text) as { title: string }[]
   assert.ok(parsed.some(m => m.title === 'colour pref'))
+})
+
+test('mcp: tools/call accepts legacy dotted name cognia.search (back-compat)', async () => {
+  const { token, userId } = await makeKey(['*'])
+  // seed a memory the search should find
+  await prisma.memory.create({
+    data: {
+      user_id: userId,
+      source: 'TEST',
+      content: 'Legacy dotted MCP back-compat marker xyzzy',
+      title: 'legacy dotted',
+      timestamp: BigInt(Date.now()),
+    },
+  })
+
+  const app = makeApp()
+  const server = app.listen(0)
+  const port = (server.address() as { port: number }).port
+  const r = await fetch(`http://127.0.0.1:${port}/mcp/v1/jsonrpc`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 8,
+      method: 'tools/call',
+      params: { name: 'cognia.search', arguments: { query: 'xyzzy', limit: 5 } },
+    }),
+  })
+  const body = (await r.json()) as {
+    result?: { content: { type: string; text: string }[] }
+    error?: { code: number; message: string }
+  }
+  server.close()
+  assert.equal(body.error, undefined, `expected success, got error: ${body.error?.message}`)
+  assert.ok(body.result, 'expected result for legacy dotted tool name')
+  assert.equal(body.result!.content[0].type, 'text')
+  const parsed = JSON.parse(body.result!.content[0].text) as { title: string }[]
+  assert.ok(parsed.some(m => m.title === 'legacy dotted'))
 })
 
 test('mcp: unknown method returns -32601 error', async () => {

@@ -16,8 +16,8 @@ export function useMemories() {
       requireAuthToken()
 
       const [memoriesData, totalCount] = await Promise.all([
-        MemoryService.getMemoriesWithTransactionDetails(10000),
-        MemoryService.getUserMemoryCount(),
+        MemoryService.getMemoriesWithTransactionDetails(10000, orgId),
+        MemoryService.getUserMemoryCount(orgId),
       ])
 
       setMemories(memoriesData || [])
@@ -25,10 +25,9 @@ export function useMemories() {
     } catch (err) {
       console.error("Error fetching memories:", err)
     }
-    // Re-fire whenever the active workspace changes. The fetch itself does
-    // not yet pass org_id (server-side scoping lands in a follow-up commit),
-    // but trigger parity matters now so the list refreshes on switch and the
-    // future scoped call observes the right value the moment it ships.
+    // Re-fire whenever the active workspace changes and pass the active org id
+    // so the server scopes the result. `null` sends no `organizationId`, which
+    // the API treats as personal-vault scope (organization_id IS NULL).
   }, [orgId])
 
   useEffect(() => {

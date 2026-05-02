@@ -19,14 +19,21 @@ interface ApiMemoryResponse {
 
 const baseUrl = "/memory"
 
+function withOrg(qs: string, organizationId?: string | null): string {
+  if (!organizationId) return qs
+  const sep = qs.includes("?") ? "&" : "?"
+  return `${qs}${sep}organizationId=${encodeURIComponent(organizationId)}`
+}
+
 export async function getMemoriesWithTransactionDetails(
-  limit?: number
+  limit?: number,
+  organizationId?: string | null
 ): Promise<Memory[]> {
   requireAuthToken()
 
   try {
     const response = await getRequest(
-      `${baseUrl}/user/recent?count=${limit || 10000}`
+      withOrg(`${baseUrl}/user/recent?count=${limit || 10000}`, organizationId)
     )
 
     if (response.data?.success === false) {
@@ -57,11 +64,16 @@ export async function getMemoriesWithTransactionDetails(
   return []
 }
 
-export async function getRecentMemories(count: number = 10): Promise<Memory[]> {
+export async function getRecentMemories(
+  count: number = 10,
+  organizationId?: string | null
+): Promise<Memory[]> {
   requireAuthToken()
 
   try {
-    const response = await getRequest(`${baseUrl}/user/recent?count=${count}`)
+    const response = await getRequest(
+      withOrg(`${baseUrl}/user/recent?count=${count}`, organizationId)
+    )
     const data = response.data?.data
 
     if (Array.isArray(data?.memories) && data.memories.length > 0) {
@@ -92,10 +104,14 @@ export async function getUserMemories(
   return data || { memories: [], total: 0, page, limit }
 }
 
-export async function getUserMemoryCount(): Promise<number> {
+export async function getUserMemoryCount(
+  organizationId?: string | null
+): Promise<number> {
   requireAuthToken()
   try {
-    const response = await getRequest(`${baseUrl}/user/count`)
+    const response = await getRequest(
+      withOrg(`${baseUrl}/user/count`, organizationId)
+    )
     const count = response.data?.data?.memoryCount
     return typeof count === "number" ? count : parseInt(count) || 0
   } catch (error) {

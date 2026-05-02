@@ -65,6 +65,7 @@ export const MemoriesV2: React.FC = () => {
       const res = await memoryV2Service.list({
         limit: 100,
         q: activeQuery || undefined,
+        organizationId: orgId,
       })
       setMemories(res.data || [])
     } catch (err) {
@@ -72,9 +73,8 @@ export const MemoriesV2: React.FC = () => {
     } finally {
       setLoading(false)
     }
-    // Re-fire on workspace switch so the list refreshes when toggling
-    // between Personal and an org. Server-side scoping is a follow-up; the
-    // refetch trigger needs to be in place ahead of it.
+    // Re-fire on workspace switch and pass the active org id; the server
+    // treats absent as personal vault and a present id as org-scoped.
   }, [activeQuery, orgId])
 
   useEffect(() => {

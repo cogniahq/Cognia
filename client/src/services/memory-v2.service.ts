@@ -48,6 +48,7 @@ export const memoryV2Service = {
     limit?: number
     onlyDeleted?: boolean
     q?: string
+    organizationId?: string | null
   }) => {
     const qs = new URLSearchParams()
     Object.entries(params).forEach(([k, v]) => {

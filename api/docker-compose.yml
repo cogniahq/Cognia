@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: cognia
       POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
       - cognia_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -27,8 +27,8 @@ services:
     container_name: cognia_qdrant
     restart: unless-stopped
     ports:
-      - '6333:6333'
-      - '6334:6334'
+      - '127.0.0.1:6333:6333'
+      - '127.0.0.1:6334:6334'
     volumes:
       - cognia_qdrant_data:/qdrant/storage
     healthcheck:
@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
     command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
     volumes:
       - cognia_redis_data:/data
     healthcheck:
@@ -92,7 +92,7 @@ services:
     ports:
       # Defaults to 3100 to avoid colliding with a host dev server on 3000.
       # Override with: API_HOST_PORT=3000 docker compose --profile app up
-      - '${API_HOST_PORT:-3100}:3000'
+      - '127.0.0.1:${API_HOST_PORT:-3100}:3000'
     # Inherit application secrets and config from .env. The container-network
     # URLs below override the localhost values in that file. Cookie/CORS
     # settings are inherited from .env so dev (.env COOKIE_SECURE=false,
@@ -136,7 +136,7 @@ services:
     container_name: cognia_client
     restart: unless-stopped
     ports:
-      - '${CLIENT_HOST_PORT:-5173}:80'
+      - '127.0.0.1:${CLIENT_HOST_PORT:-5173}:80'
     depends_on:
       api:
         condition: service_healthy

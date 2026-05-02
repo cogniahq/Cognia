@@ -17,7 +17,8 @@ export const getRequest = async (
     return res
   } catch (err: any) {
     if (callback) callback(err)
-    return err.response
+    if (err?.response) return err.response
+    throw err
   }
 }
 
@@ -55,7 +56,8 @@ export const patchRequest = async (
     return res
   } catch (err: any) {
     if (callback) callback(err)
-    return err.response
+    if (err?.response) return err.response
+    throw err
   }
 }
 
@@ -70,7 +72,8 @@ export const putRequest = async (
     return res
   } catch (err: any) {
     if (callback) callback(err)
-    return err.response
+    if (err?.response) return err.response
+    throw err
   }
 }
 
@@ -84,6 +87,7 @@ export const deleteRequest = async (
     return res
   } catch (err: any) {
     if (callback) callback(err)
-    return err.response
+    if (err?.response) return err.response
+    throw err
   }
 }

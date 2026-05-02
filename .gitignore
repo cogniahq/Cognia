@@ -68,6 +68,7 @@ typings/
 
 # Personal demo notes — not for repo
 DEMO_SCRIPT.md
+EC2_DEPLOY.md
 
 # Internal AI-agent planning docs — not for product docs site
 docs/superpowers/

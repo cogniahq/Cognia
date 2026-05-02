@@ -6,6 +6,7 @@ interface StatusSectionProps {
   isAuthenticated: boolean
   isCheckingHealth: boolean
   lastCaptureTime: number | null
+  dlpBlockCount?: number
 }
 
 type Tone = 'success' | 'warning' | 'destructive' | 'muted'
@@ -61,6 +62,7 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
   isAuthenticated,
   isCheckingHealth,
   lastCaptureTime,
+  dlpBlockCount = 0,
 }) => {
   let primaryLabel: string
   let primaryTone: Tone
@@ -108,6 +110,18 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
           <span className={cn('h-1.5 w-1.5 rounded-full', toneClasses[authTone].dot)} />
           Auth
         </span>
+        {dlpBlockCount > 0 && (
+          <>
+            <span className="text-border">·</span>
+            <span
+              className="inline-flex items-center gap-1.5"
+              title="Captures dropped by client-side DLP because they matched a secret-like pattern"
+            >
+              <span className={cn('h-1.5 w-1.5 rounded-full', toneClasses.warning.dot)} />
+              DLP {dlpBlockCount}
+            </span>
+          </>
+        )}
       </div>
     </div>
   )

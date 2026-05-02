@@ -57,4 +57,8 @@ export const STORAGE_KEYS = {
   // Cached destinations payload from /api/extension/destinations, scoped to
   // the user. Shape: { data, fetched_at }.
   DESTINATIONS_CACHE_PREFIX: 'destinations_cache:',
+  // DLP block telemetry — incremented every time client-side DLP drops a
+  // capture, surfaced in the popup status section.
+  DLP_BLOCK_COUNT: 'dlp_block_count',
+  DLP_LAST_BLOCKED_AT: 'dlp_last_blocked_at',
 } as const

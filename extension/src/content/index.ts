@@ -1,5 +1,5 @@
 import { runtime } from '@/lib/browser'
-import { MESSAGE_TYPES } from '@/utils/core/constants.util'
+import { MESSAGE_TYPES, STORAGE_KEYS } from '@/utils/core/constants.util'
 import { detectPrivacyExtensions, getPrivacyExtensionInfo } from './privacy/privacy-detector'
 import { captureContext } from './extraction/content-extractor'
 import { scanForSecretsClient } from '@/dlp'
@@ -163,6 +163,19 @@ async function sendContextToBackground() {
         url: window.location.hostname,
         matches: dlp.matches,
       })
+      try {
+        const stored = await chrome.storage.local.get([STORAGE_KEYS.DLP_BLOCK_COUNT])
+        const next =
+          (typeof stored?.[STORAGE_KEYS.DLP_BLOCK_COUNT] === 'number'
+            ? (stored[STORAGE_KEYS.DLP_BLOCK_COUNT] as number)
+            : 0) + 1
+        await chrome.storage.local.set({
+          [STORAGE_KEYS.DLP_BLOCK_COUNT]: next,
+          [STORAGE_KEYS.DLP_LAST_BLOCKED_AT]: Date.now(),
+        })
+      } catch {
+        // best-effort; don't let storage failures break the block path
+      }
       return
     }
 

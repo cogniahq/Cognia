@@ -25,6 +25,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/chrome": "^0.1.22",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
@@ -32,6 +34,7 @@
     "esbuild": "^0.24.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
+    "jsdom": "^29.1.1",
     "postcss": "^8.4.35",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.10",

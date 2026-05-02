@@ -8,7 +8,9 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
+    // jsdom for popup component tests; node tests still work since they
+    // don't depend on browser globals.
+    environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     globals: false,
   },

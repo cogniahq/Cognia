@@ -54,7 +54,8 @@ const Popup: React.FC = () => {
     blockCurrentDomain,
   } = useExtensionSettings()
 
-  const { isConnected, isAuthenticated, isCheckingHealth, lastCaptureTime } = useStatus()
+  const { isConnected, isAuthenticated, isCheckingHealth, lastCaptureTime, dlpBlockCount } =
+    useStatus()
 
   return (
     <div className="w-[360px] bg-background text-foreground font-primary">
@@ -68,6 +69,7 @@ const Popup: React.FC = () => {
           isAuthenticated={isAuthenticated}
           isCheckingHealth={isCheckingHealth}
           lastCaptureTime={lastCaptureTime}
+          dlpBlockCount={dlpBlockCount}
         />
 
         <section className="rounded-lg border border-border bg-card">

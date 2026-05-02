@@ -35,4 +35,6 @@ export const STORAGE_KEYS = {
   MEMORY_INJECTION_ENABLED: 'memoryInjectionEnabled',
   BLOCKED_WEBSITES: 'blockedWebsites',
   AUTH_TOKEN: 'auth_token',
+  DLP_BLOCK_COUNT: 'dlp_block_count',
+  DLP_LAST_BLOCKED_AT: 'dlp_last_blocked_at',
 } as const

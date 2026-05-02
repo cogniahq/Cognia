@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth.context"
+import { useOrganization } from "@/contexts/organization.context"
 import {
   onboardingService,
   type OnboardingState,
@@ -20,6 +21,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 export const Memories: React.FC = () => {
   const navigate = useNavigate()
   const { accountType, isLoading: authLoading } = useAuth()
+  const { organizations } = useOrganization()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
@@ -129,7 +131,7 @@ export const Memories: React.FC = () => {
         </div>
       )}
 
-      {!teamBannerDismissed && (
+      {!teamBannerDismissed && organizations.length === 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
           <div className="border border-gray-200 bg-white px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-700">

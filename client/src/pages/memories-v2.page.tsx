@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { useOrganization } from "@/contexts/organization.context"
 import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
 import type { SavedSearch } from "@/services/saved-search.service"
 import { requireAuthToken } from "@/utils/auth"
@@ -45,6 +46,9 @@ export const MemoriesV2: React.FC = () => {
   const canDeleteMemory = useHasPermission("memory.delete")
   const canShareMemory = useHasPermission("memory.share")
 
+  const { currentOrganization } = useOrganization()
+  const orgId = currentOrganization?.id ?? null
+
   useEffect(() => {
     try {
       requireAuthToken()
@@ -68,7 +72,10 @@ export const MemoriesV2: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [activeQuery])
+    // Re-fire on workspace switch so the list refreshes when toggling
+    // between Personal and an org. Server-side scoping is a follow-up; the
+    // refetch trigger needs to be in place ahead of it.
+  }, [activeQuery, orgId])
 
   useEffect(() => {
     if (!authed) return

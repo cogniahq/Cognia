@@ -30,8 +30,13 @@ export function OrgSwitcher({
   onNavigate,
 }: OrgSwitcherProps) {
   const navigate = useNavigate()
-  const { organizations, currentOrganization, selectOrganization, isLoading } =
-    useOrganization()
+  const {
+    organizations,
+    currentOrganization,
+    selectOrganization,
+    clearOrganization,
+    isLoading,
+  } = useOrganization()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const go = (path: string) => {
@@ -49,11 +54,11 @@ export function OrgSwitcher({
   }
 
   const handleSelectPersonal = () => {
-    try {
-      localStorage.removeItem("currentOrgSlug")
-    } catch {
-      // ignore
-    }
+    // Clear React state (currentOrganization, members, documents) and the
+    // persistence key in one shot before navigating, so the trigger label,
+    // admin badge, and any useHasPermission consumers re-render against the
+    // personal scope rather than lagging behind on the previous org.
+    clearOrganization()
     go("/memories")
   }
 

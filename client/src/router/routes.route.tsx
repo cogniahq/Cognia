@@ -109,6 +109,11 @@ const BugBounty = lazy(() =>
     default: module.BugBounty,
   }))
 )
+const ApiKeysPage = lazy(() =>
+  import("@/pages/api-keys.page").then((module) => ({
+    default: module.ApiKeys,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -178,6 +183,7 @@ const AppRoutes = () => {
         <Route path="/mesh-showcase" element={<MeshShowcase />} />
         <Route path="/org-admin/:slug" element={<OrgAdmin />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/settings/api-keys" element={<ApiKeysPage />} />
 
         <Route path="*" element={<AuthRedirectLanding />} />
       </Routes>

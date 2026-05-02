@@ -6,19 +6,27 @@ import { LayoutGroup, motion } from "framer-motion"
 import { useNavigate, useParams } from "react-router-dom"
 
 import ActivityTab from "@/components/org-admin/ActivityTab"
+import ApiKeysTab from "@/components/org-admin/ApiKeysTab"
 import IntegrationsHealthTab from "@/components/org-admin/IntegrationsHealthTab"
 import MembersTab from "@/components/org-admin/MembersTab"
 import SecurityTab from "@/components/org-admin/SecurityTab"
 import SsoSetupTab from "@/components/org-admin/SsoSetupTab"
+import { useHasPermission } from "@/hooks/use-permissions"
 import { PageHeader } from "@/components/shared/PageHeader"
 import {
   fadeUpVariants,
   staggerContainerVariants,
 } from "@/components/shared/site-motion-variants"
 
-type AdminTab = "activity" | "members" | "security" | "integrations" | "sso"
+type AdminTab =
+  | "activity"
+  | "members"
+  | "security"
+  | "integrations"
+  | "sso"
+  | "api-keys"
 
-const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
+const BASE_TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
   { id: "activity", label: "Activity" },
   { id: "members", label: "Members" },
   { id: "security", label: "Security" },
@@ -34,6 +42,7 @@ export function OrgAdmin() {
     useOrganization()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [activeTab, setActiveTab] = useState<AdminTab>("activity")
+  const canSeeApiKeys = useHasPermission("api_key.read")
 
   useEffect(() => {
     try {
@@ -72,6 +81,10 @@ export function OrgAdmin() {
     currentOrganization?.slug === slug
       ? currentOrganization
       : organizations.find((o) => o.slug === slug)
+
+  const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = canSeeApiKeys
+    ? [...BASE_TABS, { id: "api-keys", label: "API Keys" }]
+    : BASE_TABS
 
   return (
     <div className="min-h-screen bg-white">
@@ -152,6 +165,9 @@ export function OrgAdmin() {
               <IntegrationsHealthTab slug={slug} />
             )}
             {activeTab === "sso" && <SsoSetupTab slug={slug} />}
+            {activeTab === "api-keys" && matchedOrg?.id && (
+              <ApiKeysTab orgId={matchedOrg.id} slug={slug} />
+            )}
           </motion.div>
         </motion.div>
       </div>

@@ -61,6 +61,12 @@ function UserMenu({ email }: UserMenuProps) {
         >
           Profile
         </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate("/settings/api-keys")}
+          className="cursor-pointer rounded-none text-xs font-mono"
+        >
+          API keys
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}

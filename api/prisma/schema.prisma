@@ -125,6 +125,13 @@ model User {
   consent                  Json?    // { cookies: bool, analytics: bool, marketing: bool, recordedAt: ... }
   legal_hold_until         DateTime?
 
+  // Default capture destination for browser extension (and other clients)
+  // Null = personal vault. Stored as plain UUIDs (no FK relation) so org/workspace
+  // deletion does not require a cascading migration on the user row; the server
+  // re-validates membership + workspace ownership at read time.
+  default_capture_organization_id  String?  @db.Uuid
+  default_capture_workspace_id     String?  @db.Uuid
+
   memories                 Memory[]
   memory_snapshots         MemorySnapshot[]
   token_usage              TokenUsage[]

@@ -119,6 +119,64 @@ export const storage = {
       })
     },
   },
+  // chrome.storage.session is in-memory and cleared when the browser closes.
+  // Firefox added support in a recent release; we feature-detect and fall
+  // back to the same surface so callers don't need to special-case it.
+  session: {
+    get: (
+      keys: string | string[] | { [key: string]: any } | null
+    ): Promise<{ [key: string]: any }> => {
+      const sessionApi = (browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea })
+        .session
+      if (!sessionApi) return Promise.resolve({})
+      if (isFirefox) {
+        return (sessionApi.get as (k: typeof keys) => Promise<{ [key: string]: any }>)(keys)
+      }
+      return new Promise((resolve, reject) => {
+        sessionApi.get(keys, (result: { [key: string]: any }) => {
+          if (browserAPI.runtime.lastError) {
+            reject(new Error(browserAPI.runtime.lastError.message))
+          } else {
+            resolve(result)
+          }
+        })
+      })
+    },
+    set: (items: { [key: string]: any }): Promise<void> => {
+      const sessionApi = (browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea })
+        .session
+      if (!sessionApi) return Promise.resolve()
+      if (isFirefox) {
+        return (sessionApi.set as (i: typeof items) => Promise<void>)(items)
+      }
+      return new Promise((resolve, reject) => {
+        sessionApi.set(items, () => {
+          if (browserAPI.runtime.lastError) {
+            reject(new Error(browserAPI.runtime.lastError.message))
+          } else {
+            resolve()
+          }
+        })
+      })
+    },
+    remove: (keys: string | string[]): Promise<void> => {
+      const sessionApi = (browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea })
+        .session
+      if (!sessionApi) return Promise.resolve()
+      if (isFirefox) {
+        return (sessionApi.remove as (k: typeof keys) => Promise<void>)(keys)
+      }
+      return new Promise((resolve, reject) => {
+        sessionApi.remove(keys, () => {
+          if (browserAPI.runtime.lastError) {
+            reject(new Error(browserAPI.runtime.lastError.message))
+          } else {
+            resolve()
+          }
+        })
+      })
+    },
+  },
 }
 
 export const runtime = {

@@ -5,6 +5,7 @@ import { StatusSection } from './components/StatusSection'
 import { ExtensionToggle } from './components/ExtensionToggle'
 import { MemoryInjectionToggle } from './components/MemoryInjectionToggle'
 import { BlockedWebsites } from './components/BlockedWebsites'
+import { DestinationPicker } from './components/DestinationPicker'
 import { ExternalLinkIcon } from './components/Icons'
 import { useExtensionSettings } from './hooks/useExtensionSettings'
 import { useStatus } from './hooks/useStatus'
@@ -69,6 +70,8 @@ const Popup: React.FC = () => {
           isCheckingHealth={isCheckingHealth}
           lastCaptureTime={lastCaptureTime}
         />
+
+        <DestinationPicker />
 
         <section className="rounded-lg border border-border bg-card">
           <header className="flex items-center justify-between px-4 pt-3 pb-1">

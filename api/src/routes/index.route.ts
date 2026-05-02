@@ -30,6 +30,7 @@ import v1Router from './v1.route'
 import mcpRouter from './mcp.route'
 import openApiRouter from './openapi.route'
 import gdprRouter from './gdpr.route'
+import extensionRouter from './extension.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -83,4 +84,6 @@ export const routes = (app: Express) => {
   app.use('/', openApiRouter)
   // GDPR data rights (account deletion, consent, status)
   app.use('/api/gdpr', gdprRouter)
+  // Browser extension helpers (destination picker)
+  app.use('/api/extension', extensionRouter)
 }

@@ -12,6 +12,16 @@ export const MEMORY_INJECTION_MIN_LENGTH = 3
 export const MESSAGE_TYPES = {
   CAPTURE_CONTEXT: 'CAPTURE_CONTEXT',
   CAPTURE_CONTEXT_NOW: 'CAPTURE_CONTEXT_NOW',
+  // Manual capture trigger fired by the popup. Unlike CAPTURE_CONTEXT_NOW
+  // (which is sent automatically by the tab listener on activation/update),
+  // this signals an explicit user request and respects the destination
+  // picker's session override.
+  CAPTURE_CONTEXT_MANUAL: 'CAPTURE_CONTEXT_MANUAL',
+  // Background-only message asking the extension to refresh the cached
+  // destinations list. Fired after auth changes or after the picker writes a
+  // new default.
+  REFRESH_DESTINATIONS: 'REFRESH_DESTINATIONS',
+  GET_DESTINATIONS: 'GET_DESTINATIONS',
   SET_ENDPOINT: 'SET_ENDPOINT',
   GET_ENDPOINT: 'GET_ENDPOINT',
   GET_EXTENSION_ENABLED: 'GET_EXTENSION_ENABLED',
@@ -35,4 +45,16 @@ export const STORAGE_KEYS = {
   MEMORY_INJECTION_ENABLED: 'memoryInjectionEnabled',
   BLOCKED_WEBSITES: 'blockedWebsites',
   AUTH_TOKEN: 'auth_token',
+  // Default capture destination, persisted via chrome.storage.sync so it
+  // follows the user across browsers/devices that share Chrome sync. Stored
+  // shape: { organizationId: string | null, workspaceId: string | null }.
+  // Null/null = personal vault.
+  CAPTURE_TARGET_DEFAULT: 'capture_target_default',
+  // Per-capture override stored in chrome.storage.session — wiped each time
+  // the browser session ends, so the override never silently outlives the
+  // user's intent.
+  CAPTURE_TARGET_OVERRIDE: 'capture_target_override',
+  // Cached destinations payload from /api/extension/destinations, scoped to
+  // the user. Shape: { data, fetched_at }.
+  DESTINATIONS_CACHE_PREFIX: 'destinations_cache:',
 } as const

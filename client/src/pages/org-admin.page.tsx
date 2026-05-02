@@ -5,13 +5,13 @@ import { requireAuthToken } from "@/utils/auth"
 import { LayoutGroup, motion } from "framer-motion"
 import { useNavigate, useParams } from "react-router-dom"
 
+import { useHasPermission } from "@/hooks/use-permissions"
 import ActivityTab from "@/components/org-admin/ActivityTab"
 import ApiKeysTab from "@/components/org-admin/ApiKeysTab"
 import IntegrationsHealthTab from "@/components/org-admin/IntegrationsHealthTab"
 import MembersTab from "@/components/org-admin/MembersTab"
 import SecurityTab from "@/components/org-admin/SecurityTab"
 import SsoSetupTab from "@/components/org-admin/SsoSetupTab"
-import { useHasPermission } from "@/hooks/use-permissions"
 import { PageHeader } from "@/components/shared/PageHeader"
 import {
   fadeUpVariants,

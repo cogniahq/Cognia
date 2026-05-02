@@ -23,11 +23,7 @@ export function Docs() {
     <div className="min-h-screen bg-white">
       <PageHeader />
       <div className="docs-renderer h-[calc(100vh-3.5rem)]">
-        <API
-          apiDescriptionUrl="/openapi.json"
-          router="hash"
-          layout="sidebar"
-        />
+        <API apiDescriptionUrl="/openapi.json" router="hash" layout="sidebar" />
       </div>
     </div>
   )

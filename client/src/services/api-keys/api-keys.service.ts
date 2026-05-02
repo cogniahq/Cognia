@@ -38,7 +38,11 @@ export interface CreateApiKeyInput {
  * api/src/routes/api-keys.route.ts. Keep this list in sync with the
  * backend whitelist; the server rejects unknown scopes.
  */
-export const VALID_SCOPES = ["memories.read", "memories.write", "search"] as const
+export const VALID_SCOPES = [
+  "memories.read",
+  "memories.write",
+  "search",
+] as const
 export type ApiKeyScope = (typeof VALID_SCOPES)[number]
 
 export const SCOPE_DESCRIPTIONS: Record<ApiKeyScope, string> = {

@@ -121,3 +121,54 @@ test('share: ORG share rejected when recipientOrgId is missing', async () => {
     /recipientOrgId is required/
   )
 })
+
+test('share: USER share rejected when recipientUserId is missing', async () => {
+  const { u: owner, m } = await makeMemory()
+  await assert.rejects(
+    () =>
+      createShare({
+        memoryId: m.id,
+        sharerUserId: owner.id,
+        recipientType: 'USER',
+      }),
+    /recipientUserId is required/
+  )
+  const count = await prisma.memoryShare.count({
+    where: { memory_id: m.id, recipient_type: 'USER' },
+  })
+  assert.equal(count, 0)
+})
+
+test('share: USER share rejected when recipientUserId does not exist', async () => {
+  const { u: owner, m } = await makeMemory()
+  const ghostUserId = randomUUID()
+  await assert.rejects(
+    () =>
+      createShare({
+        memoryId: m.id,
+        sharerUserId: owner.id,
+        recipientType: 'USER',
+        recipientUserId: ghostUserId,
+      }),
+    /Recipient user not found/
+  )
+  const count = await prisma.memoryShare.count({
+    where: { memory_id: m.id, recipient_user_id: ghostUserId },
+  })
+  assert.equal(count, 0)
+})
+
+test('share: USER share succeeds when recipient exists (happy-path regression)', async () => {
+  const { u: owner, m } = await makeMemory()
+  const recipient = await prisma.user.create({ data: { email: `ok-${randomUUID()}@x.io` } })
+  const share = await createShare({
+    memoryId: m.id,
+    sharerUserId: owner.id,
+    recipientType: 'USER',
+    recipientUserId: recipient.id,
+  })
+  assert.equal(share.recipient_user_id, recipient.id)
+  assert.equal(share.recipient_type, 'USER')
+  const persisted = await prisma.memoryShare.findUnique({ where: { id: share.id } })
+  assert.ok(persisted)
+})

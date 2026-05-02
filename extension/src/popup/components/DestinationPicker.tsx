@@ -88,10 +88,7 @@ export const DestinationPicker: React.FC = () => {
   const headline = activeLabel(effectiveTarget, destinations)
 
   return (
-    <section
-      className="rounded-lg border border-border bg-card"
-      aria-label="Capture destination"
-    >
+    <section className="rounded-lg border border-border bg-card" aria-label="Capture destination">
       <header className="flex items-center justify-between px-4 pt-3 pb-1">
         <h3 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
           Destination
@@ -114,9 +111,7 @@ export const DestinationPicker: React.FC = () => {
         </div>
       </div>
       <ul className="divide-y divide-border" role="listbox" aria-label="Destination choices">
-        {isLoading && (
-          <li className="px-4 py-2 text-[12px] text-muted-foreground">Loading...</li>
-        )}
+        {isLoading && <li className="px-4 py-2 text-[12px] text-muted-foreground">Loading...</li>}
         {!isLoading &&
           choices.map(choice => {
             const isActive = choice.key === activeKey

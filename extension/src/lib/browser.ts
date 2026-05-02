@@ -126,8 +126,9 @@ export const storage = {
     get: (
       keys: string | string[] | { [key: string]: any } | null
     ): Promise<{ [key: string]: any }> => {
-      const sessionApi = (browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea })
-        .session
+      const sessionApi = (
+        browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea }
+      ).session
       if (!sessionApi) return Promise.resolve({})
       if (isFirefox) {
         return (sessionApi.get as (k: typeof keys) => Promise<{ [key: string]: any }>)(keys)
@@ -143,8 +144,9 @@ export const storage = {
       })
     },
     set: (items: { [key: string]: any }): Promise<void> => {
-      const sessionApi = (browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea })
-        .session
+      const sessionApi = (
+        browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea }
+      ).session
       if (!sessionApi) return Promise.resolve()
       if (isFirefox) {
         return (sessionApi.set as (i: typeof items) => Promise<void>)(items)
@@ -160,8 +162,9 @@ export const storage = {
       })
     },
     remove: (keys: string | string[]): Promise<void> => {
-      const sessionApi = (browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea })
-        .session
+      const sessionApi = (
+        browserAPI.storage as unknown as { session?: chrome.storage.SessionStorageArea }
+      ).session
       if (!sessionApi) return Promise.resolve()
       if (isFirefox) {
         return (sessionApi.remove as (k: typeof keys) => Promise<void>)(keys)

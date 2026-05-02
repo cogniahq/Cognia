@@ -10,8 +10,7 @@ export function handleCaptureContext(
 ): boolean {
   if (message?.type === MESSAGE_TYPES.CAPTURE_CONTEXT && message.data) {
     const data = message.data
-    const wasManualOverride =
-      (data as { auto_capture?: boolean }).auto_capture !== true
+    const wasManualOverride = (data as { auto_capture?: boolean }).auto_capture !== true
     sendToBackend(data)
       .then(async () => {
         storage.local.set({ last_capture_time: Date.now() })

@@ -26,10 +26,17 @@ router.get(
   '/memories',
   requireScope('memories.read'),
   async (req: ApiKeyRequest, res: Response) => {
+    // Clamp ?limit to [1, 100]; default 50 for missing/invalid/non-positive.
+    // OpenAPI advertises maximum=100; the route is the source of truth.
+    const limitRaw = Number(req.query.limit)
+    const limit =
+      Number.isFinite(limitRaw) && limitRaw > 0
+        ? Math.min(Math.max(1, Math.floor(limitRaw)), 100)
+        : 50
     const out = await listMemories({
       userId: req.apiKey!.userId,
       cursor: req.query.cursor as string | undefined,
-      limit: Number(req.query.limit) || 50,
+      limit,
       q: req.query.q as string | undefined,
     })
     res.json({

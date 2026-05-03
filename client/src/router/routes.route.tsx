@@ -109,6 +109,11 @@ const BugBounty = lazy(() =>
     default: module.BugBounty,
   }))
 )
+const Upcoming = lazy(() =>
+  import("@/pages/upcoming.page").then((module) => ({
+    default: module.Upcoming,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -178,6 +183,7 @@ const AppRoutes = () => {
         <Route path="/mesh-showcase" element={<MeshShowcase />} />
         <Route path="/org-admin/:slug" element={<OrgAdmin />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/upcoming" element={<Upcoming />} />
 
         <Route path="*" element={<AuthRedirectLanding />} />
       </Routes>

@@ -131,6 +131,7 @@ export const PageHeader = () => {
             path: "/organization",
             matchPrefixes: ["/organization", "/memories"],
           },
+          { label: "Upcoming", path: "/upcoming" },
           { label: "Integrations", path: "/integrations" },
           ...(showAdminNav
             ? [

@@ -1,8 +1,7 @@
 import { useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
+import { useNavigate } from "react-router-dom"
 
-import { useAuth } from "../contexts/auth.context"
 import { Section } from "../components/landing"
 import { AnalyticsDemo } from "../components/landing/AnalyticsDemo"
 import { CTASection } from "../components/landing/CTASection"
@@ -14,6 +13,7 @@ import { HeroSection } from "../components/landing/HeroSection"
 import { IntegrationsDemo } from "../components/landing/IntegrationsDemo"
 import { MemoryMeshDemo } from "../components/landing/MemoryMeshDemo"
 import { SecuritySection } from "../components/landing/SecuritySection"
+import { useAuth } from "../contexts/auth.context"
 
 export const Landing = () => {
   const navigate = useNavigate()

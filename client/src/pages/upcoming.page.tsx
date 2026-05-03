@@ -4,8 +4,8 @@ import { useOrganization } from "@/contexts/organization.context"
 import { requireAuthToken } from "@/utils/auth"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
-import { UpcomingList } from "@/components/upcoming/UpcomingList"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { UpcomingList } from "@/components/upcoming/UpcomingList"
 
 /**
  * Org-scoped "Upcoming" surface: the user's extracted TODOs / scheduled

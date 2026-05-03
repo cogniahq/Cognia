@@ -164,10 +164,7 @@ router.patch('/:id', authenticateToken, async (req: AuthenticatedRequest, res: R
     if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
     const todo = await prisma.memoryTodo.findUnique({ where: { id: req.params.id } })
     if (!todo) return res.status(404).json({ success: false, message: 'Todo not found' })
-    const isMember = await organizationAccessService.isMember(
-      req.user.id,
-      todo.organization_id
-    )
+    const isMember = await organizationAccessService.isMember(req.user.id, todo.organization_id)
     if (!isMember) {
       return res.status(403).json({ success: false, message: 'Not a member of this organization' })
     }
@@ -257,10 +254,7 @@ router.post(
       const todo = await prisma.memoryTodo.findUnique({ where: { id: req.params.id } })
       if (!todo) return res.status(404).json({ success: false, message: 'Todo not found' })
 
-      const isMember = await organizationAccessService.isMember(
-        req.user.id,
-        todo.organization_id
-      )
+      const isMember = await organizationAccessService.isMember(req.user.id, todo.organization_id)
       if (!isMember) {
         return res
           .status(403)
@@ -348,10 +342,7 @@ router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res: 
     if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
     const todo = await prisma.memoryTodo.findUnique({ where: { id: req.params.id } })
     if (!todo) return res.status(404).json({ success: false, message: 'Todo not found' })
-    const isMember = await organizationAccessService.isMember(
-      req.user.id,
-      todo.organization_id
-    )
+    const isMember = await organizationAccessService.isMember(req.user.id, todo.organization_id)
     if (!isMember) {
       return res.status(403).json({ success: false, message: 'Not a member of this organization' })
     }

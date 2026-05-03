@@ -110,7 +110,11 @@ export function CalendarConnectCTA({
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-mono text-amber-900">
         Calendar integration is not configured on this server. Ask an admin to
-        set <code className="px-1 bg-amber-100 rounded">GOOGLE_CALENDAR_CLIENT_ID</code>.
+        set{" "}
+        <code className="px-1 bg-amber-100 rounded">
+          GOOGLE_CALENDAR_CLIENT_ID
+        </code>
+        .
       </div>
     )
   }

@@ -88,9 +88,7 @@ export function UpcomingList({
           ...(status !== "ALL" ? { status: status as TodoStatus } : {}),
         }
         const res = await todosService.list(params)
-        setTodos((prev) =>
-          cursor ? [...prev, ...res.data] : res.data
-        )
+        setTodos((prev) => (cursor ? [...prev, ...res.data] : res.data))
         setNextCursor(res.nextCursor)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load todos")
@@ -163,8 +161,8 @@ export function UpcomingList({
         </div>
       ) : todos.length === 0 ? (
         <div className="border border-gray-200 rounded-xl py-12 text-center text-xs font-mono text-gray-500">
-          No upcoming items extracted yet. New items appear automatically as
-          you capture more memories.
+          No upcoming items extracted yet. New items appear automatically as you
+          capture more memories.
         </div>
       ) : (
         BUCKET_ORDER.map((b) => {

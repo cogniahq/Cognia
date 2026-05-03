@@ -82,11 +82,11 @@ function buildPrompt(args: {
   content: string
 }): string {
   const today = new Date().toISOString().slice(0, 10)
-  const truncated = args.content.length > MAX_CONTENT_CHARS
-    ? `${args.content.slice(0, MAX_CONTENT_CHARS)}\n[truncated]`
-    : args.content
-  return TODO_EXTRACTION_PROMPT_TEMPLATE
-    .replace('{{TODAY_ISO}}', today)
+  const truncated =
+    args.content.length > MAX_CONTENT_CHARS
+      ? `${args.content.slice(0, MAX_CONTENT_CHARS)}\n[truncated]`
+      : args.content
+  return TODO_EXTRACTION_PROMPT_TEMPLATE.replace('{{TODAY_ISO}}', today)
     .replace('{{TITLE}}', args.title || '(none)')
     .replace('{{URL}}', args.url || '(none)')
     .replace('{{CONTENT}}', truncated)
@@ -95,7 +95,10 @@ function buildPrompt(args: {
 function stripCodeFences(raw: string): string {
   const trimmed = raw.trim()
   if (trimmed.startsWith('```')) {
-    return trimmed.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+    return trimmed
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim()
   }
   return trimmed
 }

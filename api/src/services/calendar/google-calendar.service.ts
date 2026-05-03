@@ -20,8 +20,7 @@ const PROVIDER = 'google_calendar' as const
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events'
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
-const GOOGLE_EVENTS_URL =
-  'https://www.googleapis.com/calendar/v3/calendars/primary/events'
+const GOOGLE_EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
 
 interface GoogleTokenResponse {
   access_token: string
@@ -128,12 +127,8 @@ export const googleCalendarService = {
     const tokens = await exchangeCodeForTokens(args.code)
     const key = requireEncryptionKey()
     const encryptedAccess = encryptString(tokens.access_token, key)
-    const encryptedRefresh = tokens.refresh_token
-      ? encryptString(tokens.refresh_token, key)
-      : null
-    const expiresAt = tokens.expires_in
-      ? new Date(Date.now() + tokens.expires_in * 1000)
-      : null
+    const encryptedRefresh = tokens.refresh_token ? encryptString(tokens.refresh_token, key) : null
+    const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null
 
     await prisma.userIntegration.upsert({
       where: {

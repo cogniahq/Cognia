@@ -30,6 +30,8 @@ import v1Router from './v1.route'
 import mcpRouter from './mcp.route'
 import openApiRouter from './openapi.route'
 import gdprRouter from './gdpr.route'
+import todosRouter from './todos.route'
+import calendarRouter from './calendar.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -83,4 +85,8 @@ export const routes = (app: Express) => {
   app.use('/', openApiRouter)
   // GDPR data rights (account deletion, consent, status)
   app.use('/api/gdpr', gdprRouter)
+  // Memory-derived TODOs / upcoming events
+  app.use('/api/todos', todosRouter)
+  // Google Calendar OAuth + event push
+  app.use('/api/calendar', calendarRouter)
 }

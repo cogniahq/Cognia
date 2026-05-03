@@ -41,6 +41,13 @@ enum SourceType {
   DEMO
 }
 
+enum TodoStatus {
+  PENDING
+  DONE
+  SNOOZED
+  DISMISSED
+}
+
 enum AccountType {
   PERSONAL
   ORGANIZATION
@@ -145,6 +152,7 @@ model User {
   memory_tags                  MemoryTag[]
   saved_searches               SavedSearch[]
   api_keys                     ApiKey[]
+  todos                        MemoryTodo[]
 
   @@map("users")
 }
@@ -234,6 +242,7 @@ model Organization {
   invoices                     Invoice[]
   usage_records                UsageRecord[]
   api_keys                     ApiKey[]
+  todos                        MemoryTodo[]
 
   @@map("organizations")
 }
@@ -569,6 +578,7 @@ model Memory {
   shares                 MemoryShare[]
   comments               MemoryComment[]
   tags                   MemoryTagOnMemory[]
+  todos                  MemoryTodo[]
 
   @@index([user_id])
   @@index([created_at])
@@ -1010,4 +1020,33 @@ model WebhookDelivery {
   @@index([status, next_retry_at])
   @@index([organization_id])
   @@map("webhook_deliveries")
+}
+
+model MemoryTodo {
+  id                String     @id @default(uuid()) @db.Uuid
+  memory_id         String     @db.Uuid
+  user_id           String     @db.Uuid
+  organization_id   String     @db.Uuid
+  workspace_id      String?    @db.Uuid
+  title             String
+  description       String?
+  source_excerpt    String?    @db.Text
+  due_at            DateTime?
+  status            TodoStatus @default(PENDING)
+  calendar_event_id String?    // populated when added to a calendar
+  calendar_provider String?    // 'google' (extensible)
+  snoozed_until     DateTime?
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  completed_at      DateTime?
+
+  memory       Memory       @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id, status])
+  @@index([user_id, status])
+  @@index([memory_id])
+  @@index([due_at])
+  @@map("memory_todos")
 }

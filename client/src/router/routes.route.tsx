@@ -10,11 +10,6 @@ const Memories = lazy(() =>
     default: module.Memories,
   }))
 )
-const MemoriesV2 = lazy(() =>
-  import("@/pages/memories-v2.page").then((module) => ({
-    default: module.MemoriesV2,
-  }))
-)
 const MemoriesTrash = lazy(() =>
   import("@/components/memories/TrashView").then((module) => ({
     default: module.TrashView,
@@ -173,7 +168,10 @@ const AppRoutes = () => {
         <Route path="/auth/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/magic" element={<AuthMagic />} />
         <Route path="/memories" element={<Memories />} />
-        <Route path="/memories/v2" element={<MemoriesV2 />} />
+        <Route
+          path="/memories/v2"
+          element={<Navigate to="/memories" replace />}
+        />
         <Route path="/memories/trash" element={<MemoriesTrash />} />
         <Route path="/docs" element={<Docs />} />
         <Route path="/analytics" element={<Analytics />} />

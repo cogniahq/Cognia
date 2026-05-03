@@ -147,6 +147,7 @@ export const PageHeader = () => {
           path: "/organization",
           matchPrefixes: ["/organization"],
         },
+        { label: "Upcoming", path: "/upcoming" },
         ...(showAdminNav
           ? [
               {

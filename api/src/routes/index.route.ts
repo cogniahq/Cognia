@@ -31,6 +31,8 @@ import mcpRouter from './mcp.route'
 import openApiRouter from './openapi.route'
 import gdprRouter from './gdpr.route'
 import extensionRouter from './extension.route'
+import todosRouter from './todos.route'
+import calendarRouter from './calendar.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -86,4 +88,8 @@ export const routes = (app: Express) => {
   app.use('/api/gdpr', gdprRouter)
   // Browser extension helpers (destination picker)
   app.use('/api/extension', extensionRouter)
+  // Memory-derived TODOs / upcoming events
+  app.use('/api/todos', todosRouter)
+  // Google Calendar OAuth + event push
+  app.use('/api/calendar', calendarRouter)
 }

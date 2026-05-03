@@ -109,6 +109,11 @@ const ApiKeysPage = lazy(() =>
     default: module.ApiKeys,
   }))
 )
+const Upcoming = lazy(() =>
+  import("@/pages/upcoming.page").then((module) => ({
+    default: module.Upcoming,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -179,6 +184,7 @@ const AppRoutes = () => {
         <Route path="/org-admin/:slug" element={<OrgAdmin />} />
         <Route path="/billing" element={<Billing />} />
         <Route path="/settings/api-keys" element={<ApiKeysPage />} />
+        <Route path="/upcoming" element={<Upcoming />} />
 
         <Route path="*" element={<AuthRedirectLanding />} />
       </Routes>

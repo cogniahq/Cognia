@@ -150,119 +150,113 @@ export const MemoryMeshDemo: React.FC = () => {
             }}
           >
             {/* Team Members */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
-                    Team Members
-                  </p>
-                  <div className="space-y-3">
-                    {teamMembers.map((member) => (
-                      <div key={member.id} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-700">
-                          {member.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 truncate">
-                            {member.name}
-                          </p>
-                          <span
-                            className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                              member.role === "Admin"
-                                ? "bg-purple-100 text-purple-700"
-                                : member.role === "Editor"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {member.role}
-                          </span>
-                        </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
+                Team Members
+              </p>
+              <div className="space-y-3">
+                {teamMembers.map((member) => (
+                  <div key={member.id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-700">
+                      {member.initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 truncate">
+                        {member.name}
+                      </p>
+                      <span
+                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                          member.role === "Admin"
+                            ? "bg-purple-100 text-purple-700"
+                            : member.role === "Editor"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {member.role}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Shared Documents */}
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
+                Shared Documents
+              </p>
+              <div className="space-y-2">
+                {teamDocuments.map((doc) => {
+                  const isUploaded = uploadedDocs.has(doc.id)
+                  return (
+                    <div
+                      key={doc.id}
+                      className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-300 ${
+                        isUploaded
+                          ? "bg-gray-50 border border-gray-200"
+                          : "opacity-40"
+                      }`}
+                    >
+                      <div
+                        className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-mono ${
+                          doc.type === "pdf"
+                            ? "bg-red-100 text-red-600"
+                            : doc.type === "doc"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {doc.type}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Shared Documents */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
-                    Shared Documents
-                  </p>
-                  <div className="space-y-2">
-                    {teamDocuments.map((doc) => {
-                      const isUploaded = uploadedDocs.has(doc.id)
-                      return (
-                        <div
-                          key={doc.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-300 ${
-                            isUploaded
-                              ? "bg-gray-50 border border-gray-200"
-                              : "opacity-40"
-                          }`}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-800 truncate">
+                          {doc.name}
+                        </p>
+                      </div>
+                      {isUploaded && (
+                        <svg
+                          className="w-3.5 h-3.5 text-emerald-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <div
-                            className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-mono ${
-                              doc.type === "pdf"
-                                ? "bg-red-100 text-red-600"
-                                : doc.type === "doc"
-                                  ? "bg-blue-100 text-blue-600"
-                                  : "bg-gray-100 text-gray-600"
-                            }`}
-                          >
-                            {doc.type}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-800 truncate">
-                              {doc.name}
-                            </p>
-                          </div>
-                          {isUploaded && (
-                            <svg
-                              className="w-3.5 h-3.5 text-emerald-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
 
-                {/* Team Stats */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
-                    Team Knowledge
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">
-                        Shared Nodes
-                      </span>
-                      <span className="text-sm font-mono text-gray-900">
-                        127
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Documents</span>
-                      <span className="text-sm font-mono text-gray-900">
-                        {uploadedDocs.size}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">
-                        Contributors
-                      </span>
-                      <span className="text-sm font-mono text-gray-900">3</span>
-                    </div>
-                  </div>
+            {/* Team Stats */}
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
+                Team Knowledge
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Shared Nodes</span>
+                  <span className="text-sm font-mono text-gray-900">127</span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Documents</span>
+                  <span className="text-sm font-mono text-gray-900">
+                    {uploadedDocs.size}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Contributors</span>
+                  <span className="text-sm font-mono text-gray-900">3</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 3D Mesh Preview */}
@@ -367,23 +361,23 @@ export const MemoryMeshDemo: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 shadow-sm">
-                  <svg
-                    className="w-3.5 h-3.5 text-emerald-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
-                  </svg>
-                  <span className="text-xs text-emerald-700 font-mono">
-                    Shared with team
-                  </span>
-                </div>
+                <svg
+                  className="w-3.5 h-3.5 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
+                <span className="text-xs text-emerald-700 font-mono">
+                  Shared with team
+                </span>
+              </div>
             </div>
           </div>
         </div>

@@ -43,46 +43,40 @@ async function uniqueSlug(base: string): Promise<string> {
  * regular `POST /api/organizations` endpoint should be used after that to
  * create additional team workspaces.
  */
-router.post(
-  '/workspace',
-  authenticateToken,
-  async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
-    const name: string = (req.body?.name ?? '').toString().trim()
-    if (!name) {
-      return res.status(400).json({ message: 'name is required' })
-    }
-    try {
-      const existing = await prisma.organizationMember.findFirst({
-        where: { user_id: req.user.id, deactivated_at: null },
-        select: { id: true },
-      })
-      if (existing) {
-        return res
-          .status(409)
-          .json({ message: 'User already has a workspace; use /api/organizations instead' })
-      }
-      const requestedSlug =
-        typeof req.body?.slug === 'string' && req.body.slug.trim()
-          ? slugify(req.body.slug)
-          : slugify(name)
-      const slug = await uniqueSlug(requestedSlug)
-      const org = await organizationService.createOrganization(req.user.id, {
-        name,
-        slug,
-      })
-      return res.status(201).json({
-        success: true,
-        data: { organization: { id: org.id, name: org.name, slug: org.slug } },
-      })
-    } catch (error) {
-      logger.error('[onboarding] workspace error:', error)
-      return res
-        .status(500)
-        .json({ success: false, message: 'Failed to create workspace' })
-    }
+router.post('/workspace', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
+  const name: string = (req.body?.name ?? '').toString().trim()
+  if (!name) {
+    return res.status(400).json({ message: 'name is required' })
   }
-)
+  try {
+    const existing = await prisma.organizationMember.findFirst({
+      where: { user_id: req.user.id, deactivated_at: null },
+      select: { id: true },
+    })
+    if (existing) {
+      return res
+        .status(409)
+        .json({ message: 'User already has a workspace; use /api/organizations instead' })
+    }
+    const requestedSlug =
+      typeof req.body?.slug === 'string' && req.body.slug.trim()
+        ? slugify(req.body.slug)
+        : slugify(name)
+    const slug = await uniqueSlug(requestedSlug)
+    const org = await organizationService.createOrganization(req.user.id, {
+      name,
+      slug,
+    })
+    return res.status(201).json({
+      success: true,
+      data: { organization: { id: org.id, name: org.name, slug: org.slug } },
+    })
+  } catch (error) {
+    logger.error('[onboarding] workspace error:', error)
+    return res.status(500).json({ success: false, message: 'Failed to create workspace' })
+  }
+})
 
 /**
  * Onboarding wall — accept an invite by raw token. Mirrors

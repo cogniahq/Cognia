@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { axiosInstance } from "@/utils/http"
 import { useAuth } from "@/contexts/auth.context"
+import { axiosInstance } from "@/utils/http"
+import { useNavigate } from "react-router-dom"
 
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 type Mode = "create" | "join"
 
 interface ApiOrgResponse {
-  data?: { data?: { organization?: { id: string; name: string; slug: string } } }
+  data?: {
+    data?: { organization?: { id: string; name: string; slug: string } }
+  }
 }
 
 /**
@@ -77,7 +79,10 @@ export function OnboardingWorkspace() {
       if (!org?.slug) throw new Error("Server did not return a workspace.")
       await onSuccess(org.slug)
     } catch (err) {
-      const e = err as { response?: { data?: { message?: string } }; message?: string }
+      const e = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(
         e.response?.data?.message ||
           e.message ||
@@ -103,7 +108,10 @@ export function OnboardingWorkspace() {
       if (!org?.slug) throw new Error("Server did not return a workspace.")
       await onSuccess(org.slug)
     } catch (err) {
-      const e = err as { response?: { data?: { message?: string } }; message?: string }
+      const e = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(
         e.response?.data?.message ||
           e.message ||
@@ -148,8 +156,8 @@ export function OnboardingWorkspace() {
               </div>
             </div>
             <p className="text-sm text-gray-600 max-w-md mx-auto">
-              Cognia organizes memories into shared workspaces. Create your
-              own, or join an existing one with an invite code.
+              Cognia organizes memories into shared workspaces. Create your own,
+              or join an existing one with an invite code.
             </p>
           </div>
 
@@ -272,8 +280,7 @@ export function OnboardingWorkspace() {
                     disabled={busy}
                   />
                   <p className="mt-2 text-xs text-gray-500">
-                    Find this in the invite email your workspace admin sent
-                    you.
+                    Find this in the invite email your workspace admin sent you.
                   </p>
                 </div>
 

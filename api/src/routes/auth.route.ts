@@ -186,16 +186,20 @@ router.post(
   }
 )
 
-// Register with email/password
+// Register with email/password.
+//
+// Cognia is org-only: every user belongs to at least one organization. On
+// registration we auto-provision a placeholder org named after the user's
+// email-local-part and add the new user as ADMIN. Team workspaces (extra
+// orgs) are created later via the existing CreateOrganizationDialog. The
+// `account_type` request body field is accepted for back-compat but no
+// longer routes any decisions; the column itself is still written so
+// rolling-back the deploy doesn't crash older code paths.
 router.post('/register', registerRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, account_type } = req.body || {}
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' })
-    }
-
-    if (!account_type || !['PERSONAL', 'ORGANIZATION'].includes(account_type)) {
-      return res.status(400).json({ message: 'account_type must be PERSONAL or ORGANIZATION' })
     }
 
     // Validate password against standard policy + HIBP breach check for new registrations
@@ -217,13 +221,45 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       data: {
         email,
         password_hash,
-        account_type: account_type as 'PERSONAL' | 'ORGANIZATION',
+        // Back-compat write: column slated for removal in a follow-up
+        // migration. Default to ORGANIZATION since every user now has an
+        // org. Honors any explicit value the legacy clients still send.
+        account_type:
+          account_type === 'PERSONAL' || account_type === 'ORGANIZATION'
+            ? account_type
+            : 'ORGANIZATION',
         // Email verification is currently a no-op: the email sender is a stub
         // (no Resend/Postmark wired up). Auto-verify so users aren't stranded
         // by a UI banner or future gate. Remove this line when a real email
         // provider is plugged in and a verify-on-click flow is desired.
         email_verified_at: new Date(),
       },
+    })
+
+    // Auto-provision the user's first org. Slug = email-local-part with a
+    // short uuid suffix to avoid collisions; collisions are still possible
+    // under heavy concurrent registration but the unique index will surface
+    // them as a 500 (rare; surface honestly rather than retry-loop here).
+    const localPart =
+      (email.split('@')[0] || 'workspace')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 32) || 'workspace'
+    const slugSuffix = user.id.replace(/-/g, '').slice(0, 6)
+    const placeholderOrg = await prisma.organization.create({
+      data: {
+        name: `${email.split('@')[0] || 'Personal'}'s Workspace`,
+        slug: `${localPart}-${slugSuffix}`,
+        plan: 'free',
+        members: {
+          create: {
+            user_id: user.id,
+            role: 'ADMIN',
+          },
+        },
+      },
+      select: { id: true, slug: true, name: true },
     })
 
     // Verification email is intentionally disabled — see note above.
@@ -255,6 +291,7 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       message: 'Registered',
       token,
       user: { id: user.id, email: user.email },
+      organization: placeholderOrg,
     })
   } catch (error) {
     logger.error('Register error:', error)

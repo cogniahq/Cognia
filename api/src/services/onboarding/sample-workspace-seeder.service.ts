@@ -33,13 +33,27 @@ function loadSamples(): SampleMemory[] {
 
 export async function seedSampleWorkspace(userId: string): Promise<{ created: number }> {
   if (process.env.SEED_SAMPLE_DATA === 'false') return { created: 0 }
+  // Memory.organization_id is required. Resolve the user's first active
+  // org membership; if none exists yet (e.g. a race during signup) skip.
+  const firstMembership = await prisma.organizationMember.findFirst({
+    where: { user_id: userId, deactivated_at: null },
+    orderBy: { created_at: 'asc' },
+    select: { organization_id: true },
+  })
+  if (!firstMembership) {
+    logger.warn('[seeder] skipped — user has no active org membership yet', { userId })
+    return { created: 0 }
+  }
+  const organizationId = firstMembership.organization_id
+
   const samples = loadSamples()
   let created = 0
   for (const s of samples) {
     try {
       await prisma.memory.create({
         data: {
-          user_id: userId,
+          user: { connect: { id: userId } },
+          organization: { connect: { id: organizationId } },
           source: 'demo',
           source_type: 'DEMO',
           title: s.title,

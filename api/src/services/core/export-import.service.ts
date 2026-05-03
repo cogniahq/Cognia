@@ -112,6 +112,20 @@ export class ExportImportService {
         throw new Error(`Unsupported bundle version: ${bundle.version}`)
       }
 
+      // Memory.organization_id is required. Resolve the target user's first
+      // active org so imported memories land somewhere sensible.
+      const firstMembership = await prisma.organizationMember.findFirst({
+        where: { user_id: targetUserId, deactivated_at: null },
+        orderBy: { created_at: 'asc' },
+        select: { organization_id: true },
+      })
+      if (!firstMembership) {
+        throw new Error(
+          'Cannot import memories: target user has no active organization membership.'
+        )
+      }
+      const importOrganizationId = firstMembership.organization_id
+
       // Import memories (skip duplicates based on canonical_hash if available)
       for (const memory of bundle.memories) {
         try {
@@ -130,7 +144,8 @@ export class ExportImportService {
 
           await prisma.memory.create({
             data: {
-              user_id: targetUserId,
+              user: { connect: { id: targetUserId } },
+              organization: { connect: { id: importOrganizationId } },
               title: memory.title,
               url: memory.url,
               content: memory.content,

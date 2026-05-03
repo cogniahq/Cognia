@@ -572,11 +572,11 @@ model Memory {
   access_count           Int                  @default(0)
   last_accessed          DateTime             @default(now())
   source_type            SourceType?          @default(EXTENSION)
-  organization_id        String?              @db.Uuid
+  organization_id        String               @db.Uuid
   workspace_id           String?              @db.Uuid
   deleted_at             DateTime?
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization           Organization?        @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  organization           Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   workspace              Workspace?           @relation(fields: [workspace_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
@@ -990,7 +990,7 @@ model BillingEvent {
 
 model ApiKey {
   id                  String    @id @default(uuid()) @db.Uuid
-  organization_id     String?   @db.Uuid
+  organization_id     String    @db.Uuid
   user_id             String    @db.Uuid
   name                String
   prefix              String    // first 8 chars (visible)
@@ -1000,7 +1000,7 @@ model ApiKey {
   created_at          DateTime  @default(now())
   revoked_at          DateTime?
   user                User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization        Organization?  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization        Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
   @@index([user_id])

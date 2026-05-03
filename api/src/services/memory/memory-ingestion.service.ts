@@ -345,9 +345,11 @@ export class MemoryIngestionService {
       sourceType = SourceType.INTEGRATION
     }
 
-    // Get organization_id from metadata if provided
+    // Get organization_id from metadata if provided. Memory.organization_id
+    // is now required (every user belongs to at least one org), so when the
+    // caller doesn't specify one, fall back to the user's first active org.
     const rawOrganizationId = metadata.organization_id
-    const organizationId =
+    let organizationId: string | undefined =
       typeof rawOrganizationId === 'string' && rawOrganizationId.trim() !== ''
         ? rawOrganizationId.trim()
         : undefined
@@ -357,8 +359,35 @@ export class MemoryIngestionService {
         ? rawWorkspaceId.trim()
         : undefined
 
+    if (organizationId) {
+      const membership = await prisma.organizationMember.findFirst({
+        where: {
+          user_id: payload.userId,
+          organization_id: organizationId,
+          deactivated_at: null,
+        },
+        select: { id: true },
+      })
+      if (!membership) {
+        throw new Error('User is not an active member of the specified organization')
+      }
+    } else {
+      const firstMembership = await prisma.organizationMember.findFirst({
+        where: { user_id: payload.userId, deactivated_at: null },
+        orderBy: { created_at: 'asc' },
+        select: { organization_id: true },
+      })
+      if (!firstMembership) {
+        throw new Error(
+          'Cannot ingest memory: user has no active organization membership. Every user must belong to at least one org.'
+        )
+      }
+      organizationId = firstMembership.organization_id
+    }
+
     const result: Prisma.MemoryCreateInput = {
       user: { connect: { id: payload.userId } },
+      organization: { connect: { id: organizationId } },
       source: sourceValue,
       source_type: sourceType,
       url,
@@ -372,25 +401,6 @@ export class MemoryIngestionService {
       importance_score: importanceScore,
       confidence_score: confidenceScore,
       memory_type: memoryType,
-    }
-
-    // If an organization is provided, verify the user is an active member of
-    // that org before scoping the memory there. Mirrors the active-member
-    // predicate (`deactivated_at: null`) used in OrganizationMember checks
-    // throughout the codebase.
-    if (organizationId) {
-      const membership = await prisma.organizationMember.findFirst({
-        where: {
-          user_id: payload.userId,
-          organization_id: organizationId,
-          deactivated_at: null,
-        },
-        select: { id: true },
-      })
-      if (!membership) {
-        throw new Error('User is not an active member of the specified organization')
-      }
-      result.organization = { connect: { id: organizationId } }
     }
 
     // workspace_id is only valid when an organization is set and the workspace

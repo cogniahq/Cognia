@@ -116,9 +116,11 @@ const LoadingFallback = () => (
   </div>
 )
 
-// Redirect authenticated users to their respective dashboard
+// Redirect authenticated users to /memories. Org-vs-personal context is
+// derived at the page level from currentOrganization, not from a vestigial
+// account_type column.
 const AuthRedirectLanding = () => {
-  const { isAuthenticated, isLoading, accountType } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const hadTokenAtMount = useRef(
     typeof window !== "undefined" && !!localStorage.getItem("auth_token")
   )
@@ -128,11 +130,6 @@ const AuthRedirectLanding = () => {
   }
 
   if (isAuthenticated) {
-    // Redirect based on account type
-    if (accountType === "ORGANIZATION") {
-      return <Navigate to="/organization" replace />
-    }
-    // Default to memories for personal accounts
     return <Navigate to="/memories" replace />
   }
 

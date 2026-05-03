@@ -1,4 +1,10 @@
 import 'dotenv/config'
+import { validateEnv } from './utils/core/env-validation.util'
+
+// Fail loudly at boot if any required variable is missing. Must run before
+// any other module-level imports execute env-dependent side effects.
+validateEnv()
+
 import express, { Request, Response, NextFunction } from 'express'
 
 import morgan from 'morgan'

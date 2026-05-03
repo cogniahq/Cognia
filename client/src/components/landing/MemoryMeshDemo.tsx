@@ -4,19 +4,6 @@ import { mockMeshData } from "../../data/mock"
 import { MemoryMesh3DPreview } from "./mesh-preview/MemoryMesh3DPreview"
 import { Section } from "./Section"
 
-const nodeTypes = [
-  { type: "browser", label: "Browser", color: "#3B82F6" },
-  { type: "manual", label: "Manual", color: "#22C55E" },
-  { type: "extension", label: "Integration", color: "#F59E0B" },
-  { type: "reasoning", label: "AI Generated", color: "#A855F7" },
-]
-
-const connectionStrengths = [
-  { label: "Strong (>85%)", color: "#1F2937", opacity: 1 },
-  { label: "Medium (>75%)", color: "#6B7280", opacity: 0.7 },
-  { label: "Weak (<75%)", color: "#D1D5DB", opacity: 0.4 },
-]
-
 const teamMembers = [
   { id: "1", name: "Sarah Chen", role: "Admin", initials: "SC" },
   { id: "2", name: "Marcus Johnson", role: "Editor", initials: "MJ" },
@@ -36,7 +23,6 @@ const teamDocuments = [
 
 export const MemoryMeshDemo: React.FC = () => {
   const [isInView, setIsInView] = useState(false)
-  const [activeTab, setActiveTab] = useState<"personal" | "team">("personal")
   const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(
     new Set()
   )
@@ -100,13 +86,6 @@ export const MemoryMeshDemo: React.FC = () => {
       }, 3500)
     )
 
-    // Switch to team view
-    timers.push(
-      setTimeout(() => {
-        setActiveTab("team")
-      }, 4500)
-    )
-
     // Animate document uploads
     teamDocuments.forEach((doc, index) => {
       timers.push(
@@ -114,7 +93,7 @@ export const MemoryMeshDemo: React.FC = () => {
           () => {
             setUploadedDocs((prev) => new Set([...prev, doc.id]))
           },
-          5200 + index * 400
+          1200 + index * 400
         )
       )
     })
@@ -155,44 +134,13 @@ export const MemoryMeshDemo: React.FC = () => {
             See your knowledge graph
           </h2>
           <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-700 px-4 sm:px-2 md:px-0 leading-relaxed">
-            Watch as your memories connect into a living, interactive network.
-            Start personal, then invite your team to share knowledge.
+            Watch your team's memories connect into a living, interactive
+            network of shared knowledge.
           </p>
         </div>
 
-        {/* Tab Toggle */}
-        <div
-          className="flex justify-center mb-6 sm:mb-8"
-          style={{
-            animation: isInView ? "slideInUp 0.6s ease-out 0.1s both" : "none",
-          }}
-        >
-          <div className="inline-flex rounded-full border border-gray-200 p-1 bg-white shadow-sm">
-            <button
-              onClick={() => setActiveTab("personal")}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${
-                activeTab === "personal"
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Personal
-            </button>
-            <button
-              onClick={() => setActiveTab("team")}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${
-                activeTab === "team"
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Team Workspace
-            </button>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-          {/* Left Panel - Changes based on tab */}
+          {/* Left Panel */}
           <div
             className="lg:col-span-1 space-y-4"
             style={{
@@ -201,89 +149,7 @@ export const MemoryMeshDemo: React.FC = () => {
                 : "none",
             }}
           >
-            {activeTab === "personal" ? (
-              <>
-                {/* Node Types Legend */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
-                    Node Types
-                  </p>
-                  <div className="space-y-2.5">
-                    {nodeTypes.map((nodeType) => (
-                      <div
-                        key={nodeType.type}
-                        className="flex items-center gap-2.5"
-                      >
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: nodeType.color }}
-                        />
-                        <span className="text-sm text-gray-700">
-                          {nodeType.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Connection Strength Legend */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
-                    Connection Strength
-                  </p>
-                  <div className="space-y-2.5">
-                    {connectionStrengths.map((strength) => (
-                      <div
-                        key={strength.label}
-                        className="flex items-center gap-2.5"
-                      >
-                        <div
-                          className="w-6 h-0.5 rounded-full"
-                          style={{
-                            backgroundColor: strength.color,
-                            opacity: strength.opacity,
-                          }}
-                        />
-                        <span className="text-sm text-gray-700">
-                          {strength.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                  <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
-                    Mesh Stats
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Nodes</span>
-                      <span className="text-sm font-mono text-gray-900">
-                        {mockMeshData.nodes.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Connections</span>
-                      <span className="text-sm font-mono text-gray-900">
-                        {mockMeshData.edges.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Avg. Links</span>
-                      <span className="text-sm font-mono text-gray-900">
-                        {mockMeshData.metadata?.average_connections?.toFixed(
-                          1
-                        ) ?? "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Team Members */}
+            {/* Team Members */}
                 <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                   <p className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-3">
                     Team Members
@@ -397,8 +263,6 @@ export const MemoryMeshDemo: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </>
-            )}
           </div>
 
           {/* 3D Mesh Preview */}
@@ -410,49 +274,41 @@ export const MemoryMeshDemo: React.FC = () => {
                 : "none",
             }}
           >
-            {/* Header bar for team view */}
-            {activeTab === "team" && (
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
-                    <svg
-                      className="w-3.5 h-3.5 text-blue-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                      />
-                    </svg>
-                  </div>
-                  <span className="text-xs font-mono uppercase tracking-wider text-gray-500">
-                    [TEAM WORKSPACE]
-                  </span>
+            {/* Header bar */}
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
+                  <svg
+                    className="w-3.5 h-3.5 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
                 </div>
-                <div className="flex items-center -space-x-1.5">
-                  {teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-medium text-gray-700"
-                    >
-                      {member.initials}
-                    </div>
-                  ))}
-                </div>
+                <span className="text-xs font-mono uppercase tracking-wider text-gray-500">
+                  [TEAM WORKSPACE]
+                </span>
               </div>
-            )}
+              <div className="flex items-center -space-x-1.5">
+                {teamMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[10px] font-medium text-gray-700"
+                  >
+                    {member.initials}
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            <div
-              className={
-                activeTab === "team"
-                  ? "aspect-[4/3] sm:aspect-[16/9]"
-                  : "aspect-[4/3] sm:aspect-[16/10]"
-              }
-            >
+            <div className="aspect-[4/3] sm:aspect-[16/9]">
               <Suspense
                 fallback={
                   <div className="w-full h-full flex items-center justify-center">
@@ -510,17 +366,7 @@ export const MemoryMeshDemo: React.FC = () => {
                 </span>
               </div>
 
-              {activeTab === "personal" && highlightedNodes.size > 0 && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 shadow-sm">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-xs text-blue-700 font-mono">
-                    {highlightedNodes.size} nodes highlighted
-                  </span>
-                </div>
-              )}
-
-              {activeTab === "team" && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 shadow-sm">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 shadow-sm">
                   <svg
                     className="w-3.5 h-3.5 text-emerald-600"
                     fill="none"
@@ -538,7 +384,6 @@ export const MemoryMeshDemo: React.FC = () => {
                     Shared with team
                   </span>
                 </div>
-              )}
             </div>
           </div>
         </div>

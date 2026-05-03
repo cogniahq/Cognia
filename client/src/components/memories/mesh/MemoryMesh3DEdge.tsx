@@ -7,12 +7,17 @@ interface MemoryMesh3DEdgeProps {
   end: [number, number, number]
   similarity: number
   relationType?: string
+  // Multiplier applied to the edge's rendered opacity. Used by the
+  // infinite-scroll tiling layer to fade edges at tile boundaries so
+  // recycled segments transition smoothly. Defaults to 1.
+  tileOpacity?: number
 }
 
 export const MemoryMesh3DEdge: React.FC<MemoryMesh3DEdgeProps> = ({
   start,
   end,
   similarity,
+  tileOpacity = 1,
 }) => {
   const points = useMemo(
     () => [new THREE.Vector3(...start), new THREE.Vector3(...end)],
@@ -26,7 +31,9 @@ export const MemoryMesh3DEdge: React.FC<MemoryMesh3DEdgeProps> = ({
   }
 
   const color = getLineColor(similarity)
-  const opacity = similarity > 0.75 ? 0.6 : similarity > 0.5 ? 0.4 : 0.3
+  const baseOpacity = similarity > 0.75 ? 0.6 : similarity > 0.5 ? 0.4 : 0.3
+  const clampedTileOpacity = Math.max(0, Math.min(1, tileOpacity))
+  const opacity = baseOpacity * clampedTileOpacity
   const lineWidth = similarity > 0.85 ? 0.4 : similarity > 0.75 ? 0.3 : 0.2
 
   return (

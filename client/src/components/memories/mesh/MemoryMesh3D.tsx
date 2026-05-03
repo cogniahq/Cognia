@@ -64,11 +64,19 @@ const MemoryMesh3D: React.FC<MemoryMesh3DProps> = ({
     : internalHook.isLoading
   const error = useExternalData ? externalError : internalHook.error
 
+  // Reset the orbit target only when the mesh first loads. Subsequent
+  // refreshes intentionally preserve the current camera/target Y so
+  // infinite vertical scrolling is not jerked back to the origin every
+  // time the mesh data is reloaded.
+  const didInitialiseTargetRef = useRef(false)
   useEffect(() => {
     if (!controlsRef.current) return
+    if (didInitialiseTargetRef.current) return
+    if (!meshData) return
     controlsRef.current.target.set(0, 0, 0)
     controlsRef.current.update()
-  }, [controlsRef, meshData])
+    didInitialiseTargetRef.current = true
+  }, [meshData])
 
   const handleNodeClick = useCallback(
     (memoryId: string) => {
@@ -142,6 +150,7 @@ const MemoryMesh3D: React.FC<MemoryMesh3DProps> = ({
             memoryUrls={memoryUrls}
             onNodeClick={handleNodeClick}
             isCompactView={isCompactView}
+            controlsRef={controlsRef}
           />
           <OrbitControls
             ref={controlsRef}

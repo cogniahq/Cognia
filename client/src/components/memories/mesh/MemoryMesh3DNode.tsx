@@ -11,6 +11,10 @@ interface MemoryMesh3DNodeProps {
   importance?: number
   inLatentSpace?: boolean
   onClick: (memoryId: string) => void
+  // Multiplier applied to the node's rendered opacity. Used by the
+  // infinite-scroll tiling layer to fade nodes at the edges of a tile so
+  // recycling/repositioning is visually seamless. Defaults to 1.
+  tileOpacity?: number
 }
 
 export const MemoryMesh3DNode: React.FC<MemoryMesh3DNodeProps> = ({
@@ -22,6 +26,7 @@ export const MemoryMesh3DNode: React.FC<MemoryMesh3DNodeProps> = ({
   importance = 0.5,
   inLatentSpace = true,
   onClick,
+  tileOpacity = 1,
 }) => {
   const meshRef = useRef<THREE.Mesh>(null)
   const { camera } = useThree()
@@ -29,7 +34,9 @@ export const MemoryMesh3DNode: React.FC<MemoryMesh3DNodeProps> = ({
 
   const baseSize = 0.0035 + importance * 0.0015
   const size = baseSize
-  const opacity = inLatentSpace ? 0.95 : 0.75
+  const baseOpacity = inLatentSpace ? 0.95 : 0.75
+  const clampedTileOpacity = Math.max(0, Math.min(1, tileOpacity))
+  const opacity = baseOpacity * clampedTileOpacity
 
   const groupRef = useRef<THREE.Group>(null)
 
@@ -75,7 +82,7 @@ export const MemoryMesh3DNode: React.FC<MemoryMesh3DNodeProps> = ({
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={isSelected ? 1.0 : opacity}
+          opacity={isSelected ? clampedTileOpacity : opacity}
           depthWrite={true}
           toneMapped={false}
         />

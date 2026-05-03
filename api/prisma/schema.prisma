@@ -48,11 +48,6 @@ enum TodoStatus {
   DISMISSED
 }
 
-enum AccountType {
-  PERSONAL
-  ORGANIZATION
-}
-
 enum IntegrationStatus {
   ACTIVE
   PAUSED
@@ -98,7 +93,6 @@ enum SharePermission {
 }
 
 enum ShareRecipientType {
-  USER
   ORG
   LINK
 }
@@ -114,7 +108,6 @@ model User {
   email_verified_at        DateTime?
   password_hash            String?
   role                     UserRole             @default(USER)
-  account_type             AccountType          @default(PERSONAL)
   created_at               DateTime             @default(now())
   updated_at               DateTime             @default(now()) @updatedAt
 
@@ -132,10 +125,11 @@ model User {
   consent                  Json?    // { cookies: bool, analytics: bool, marketing: bool, recordedAt: ... }
   legal_hold_until         DateTime?
 
-  // Default capture destination for browser extension (and other clients)
-  // Null = personal vault. Stored as plain UUIDs (no FK relation) so org/workspace
-  // deletion does not require a cascading migration on the user row; the server
-  // re-validates membership + workspace ownership at read time.
+  // Default capture destination for browser extension (and other clients).
+  // Null = no default set; the user is prompted to pick one at capture time.
+  // Stored as plain UUIDs (no FK relation) so org/workspace deletion does not
+  // require a cascading migration on the user row; the server re-validates
+  // membership + workspace ownership at read time.
   default_capture_organization_id  String?  @db.Uuid
   default_capture_workspace_id     String?  @db.Uuid
 
@@ -154,7 +148,6 @@ model User {
   oauth_identities             OAuthIdentity[]
   email_verification_tokens    EmailVerificationToken[]
   memory_shares_authored       MemoryShare[]            @relation("MemorySharer")
-  memory_shares_received       MemoryShare[]            @relation("MemoryShareRecipient")
   memory_comments              MemoryComment[]
   memory_tags                  MemoryTag[]
   saved_searches               SavedSearch[]
@@ -810,7 +803,6 @@ model MemoryShare {
   memory_id           String                 @db.Uuid
   sharer_user_id      String                 @db.Uuid
   recipient_type      ShareRecipientType
-  recipient_user_id   String?                @db.Uuid
   recipient_org_id    String?                @db.Uuid
   link_token          String?                @unique
   permission          SharePermission        @default(READ)
@@ -819,11 +811,9 @@ model MemoryShare {
   revoked_at          DateTime?
   memory              Memory                 @relation(fields: [memory_id], references: [id], onDelete: Cascade)
   sharer_user         User                   @relation("MemorySharer", fields: [sharer_user_id], references: [id], onDelete: Cascade)
-  recipient_user      User?                  @relation("MemoryShareRecipient", fields: [recipient_user_id], references: [id], onDelete: SetNull)
   recipient_org       Organization?          @relation(fields: [recipient_org_id], references: [id], onDelete: SetNull)
 
   @@index([memory_id])
-  @@index([recipient_user_id])
   @@index([recipient_org_id])
   @@map("memory_shares")
 }

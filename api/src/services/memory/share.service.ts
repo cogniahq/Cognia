@@ -6,8 +6,7 @@ import { auditLogService } from '../core/audit-log.service'
 export interface CreateShareInput {
   memoryId: string
   sharerUserId: string
-  recipientType: 'USER' | 'ORG' | 'LINK'
-  recipientUserId?: string
+  recipientType: 'ORG' | 'LINK'
   recipientOrgId?: string
   permission?: 'READ' | 'COMMENT'
   expiresAt?: Date
@@ -34,18 +33,6 @@ export async function createShare(input: CreateShareInput) {
       throw new Error('Sharer is not a member of the recipient organization')
     }
   }
-  if (input.recipientType === 'USER') {
-    if (!input.recipientUserId) {
-      throw new Error('recipientUserId is required when recipientType is USER')
-    }
-    const recipient = await prisma.user.findUnique({
-      where: { id: input.recipientUserId },
-      select: { id: true },
-    })
-    if (!recipient) {
-      throw new Error('Recipient user not found')
-    }
-  }
   let linkToken: string | undefined
   if (input.recipientType === 'LINK') {
     linkToken = randomBytes(24).toString('base64url')
@@ -55,7 +42,6 @@ export async function createShare(input: CreateShareInput) {
       memory_id: input.memoryId,
       sharer_user_id: input.sharerUserId,
       recipient_type: input.recipientType,
-      recipient_user_id: input.recipientUserId,
       recipient_org_id: input.recipientOrgId,
       link_token: linkToken,
       permission: input.permission ?? 'READ',
@@ -78,7 +64,6 @@ export async function listSharesForMemory(memoryId: string, sharerUserId: string
   return prisma.memoryShare.findMany({
     where: { memory_id: memoryId, sharer_user_id: sharerUserId, revoked_at: null },
     include: {
-      recipient_user: { select: { id: true, email: true } },
       recipient_org: { select: { id: true, name: true, slug: true } },
     },
     orderBy: { created_at: 'desc' },
@@ -120,27 +105,16 @@ export async function canRead(memoryId: string, viewerUserId: string | null): Pr
   if (viewerUserId && memory.user_id === viewerUserId) return true
 
   if (viewerUserId) {
-    // direct user share
-    const direct = await prisma.memoryShare.findFirst({
+    // org membership grants read on every memory in the org
+    const member = await prisma.organizationMember.findFirst({
       where: {
-        memory_id: memoryId,
-        recipient_user_id: viewerUserId,
-        revoked_at: null,
-        OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
+        user_id: viewerUserId,
+        organization_id: memory.organization_id,
+        deactivated_at: null,
       },
     })
-    if (direct) return true
-    // org share via membership
-    if (memory.organization_id) {
-      const member = await prisma.organizationMember.findFirst({
-        where: {
-          user_id: viewerUserId,
-          organization_id: memory.organization_id,
-          deactivated_at: null,
-        },
-      })
-      if (member) return true
-    }
+    if (member) return true
+    // explicit org share targets a different org the viewer belongs to
     const orgShare = await prisma.memoryShare.findFirst({
       where: {
         memory_id: memoryId,

@@ -188,16 +188,15 @@ router.post(
 
 // Register with email/password.
 //
-// Cognia is org-only: every user belongs to at least one organization. On
-// registration we auto-provision a placeholder org named after the user's
-// email-local-part and add the new user as ADMIN. Team workspaces (extra
-// orgs) are created later via the existing CreateOrganizationDialog. The
-// `account_type` request body field is accepted for back-compat but no
-// longer routes any decisions; the column itself is still written so
-// rolling-back the deploy doesn't crash older code paths.
+// Cognia is org-only: every user must belong to at least one organization
+// before they can use the app. /register creates the User row only — no
+// org. The client redirects the new user to /onboarding/workspace where
+// they either create a workspace (becomes ADMIN) or accept an invite. The
+// require-org-membership middleware blocks every other /api/* call until a
+// membership exists, so there is no way to slip past the wall.
 router.post('/register', registerRateLimiter, async (req: Request, res: Response) => {
   try {
-    const { email, password, account_type } = req.body || {}
+    const { email, password } = req.body || {}
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' })
     }
@@ -221,13 +220,6 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       data: {
         email,
         password_hash,
-        // Back-compat write: column slated for removal in a follow-up
-        // migration. Default to ORGANIZATION since every user now has an
-        // org. Honors any explicit value the legacy clients still send.
-        account_type:
-          account_type === 'PERSONAL' || account_type === 'ORGANIZATION'
-            ? account_type
-            : 'ORGANIZATION',
         // Email verification is currently a no-op: the email sender is a stub
         // (no Resend/Postmark wired up). Auto-verify so users aren't stranded
         // by a UI banner or future gate. Remove this line when a real email
@@ -236,37 +228,14 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       },
     })
 
-    // Auto-provision the user's first org. Slug = email-local-part with a
-    // short uuid suffix to avoid collisions; collisions are still possible
-    // under heavy concurrent registration but the unique index will surface
-    // them as a 500 (rare; surface honestly rather than retry-loop here).
-    const localPart =
-      (email.split('@')[0] || 'workspace')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 32) || 'workspace'
-    const slugSuffix = user.id.replace(/-/g, '').slice(0, 6)
-    const placeholderOrg = await prisma.organization.create({
-      data: {
-        name: `${email.split('@')[0] || 'Personal'}'s Workspace`,
-        slug: `${localPart}-${slugSuffix}`,
-        plan: 'free',
-        members: {
-          create: {
-            user_id: user.id,
-            role: 'ADMIN',
-          },
-        },
-      },
-      select: { id: true, slug: true, name: true },
-    })
-
     // Verification email is intentionally disabled — see note above.
     // const { token: vToken } = await issueEmailVerificationToken(user.id, 'verify_email')
     // await sendVerificationEmail(user.email!, vToken, 'verify_email').catch(() => {})
 
-    // Kick off sample-workspace seeding asynchronously so registration is not blocked
+    // Kick off sample-workspace seeding asynchronously so registration is
+    // not blocked. The seeder no-ops if the user has no org yet — it gets
+    // re-triggered after onboarding once an org exists (see
+    // /api/onboarding/workspace).
     seedSampleWorkspace(user.id).catch(err =>
       logger.warn('[register] seeder failed', { error: String(err) })
     )
@@ -291,7 +260,8 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       message: 'Registered',
       token,
       user: { id: user.id, email: user.email },
-      organization: placeholderOrg,
+      // No organization yet; client routes to /onboarding/workspace.
+      requiresOnboarding: true,
     })
   } catch (error) {
     logger.error('Register error:', error)

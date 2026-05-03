@@ -424,7 +424,6 @@ async function ensureUser(email: string, name: string, hash: string) {
     data: {
       email,
       password_hash: hash,
-      account_type: 'ORGANIZATION',
       email_verified_at: new Date(),
     },
   })

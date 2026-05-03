@@ -64,7 +64,6 @@ export interface UserListItem {
   id: string
   email: string | null
   role: UserRole
-  account_type: string
   created_at: Date
   updated_at: Date
   _count: {
@@ -408,7 +407,6 @@ class AdminService {
           id: true,
           email: true,
           role: true,
-          account_type: true,
           created_at: true,
           updated_at: true,
           _count: {
@@ -445,7 +443,6 @@ class AdminService {
         id: true,
         email: true,
         role: true,
-        account_type: true,
         created_at: true,
         updated_at: true,
         _count: {

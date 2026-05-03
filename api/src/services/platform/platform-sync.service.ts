@@ -1,5 +1,3 @@
-import { AccountType } from '@prisma/client'
-
 import { prisma } from '../../lib/prisma.lib'
 import type {
   PlatformMembershipRef,
@@ -164,7 +162,6 @@ export class PlatformSyncService {
         where: { id: existingLink.user_id },
         data: {
           email: user.email,
-          account_type: AccountType.ORGANIZATION,
         },
       })
 
@@ -189,7 +186,6 @@ export class PlatformSyncService {
         (await tx.user.create({
           data: {
             email: user.email,
-            account_type: AccountType.ORGANIZATION,
           },
         }))
 

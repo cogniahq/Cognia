@@ -48,7 +48,7 @@ export const STORAGE_KEYS = {
   // Default capture destination, persisted via chrome.storage.sync so it
   // follows the user across browsers/devices that share Chrome sync. Stored
   // shape: { organizationId: string | null, workspaceId: string | null }.
-  // Null/null = personal vault.
+  // Null/null = no default chosen; the popup prompts the user.
   CAPTURE_TARGET_DEFAULT: 'capture_target_default',
   // Per-capture override stored in chrome.storage.session — wiped each time
   // the browser session ends, so the override never silently outlives the

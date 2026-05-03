@@ -41,8 +41,8 @@ export function handleMessage(
           await storage.local.set({ [STORAGE_KEYS.AUTH_TOKEN]: token })
           // Warm the destinations cache so the popup picker has fresh data
           // ready the first time the user clicks it after signing in. We
-          // fire-and-forget; failures are tolerated (the picker fails open
-          // to "Personal").
+          // fire-and-forget; failures are tolerated (the picker surfaces a
+          // load error inline).
           refreshDestinations().catch(() => {})
         }
       } catch (_error) {}

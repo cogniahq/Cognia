@@ -2,16 +2,20 @@ import { storage } from '@/lib/browser'
 import { STORAGE_KEYS } from '@/utils/core/constants.util'
 import type { CaptureTarget } from '@/types/destinations.types'
 
-const PERSONAL: CaptureTarget = { organizationId: null, workspaceId: null }
+// Cognia is org-only; "no destination set" is represented by a null
+// organizationId so the caller can decide whether to prompt the user
+// (manual flow) or surface a notification (auto-capture flow). The server
+// rejects payloads with no organization_id.
+const UNSET: CaptureTarget = { organizationId: null, workspaceId: null }
 
 function normalize(value: unknown): CaptureTarget | null {
   if (!value || typeof value !== 'object') return null
   const v = value as { organizationId?: unknown; workspaceId?: unknown }
   const orgId = typeof v.organizationId === 'string' ? v.organizationId : null
   const wsId = typeof v.workspaceId === 'string' ? v.workspaceId : null
-  // workspace without org is invalid — collapse to personal rather than send
-  // a malformed payload.
-  if (wsId && !orgId) return PERSONAL
+  // workspace without org is invalid — drop both rather than send a
+  // malformed payload.
+  if (wsId && !orgId) return UNSET
   return { organizationId: orgId, workspaceId: wsId }
 }
 
@@ -38,17 +42,19 @@ async function readSessionOverride(): Promise<CaptureTarget | null> {
  *
  * Precedence: session override (per-capture, set by the popup) > sync default
  * (the user's saved preference, follows them across browsers via Chrome sync)
- * > personal vault.
+ * > unset.
  *
- * Always returns a value — failures fall through to personal so capture never
- * silently picks an unintended workspace.
+ * Always returns a value. If both sources are missing (org-only model with
+ * no default chosen yet), the returned target's `organizationId` is null —
+ * callers should prompt the user / surface a notification rather than POST
+ * a payload the server will reject.
  */
 export async function getEffectiveCaptureTarget(): Promise<CaptureTarget> {
   const override = await readSessionOverride()
   if (override) return override
   const def = await readSyncDefault()
   if (def) return def
-  return PERSONAL
+  return UNSET
 }
 
 export async function setSessionOverride(target: CaptureTarget): Promise<void> {
@@ -64,7 +70,7 @@ export async function setSyncDefault(target: CaptureTarget): Promise<void> {
 }
 
 export async function getSyncDefault(): Promise<CaptureTarget> {
-  return (await readSyncDefault()) ?? PERSONAL
+  return (await readSyncDefault()) ?? UNSET
 }
 
 export async function getSessionOverride(): Promise<CaptureTarget | null> {

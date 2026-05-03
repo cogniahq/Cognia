@@ -59,7 +59,7 @@ async function invalidateCache(userId: string): Promise<void> {
 /**
  * Fetch the user's destinations from the API. Returns the cached payload if
  * fresh; otherwise fetches and caches. Throws on network/auth failure — the
- * popup is responsible for handling that and falling back to "Personal".
+ * popup is responsible for surfacing an error to the user.
  */
 export async function getDestinations(
   options: { forceRefresh?: boolean } = {}
@@ -113,8 +113,8 @@ export async function refreshDestinations(): Promise<DestinationsPayload | null>
   try {
     return await getDestinations({ forceRefresh: true })
   } catch {
-    // best-effort; the picker can fall back to whatever is cached or to
-    // Personal-only.
+    // best-effort; the picker can fall back to whatever is cached, or
+    // surface an empty list if there is no cache yet.
     return null
   }
 }

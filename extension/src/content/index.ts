@@ -181,10 +181,10 @@ async function sendContextToBackground() {
     }
 
     ;(contextData as any).privacy_extension_info = privacyInfo
-    // Tab-driven captures (DOMContentLoaded / tab-activated / tab-updated) are
-    // considered auto: they fire without explicit user intent on every page,
-    // so they always go to the user's personal vault. The destination picker
-    // override only applies to explicit manual captures fired from the popup.
+    // Tab-driven captures (DOMContentLoaded / tab-activated / tab-updated)
+    // are considered auto: they fire without explicit user intent on every
+    // page. They route to the user's saved default destination; if none is
+    // set the api-service drops the capture and surfaces a notification.
     ;(contextData as any).auto_capture = true
     runtime.sendMessage({ type: MESSAGE_TYPES.CAPTURE_CONTEXT, data: contextData }, _response => {
       // Capture sent silently

@@ -190,15 +190,33 @@ export async function sendToBackend(data: ContextData): Promise<void> {
       return
     }
 
-    // Resolve the destination for this capture. Manual captures honor the
-    // session override (set by the popup picker) and fall back to the user's
-    // stored default. Auto-captures (continuous monitoring) always go to
-    // Personal — see context-handler / capture-target.service for the
-    // rationale.
-    const isAutoCapture = (data as { auto_capture?: boolean }).auto_capture === true
-    const target = isAutoCapture
-      ? { organizationId: null, workspaceId: null }
-      : await getEffectiveCaptureTarget()
+    // Resolve the destination for this capture. Both manual and auto
+    // captures need an organization_id now (Cognia is org-only; the server
+    // rejects null org). The effective target chain is: session override
+    // (popup picker) > user-saved default > null. If null, we drop the
+    // request and surface a one-time Chrome notification asking the user
+    // to set a default destination.
+    const target = await getEffectiveCaptureTarget()
+    if (!target.organizationId) {
+      try {
+        if (
+          typeof chrome !== 'undefined' &&
+          chrome.notifications &&
+          typeof chrome.notifications.create === 'function'
+        ) {
+          chrome.notifications.create('cognia-no-default-destination', {
+            type: 'basic',
+            iconUrl: 'icon-128.png',
+            title: 'Set a default workspace',
+            message:
+              'Open the Cognia popup and pick a default workspace before auto-capture works.',
+          })
+        }
+      } catch {
+        // Notifications API unavailable; silently skip the capture.
+      }
+      return
+    }
 
     const payload = {
       content: content,
@@ -241,10 +259,10 @@ export async function sendToBackend(data: ContextData): Promise<void> {
         privacy_extension_conflicts: hasPrivacyConflicts,
         privacy_extension_type: privacyInfo?.type || 'none',
         compatibility_mode: privacyInfo?.compatibility_mode || false,
-        // Capture destination — null/undefined means personal vault. Server
-        // ignores either when none is set. P1 wired the ingestion side to
-        // honor these and validate workspace_id belongs to the org.
-        organization_id: target.organizationId ?? undefined,
+        // Capture destination — required since Cognia is org-only. Server
+        // rejects payloads with no organization_id. If a workspace_id is
+        // present, the ingestion side validates it belongs to the org.
+        organization_id: target.organizationId,
         workspace_id: target.workspaceId ?? undefined,
       },
     }

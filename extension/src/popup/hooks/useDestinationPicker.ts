@@ -5,7 +5,10 @@ import type { CaptureTarget, DestinationsPayload } from '@/types/destinations.ty
 import { getApiEndpoint } from '@/background/services/storage-service'
 import { requireAuthToken } from '@/utils/auth'
 
-const PERSONAL: CaptureTarget = { organizationId: null, workspaceId: null }
+// Org-only model: a null/null target means "no destination chosen yet";
+// the popup surfaces an empty-state message and the api-service refuses
+// to send any auto-capture until the user picks one.
+const UNSET: CaptureTarget = { organizationId: null, workspaceId: null }
 
 interface SendMessageResponse {
   success?: boolean
@@ -25,13 +28,13 @@ async function readSyncDefault(): Promise<CaptureTarget> {
   try {
     const result = await storage.sync.get([STORAGE_KEYS.CAPTURE_TARGET_DEFAULT])
     const value = result[STORAGE_KEYS.CAPTURE_TARGET_DEFAULT] as CaptureTarget | undefined
-    if (!value) return PERSONAL
+    if (!value) return UNSET
     return {
       organizationId: typeof value.organizationId === 'string' ? value.organizationId : null,
       workspaceId: typeof value.workspaceId === 'string' ? value.workspaceId : null,
     }
   } catch {
-    return PERSONAL
+    return UNSET
   }
 }
 
@@ -65,13 +68,14 @@ interface UseDestinationPickerResult {
  * Loads the user's destination tree, current saved default and session
  * override, and exposes setters for picker interactions.
  *
- * Fail-open: if the destinations fetch fails (offline, server down, etc.) we
- * surface a loadError but the picker still renders Personal so capture is not
- * blocked.
+ * If the destinations fetch fails (offline, server down, etc.) we surface
+ * a loadError. The picker shows an empty-state message; capture is paused
+ * until destinations come back, since Cognia is org-only and there is no
+ * personal vault to fall back to.
  */
 export function useDestinationPicker(): UseDestinationPickerResult {
   const [destinations, setDestinations] = useState<DestinationsPayload | null>(null)
-  const [syncDefault, setSyncDefaultState] = useState<CaptureTarget>(PERSONAL)
+  const [syncDefault, setSyncDefaultState] = useState<CaptureTarget>(UNSET)
   const [sessionOverride, setSessionOverrideState] = useState<CaptureTarget | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)

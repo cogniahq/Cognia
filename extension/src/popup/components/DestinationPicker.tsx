@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { CheckIcon, GlobeIcon, ShieldIcon } from './Icons'
+import { CheckIcon, GlobeIcon } from './Icons'
 import { useDestinationPicker } from '../hooks/useDestinationPicker'
 import type { CaptureTarget, DestinationOrganization } from '@/types/destinations.types'
 
@@ -9,22 +9,14 @@ interface Choice {
   label: string
   sublabel?: string
   target: CaptureTarget
-  type: 'personal' | 'organization' | 'workspace'
-  orgId?: string
+  type: 'organization' | 'workspace'
+  orgId: string
 }
 
 function buildChoices(
   destinations: ReturnType<typeof useDestinationPicker>['destinations']
 ): Choice[] {
-  const out: Choice[] = [
-    {
-      key: 'personal',
-      label: 'Personal',
-      sublabel: 'Saved to your private vault',
-      target: { organizationId: null, workspaceId: null },
-      type: 'personal',
-    },
-  ]
+  const out: Choice[] = []
   if (!destinations) return out
   for (const org of destinations.organizations) {
     out.push({
@@ -57,7 +49,7 @@ function activeLabel(
   effective: CaptureTarget,
   destinations: ReturnType<typeof useDestinationPicker>['destinations']
 ): string {
-  if (!effective.organizationId) return 'Personal'
+  if (!effective.organizationId) return destinations?.organizations[0]?.name ?? 'No workspace'
   if (!destinations) return 'Custom'
   const org: DestinationOrganization | undefined = destinations.organizations.find(
     o => o.id === effective.organizationId
@@ -82,7 +74,7 @@ export const DestinationPicker: React.FC = () => {
   const choices = useMemo(() => buildChoices(destinations), [destinations])
   const activeKey = useMemo(() => {
     const match = choices.find(c => targetsEqual(c.target, effectiveTarget))
-    return match?.key ?? 'personal'
+    return match?.key ?? choices[0]?.key ?? null
   }, [choices, effectiveTarget])
 
   const headline = activeLabel(effectiveTarget, destinations)
@@ -98,7 +90,7 @@ export const DestinationPicker: React.FC = () => {
             className="font-mono text-[10px] uppercase tracking-wider text-warning"
             title={loadError}
           >
-            offline · personal only
+            offline · destinations unavailable
           </span>
         )}
       </header>
@@ -112,6 +104,20 @@ export const DestinationPicker: React.FC = () => {
       </div>
       <ul className="divide-y divide-border" role="listbox" aria-label="Destination choices">
         {isLoading && <li className="px-4 py-2 text-[12px] text-muted-foreground">Loading...</li>}
+        {!isLoading && choices.length === 0 && (
+          <li className="px-4 py-3 text-[12px] text-muted-foreground">
+            No team workspaces yet.{' '}
+            <a
+              href="https://cogniahq.tech/organization"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-foreground hover:text-primary"
+            >
+              Create one in Cognia
+            </a>{' '}
+            to start capturing.
+          </li>
+        )}
         {!isLoading &&
           choices.map(choice => {
             const isActive = choice.key === activeKey
@@ -131,17 +137,8 @@ export const DestinationPicker: React.FC = () => {
                     aria-label={`Use ${choice.label} for the next capture`}
                     data-testid={`pick-${choice.key}`}
                   >
-                    <span
-                      className={cn(
-                        'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-surface-subtle text-foreground',
-                        choice.type === 'personal' && 'text-primary'
-                      )}
-                    >
-                      {choice.type === 'personal' ? (
-                        <ShieldIcon size={11} />
-                      ) : (
-                        <GlobeIcon size={11} />
-                      )}
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-surface-subtle text-foreground">
+                      <GlobeIcon size={11} />
                     </span>
                     <span className="flex flex-col min-w-0">
                       <span className="text-[13px] font-medium text-foreground truncate">

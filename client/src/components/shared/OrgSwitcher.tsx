@@ -12,31 +12,20 @@ import {
 import { CreateOrganizationDialog } from "@/components/organization/CreateOrganizationDialog"
 
 interface OrgSwitcherProps {
-  /** When true, includes the Personal pseudo-workspace at the top of the list. */
-  includePersonal?: boolean
   /** Override navigate behaviour (useful in tests). */
   onNavigate?: (path: string) => void
 }
 
-const PERSONAL_LABEL = "Personal"
-
 /**
  * Global org switcher rendered in the page header. Lists the user's team
- * workspaces plus a "Personal" pseudo-entry; the current selection is mirrored
- * in the OrganizationContext + localStorage (see organization.context.tsx).
+ * workspaces; the current selection mirrors the OrganizationContext +
+ * localStorage. Cognia is org-only — every user belongs to at least one
+ * workspace, so there is no "Personal" pseudo-entry.
  */
-export function OrgSwitcher({
-  includePersonal = true,
-  onNavigate,
-}: OrgSwitcherProps) {
+export function OrgSwitcher({ onNavigate }: OrgSwitcherProps) {
   const navigate = useNavigate()
-  const {
-    organizations,
-    currentOrganization,
-    selectOrganization,
-    clearOrganization,
-    isLoading,
-  } = useOrganization()
+  const { organizations, currentOrganization, selectOrganization, isLoading } =
+    useOrganization()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   const go = (path: string) => {
@@ -53,16 +42,7 @@ export function OrgSwitcher({
     }
   }
 
-  const handleSelectPersonal = () => {
-    // Clear React state (currentOrganization, members, documents) and the
-    // persistence key in one shot before navigating, so the trigger label,
-    // admin badge, and any useHasPermission consumers re-render against the
-    // personal scope rather than lagging behind on the previous org.
-    clearOrganization()
-    go("/memories")
-  }
-
-  const triggerLabel = currentOrganization?.name ?? PERSONAL_LABEL
+  const triggerLabel = currentOrganization?.name ?? "Select workspace"
   const isAdmin = currentOrganization?.userRole === "ADMIN"
 
   return (
@@ -92,26 +72,6 @@ export function OrgSwitcher({
           align="end"
           className="w-[240px] rounded-none border-gray-300"
         >
-          {includePersonal && (
-            <>
-              <div className="px-2 py-1.5 text-[10px] font-mono text-gray-500 uppercase tracking-wider">
-                Account
-              </div>
-              <DropdownMenuItem
-                onClick={handleSelectPersonal}
-                className="cursor-pointer rounded-none text-xs font-mono"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="truncate">{PERSONAL_LABEL}</span>
-                  {!currentOrganization && (
-                    <span className="text-gray-400">✓</span>
-                  )}
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-
           {organizations.length > 0 ? (
             <>
               <div className="px-2 py-1.5 text-[10px] font-mono text-gray-500 uppercase tracking-wider">

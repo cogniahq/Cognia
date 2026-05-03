@@ -48,7 +48,7 @@ export function ApiKeys() {
               API keys
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Personal-account credentials for the public Cognia API.
+              Workspace-scoped credentials for the public Cognia API.
             </p>
           </motion.div>
 

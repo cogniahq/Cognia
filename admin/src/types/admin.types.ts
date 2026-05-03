@@ -61,7 +61,6 @@ export interface UserListItem {
   id: string
   email: string | null
   role: UserRole
-  account_type: string
   created_at: string
   updated_at: string
   _count: {

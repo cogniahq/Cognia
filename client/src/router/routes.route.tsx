@@ -114,6 +114,11 @@ const Upcoming = lazy(() =>
     default: module.Upcoming,
   }))
 )
+const OnboardingWorkspace = lazy(() =>
+  import("@/pages/onboarding/workspace.page").then((module) => ({
+    default: module.OnboardingWorkspace,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -121,9 +126,10 @@ const LoadingFallback = () => (
   </div>
 )
 
-// Redirect authenticated users to /memories. Org-vs-personal context is
-// derived at the page level from currentOrganization, not from a vestigial
-// account_type column.
+// Redirect authenticated users to /memories. The require-org-membership
+// wall on the server will 403-redirect them to /onboarding/workspace if
+// they haven't created or joined a workspace yet (handled by the axios
+// interceptor).
 const AuthRedirectLanding = () => {
   const { isAuthenticated, isLoading } = useAuth()
   const hadTokenAtMount = useRef(
@@ -169,6 +175,7 @@ const AppRoutes = () => {
         <Route path="/signup" element={<Login />} />
         <Route path="/auth/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/magic" element={<AuthMagic />} />
+        <Route path="/onboarding/workspace" element={<OnboardingWorkspace />} />
         <Route path="/memories" element={<Memories />} />
         <Route
           path="/memories/v2"

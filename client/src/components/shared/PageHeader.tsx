@@ -120,10 +120,12 @@ export const PageHeader = () => {
   const canSeeAdminLink = useHasPermission("audit.read")
   const canSeeBillingLink = useHasPermission("billing.read")
 
-  // Nav is now driven by `currentOrganization` presence, not the legacy
-  // account_type column. Memories/Analytics/Integrations always show; the
-  // org-only links (Workspace, Admin, Billing) appear only when an org is
-  // active. Admin remains role-gated via `audit.read`.
+  // Nav is driven by `currentOrganization` presence. Memories/Analytics/
+  // Integrations always show; the org-scoped links (Workspace, Admin,
+  // Billing) appear only when an org is active. Admin remains role-gated
+  // via `audit.read`. Cognia is org-only — every authenticated user is
+  // expected to have at least one active membership; the
+  // require-org-membership wall enforces that on the server.
   const inOrgContext = !!currentOrganization
   const showAdminNav =
     inOrgContext && !!currentOrganization?.slug && canSeeAdminLink

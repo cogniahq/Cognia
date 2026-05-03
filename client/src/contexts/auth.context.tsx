@@ -9,8 +9,6 @@ import {
 } from "react"
 import { axiosInstance } from "@/utils/http"
 
-type AccountType = "PERSONAL" | "ORGANIZATION"
-
 /**
  * Phase 7 RBAC: `/api/auth/me` returns effective permission sets so the
  * frontend can gate UI without an extra round-trip.
@@ -50,11 +48,7 @@ interface AuthContextType {
     totpCode?: string,
     backupCode?: string
   ) => Promise<LoginResult>
-  register: (
-    email: string,
-    password: string,
-    accountType: AccountType
-  ) => Promise<User>
+  register: (email: string, password: string) => Promise<User>
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
 }
@@ -253,15 +247,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   const register = useCallback(
-    async (
-      email: string,
-      password: string,
-      accountType: AccountType
-    ): Promise<User> => {
+    async (email: string, password: string): Promise<User> => {
       const response = await axiosInstance.post("/auth/register", {
         email: email.trim(),
         password: password.trim(),
-        account_type: accountType,
       })
 
       // Handle both direct and nested response structures

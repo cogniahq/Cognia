@@ -10,12 +10,13 @@ import { OAuthButton } from "@/components/auth/OAuthButton"
 import { SsoDiscovery } from "@/components/auth/SsoDiscovery"
 import { ConsoleButton } from "@/components/landing/ConsoleButton"
 
-type AccountType = "PERSONAL" | "ORGANIZATION"
-
-// Phase 3 dropped the personal/team selector at signup; everyone lands on
-// /memories. The OrganizationProvider picks up a stored currentOrgSlug
-// (if any) and scopes queries on top of that.
+// Existing users go straight to /memories. Brand-new users get redirected
+// to /onboarding/workspace (handled in handleSubmit) because their /register
+// response carries `requiresOnboarding: true` and they have no active
+// OrganizationMember row yet — the require-org-membership middleware
+// would 403 every other route.
 const POST_LOGIN_PATH = "/memories"
+const ONBOARDING_PATH = "/onboarding/workspace"
 
 // Password requirement indicator
 const PasswordRequirement: React.FC<{
@@ -122,9 +123,6 @@ export const Login = () => {
   const [error, setError] = useState("")
   const [isRegister, setIsRegister] = useState(startAsRegister)
   const [showPassword, setShowPassword] = useState(false)
-  // The signup flow always provisions a personal workspace. Team workspaces are
-  // created post-signup via the CreateOrganizationDialog.
-  const selectedAccountType: AccountType = "PERSONAL"
   const [sessionExpiredMessage, setSessionExpiredMessage] = useState("")
 
   // 2FA state
@@ -207,8 +205,10 @@ export const Login = () => {
 
     try {
       if (isRegister) {
-        await register(email.trim(), password.trim(), selectedAccountType)
-        setTimeout(() => navigate(POST_LOGIN_PATH), 500)
+        await register(email.trim(), password.trim())
+        // Brand-new users have no workspace yet — send them through the
+        // onboarding wall instead of /memories (which would 403).
+        setTimeout(() => navigate(ONBOARDING_PATH), 500)
       } else {
         // Handle login with optional 2FA
         const result = await login(
@@ -406,7 +406,7 @@ export const Login = () => {
                 </h2>
                 <p className="text-sm text-gray-600">
                   {isRegister
-                    ? "Start free with a personal workspace. You can invite a team later."
+                    ? "Create an account, then set up or join a workspace."
                     : "Enter your credentials to continue"}
                 </p>
               </div>

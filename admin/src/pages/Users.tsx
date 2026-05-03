@@ -104,14 +104,6 @@ export function UsersPage() {
       ),
     },
     {
-      key: 'account_type',
-      label: 'Type',
-      width: '120px',
-      render: (user: UserListItem) => (
-        <span className="text-xs text-gray-500">{user.account_type}</span>
-      ),
-    },
-    {
       key: 'memories',
       label: 'Memories',
       width: '100px',
@@ -220,10 +212,6 @@ export function UsersPage() {
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Email</span>
                   <span className="text-xs">{selectedUser.email || '-'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-xs text-gray-500">Account Type</span>
-                  <span className="text-xs">{selectedUser.account_type}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100">
                   <span className="text-xs text-gray-500">Created</span>

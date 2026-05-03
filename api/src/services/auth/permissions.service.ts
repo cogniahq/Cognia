@@ -21,7 +21,7 @@ export async function getEffectivePermissions(
 ): Promise<Permission[]> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true, account_type: true },
+    select: { role: true },
   })
   if (!user) return []
 

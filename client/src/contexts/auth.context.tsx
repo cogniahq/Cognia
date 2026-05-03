@@ -29,7 +29,6 @@ interface OrgPermissionSet {
 interface User {
   id: string
   email?: string
-  account_type?: AccountType
   role?: "USER" | "ADMIN"
   personalPermissions?: string[]
   orgPermissions?: OrgPermissionSet[]
@@ -45,7 +44,6 @@ interface AuthContextType {
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
-  accountType: AccountType | null
   login: (
     email: string,
     password: string,
@@ -332,7 +330,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       token,
       isAuthenticated: !!user && !!token,
       isLoading,
-      accountType: user?.account_type || null,
       login,
       register,
       logout,

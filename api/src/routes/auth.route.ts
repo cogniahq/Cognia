@@ -52,7 +52,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, account_type: true, role: true },
+      select: { id: true, email: true, role: true },
     })
 
     if (!user) {
@@ -87,7 +87,6 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
       data: {
         id: user.id,
         email: user.email,
-        account_type: user.account_type,
         role: user.role,
         personalPermissions,
         orgPermissions,
@@ -255,7 +254,7 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
     return res.status(201).json({
       message: 'Registered',
       token,
-      user: { id: user.id, email: user.email, account_type: user.account_type },
+      user: { id: user.id, email: user.email },
     })
   } catch (error) {
     logger.error('Register error:', error)
@@ -277,7 +276,6 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
         id: true,
         email: true,
         password_hash: true,
-        account_type: true,
         role: true,
         two_factor_enabled: true,
         two_factor_secret: true,
@@ -411,7 +409,6 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
         user: {
           id: user.id,
           email: user.email,
-          account_type: user.account_type,
           role: user.role,
           two_factor_enabled: user.two_factor_enabled,
         },

@@ -1,5 +1,6 @@
-import React, { memo, useEffect, useMemo } from "react"
-import { useThree } from "@react-three/fiber"
+import React, { memo, useEffect, useMemo, useRef, useState } from "react"
+import { useFrame, useThree } from "@react-three/fiber"
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 
 import type { MemoryMesh, MemoryMeshEdge } from "../../../types/memory"
 import { resolveNodeColor } from "../../../utils/mesh/colors.util"
@@ -15,7 +16,48 @@ interface MemoryMesh3DSceneProps {
   memoryUrls?: Record<string, string>
   onNodeClick: (memoryId: string) => void
   isCompactView?: boolean
+  // OrbitControls instance ref. When provided the scene rebases the
+  // controls target periodically so vertical panning never terminates and
+  // floating-point precision stays bounded over long scroll sessions.
+  controlsRef?: React.RefObject<OrbitControlsImpl | null>
 }
+
+interface PositionedNode {
+  id: string
+  memoryId: string
+  position: [number, number, number]
+  color: string
+  isSelected: boolean
+  isHighlighted: boolean
+  importance?: number
+  inLatentSpace?: boolean
+}
+
+interface PositionedEdge {
+  start: [number, number, number]
+  end: [number, number, number]
+  similarity: number
+  relationType?: string
+}
+
+// Number of tiles rendered above and below the active tile. A radius of 1
+// renders 3 tiles (current + above + below) which is enough to keep the
+// neighboring content visible while the user is scrolling between tiles.
+const TILE_RADIUS = 1
+
+// Extra vertical gap between tiles (relative to spanY). Keeps the seam
+// between recycled segments visually distinct rather than overlapping.
+const TILE_GAP_RATIO = 0.15
+
+// Fraction of a tile's height over which the fade-out near tile edges is
+// applied. Values in (0, 0.5] are sensible. 0.25 means nodes fade across
+// the outermost 25% of a tile's height.
+const TILE_FADE_RATIO = 0.25
+
+// Whenever the controls target drifts beyond REBASE_THRESHOLD * tileHeight
+// from the origin, we snap it back toward 0 so coordinates stay bounded
+// over long scrolling sessions.
+const REBASE_THRESHOLD = 4
 
 export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
   meshData,
@@ -25,6 +67,7 @@ export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
   memoryUrls,
   onNodeClick,
   isCompactView = false,
+  controlsRef,
 }) => {
   const { camera } = useThree()
 
@@ -37,7 +80,7 @@ export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
     camera.lookAt(0, 0, 0)
   }, [camera, isCompactView])
 
-  const nodes = useMemo(() => {
+  const nodes = useMemo<PositionedNode[]>(() => {
     return calculateNodePositions(
       meshData,
       selectedMemoryId,
@@ -56,7 +99,7 @@ export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
     isCompactView,
   ])
 
-  const edges = useMemo(() => {
+  const edges = useMemo<PositionedEdge[]>(() => {
     if (!meshData?.edges?.length) return []
 
     const nodeMap = new Map(nodes.map((n) => [n.id, n]))
@@ -72,12 +115,7 @@ export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
       groups.set(key, list)
     })
 
-    const result: Array<{
-      start: [number, number, number]
-      end: [number, number, number]
-      similarity: number
-      relationType?: string
-    }> = []
+    const result: PositionedEdge[] = []
 
     groups.forEach((edgesForPair: MemoryMeshEdge[]) => {
       const best = edgesForPair.reduce<MemoryMeshEdge | undefined>(
@@ -112,53 +150,195 @@ export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
     return result
   }, [meshData, nodes])
 
-  const visibleData = useMemo(() => {
-    if (nodes.length === 0) return { nodes: [], edges: [] }
+  // Bounds of the laid-out mesh in Y. Used to compute tile spacing so that
+  // each tile (a recycled copy of the mesh) is offset by exactly the
+  // mesh's vertical extent plus a small gap.
+  const verticalLayout = useMemo(() => {
+    if (!nodes.length) {
+      return { minY: 0, maxY: 0, spanY: 0, tileHeight: 0 }
+    }
+    let minY = Infinity
+    let maxY = -Infinity
+    for (let i = 0; i < nodes.length; i++) {
+      const y = nodes[i].position[1]
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    }
+    const spanY = Math.max(1e-3, maxY - minY)
+    const tileHeight = spanY * (1 + TILE_GAP_RATIO)
+    return { minY, maxY, spanY, tileHeight }
+  }, [nodes])
 
-    const maxVisibleNodes = Infinity
-    const maxVisibleEdges = Infinity
+  // Active baseline tile index. The scene renders tiles in
+  // [activeTile - TILE_RADIUS, activeTile + TILE_RADIUS]. As the camera
+  // target Y crosses tile boundaries we update this so new segments
+  // appear above/below seamlessly and far ones are recycled.
+  const [activeTile, setActiveTile] = useState(0)
+  const activeTileRef = useRef(0)
+  activeTileRef.current = activeTile
 
-    const priorityNodes = nodes.filter((n) => n.isSelected || n.isHighlighted)
-    const otherNodes = nodes.filter((n) => !n.isSelected && !n.isHighlighted)
+  // Camera-Y used for per-tile fade calculations. Updated from useFrame.
+  // We mirror it into both a ref (for tight per-frame use) and React
+  // state (so opacity fades re-render smoothly as the camera moves). To
+  // avoid one render per frame the state is only updated when the value
+  // changes by more than a small fraction of a tile's height.
+  const targetYRef = useRef(0)
+  const [targetYState, setTargetYState] = useState(0)
+  const lastReportedTargetYRef = useRef(0)
 
-    const visibleNodes =
-      maxVisibleNodes === Infinity
-        ? nodes
-        : [
-            ...priorityNodes,
-            ...otherNodes.slice(
-              0,
-              Math.max(0, maxVisibleNodes - priorityNodes.length)
-            ),
-          ]
+  // When the mesh changes, reset the active tile / rebase counters so the
+  // camera doesn't suddenly jump after a refresh.
+  useEffect(() => {
+    setActiveTile(0)
+    targetYRef.current = 0
+    lastReportedTargetYRef.current = 0
+    setTargetYState(0)
+  }, [meshData])
 
-    const visibleNodeIds = new Set(visibleNodes.map((n) => n.id))
-    const nodePosMap = new Map<string, string>()
-    nodes.forEach((n) => {
-      const posKey = `${n.position[0].toFixed(3)},${n.position[1].toFixed(3)},${n.position[2].toFixed(3)}`
-      nodePosMap.set(posKey, n.id)
-    })
+  useFrame(() => {
+    const tileHeight = verticalLayout.tileHeight
+    if (tileHeight <= 0) return
 
-    const filteredEdges = edges
-      .filter((edge) => {
-        const startKey = `${edge.start[0].toFixed(3)},${edge.start[1].toFixed(3)},${edge.start[2].toFixed(3)}`
-        const endKey = `${edge.end[0].toFixed(3)},${edge.end[1].toFixed(3)},${edge.end[2].toFixed(3)}`
-        const startId = nodePosMap.get(startKey)
-        const endId = nodePosMap.get(endKey)
+    const controls = controlsRef?.current
+    const targetY = controls ? controls.target.y : camera.position.y
+    targetYRef.current = targetY
 
-        return (
-          (startId &&
-            visibleNodeIds.has(startId) &&
-            endId &&
-            visibleNodeIds.has(endId)) ||
-          edge.similarity >= 0.2
-        )
+    // Throttle React state updates so smooth fades are visible without
+    // re-rendering every single frame. ~1% of a tile's height is fine.
+    const epsilon = tileHeight * 0.01
+    if (Math.abs(targetY - lastReportedTargetYRef.current) > epsilon) {
+      lastReportedTargetYRef.current = targetY
+      setTargetYState(targetY)
+    }
+
+    // Determine which tile index the user is currently centered on.
+    const desiredTile = Math.round(targetY / tileHeight)
+    if (desiredTile !== activeTileRef.current) {
+      activeTileRef.current = desiredTile
+      setActiveTile(desiredTile)
+    }
+
+    // Rebase to keep coordinates bounded. When the user has scrolled far
+    // from the origin, snap the controls target back toward 0 by an
+    // integer number of tile heights and absorb the same shift into the
+    // active tile so the visual scene is unchanged.
+    if (controls && Math.abs(desiredTile) >= REBASE_THRESHOLD) {
+      const shiftTiles = desiredTile
+      const shiftWorld = shiftTiles * tileHeight
+      controls.target.y -= shiftWorld
+      camera.position.y -= shiftWorld
+      controls.update()
+      activeTileRef.current = 0
+      lastReportedTargetYRef.current = controls.target.y
+      setActiveTile(0)
+      setTargetYState(controls.target.y)
+    }
+  })
+
+  // Build the visible tile set. For each tile in the active window we
+  // compute a fade factor based on how far the camera target Y is from
+  // the tile center, and we cull nodes whose Y falls outside the visible
+  // window. This is the recycle behaviour: tiles outside the active
+  // window are not rendered at all and their memory is reclaimed.
+  const tiles = useMemo(() => {
+    const tileHeight = verticalLayout.tileHeight
+    if (tileHeight <= 0 || !nodes.length) {
+      return [] as Array<{
+        offset: number
+        centerY: number
+        nodes: PositionedNode[]
+        edges: PositionedEdge[]
+      }>
+    }
+
+    const out: Array<{
+      offset: number
+      centerY: number
+      nodes: PositionedNode[]
+      edges: PositionedEdge[]
+    }> = []
+
+    for (let k = -TILE_RADIUS; k <= TILE_RADIUS; k++) {
+      const offset = activeTile + k
+      const offsetY = offset * tileHeight
+      const tileNodes = nodes.map<PositionedNode>((n) => ({
+        ...n,
+        position: [n.position[0], n.position[1] + offsetY, n.position[2]],
+      }))
+      const tileEdges = edges.map<PositionedEdge>((e) => ({
+        start: [e.start[0], e.start[1] + offsetY, e.start[2]],
+        end: [e.end[0], e.end[1] + offsetY, e.end[2]],
+        similarity: e.similarity,
+        relationType: e.relationType,
+      }))
+      out.push({ offset, centerY: offsetY, nodes: tileNodes, edges: tileEdges })
+    }
+
+    return out
+  }, [activeTile, nodes, edges, verticalLayout])
+
+  // Edge filter / priority logic preserved from the previous
+  // implementation. Edges are filtered per-tile against that tile's
+  // visible node set so wrapped edges never connect to nodes that have
+  // been culled.
+  const tilesWithVisible = useMemo(() => {
+    return tiles.map((tile) => {
+      if (tile.nodes.length === 0) {
+        return { ...tile, visibleNodes: [], visibleEdges: [] }
+      }
+
+      const priorityNodes = tile.nodes.filter(
+        (n) => n.isSelected || n.isHighlighted
+      )
+      const otherNodes = tile.nodes.filter(
+        (n) => !n.isSelected && !n.isHighlighted
+      )
+      const visibleNodes = [...priorityNodes, ...otherNodes]
+
+      const visibleNodeIds = new Set(visibleNodes.map((n) => n.id))
+      const nodePosMap = new Map<string, string>()
+      tile.nodes.forEach((n) => {
+        const posKey = `${n.position[0].toFixed(3)},${n.position[1].toFixed(3)},${n.position[2].toFixed(3)}`
+        nodePosMap.set(posKey, n.id)
       })
-      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-      .slice(0, maxVisibleEdges === Infinity ? edges.length : maxVisibleEdges)
 
-    return { nodes: visibleNodes, edges: filteredEdges }
-  }, [nodes, edges])
+      const visibleEdges = tile.edges
+        .filter((edge) => {
+          const startKey = `${edge.start[0].toFixed(3)},${edge.start[1].toFixed(3)},${edge.start[2].toFixed(3)}`
+          const endKey = `${edge.end[0].toFixed(3)},${edge.end[1].toFixed(3)},${edge.end[2].toFixed(3)}`
+          const startId = nodePosMap.get(startKey)
+          const endId = nodePosMap.get(endKey)
+
+          return (
+            (startId &&
+              visibleNodeIds.has(startId) &&
+              endId &&
+              visibleNodeIds.has(endId)) ||
+            edge.similarity >= 0.2
+          )
+        })
+        .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
+
+      return { ...tile, visibleNodes, visibleEdges }
+    })
+  }, [tiles])
+
+  // Per-tile opacity computed from distance between camera target Y and
+  // tile center. The active tile is fully opaque; tiles fade out as the
+  // camera approaches the next tile so the transition between recycled
+  // segments is seamless. Uses the throttled targetYState so React
+  // re-renders on opacity changes during scroll.
+  const tileOpacityFor = (centerY: number): number => {
+    const tileHeight = verticalLayout.tileHeight
+    if (tileHeight <= 0) return 1
+    const distance = Math.abs(targetYState - centerY)
+    const fadeStart = tileHeight * (0.5 - TILE_FADE_RATIO)
+    const fadeEnd = tileHeight * (0.5 + TILE_FADE_RATIO)
+    if (distance <= fadeStart) return 1
+    if (distance >= fadeEnd) return 0
+    const t = (distance - fadeStart) / Math.max(1e-6, fadeEnd - fadeStart)
+    return Math.max(0, Math.min(1, 1 - t))
+  }
 
   return (
     <>
@@ -166,31 +346,39 @@ export const MemoryMesh3DScene: React.FC<MemoryMesh3DSceneProps> = ({
       <directionalLight position={[8, 8, 6]} intensity={0.4} />
       <pointLight position={[0, 0, 0]} intensity={0.2} color="#ffffff" />
 
-      <group>
-        {visibleData.nodes.map((node) => (
-          <MemoryMesh3DNode
-            key={node.id}
-            position={node.position}
-            memoryId={node.memoryId}
-            color={node.color}
-            isSelected={node.isSelected}
-            isHighlighted={node.isHighlighted}
-            importance={node.importance}
-            inLatentSpace={node.inLatentSpace}
-            onClick={onNodeClick}
-          />
-        ))}
+      {tilesWithVisible.map((tile) => {
+        const tileOpacity = tileOpacityFor(tile.centerY)
+        if (tileOpacity <= 0) return null
+        return (
+          <group key={`tile-${tile.offset}`}>
+            {tile.visibleNodes.map((node) => (
+              <MemoryMesh3DNode
+                key={`tile-${tile.offset}-node-${node.id}`}
+                position={node.position}
+                memoryId={node.memoryId}
+                color={node.color}
+                isSelected={node.isSelected}
+                isHighlighted={node.isHighlighted}
+                importance={node.importance}
+                inLatentSpace={node.inLatentSpace}
+                onClick={onNodeClick}
+                tileOpacity={tileOpacity}
+              />
+            ))}
 
-        {visibleData.edges.map((edge, index) => (
-          <MemoryMesh3DEdge
-            key={`edge-${index}-${edge.start.join(",")}-${edge.end.join(",")}`}
-            start={edge.start}
-            end={edge.end}
-            similarity={edge.similarity}
-            relationType={edge.relationType}
-          />
-        ))}
-      </group>
+            {tile.visibleEdges.map((edge, index) => (
+              <MemoryMesh3DEdge
+                key={`tile-${tile.offset}-edge-${index}-${edge.start.join(",")}-${edge.end.join(",")}`}
+                start={edge.start}
+                end={edge.end}
+                similarity={edge.similarity}
+                relationType={edge.relationType}
+                tileOpacity={tileOpacity}
+              />
+            ))}
+          </group>
+        )
+      })}
     </>
   )
 }

@@ -9,9 +9,9 @@
  *   - cognia_list_memories : paginated listing
  *
  * Tool names use snake_case to align with the standalone @cogniahq/mcp server
- * and the public docs. The legacy dotted form (cognia.search, etc.) is still
- * accepted by tools/call for back-compat with in-flight integrations and is
- * planned to be removed in a future release.
+ * and the public docs. (The legacy dotted form `cognia.search` etc. was
+ * accepted as a fallback during the snake_case migration; that fallback was
+ * removed once telemetry showed no live callers used it.)
  *
  * The transport is HTTP POST so the same endpoint serves all JSON-RPC methods.
  */
@@ -106,19 +106,9 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
     const userId = req.apiKey!.userId
     const params = (body.params ?? {}) as unknown as ToolCallParams
     const { name, arguments: args } = params
-    // Accept both snake_case (canonical, what tools/list returns) and the legacy
-    // dotted form for back-compat. Normalise once so the switch below is simple.
-    const canonicalName =
-      name === 'cognia.search'
-        ? 'cognia_search'
-        : name === 'cognia.get_memory'
-          ? 'cognia_get_memory'
-          : name === 'cognia.list_memories'
-            ? 'cognia_list_memories'
-            : name
     try {
       let resultPayload: unknown
-      if (canonicalName === 'cognia_search') {
+      if (name === 'cognia_search') {
         const query = String(args?.query ?? '')
         const limit = Math.min(Number(args?.limit ?? 10), 50)
         const organizationId = req.apiKey!.organizationId
@@ -162,12 +152,12 @@ router.post('/v1/jsonrpc', async (req: ApiKeyRequest, res: Response) => {
             url: m.url,
           }))
         }
-      } else if (canonicalName === 'cognia_get_memory') {
+      } else if (name === 'cognia_get_memory') {
         const m = await prisma.memory.findFirst({
           where: { id: String(args?.id ?? ''), user_id: userId, deleted_at: null },
         })
         resultPayload = m ?? null
-      } else if (canonicalName === 'cognia_list_memories') {
+      } else if (name === 'cognia_list_memories') {
         const out = await listMemories({
           userId,
           limit: Number(args?.limit ?? 50),

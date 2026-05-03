@@ -12,6 +12,7 @@ import { markUserActivity } from './monitoring/activity-tracker'
 import { initEmailDraftPill } from './email/email-draft'
 import { initAIChatIntegration } from './ai-chat/chat-integration'
 import { startSearchResultHighlighting } from './highlighting/search-result-highlighter'
+import { isPdfDocument, capturePdfDocument } from './pdf-capture'
 
 // Announces the extension to the page so first-party web apps (cogniahq.tech)
 // can swap their "Install the extension" CTA for an installed-state UI.
@@ -195,7 +196,27 @@ async function sendContextToBackground() {
 ;(window as any).interactionCount = 0
 detectPrivacyExtensions()
 
-if (document.readyState === 'loading') {
+// PDF auto-ingest. When the user navigates directly to a PDF (Chrome's built-
+// in viewer, a raw .pdf URL, or any document with application/pdf MIME), the
+// regular HTML extraction has nothing to capture — the page DOM is just the
+// viewer chrome. Branch out to the dedicated PDF capture path and skip the
+// rest of the HTML pipeline (continuous monitoring, mutation observer, etc.)
+// since none of it is meaningful inside the PDF viewer.
+const isPdfPage = isPdfDocument()
+
+function runPdfCapture(): void {
+  if (!isLocalhost()) {
+    capturePdfDocument()
+  }
+}
+
+if (isPdfPage) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runPdfCapture)
+  } else {
+    runPdfCapture()
+  }
+} else if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     markUserActivity()
     startSearchResultHighlighting()
@@ -227,11 +248,14 @@ runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   }
   if (message.type === MESSAGE_TYPES.CAPTURE_CONTEXT_NOW) {
     markUserActivity()
-    if (!isLocalhost()) {
-      sendContextToBackground()
+    if (isLocalhost()) {
+      sendResponse({ success: false, reason: 'localhost detected' })
+    } else if (isPdfPage) {
+      capturePdfDocument()
       sendResponse({ success: true })
     } else {
-      sendResponse({ success: false, reason: 'localhost detected' })
+      sendContextToBackground()
+      sendResponse({ success: true })
     }
     return true
   }
@@ -260,18 +284,23 @@ runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   }
 })
 
-startContinuousMonitoring()
+// Continuous monitoring + DOM-mutation-driven re-capture only make sense for
+// HTML pages. The PDF viewer's DOM mutates as pages render but those mutations
+// have nothing to do with the underlying document text we already extracted.
+if (!isPdfPage) {
+  startContinuousMonitoring()
 
-new MutationObserver(async () => {
-  const url = location.href
-  const { updateLastContent } = await import('./monitoring/content-monitor')
-  if (url !== location.href) {
-    updateLastContent()
-    if (!isLocalhost()) {
-      setTimeout(sendContextToBackground, 1000)
+  new MutationObserver(async () => {
+    const url = location.href
+    const { updateLastContent } = await import('./monitoring/content-monitor')
+    if (url !== location.href) {
+      updateLastContent()
+      if (!isLocalhost()) {
+        setTimeout(sendContextToBackground, 1000)
+      }
     }
-  }
-}).observe(document, { subtree: true, childList: true })
+  }).observe(document, { subtree: true, childList: true })
+}
 
 document.addEventListener('visibilitychange', () => {
   setIsActive(!document.hidden)
@@ -352,5 +381,9 @@ document.addEventListener(
   true
 )
 
-initAIChatIntegration()
-initEmailDraftPill()
+// AI chat memory injection and the email draft pill operate on HTML pages
+// (chatgpt.com, claude.ai, gmail.com, etc.). Skip them inside the PDF viewer.
+if (!isPdfPage) {
+  initAIChatIntegration()
+  initEmailDraftPill()
+}

@@ -7,7 +7,7 @@ Written: April 1, 2026
 Cognia is an AI-native memory system designed to capture context, structure it into durable knowledge, and make that knowledge retrievable at the moment of work. The product already operates across two distinct but connected modes:
 
 - a personal memory layer that captures and organizes an individual user's browsing and research activity
-- a team workspace layer that ingests organizational documents and connected systems for shared retrieval, collaboration, and briefing
+- a team workspace layer that ingests organizational documents and connected systems for shared retrieval and collaboration
 
 At a product level, Cognia sits between note-taking, enterprise search, and knowledge management. It is not just a storage layer, and it is not just a chat interface. Its core proposition is that work context should be continuously captured, normalized, connected, and re-used.
 
@@ -18,7 +18,6 @@ The codebase shows a product with real operational depth:
 - semantic and hybrid retrieval
 - AI-generated answers with citations
 - a visual knowledge graph called the Memory Mesh
-- recurring personal and team briefings
 - workspace security controls such as 2FA enforcement, session timeout policies, and IP allowlists
 - a platform API for embedded document workflows and matter-aware search
 
@@ -66,15 +65,7 @@ The current workspace model is document-first. The repository also includes a cl
 
 ### 3. Intelligence Layer
 
-Cognia does not stop at retrieval. It generates higher-order outputs on top of captured knowledge:
-
-- personal daily digests
-- weekly synthesis briefings
-- trend alerts
-- team reports
-- evolving user profiles derived from memory history
-
-This moves the product from passive archive to active intelligence system.
+Cognia does not stop at retrieval. It builds higher-order context on top of captured knowledge through evolving user profiles derived from memory history — durable traits, interests, domains, and expertise that the retrieval layer uses to personalize search and answer generation. Scheduled synthesis outputs (daily digests, weekly briefings, trend alerts) are on the roadmap as a follow-up to the current profile-and-mesh substrate.
 
 ### 4. Integration Layer
 
@@ -163,7 +154,6 @@ flowchart LR
     QUEUE["Redis + BullMQ"]
     CW["Content Worker"]
     DW["Document Worker"]
-    BW["Briefing Worker"]
     PW["Profile Worker"]
   end
 
@@ -176,7 +166,6 @@ flowchart LR
   subgraph Outputs["Retrieval and Intelligence Outputs"]
     SEARCH["Search and Answer Layer"]
     MESH["Memory Mesh"]
-    BRIEF["Briefings"]
     PROFILE["User Profiles"]
     UX["Personal and Workspace UI"]
     ASSIST["AI Chat Injection and Email Drafting"]
@@ -267,18 +256,9 @@ The retrieval stack includes:
 
 For users, the result is straightforward: natural-language query in, grounded answer out. Under the hood, the system is materially more sophisticated than a simple embedding lookup.
 
-### Briefings and Profile Intelligence
+### Profile Intelligence
 
-Cognia continuously converts accumulated memory into synthesized outputs.
-
-Implemented briefing types include:
-
-- daily digest
-- weekly synthesis
-- trend alert
-- team report
-
-In parallel, the profile system extracts durable user traits, interests, domains, and expertise areas from memory history. This creates a feedback loop where the system can personalize future summaries and outputs using longitudinal context.
+The profile system extracts durable user traits, interests, domains, and expertise areas from memory history. This creates a feedback loop where the retrieval layer can personalize ranking, the answer layer can ground in user-specific context, and downstream synthesis features (digests, scheduled summaries) can be built on a known baseline of who the user actually is.
 
 ## Product Surfaces
 
@@ -365,7 +345,7 @@ That framing is defensible because the product already combines:
 - semantic retrieval
 - graph relationships
 - workflow injection
-- synthesized briefings
+- evolving user profiles
 - enterprise policy controls
 - platform APIs
 

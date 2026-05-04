@@ -86,13 +86,12 @@ export async function searchMemories(params: {
   } = params
 
   // Build a Prisma `where` fragment that scopes any DB read by active org.
-  // Note: explicit `null` is the personal-vault filter; `undefined` skips it.
-  const orgFilter: { organization_id: string | null } | object =
-    organizationId === null
-      ? { organization_id: null }
-      : typeof organizationId === 'string' && organizationId.length > 0
-        ? { organization_id: organizationId }
-        : {}
+  // Personal vault no longer exists; only a real org id filters, otherwise no
+  // org filter is applied (caller decides — typically the route layer scopes).
+  const orgFilter: { organization_id: string } | object =
+    typeof organizationId === 'string' && organizationId.length > 0
+      ? { organization_id: organizationId }
+      : {}
 
   const normalized = normalizeText(query)
 

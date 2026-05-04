@@ -38,6 +38,10 @@ import { LocalStorageController } from '../controller/storage/local-storage.cont
 export const routes = (app: Express) => {
   app.get('/api/storage/local', LocalStorageController.serveSignedFile)
   app.use('/api/memory', memoryRouter)
+  // Plural alias: client services (`/api/memories/v2`, `/api/memories/:id`,
+  // `/api/memories/bulk-delete`, `/api/memories/:id/restore`) hit this prefix.
+  // The extension still uses `/api/memory/process`, so both mounts stay.
+  app.use('/api/memories', memoryRouter)
   app.use('/api/content', contentRouter)
 
   app.use('/api/search', searchRouter)

@@ -12,14 +12,9 @@ export async function runTrashPurge(): Promise<{ deleted: number }> {
       user: {
         OR: [{ legal_hold_until: null }, { legal_hold_until: { lt: now } }],
       },
-      OR: [
-        { organization_id: null },
-        {
-          organization: {
-            OR: [{ legal_hold_until: null }, { legal_hold_until: { lt: now } }],
-          },
-        },
-      ],
+      organization: {
+        OR: [{ legal_hold_until: null }, { legal_hold_until: { lt: now } }],
+      },
     },
   })
   logger.log('[trash-purge] complete', {

@@ -356,10 +356,13 @@ process.on('unhandledRejection', (err: Error) => {
   if (errorMessage.includes('Command timed out') || errorMessage.includes('timeout')) {
     return
   }
-  logger.error('Unhandled Rejection! 💥 Shutting down...')
-  logger.error(err.name, err.message)
-  server.close(() => {
-    process.exit(1)
+  // Log loudly but do NOT exit. A long-running API should not die because one
+  // request handler forgot a try/catch — that turns a single 500 into a ~70s
+  // outage while Docker restarts the container. Real Prisma/programmer errors
+  // surface in logs; the global error handler middleware emits 500s for the
+  // user-facing request.
+  logger.error('[unhandled-rejection]', err.name, err.message, {
+    stack: err.stack,
   })
 })
 

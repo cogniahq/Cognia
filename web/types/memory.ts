@@ -6,10 +6,11 @@
  */
 export interface MemoryMeshNode {
   id: string;
-  type: "manual" | "browser" | "extension" | "reasoning";
+  type: "manual" | "browser" | "extension" | "reasoning" | string;
   label: string;
   x: number;
   y: number;
+  z?: number;
   memory_id: string;
   title?: string;
   preview?: string;
@@ -18,6 +19,8 @@ export interface MemoryMeshNode {
   importance_score?: number;
   hasEmbedding?: boolean;
   clusterId?: number;
+  source?: string;
+  url?: string;
   layout?: {
     isLatentSpace?: boolean;
     cluster?: string;

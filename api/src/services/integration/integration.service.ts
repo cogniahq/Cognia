@@ -12,6 +12,7 @@ import {
   IntegrationQueueManager,
   createTokenEncryptor,
   BoxPlugin,
+  GoogleCalendarPlugin,
   GoogleDrivePlugin,
   NotionPlugin,
   SlackPlugin,
@@ -153,6 +154,17 @@ export class IntegrationService {
         secondaryWebhookKey: process.env.BOX_SECONDARY_WEBHOOK_KEY,
       })
       logger.log('Registered Box plugin')
+    }
+
+    // Google Calendar — same env-var family the legacy googleCalendarService
+    // already uses, so a single OAuth credential covers both code paths.
+    if (process.env.GOOGLE_CALENDAR_CLIENT_ID && process.env.GOOGLE_CALENDAR_CLIENT_SECRET) {
+      PluginRegistry.register(GoogleCalendarPlugin, {
+        clientId: process.env.GOOGLE_CALENDAR_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_CALENDAR_REDIRECT_URI || '',
+      })
+      logger.log('Registered Google Calendar plugin')
     }
 
     // Add more plugins here as they're implemented

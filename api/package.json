@@ -66,7 +66,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.980.0",
     "@aws-sdk/s3-request-presigner": "^3.980.0",
-    "@cogniahq/integrations": "^0.4.2",
+    "@cogniahq/integrations": "^0.6.0",
     "@google/genai": "^1.24.0",
     "@node-saml/node-saml": "^5.1.0",
     "@prisma/client": "^6.19.0",

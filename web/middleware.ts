@@ -18,6 +18,11 @@ const PROTECTED_PREFIXES = [
   "/billing",
   "/org-admin",
   "/mesh-showcase",
+  // Onboarding requires a user — anonymous traffic must hit /login first
+  // before they can create a workspace or accept an invite. The existing
+  // isProtected check redirects to /login (not /onboarding/workspace) so
+  // there's no loop.
+  "/onboarding",
 ];
 
 function isProtected(pathname: string): boolean {

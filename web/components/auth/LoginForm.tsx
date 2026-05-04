@@ -7,9 +7,13 @@ import { cn } from "@/lib/utils";
 import {
   loginAction,
   registerAction,
+  requestMagicLinkAction,
   type ActionError,
+  type MagicLinkRequestState,
 } from "@/lib/auth/actions";
-import { OAuthButton } from "@/components/auth/OAuthButton";
+import { OAuthButton } from "./OAuthButton";
+import { SsoDiscovery } from "./SsoDiscovery";
+import type { SsoDiscoveryResult } from "@/services/identity.service";
 
 type Mode = "signin" | "signup";
 
@@ -112,10 +116,23 @@ export function LoginForm({ mode }: LoginFormProps) {
     FormData
   >(action, null);
 
+  const [magicState, magicFormAction, isMagicPending] = useActionState<
+    MagicLinkRequestState | null,
+    FormData
+  >(requestMagicLinkAction, null);
+
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  // Magic-link mode is sign-in only; signup always uses email/password so
+  // the user gets a chance to set a password they can re-use.
+  const [magicMode, setMagicMode] = useState(false);
+  const [ssoResult, setSsoResult] = useState<SsoDiscoveryResult | null>(null);
 
   const error = state?.error;
+  const showSsoCta =
+    !isRegister && ssoResult?.ssoAvailable && ssoResult.loginUrl;
+  const showMagicSent = magicMode && magicState?.ok === true;
 
   return (
     <div
@@ -200,7 +217,79 @@ export function LoginForm({ mode }: LoginFormProps) {
                 </p>
               </div>
 
-              <form className="space-y-5" action={formAction}>
+              {/* Magic-link mode renders its own simpler form. Confirmation
+                  state shows when the API accepted the request. */}
+              {magicMode && showMagicSent ? (
+                <div className="border border-gray-200 bg-gray-50 p-4 text-center">
+                  <div className="text-sm font-medium text-gray-900">
+                    Check your email
+                  </div>
+                  <p className="mt-1 text-xs text-gray-600">
+                    We sent a sign-in link to{" "}
+                    <span className="font-mono text-gray-900">
+                      {magicState?.email}
+                    </span>
+                    . The link expires in 15 minutes.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setMagicMode(false)}
+                    className="mt-3 text-xs font-medium text-gray-700 hover:text-gray-900 underline"
+                  >
+                    Back to sign in
+                  </button>
+                </div>
+              ) : magicMode ? (
+                <form className="space-y-5" action={magicFormAction}>
+                  <div>
+                    <label
+                      htmlFor="magic-email"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Email address
+                    </label>
+                    <input
+                      id="magic-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-none focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400 text-gray-900 text-sm"
+                      placeholder="name@company.com"
+                      disabled={isMagicPending}
+                    />
+                  </div>
+
+                  {magicState?.error && (
+                    <div className="bg-red-50 border border-red-200 p-3 rounded-none text-sm text-red-800">
+                      {magicState.error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isMagicPending || !email.trim()}
+                    className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md bg-gray-100 border border-gray-300 text-black hover:bg-black hover:text-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="relative z-10 text-sm font-medium">
+                      {isMagicPending ? "Sending link..." : "Send sign-in link"}
+                    </span>
+                  </button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setMagicMode(false)}
+                      className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+                    >
+                      Use password instead
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form className="space-y-5" action={formAction}>
                 <div>
                   <label
                     htmlFor="email"
@@ -214,6 +303,8 @@ export function LoginForm({ mode }: LoginFormProps) {
                     type="email"
                     autoComplete="email"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className={cn(
                       "block w-full px-4 py-3 border rounded-none transition-all duration-200",
                       "focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent",
@@ -225,6 +316,13 @@ export function LoginForm({ mode }: LoginFormProps) {
                     placeholder="name@company.com"
                     disabled={isPending}
                   />
+                  {!isRegister && (
+                    <SsoDiscovery
+                      email={email}
+                      onResult={setSsoResult}
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -426,29 +524,44 @@ export function LoginForm({ mode }: LoginFormProps) {
                   </button>
                 </div>
               </form>
+              )}
 
-              {/* OAuth — only on /login. /signup keeps the password-only path
-                  because the upstream OAuth callback implicitly registers if
-                  the email is new, and we don't want to duplicate flows.
-
-                  TODO(phase-5-followup): wire SSO discovery + magic-link
-                  toggle alongside these buttons. */}
-              {!isRegister && (
-                <>
-                  <div className="relative pt-2">
+              {/* OAuth providers + SSO CTA, rendered outside the ternary so
+                  they're available in both signin and signup modes — but
+                  hidden in magic-link mode. */}
+              {!magicMode && (
+                <div className="space-y-3 pt-4">
+                  <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-gray-200"></div>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white/80 text-gray-500">or</span>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-3 bg-white/80 text-gray-500 uppercase tracking-wider">
+                        or
+                      </span>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    <OAuthButton provider="google" />
-                    <OAuthButton provider="microsoft" />
-                  </div>
-                </>
+                  <OAuthButton provider="google" />
+                  <OAuthButton provider="microsoft" />
+                  {showSsoCta && ssoResult?.loginUrl && (
+                    <a
+                      href={ssoResult.loginUrl}
+                      className="block w-full text-center px-4 py-2 border border-gray-300 text-sm font-medium text-gray-700 hover:border-black hover:text-gray-900 transition-colors"
+                    >
+                      Continue with SSO ({ssoResult.orgName ?? "your org"})
+                    </a>
+                  )}
+                  <SsoDiscovery email={email} onResult={setSsoResult} />
+                  {!isRegister && (
+                    <button
+                      type="button"
+                      onClick={() => setMagicMode(true)}
+                      className="block w-full text-center text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+                    >
+                      Sign in with a magic link instead
+                    </button>
+                  )}
+                </div>
               )}
 
               <div className="relative pt-4">

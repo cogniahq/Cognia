@@ -12,6 +12,14 @@ const API_BASE = `${env.publicApiUrl}/api`;
 
 // ============ Types ============
 
+export interface SsoDiscoveryResult {
+  ssoAvailable: boolean;
+  enforced?: boolean;
+  orgSlug?: string;
+  orgName?: string;
+  loginUrl?: string;
+}
+
 export interface ScimToken {
   id: string;
   prefix: string;
@@ -28,6 +36,28 @@ export interface CreatedScimToken extends ScimToken {
 // ============ Service ============
 
 export const identityService = {
+  // ---- SSO discovery (login form) ----
+  // POST /sso/discover with { email }; the API returns whether the email's
+  // domain is mapped to an enterprise IdP. Used by SsoDiscovery on the
+  // login form to surface a "Continue with SSO" CTA when applicable.
+  discoverSso: async (email: string): Promise<SsoDiscoveryResult> => {
+    const res = await apiClient.post(`/sso/discover`, { email });
+    if (res.data?.success === false) {
+      throw new Error(res.data?.message || "SSO discovery failed");
+    }
+    // The API may wrap the payload in { success, data } or return raw.
+    const wrapped = res.data?.data as SsoDiscoveryResult | undefined;
+    return wrapped ?? (res.data as SsoDiscoveryResult);
+  },
+
+  // ---- Magic link request (login form) ----
+  sendMagicLink: async (email: string): Promise<void> => {
+    const res = await apiClient.post(`/auth/magic-link/send`, { email });
+    if (res.data?.success === false) {
+      throw new Error(res.data?.message || "Failed to send magic link");
+    }
+  },
+
   // ---- SCIM token management (org admin) ----
   listScimTokens: async (
     slug: string,

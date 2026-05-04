@@ -324,6 +324,54 @@ export async function verifyEmailAction(
 }
 
 // ===========================================================================
+// /api/auth/magic-link/send (request a fresh sign-in link)
+// ===========================================================================
+
+export interface MagicLinkRequestState {
+  ok?: true;
+  email?: string;
+  error?: string;
+}
+
+/**
+ * Sends a magic-link email. Returns a serialisable state shape so the
+ * calling form can render a "check your email" panel via useActionState.
+ *
+ * Distinct from magicLinkAction below, which CONSUMES a token from a
+ * link the user clicked in their inbox — opposite direction.
+ */
+export async function requestMagicLinkAction(
+  _prev: MagicLinkRequestState | null,
+  formData: FormData,
+): Promise<MagicLinkRequestState> {
+  const email = (formData.get("email") ?? "").toString().trim();
+  if (!email) {
+    return { error: "Enter your email to receive a sign-in link." };
+  }
+
+  const res = await fetch(`${env.publicApiUrl}/api/auth/magic-link/send`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({ email }),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    return {
+      error: await readErrorMessage(
+        res,
+        "Could not send the sign-in link. Try again in a moment.",
+      ),
+    };
+  }
+
+  return { ok: true, email };
+}
+
+// ===========================================================================
 // /api/auth/magic-link/consume
 // ===========================================================================
 

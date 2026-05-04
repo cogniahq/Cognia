@@ -1,7 +1,34 @@
 import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
 const SITE_URL = "https://cogniahq.tech";
+
+// next/font handles preload + self-host out of the box, replacing the
+// third-party @import url(...) lines that the Phase 0 globals.css carried
+// over from the Vite app.
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
+// TODO(phase-1): self-host PP Editorial via next/font/local once we have the
+// .woff2 file. For now it loads from a third-party CDN via @import in
+// globals.css; that keeps the editorial typeface working but pays a CORS +
+// preconnect tax. Bringing it in-tree is a one-line change once we have the
+// font file.
+
+// TODO(phase-1): replace web/public/og-default.png with a real 1200x630
+// image. The placeholder is a 1×1 PNG so previews render the alt text only.
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -71,7 +98,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
       <body>
         <script
           type="application/ld+json"

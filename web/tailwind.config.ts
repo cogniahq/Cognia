@@ -13,12 +13,14 @@ const config: Config = {
   prefix: "",
   theme: {
     fontFamily: {
-      // PP Editorial loaded via @import in globals.css for Phase 0.
-      // Phase 1 moves this to next/font.
+      // Inter + IBM Plex Mono loaded via next/font/google in app/layout.tsx
+      // (CSS variables --font-sans and --font-mono).
+      // PP Editorial still loads via @import in globals.css; see
+      // TODO(phase-1) in layout.tsx for the planned self-host migration.
       editorial: ['"PP Editorial New Ultralight"', "serif"],
-      mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
-      primary: ["Inter", "system-ui", "sans-serif"],
-      sans: ["Inter", "system-ui", "sans-serif"],
+      mono: ["var(--font-mono)", '"IBM Plex Mono"', "ui-monospace", "monospace"],
+      primary: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+      sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
     },
     container: {
       center: true,

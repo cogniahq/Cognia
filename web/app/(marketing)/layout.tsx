@@ -1,6 +1,8 @@
 /**
- * Marketing + legal pages. No app chrome, no auth requirement.
- * Phase 1 will populate this with the marketing Header + Footer.
+ * Marketing + legal pages. No app chrome, no auth requirement. Each page
+ * mounts its own Header + Footer (via LegalPageLayout for legal/security
+ * surfaces, inline for the landing) so the layout stays a thin
+ * background-color shell.
  */
 export default function MarketingLayout({
   children,

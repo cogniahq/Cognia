@@ -1,8 +1,8 @@
-import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Inter } from "next/font/google";
-import "./globals.css";
+import type { Metadata, Viewport } from "next"
+import { IBM_Plex_Mono, Inter } from "next/font/google"
+import "./globals.css"
 
-const SITE_URL = "https://cogniahq.tech";
+const SITE_URL = "https://cogniahq.tech"
 
 // next/font handles preload + self-host out of the box, replacing the
 // third-party @import url(...) lines that the Phase 0 globals.css carried
@@ -12,14 +12,14 @@ const inter = Inter({
   weight: ["200", "300", "400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
-});
+})
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700"],
   variable: "--font-mono",
   display: "swap",
-});
+})
 
 // TODO(phase-1): self-host PP Editorial via next/font/local once we have the
 // .woff2 file. For now it loads from a third-party CDN via @import in
@@ -76,13 +76,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
-};
+}
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#ffffff",
-};
+}
 
 const organizationLdJson = {
   "@context": "https://schema.org",
@@ -90,12 +90,12 @@ const organizationLdJson = {
   name: "Cognia",
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
-};
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
@@ -109,5 +109,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  );
+  )
 }

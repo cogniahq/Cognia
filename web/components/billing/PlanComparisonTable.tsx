@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import React from "react";
+import React from "react"
 
-import { PLAN_TIERS, type PlanId } from "@/data/plans";
+import { PLAN_TIERS, type PlanId } from "@/data/plans"
 
 interface PlanComparisonTableProps {
-  currentPlanId?: PlanId | string | null;
-  onUpgrade?: (planId: PlanId) => void;
-  pendingPlanId?: PlanId | null;
+  currentPlanId?: PlanId | string | null
+  onUpgrade?: (planId: PlanId) => void
+  pendingPlanId?: PlanId | null
 }
 
 export const PlanComparisonTable: React.FC<PlanComparisonTableProps> = ({
@@ -18,8 +18,8 @@ export const PlanComparisonTable: React.FC<PlanComparisonTableProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
       {PLAN_TIERS.map((tier) => {
-        const isCurrent = currentPlanId === tier.id;
-        const isPending = pendingPlanId === tier.id;
+        const isCurrent = currentPlanId === tier.id
+        const isPending = pendingPlanId === tier.id
         return (
           <div
             key={tier.id}
@@ -102,10 +102,10 @@ export const PlanComparisonTable: React.FC<PlanComparisonTableProps> = ({
               </button>
             )}
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}
 
-export default PlanComparisonTable;
+export default PlanComparisonTable

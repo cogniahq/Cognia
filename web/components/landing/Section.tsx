@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import React from "react";
+import React from "react"
 
-import { AnimatedSection } from "@/components/shared/site-motion";
+import { AnimatedSection } from "@/components/shared/site-motion"
 
 interface SectionProps {
-  children: React.ReactNode;
-  className?: string;
-  animate?: boolean;
+  children: React.ReactNode
+  className?: string
+  animate?: boolean
 }
 
 export const Section: React.FC<SectionProps> = ({
@@ -24,5 +24,5 @@ export const Section: React.FC<SectionProps> = ({
     >
       <div className="max-w-7xl mx-auto px-8">{children}</div>
     </AnimatedSection>
-  );
-};
+  )
+}

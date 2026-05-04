@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import React from "react";
+import type { Metadata } from "next"
+import Link from "next/link"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
 export const metadata: Metadata = {
   title: "Security",
@@ -15,12 +15,12 @@ export const metadata: Metadata = {
       "Encryption, access controls, audit logs, and incident response — how Cognia protects your team's memories.",
     url: "/security",
   },
-};
+}
 
 const Section: React.FC<{
-  id: string;
-  title: string;
-  children: React.ReactNode;
+  id: string
+  title: string
+  children: React.ReactNode
 }> = ({ id, title, children }) => (
   <section id={id} className="mt-10 first:mt-0">
     <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
@@ -30,7 +30,7 @@ const Section: React.FC<{
       {children}
     </div>
   </section>
-);
+)
 
 export default function SecurityPage() {
   return (
@@ -172,5 +172,5 @@ export default function SecurityPage() {
         </p>
       </Section>
     </LegalPageLayout>
-  );
+  )
 }

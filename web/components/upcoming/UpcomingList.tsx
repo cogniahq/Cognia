@@ -1,28 +1,28 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
-import { calendarService } from "@/services/calendar.service";
+import { calendarService } from "@/services/calendar.service"
 import {
   todosService,
   type MemoryTodo,
   type TodoStatus,
-} from "@/services/todos.service";
+} from "@/services/todos.service"
 
-import { TodoItemCard } from "./TodoItemCard";
+import { TodoItemCard } from "./TodoItemCard"
 
 interface UpcomingListProps {
-  organizationId: string;
+  organizationId: string
   /** Initial todos pre-fetched on the server. */
-  initialTodos: MemoryTodo[];
+  initialTodos: MemoryTodo[]
   /** Cursor for the next page; null when initialTodos exhausted the list. */
-  initialCursor: string | null;
-  allMembers?: boolean;
-  initialStatus?: TodoStatus | "ALL";
+  initialCursor: string | null
+  allMembers?: boolean
+  initialStatus?: TodoStatus | "ALL"
 }
 
-type Bucket = "overdue" | "today" | "week" | "later" | "noDate";
+type Bucket = "overdue" | "today" | "week" | "later" | "noDate"
 
 const BUCKET_LABELS: Record<Bucket, string> = {
   overdue: "Overdue",
@@ -30,31 +30,31 @@ const BUCKET_LABELS: Record<Bucket, string> = {
   week: "This week",
   later: "Later",
   noDate: "No date",
-};
+}
 
-const BUCKET_ORDER: Bucket[] = ["overdue", "today", "week", "later", "noDate"];
+const BUCKET_ORDER: Bucket[] = ["overdue", "today", "week", "later", "noDate"]
 
 function bucketOf(todo: MemoryTodo, now: Date): Bucket {
-  if (!todo.due_at) return "noDate";
-  const due = new Date(todo.due_at);
-  if (Number.isNaN(due.getTime())) return "noDate";
+  if (!todo.due_at) return "noDate"
+  const due = new Date(todo.due_at)
+  if (Number.isNaN(due.getTime())) return "noDate"
 
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
-  const endOfWeek = new Date(startOfToday);
-  endOfWeek.setDate(endOfWeek.getDate() + 7);
+  const startOfToday = new Date(now)
+  startOfToday.setHours(0, 0, 0, 0)
+  const startOfTomorrow = new Date(startOfToday)
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1)
+  const endOfWeek = new Date(startOfToday)
+  endOfWeek.setDate(endOfWeek.getDate() + 7)
 
-  if (due < startOfToday) return "overdue";
-  if (due < startOfTomorrow) return "today";
-  if (due < endOfWeek) return "week";
-  return "later";
+  if (due < startOfToday) return "overdue"
+  if (due < startOfTomorrow) return "today"
+  if (due < endOfWeek) return "week"
+  return "later"
 }
 
 function groupTodos(
   todos: MemoryTodo[],
-  now: Date,
+  now: Date
 ): Record<Bucket, MemoryTodo[]> {
   const buckets: Record<Bucket, MemoryTodo[]> = {
     overdue: [],
@@ -62,9 +62,9 @@ function groupTodos(
     week: [],
     later: [],
     noDate: [],
-  };
-  for (const t of todos) buckets[bucketOf(t, now)].push(t);
-  return buckets;
+  }
+  for (const t of todos) buckets[bucketOf(t, now)].push(t)
+  return buckets
 }
 
 export function UpcomingList({
@@ -74,76 +74,76 @@ export function UpcomingList({
   allMembers = false,
   initialStatus = "PENDING",
 }: UpcomingListProps) {
-  const [todos, setTodos] = useState<MemoryTodo[]>(initialTodos);
-  const [nextCursor, setNextCursor] = useState<string | null>(initialCursor);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<TodoStatus | "ALL">(initialStatus);
-  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [todos, setTodos] = useState<MemoryTodo[]>(initialTodos)
+  const [nextCursor, setNextCursor] = useState<string | null>(initialCursor)
+  const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState<TodoStatus | "ALL">(initialStatus)
+  const [calendarConnected, setCalendarConnected] = useState(false)
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     calendarService
       .status()
       .then((res) => {
-        if (!cancelled) setCalendarConnected(res.data.connected);
+        if (!cancelled) setCalendarConnected(res.data.connected)
       })
       .catch(() => {
-        if (!cancelled) setCalendarConnected(false);
-      });
+        if (!cancelled) setCalendarConnected(false)
+      })
     return () => {
-      cancelled = true;
-    };
-  }, []);
+      cancelled = true
+    }
+  }, [])
 
   const load = useCallback(
     async (cursor?: string) => {
-      const setBusy = cursor ? setLoadingMore : setLoading;
-      setBusy(true);
-      setError(null);
+      const setBusy = cursor ? setLoadingMore : setLoading
+      setBusy(true)
+      setError(null)
       try {
         const params = {
           organizationId,
           allMembers,
           cursor,
           ...(status !== "ALL" ? { status: status as TodoStatus } : {}),
-        };
-        const res = await todosService.list(params);
-        setTodos((prev) => (cursor ? [...prev, ...res.data] : res.data));
-        setNextCursor(res.nextCursor);
+        }
+        const res = await todosService.list(params)
+        setTodos((prev) => (cursor ? [...prev, ...res.data] : res.data))
+        setNextCursor(res.nextCursor)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load todos");
+        setError(err instanceof Error ? err.message : "Failed to load todos")
       } finally {
-        setBusy(false);
+        setBusy(false)
       }
     },
-    [organizationId, allMembers, status],
-  );
+    [organizationId, allMembers, status]
+  )
 
   // Re-fetch from page 1 when the status filter changes; the SSR'd initial
   // page is for the default PENDING filter.
-  const initialStatusRef = useState(initialStatus)[0];
+  const initialStatusRef = useState(initialStatus)[0]
   useEffect(() => {
     if (status !== initialStatusRef) {
-      load();
+      load()
     }
-  }, [status, load, initialStatusRef]);
+  }, [status, load, initialStatusRef])
 
   const updateOne = useCallback((next: MemoryTodo) => {
-    setTodos((prev) => prev.map((t) => (t.id === next.id ? next : t)));
-  }, []);
+    setTodos((prev) => prev.map((t) => (t.id === next.id ? next : t)))
+  }, [])
   const removeOne = useCallback((id: string) => {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+    setTodos((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
   const requestCalendarConnect = useCallback(() => {
     if (typeof window !== "undefined") {
-      window.location.href = "/integrations";
+      window.location.href = "/integrations"
     }
-  }, []);
+  }, [])
 
-  const buckets = groupTodos(todos, new Date());
+  const buckets = groupTodos(todos, new Date())
 
   return (
     <div className="space-y-5">
@@ -189,8 +189,8 @@ export function UpcomingList({
         </div>
       ) : (
         BUCKET_ORDER.map((b) => {
-          const items = buckets[b];
-          if (items.length === 0) return null;
+          const items = buckets[b]
+          if (items.length === 0) return null
           return (
             <section key={b} className="space-y-1">
               <h3 className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.18em] px-1">
@@ -210,7 +210,7 @@ export function UpcomingList({
                 ))}
               </div>
             </section>
-          );
+          )
         })
       )}
 
@@ -227,5 +227,5 @@ export function UpcomingList({
         </div>
       )}
     </div>
-  );
+  )
 }

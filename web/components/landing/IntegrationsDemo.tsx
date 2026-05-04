@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react"
 
-import { Section } from "./Section";
+import { Section } from "./Section"
 
 // Integration logos as inline SVGs (from integrations.page.tsx)
 const IntegrationLogos: Record<string, React.ReactNode> = {
@@ -52,7 +52,7 @@ const IntegrationLogos: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-};
+}
 
 const integrations = [
   {
@@ -79,95 +79,95 @@ const integrations = [
     description: "Sync enterprise files",
     syncItems: ["Contracts", "Reports", "Archives"],
   },
-];
+]
 
 export const IntegrationsDemo: React.FC = () => {
-  const [isInView, setIsInView] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
+  const [isInView, setIsInView] = useState(false)
+  const [activeStep, setActiveStep] = useState(0)
   const [connectedIntegrations, setConnectedIntegrations] = useState<
     Set<string>
-  >(new Set());
+  >(new Set())
   const [syncingIntegration, setSyncingIntegration] = useState<string | null>(
-    null,
-  );
-  const containerRef = useRef<HTMLDivElement>(null);
+    null
+  )
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isInView) {
-            setIsInView(true);
+            setIsInView(true)
           }
-        });
+        })
       },
-      { threshold: 0.2 },
-    );
+      { threshold: 0.2 }
+    )
 
-    const currentContainer = containerRef.current;
+    const currentContainer = containerRef.current
     if (currentContainer) {
-      observer.observe(currentContainer);
+      observer.observe(currentContainer)
     }
 
     return () => {
       if (currentContainer) {
-        observer.unobserve(currentContainer);
+        observer.unobserve(currentContainer)
       }
-    };
-  }, [isInView]);
+    }
+  }, [isInView])
 
   useEffect(() => {
-    if (!isInView) return;
+    if (!isInView) return
 
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = []
 
     // Step 1: First integration connects
     timers.push(
       setTimeout(() => {
-        setActiveStep(1);
-        setSyncingIntegration("slack");
-      }, 600),
-    );
+        setActiveStep(1)
+        setSyncingIntegration("slack")
+      }, 600)
+    )
 
     timers.push(
       setTimeout(() => {
-        setConnectedIntegrations(new Set(["slack"]));
-        setSyncingIntegration("notion");
-      }, 1400),
-    );
+        setConnectedIntegrations(new Set(["slack"]))
+        setSyncingIntegration("notion")
+      }, 1400)
+    )
 
     // Step 2: Second integration
     timers.push(
       setTimeout(() => {
-        setActiveStep(2);
-        setConnectedIntegrations(new Set(["slack", "notion"]));
-        setSyncingIntegration("google_drive");
-      }, 2200),
-    );
+        setActiveStep(2)
+        setConnectedIntegrations(new Set(["slack", "notion"]))
+        setSyncingIntegration("google_drive")
+      }, 2200)
+    )
 
     // Step 3: Third integration
     timers.push(
       setTimeout(() => {
-        setActiveStep(3);
-        setConnectedIntegrations(new Set(["slack", "notion", "google_drive"]));
-        setSyncingIntegration("box");
-      }, 3000),
-    );
+        setActiveStep(3)
+        setConnectedIntegrations(new Set(["slack", "notion", "google_drive"]))
+        setSyncingIntegration("box")
+      }, 3000)
+    )
 
     // All connected
     timers.push(
       setTimeout(() => {
         setConnectedIntegrations(
-          new Set(["slack", "notion", "google_drive", "box"]),
-        );
-        setSyncingIntegration(null);
-      }, 3800),
-    );
+          new Set(["slack", "notion", "google_drive", "box"])
+        )
+        setSyncingIntegration(null)
+      }, 3800)
+    )
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-    };
-  }, [isInView]);
+      timers.forEach((timer) => clearTimeout(timer))
+    }
+  }, [isInView])
 
   const flowSteps = [
     {
@@ -185,7 +185,7 @@ export const IntegrationsDemo: React.FC = () => {
       label: "Search",
       description: "Find anything across all connected sources",
     },
-  ];
+  ]
 
   return (
     <Section className="bg-transparent py-12 sm:py-16 lg:py-20 xl:py-24">
@@ -233,7 +233,7 @@ export const IntegrationsDemo: React.FC = () => {
           {/* Flow Steps */}
           <div className="lg:col-span-1 space-y-4">
             {flowSteps.map((item, index) => {
-              const isActive = activeStep >= item.step;
+              const isActive = activeStep >= item.step
               return (
                 <div key={item.step} className="flex gap-4">
                   <div className="flex flex-col items-center">
@@ -271,7 +271,7 @@ export const IntegrationsDemo: React.FC = () => {
                     </p>
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
 
@@ -279,8 +279,8 @@ export const IntegrationsDemo: React.FC = () => {
           <div className="lg:col-span-2 relative rounded-2xl border border-gray-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)] overflow-hidden p-4 sm:p-6">
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {integrations.map((integration, index) => {
-                const isConnected = connectedIntegrations.has(integration.id);
-                const isSyncing = syncingIntegration === integration.id;
+                const isConnected = connectedIntegrations.has(integration.id)
+                const isSyncing = syncingIntegration === integration.id
 
                 return (
                   <div
@@ -379,7 +379,7 @@ export const IntegrationsDemo: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                );
+                )
               })}
             </div>
 
@@ -407,5 +407,5 @@ export const IntegrationsDemo: React.FC = () => {
         </div>
       </div>
     </Section>
-  );
-};
+  )
+}

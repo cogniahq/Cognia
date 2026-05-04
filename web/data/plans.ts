@@ -7,19 +7,19 @@
 // RAZORPAY_PLAN_ENTERPRISE) and surfaced to the client via
 // NEXT_PUBLIC_RAZORPAY_PLAN_PRO.
 
-export type PlanId = "free" | "pro" | "enterprise";
+export type PlanId = "free" | "pro" | "enterprise"
 
 export interface PlanTier {
-  id: PlanId;
-  displayName: string;
-  priceMonthlyCents: number | null;
-  priceMonthlyDisplay: string;
-  maxSeats: number;
-  maxMemories: number;
-  maxIntegrations: number;
-  features: string[];
-  cta: string;
-  highlighted?: boolean;
+  id: PlanId
+  displayName: string
+  priceMonthlyCents: number | null
+  priceMonthlyDisplay: string
+  maxSeats: number
+  maxMemories: number
+  maxIntegrations: number
+  features: string[]
+  cta: string
+  highlighted?: boolean
 }
 
 export const PLAN_TIERS: PlanTier[] = [
@@ -82,13 +82,13 @@ export const PLAN_TIERS: PlanTier[] = [
     ],
     cta: "Contact sales",
   },
-];
+]
 
 export function formatLimit(value: number): string {
-  return value === -1 ? "Unlimited" : value.toLocaleString();
+  return value === -1 ? "Unlimited" : value.toLocaleString()
 }
 
 export function getPlanTier(id: string | null | undefined): PlanTier | null {
-  if (!id) return null;
-  return PLAN_TIERS.find((t) => t.id === id) ?? null;
+  if (!id) return null
+  return PLAN_TIERS.find((t) => t.id === id) ?? null
 }

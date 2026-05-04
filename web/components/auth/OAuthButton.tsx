@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { cn } from "@/lib/utils";
-import { env } from "@/lib/env";
+import { cn } from "@/lib/utils"
+import { env } from "@/lib/env"
 
 /**
  * OAuth sign-in button.
@@ -18,10 +18,10 @@ import { env } from "@/lib/env";
  */
 
 interface OAuthButtonProps {
-  provider: "google" | "microsoft";
-  returnTo?: string;
-  disabled?: boolean;
-  className?: string;
+  provider: "google" | "microsoft"
+  returnTo?: string
+  disabled?: boolean
+  className?: string
 }
 
 const GoogleLogo = () => (
@@ -43,7 +43,7 @@ const GoogleLogo = () => (
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
     />
   </svg>
-);
+)
 
 const MicrosoftLogo = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -52,7 +52,7 @@ const MicrosoftLogo = () => (
     <path fill="#00A4EF" d="M1 13h10v10H1z" />
     <path fill="#FFB900" d="M13 13h10v10H13z" />
   </svg>
-);
+)
 
 export function OAuthButton({
   provider,
@@ -61,18 +61,16 @@ export function OAuthButton({
   className,
 }: OAuthButtonProps) {
   const label =
-    provider === "google"
-      ? "Continue with Google"
-      : "Continue with Microsoft";
+    provider === "google" ? "Continue with Google" : "Continue with Microsoft"
 
   const handleClick = () => {
     const target =
       returnTo ??
-      `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const url = new URL(`${env.publicApiUrl}/api/auth/oauth/${provider}/start`);
-    if (target) url.searchParams.set("returnTo", target);
-    window.location.href = url.toString();
-  };
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    const url = new URL(`${env.publicApiUrl}/api/auth/oauth/${provider}/start`)
+    if (target) url.searchParams.set("returnTo", target)
+    window.location.href = url.toString()
+  }
 
   return (
     <button
@@ -84,13 +82,13 @@ export function OAuthButton({
         "w-full inline-flex items-center justify-center gap-3 rounded-none border border-gray-300",
         "bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors",
         "hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed",
-        className,
+        className
       )}
     >
       {provider === "google" ? <GoogleLogo /> : <MicrosoftLogo />}
       <span>{label}</span>
     </button>
-  );
+  )
 }
 
-export default OAuthButton;
+export default OAuthButton

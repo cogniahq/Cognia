@@ -19,7 +19,7 @@ const nextConfig = {
       },
       // /memories/v2 specifically redirects too — captured by the wildcard
       // above but keeping a comment for searchability.
-    ];
+    ]
   },
   // Allow next/image to optimize remote assets we need.
   images: {
@@ -30,6 +30,6 @@ const nextConfig = {
   },
   // Strip the X-Powered-By header.
   poweredByHeader: false,
-};
+}
 
-export default nextConfig;
+export default nextConfig

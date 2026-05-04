@@ -1,24 +1,24 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import type { Metadata } from "next"
+import Link from "next/link"
 
-import { Footer } from "@/components/landing/Footer";
-import { Header } from "@/components/landing/Header";
+import { Footer } from "@/components/landing/Footer"
+import { Header } from "@/components/landing/Header"
 
-const SITE_URL = "https://cogniahq.tech";
+const SITE_URL = "https://cogniahq.tech"
 
 interface Tier {
-  id: "free" | "pro" | "enterprise";
-  name: string;
-  price: string;
-  cadence?: string;
-  blurb: string;
-  cta: string;
-  ctaHref: string;
-  features: string[];
-  highlighted?: boolean;
+  id: "free" | "pro" | "enterprise"
+  name: string
+  price: string
+  cadence?: string
+  blurb: string
+  cta: string
+  ctaHref: string
+  features: string[]
+  highlighted?: boolean
   // Numeric monthly USD price for the structured-data Offer. null = "Talk to
   // sales" tiers, which we surface as a separate Quote/contact link.
-  priceMonthlyUsd: number | null;
+  priceMonthlyUsd: number | null
 }
 
 const TIERS: Tier[] = [
@@ -75,7 +75,7 @@ const TIERS: Tier[] = [
     ],
     priceMonthlyUsd: null,
   },
-];
+]
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
       "Start free, scale to Pro for small teams, and upgrade to Enterprise when compliance, SSO, and audit logs enter the conversation.",
     url: "/pricing",
   },
-};
+}
 
 /**
  * One Product per tier, each with a single Offer. AggregateOffer would be
@@ -119,8 +119,8 @@ const productLdJson = TIERS.filter((t) => t.priceMonthlyUsd !== null).map(
         unitText: tier.id === "pro" ? "MONTH" : "FOREVER",
       },
     },
-  }),
-);
+  })
+)
 
 export default function PricingPage() {
   return (
@@ -162,17 +162,17 @@ export default function PricingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
               {TIERS.map((tier) => {
-                const isMail = tier.ctaHref.startsWith("mailto:");
+                const isMail = tier.ctaHref.startsWith("mailto:")
                 const cardClasses = `flex flex-col border bg-white p-6 sm:p-8 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md ${
                   tier.highlighted
                     ? "border-gray-900 ring-1 ring-gray-900/10"
                     : "border-gray-200 hover:border-gray-300"
-                }`;
+                }`
                 const ctaClasses = `w-full px-4 py-2.5 text-sm font-medium transition-colors text-center block ${
                   tier.highlighted
                     ? "bg-gray-900 text-white hover:bg-black"
                     : "border border-gray-300 text-gray-900 hover:border-black hover:bg-gray-50"
-                }`;
+                }`
 
                 return (
                   <div key={tier.id} className={cardClasses}>
@@ -236,7 +236,7 @@ export default function PricingPage() {
                       </Link>
                     )}
                   </div>
-                );
+                )
               })}
             </div>
 
@@ -256,5 +256,5 @@ export default function PricingPage() {
         <Footer />
       </div>
     </>
-  );
+  )
 }

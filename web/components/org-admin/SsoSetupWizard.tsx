@@ -1,44 +1,44 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo, useState } from "react"
+import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
-import { identityService } from "@/services/identity.service";
-import { cn } from "@/lib/utils";
+import { identityService } from "@/services/identity.service"
+import { cn } from "@/lib/utils"
 
-type Provider = "SAML" | "OIDC";
-type OrgRole = "ADMIN" | "EDITOR" | "VIEWER";
+type Provider = "SAML" | "OIDC"
+type OrgRole = "ADMIN" | "EDITOR" | "VIEWER"
 
 interface RoleMapping {
-  group: string;
-  role: OrgRole;
+  group: string
+  role: OrgRole
 }
 
 export interface SsoSetupValues {
-  provider: Provider | null;
+  provider: Provider | null
   // SAML
-  samlEntityId: string;
-  samlSsoUrl: string;
-  samlCertificate: string;
+  samlEntityId: string
+  samlSsoUrl: string
+  samlCertificate: string
   // OIDC
-  oidcIssuer: string;
-  oidcClientId: string;
-  oidcClientSecret: string;
+  oidcIssuer: string
+  oidcClientId: string
+  oidcClientSecret: string
   // Attribute mapping
-  attrEmail: string;
-  attrGroups: string;
+  attrEmail: string
+  attrGroups: string
   // Role mappings
-  roleMappings: RoleMapping[];
+  roleMappings: RoleMapping[]
   // Domains + enforcement
-  ssoEmailDomains: string[];
-  ssoEnforced: boolean;
+  ssoEmailDomains: string[]
+  ssoEnforced: boolean
 }
 
 export interface SsoSetupWizardProps {
-  slug: string;
-  initial?: Partial<SsoSetupValues>;
-  onSaved?: (values: SsoSetupValues) => void;
+  slug: string
+  initial?: Partial<SsoSetupValues>
+  onSaved?: (values: SsoSetupValues) => void
 }
 
 const STEPS = [
@@ -47,7 +47,7 @@ const STEPS = [
   { id: 3, label: "Attributes" },
   { id: 4, label: "Roles" },
   { id: 5, label: "Domains" },
-] as const;
+] as const
 
 const DEFAULT_VALUES: SsoSetupValues = {
   provider: null,
@@ -62,16 +62,16 @@ const DEFAULT_VALUES: SsoSetupValues = {
   roleMappings: [],
   ssoEmailDomains: [],
   ssoEnforced: false,
-};
+}
 
 function StepHeader({
   step,
   total,
   label,
 }: {
-  step: number;
-  total: number;
-  label: string;
+  step: number
+  total: number
+  label: string
 }) {
   return (
     <div className="flex items-center justify-between">
@@ -80,15 +80,15 @@ function StepHeader({
       </div>
       <div className="text-sm font-medium text-gray-900">{label}</div>
     </div>
-  );
+  )
 }
 
 function FieldLabel({
   htmlFor,
   children,
 }: {
-  htmlFor?: string;
-  children: React.ReactNode;
+  htmlFor?: string
+  children: React.ReactNode
 }) {
   return (
     <label
@@ -97,11 +97,11 @@ function FieldLabel({
     >
       {children}
     </label>
-  );
+  )
 }
 
 const inputClass =
-  "block w-full px-3 py-2 border border-gray-300 rounded-none text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400";
+  "block w-full px-3 py-2 border border-gray-300 rounded-none text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400"
 
 export function SsoSetupWizard({
   slug,
@@ -116,80 +116,80 @@ export function SsoSetupWizard({
         ? initial.roleMappings
         : DEFAULT_VALUES.roleMappings,
     ssoEmailDomains: initial?.ssoEmailDomains ?? [],
-  }));
-  const [step, setStep] = useState(1);
-  const [domainInput, setDomainInput] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  }))
+  const [step, setStep] = useState(1)
+  const [domainInput, setDomainInput] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const update = <K extends keyof SsoSetupValues>(
     key: K,
-    value: SsoSetupValues[K],
-  ) => setValues((v) => ({ ...v, [key]: value }));
+    value: SsoSetupValues[K]
+  ) => setValues((v) => ({ ...v, [key]: value }))
 
   const canAdvance = useMemo(() => {
     switch (step) {
       case 1:
-        return !!values.provider;
+        return !!values.provider
       case 2:
         if (values.provider === "SAML") {
           return !!(
             values.samlEntityId.trim() &&
             values.samlSsoUrl.trim() &&
             values.samlCertificate.trim()
-          );
+          )
         }
         if (values.provider === "OIDC") {
           return !!(
             values.oidcIssuer.trim() &&
             values.oidcClientId.trim() &&
             values.oidcClientSecret.trim()
-          );
+          )
         }
-        return false;
+        return false
       case 3:
-        return !!(values.attrEmail.trim() && values.attrGroups.trim());
+        return !!(values.attrEmail.trim() && values.attrGroups.trim())
       case 4:
-        return true;
+        return true
       case 5:
-        return true;
+        return true
       default:
-        return false;
+        return false
     }
-  }, [step, values]);
+  }, [step, values])
 
   const addRoleMapping = () =>
     update("roleMappings", [
       ...values.roleMappings,
       { group: "", role: "VIEWER" },
-    ]);
+    ])
   const updateRoleMapping = (idx: number, patch: Partial<RoleMapping>) => {
-    const next = values.roleMappings.slice();
-    next[idx] = { ...next[idx], ...patch };
-    update("roleMappings", next);
-  };
+    const next = values.roleMappings.slice()
+    next[idx] = { ...next[idx], ...patch }
+    update("roleMappings", next)
+  }
   const removeRoleMapping = (idx: number) => {
-    const next = values.roleMappings.slice();
-    next.splice(idx, 1);
-    update("roleMappings", next);
-  };
+    const next = values.roleMappings.slice()
+    next.splice(idx, 1)
+    update("roleMappings", next)
+  }
 
   const addDomain = () => {
-    const domain = domainInput.trim().toLowerCase();
-    if (!domain) return;
+    const domain = domainInput.trim().toLowerCase()
+    if (!domain) return
     if (values.ssoEmailDomains.includes(domain)) {
-      setDomainInput("");
-      return;
+      setDomainInput("")
+      return
     }
-    update("ssoEmailDomains", [...values.ssoEmailDomains, domain]);
-    setDomainInput("");
-  };
+    update("ssoEmailDomains", [...values.ssoEmailDomains, domain])
+    setDomainInput("")
+  }
 
   const removeDomain = (domain: string) =>
     update(
       "ssoEmailDomains",
-      values.ssoEmailDomains.filter((d) => d !== domain),
-    );
+      values.ssoEmailDomains.filter((d) => d !== domain)
+    )
 
   const buildPayload = () => {
     const base: Record<string, unknown> = {
@@ -201,34 +201,34 @@ export function SsoSetupWizard({
         groups: values.attrGroups,
       },
       sso_role_mappings: values.roleMappings.filter((m) => m.group.trim()),
-    };
-    if (values.provider === "SAML") {
-      base.sso_saml_entity_id = values.samlEntityId;
-      base.sso_saml_sso_url = values.samlSsoUrl;
-      base.sso_saml_certificate = values.samlCertificate;
-    } else if (values.provider === "OIDC") {
-      base.sso_oidc_issuer = values.oidcIssuer;
-      base.sso_oidc_client_id = values.oidcClientId;
-      base.sso_oidc_client_secret = values.oidcClientSecret;
     }
-    return base;
-  };
+    if (values.provider === "SAML") {
+      base.sso_saml_entity_id = values.samlEntityId
+      base.sso_saml_sso_url = values.samlSsoUrl
+      base.sso_saml_certificate = values.samlCertificate
+    } else if (values.provider === "OIDC") {
+      base.sso_oidc_issuer = values.oidcIssuer
+      base.sso_oidc_client_id = values.oidcClientId
+      base.sso_oidc_client_secret = values.oidcClientSecret
+    }
+    return base
+  }
 
   const handleSave = async () => {
-    setIsSaving(true);
-    setSaveError(null);
+    setIsSaving(true)
+    setSaveError(null)
     try {
-      await identityService.updateSso(slug, buildPayload());
-      toast.success("SSO configuration saved");
-      onSaved?.(values);
+      await identityService.updateSso(slug, buildPayload())
+      toast.success("SSO configuration saved")
+      onSaved?.(values)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to save SSO";
-      setSaveError(msg);
-      toast.error(msg);
+      const msg = err instanceof Error ? err.message : "Failed to save SSO"
+      setSaveError(msg)
+      toast.error(msg)
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -245,7 +245,7 @@ export function SsoSetupWizard({
             key={s.id}
             className={cn(
               "flex-1 h-1.5 rounded-full transition-colors",
-              s.id <= step ? "bg-gray-900" : "bg-gray-200",
+              s.id <= step ? "bg-gray-900" : "bg-gray-200"
             )}
           />
         ))}
@@ -267,7 +267,7 @@ export function SsoSetupWizard({
                   "border p-4 text-left transition-colors",
                   values.provider === p
                     ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-400",
+                    : "border-gray-200 hover:border-gray-400"
                 )}
               >
                 <div className="text-sm font-medium text-gray-900">{p}</div>
@@ -488,8 +488,8 @@ export function SsoSetupWizard({
                 onChange={(e) => setDomainInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    e.preventDefault();
-                    addDomain();
+                    e.preventDefault()
+                    addDomain()
                   }
                 }}
                 placeholder="example.com"
@@ -581,7 +581,7 @@ export function SsoSetupWizard({
         )}
       </div>
     </div>
-  );
+  )
 }
 
-export default SsoSetupWizard;
+export default SsoSetupWizard

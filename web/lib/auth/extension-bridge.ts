@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Browser-extension auth bridge. Mirrors
@@ -17,23 +17,23 @@
  */
 
 interface ChromeRuntimeApi {
-  id?: string;
+  id?: string
   sendMessage?: (
     extensionId: string,
-    message: { type: string; userId?: string | null; token?: string | null },
-  ) => Promise<unknown>;
+    message: { type: string; userId?: string | null; token?: string | null }
+  ) => Promise<unknown>
 }
 
 interface WindowWithChrome extends Window {
-  chrome?: { runtime?: ChromeRuntimeApi };
+  chrome?: { runtime?: ChromeRuntimeApi }
 }
 
 function getChromeRuntime(): ChromeRuntimeApi | null {
-  if (typeof window === "undefined") return null;
-  const w = window as WindowWithChrome;
-  const runtime = w.chrome?.runtime;
-  if (!runtime?.id || typeof runtime.sendMessage !== "function") return null;
-  return runtime;
+  if (typeof window === "undefined") return null
+  const w = window as WindowWithChrome
+  const runtime = w.chrome?.runtime
+  if (!runtime?.id || typeof runtime.sendMessage !== "function") return null
+  return runtime
 }
 
 /**
@@ -44,8 +44,8 @@ function getChromeRuntime(): ChromeRuntimeApi | null {
  * to reading the cookie when the token field is absent.
  */
 export function syncSessionToExtension(userId: string): void {
-  const runtime = getChromeRuntime();
-  if (!runtime?.sendMessage || !runtime.id) return;
+  const runtime = getChromeRuntime()
+  if (!runtime?.sendMessage || !runtime.id) return
   try {
     runtime
       .sendMessage(runtime.id, {
@@ -55,7 +55,7 @@ export function syncSessionToExtension(userId: string): void {
       })
       .catch(() => {
         // Extension might not be ready or installed for this id; ignore.
-      });
+      })
   } catch {
     // Throwing during sendMessage is rare but possible (e.g., when the
     // extension was uninstalled mid-session). Swallow — there's nothing
@@ -70,8 +70,8 @@ export function syncSessionToExtension(userId: string): void {
  * cookie-expiry check.
  */
 export function clearExtensionSession(): void {
-  const runtime = getChromeRuntime();
-  if (!runtime?.sendMessage || !runtime.id) return;
+  const runtime = getChromeRuntime()
+  if (!runtime?.sendMessage || !runtime.id) return
   try {
     runtime
       .sendMessage(runtime.id, {
@@ -81,7 +81,7 @@ export function clearExtensionSession(): void {
       })
       .catch(() => {
         // ignore
-      });
+      })
   } catch {
     // ignore
   }

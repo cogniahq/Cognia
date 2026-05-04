@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import React, { memo, useMemo } from "react";
-import { Line } from "@react-three/drei";
-import * as THREE from "three";
+import React, { memo, useMemo } from "react"
+import { Line } from "@react-three/drei"
+import * as THREE from "three"
 
 interface MemoryMesh3DPreviewEdgeProps {
-  start: [number, number, number];
-  end: [number, number, number];
-  similarity: number;
+  start: [number, number, number]
+  end: [number, number, number]
+  similarity: number
 }
 
 export const MemoryMesh3DPreviewEdge: React.FC<
@@ -15,18 +15,18 @@ export const MemoryMesh3DPreviewEdge: React.FC<
 > = ({ start, end, similarity }) => {
   const points = useMemo(
     () => [new THREE.Vector3(...start), new THREE.Vector3(...end)],
-    [start, end],
-  );
+    [start, end]
+  )
 
   const getLineColor = (s: number) => {
-    if (s > 0.85) return "#3b82f6";
-    if (s > 0.75) return "#38bdf8";
-    return "#9ca3af";
-  };
+    if (s > 0.85) return "#3b82f6"
+    if (s > 0.75) return "#38bdf8"
+    return "#9ca3af"
+  }
 
-  const color = getLineColor(similarity);
-  const opacity = similarity > 0.75 ? 0.8 : similarity > 0.5 ? 0.6 : 0.4;
-  const lineWidth = similarity > 0.85 ? 0.6 : similarity > 0.75 ? 0.5 : 0.3;
+  const color = getLineColor(similarity)
+  const opacity = similarity > 0.75 ? 0.8 : similarity > 0.5 ? 0.6 : 0.4
+  const lineWidth = similarity > 0.85 ? 0.6 : similarity > 0.75 ? 0.5 : 0.3
 
   return (
     <Line
@@ -40,7 +40,7 @@ export const MemoryMesh3DPreviewEdge: React.FC<
       depthTest={true}
       depthWrite={false}
     />
-  );
-};
+  )
+}
 
-export default memo(MemoryMesh3DPreviewEdge);
+export default memo(MemoryMesh3DPreviewEdge)

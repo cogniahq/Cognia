@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Analytics dashboard data fetcher. Reads /api/memory/analytics — same
@@ -7,8 +7,8 @@
  * postRequest/getRequest helpers in web/utils/http unwrap.
  */
 
-import { getRequest } from "@/utils/http";
-import type { AnalyticsData } from "@/types/analytics";
+import { getRequest } from "@/utils/http"
+import type { AnalyticsData } from "@/types/analytics"
 
 const EMPTY_ANALYTICS: AnalyticsData = {
   overview: {
@@ -104,12 +104,12 @@ const EMPTY_ANALYTICS: AnalyticsData = {
     averagePerMemory: 0,
     inputOutputRatio: 0,
   },
-};
+}
 
 export async function getAnalytics(): Promise<AnalyticsData> {
-  const response = await getRequest("/memory/analytics");
+  const response = await getRequest("/memory/analytics")
   if (response.data?.success === false) {
-    throw new Error(response.data?.error || "Failed to load analytics");
+    throw new Error(response.data?.error || "Failed to load analytics")
   }
-  return response.data?.data || EMPTY_ANALYTICS;
+  return response.data?.data || EMPTY_ANALYTICS
 }

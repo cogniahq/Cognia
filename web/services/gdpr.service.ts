@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * GDPR data-rights endpoints: schedule a 30-day deletion, cancel during
@@ -8,16 +8,16 @@
  * pre-onboarding state where 401 is expected.
  */
 
-import { env } from "@/lib/env";
+import { env } from "@/lib/env"
 
 interface GdprStatusResponse {
-  success: boolean;
-  data: { scheduledFor: string | null; underLegalHold: boolean };
+  success: boolean
+  data: { scheduledFor: string | null; underLegalHold: boolean }
 }
 
 interface GdprScheduleResponse {
-  success: boolean;
-  scheduledFor: string;
+  success: boolean
+  scheduledFor: string
 }
 
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
@@ -28,15 +28,15 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       ...(init?.headers || {}),
     },
-  });
+  })
   const body = (await res.json().catch(() => ({}))) as
     | { success?: boolean; message?: string }
-    | Record<string, unknown>;
+    | Record<string, unknown>
   if (!res.ok || (body as { success?: boolean })?.success === false) {
-    const message = (body as { message?: string })?.message;
-    throw new Error(message || `Request failed: ${res.status}`);
+    const message = (body as { message?: string })?.message
+    throw new Error(message || `Request failed: ${res.status}`)
   }
-  return body as T;
+  return body as T
 }
 
 export const gdprService = {
@@ -49,4 +49,4 @@ export const gdprService = {
       method: "POST",
     }),
   getStatus: () => fetchJSON<GdprStatusResponse>(`/api/gdpr/delete-status`),
-};
+}

@@ -1,37 +1,34 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2, MoreHorizontal } from "lucide-react";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2, MoreHorizontal } from "lucide-react"
 
-import {
-  orgAdminService,
-  type AdminMember,
-} from "@/services/org-admin.service";
+import { orgAdminService, type AdminMember } from "@/services/org-admin.service"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
 
-import OffboardDialog from "./OffboardDialog";
+import OffboardDialog from "./OffboardDialog"
 
 interface MembersTabProps {
-  slug: string;
+  slug: string
   /**
    * Whether the calling user can offboard members (maps to the
    * `member.remove` permission, which is ADMIN-only). When false the
    * action menu is replaced with a placeholder.
    */
-  canManageMembers: boolean;
+  canManageMembers: boolean
 }
 
 function formatDate(iso?: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "—"
   try {
-    return new Date(iso).toLocaleDateString();
+    return new Date(iso).toLocaleDateString()
   } catch {
-    return iso;
+    return iso
   }
 }
 
@@ -39,35 +36,33 @@ export default function MembersTab({
   slug,
   canManageMembers,
 }: MembersTabProps) {
-  const [members, setMembers] = useState<AdminMember[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [offboardTarget, setOffboardTarget] = useState<AdminMember | null>(
-    null,
-  );
-  const [hardDeleteDefault, setHardDeleteDefault] = useState(false);
+  const [members, setMembers] = useState<AdminMember[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [offboardTarget, setOffboardTarget] = useState<AdminMember | null>(null)
+  const [hardDeleteDefault, setHardDeleteDefault] = useState(false)
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const data = await orgAdminService.getMembers(slug);
-      setMembers(data);
+      const data = await orgAdminService.getMembers(slug)
+      setMembers(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load members");
+      setError(err instanceof Error ? err.message : "Failed to load members")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [slug]);
+  }, [slug])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   const openOffboard = (member: AdminMember, hard: boolean) => {
-    setHardDeleteDefault(hard);
-    setOffboardTarget(member);
-  };
+    setHardDeleteDefault(hard)
+    setOffboardTarget(member)
+  }
 
   return (
     <div className="space-y-4">
@@ -116,8 +111,8 @@ export default function MembersTab({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {members.map((member) => {
-                  const isDeactivated = !!member.deactivated_at;
-                  const has2FA = !!member.user?.two_factor_enabled;
+                  const isDeactivated = !!member.deactivated_at
+                  const has2FA = !!member.user?.two_factor_enabled
                   return (
                     <tr key={member.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2.5 text-gray-900">
@@ -188,7 +183,7 @@ export default function MembersTab({
                         )}
                       </td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
@@ -207,5 +202,5 @@ export default function MembersTab({
         key={`${offboardTarget?.id ?? "none"}-${hardDeleteDefault ? "hard" : "soft"}`}
       />
     </div>
-  );
+  )
 }

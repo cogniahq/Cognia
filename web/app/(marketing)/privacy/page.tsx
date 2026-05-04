@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import React from "react";
+import type { Metadata } from "next"
+import Link from "next/link"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
       "How Cognia collects, uses, and protects your information — written for humans, not lawyers.",
     url: "/privacy",
   },
-};
+}
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -29,7 +29,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
       {children}
     </div>
   </section>
-);
+)
 
 export default function PrivacyPage() {
   return (
@@ -171,5 +171,5 @@ export default function PrivacyPage() {
         </p>
       </Section>
     </LegalPageLayout>
-  );
+  )
 }

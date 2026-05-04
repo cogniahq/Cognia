@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Account-deletion confirmation. Mirrors
@@ -7,8 +7,8 @@
  * use sonner.
  */
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import {
   Dialog,
@@ -17,29 +17,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { gdprService } from "@/services/gdpr.service";
+} from "@/components/ui/dialog"
+import { gdprService } from "@/services/gdpr.service"
 
 interface DeleteAccountDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  scheduledFor: string | null;
-  onScheduled: (scheduledFor: string) => void;
-  onCancelled: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  scheduledFor: string | null
+  onScheduled: (scheduledFor: string) => void
+  onCancelled: () => void
 }
 
 const formatDate = (iso: string | null): string => {
-  if (!iso) return "";
+  if (!iso) return ""
   try {
     return new Date(iso).toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
       day: "numeric",
-    });
+    })
   } catch {
-    return iso;
+    return iso
   }
-};
+}
 
 export function DeleteAccountDialog({
   open,
@@ -48,44 +48,44 @@ export function DeleteAccountDialog({
   onScheduled,
   onCancelled,
 }: DeleteAccountDialogProps) {
-  const [confirmed, setConfirmed] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [confirmed, setConfirmed] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!open) setConfirmed(false);
-  }, [open]);
+    if (!open) setConfirmed(false)
+  }, [open])
 
   const handleSchedule = async () => {
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      const res = await gdprService.scheduleDeletion();
-      onScheduled(res.scheduledFor);
+      const res = await gdprService.scheduleDeletion()
+      onScheduled(res.scheduledFor)
       toast.success(
-        `Account deletion scheduled for ${formatDate(res.scheduledFor)}.`,
-      );
+        `Account deletion scheduled for ${formatDate(res.scheduledFor)}.`
+      )
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Could not schedule deletion";
-      toast.error(message);
+        err instanceof Error ? err.message : "Could not schedule deletion"
+      toast.error(message)
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   const handleCancel = async () => {
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      await gdprService.cancelDeletion();
-      onCancelled();
-      toast.success("Account deletion cancelled.");
+      await gdprService.cancelDeletion()
+      onCancelled()
+      toast.success("Account deletion cancelled.")
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Could not cancel deletion";
-      toast.error(message);
+        err instanceof Error ? err.message : "Could not cancel deletion"
+      toast.error(message)
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,5 +164,5 @@ export function DeleteAccountDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

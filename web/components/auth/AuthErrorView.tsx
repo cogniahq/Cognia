@@ -1,11 +1,11 @@
-import Image from "next/image";
-import Link from "next/link";
+import Image from "next/image"
+import Link from "next/link"
 
 interface AuthErrorViewProps {
-  title: string;
-  message: string;
+  title: string
+  message: string
   /** Optional override for the CTA. Defaults to "Back to sign in" → /login. */
-  cta?: { href: string; label: string };
+  cta?: { href: string; label: string }
 }
 
 /**
@@ -13,8 +13,8 @@ interface AuthErrorViewProps {
  * Pure Server Component — no client JS shipped for static error pages.
  */
 export function AuthErrorView({ title, message, cta }: AuthErrorViewProps) {
-  const ctaHref = cta?.href ?? "/login";
-  const ctaLabel = cta?.label ?? "Back to sign in";
+  const ctaHref = cta?.href ?? "/login"
+  const ctaLabel = cta?.label ?? "Back to sign in"
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <div className="max-w-md w-full bg-white border border-gray-200 p-8 shadow-sm">
@@ -41,13 +41,13 @@ export function AuthErrorView({ title, message, cta }: AuthErrorViewProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 interface AuthSuccessViewProps {
-  title: string;
-  message: string;
-  cta: { href: string; label: string };
+  title: string
+  message: string
+  cta: { href: string; label: string }
 }
 
 export function AuthSuccessView({ title, message, cta }: AuthSuccessViewProps) {
@@ -77,5 +77,5 @@ export function AuthSuccessView({ title, message, cta }: AuthSuccessViewProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

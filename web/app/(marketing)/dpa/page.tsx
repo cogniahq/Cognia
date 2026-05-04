@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
-import React from "react";
+import type { Metadata } from "next"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
 export const metadata: Metadata = {
   title: "Data Processing Addendum",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
       "Cognia's standard Data Processing Addendum — pre-signed, modeled on the EU SCCs, available to every customer.",
     url: "/dpa",
   },
-};
+}
 
 export default function DpaPage() {
   return (
@@ -95,5 +95,5 @@ export default function DpaPage() {
         </p>
       </section>
     </LegalPageLayout>
-  );
+  )
 }

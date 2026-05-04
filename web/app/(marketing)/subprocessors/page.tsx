@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
-import React from "react";
+import type { Metadata } from "next"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
-import { SubprocessorSubscribeForm } from "@/components/legal/SubprocessorSubscribeForm";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
+import { SubprocessorSubscribeForm } from "@/components/legal/SubprocessorSubscribeForm"
 
 interface Subprocessor {
-  name: string;
-  purpose: string;
-  region: string;
-  dpa: string;
+  name: string
+  purpose: string
+  region: string
+  dpa: string
 }
 
 const SUBPROCESSORS: Subprocessor[] = [
@@ -48,7 +48,7 @@ const SUBPROCESSORS: Subprocessor[] = [
     region: "us-east-1",
     dpa: "https://sentry.io/legal/dpa/",
   },
-];
+]
 
 export const metadata: Metadata = {
   title: "Subprocessors",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
       "The third parties that process customer data on Cognia's behalf, with regions and links to each subprocessor's DPA.",
     url: "/subprocessors",
   },
-};
+}
 
 export default function SubprocessorsPage() {
   return (
@@ -134,5 +134,5 @@ export default function SubprocessorsPage() {
         <SubprocessorSubscribeForm />
       </section>
     </LegalPageLayout>
-  );
+  )
 }

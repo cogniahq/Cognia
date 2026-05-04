@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
 import {
   connectIntegration,
@@ -10,11 +10,8 @@ import {
   getAvailableIntegrations,
   getConnectedIntegrations,
   syncIntegration,
-} from "@/services/integration.service";
-import type {
-  ConnectedIntegration,
-  IntegrationInfo,
-} from "@/types/integration";
+} from "@/services/integration.service"
+import type { ConnectedIntegration, IntegrationInfo } from "@/types/integration"
 import {
   Dialog,
   DialogContent,
@@ -22,8 +19,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { CalendarConnectCTA } from "@/components/upcoming/CalendarConnectCTA";
+} from "@/components/ui/dialog"
+import { CalendarConnectCTA } from "@/components/upcoming/CalendarConnectCTA"
 
 const IntegrationLogos: Record<string, React.ReactNode> = {
   slack: (
@@ -95,142 +92,142 @@ const IntegrationLogos: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-};
+}
 
 const getErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error && error.message ? error.message : fallback;
+  error instanceof Error && error.message ? error.message : fallback
 
 export function IntegrationsClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const [available, setAvailable] = useState<IntegrationInfo[]>([]);
-  const [connected, setConnected] = useState<ConnectedIntegration[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [available, setAvailable] = useState<IntegrationInfo[]>([])
+  const [connected, setConnected] = useState<ConnectedIntegration[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [connectingProvider, setConnectingProvider] = useState<string | null>(
-    null,
-  );
-  const [syncingProvider, setSyncingProvider] = useState<string | null>(null);
-  const [disconnectDialog, setDisconnectDialog] = useState<string | null>(null);
+    null
+  )
+  const [syncingProvider, setSyncingProvider] = useState<string | null>(null)
+  const [disconnectDialog, setDisconnectDialog] = useState<string | null>(null)
   const [calendarBanner, setCalendarBanner] = useState<{
-    kind: "ok" | "error";
-    text: string;
-  } | null>(null);
+    kind: "ok" | "error"
+    text: string
+  } | null>(null)
 
   const loadIntegrations = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
       const [availableData, connectedData] = await Promise.all([
         getAvailableIntegrations(),
         getConnectedIntegrations(),
-      ]);
-      setAvailable(availableData);
-      setConnected(connectedData);
+      ])
+      setAvailable(availableData)
+      setConnected(connectedData)
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to load integrations"));
+      setError(getErrorMessage(err, "Failed to load integrations"))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    const connectedProvider = searchParams.get("connected");
-    const errorMessage = searchParams.get("error");
-    const calendar = searchParams.get("calendar");
+    const connectedProvider = searchParams.get("connected")
+    const errorMessage = searchParams.get("error")
+    const calendar = searchParams.get("calendar")
 
     if (connectedProvider) {
-      router.replace("/integrations");
-      loadIntegrations();
+      router.replace("/integrations")
+      loadIntegrations()
     }
     if (errorMessage) {
-      setError(decodeURIComponent(errorMessage));
-      router.replace("/integrations");
+      setError(decodeURIComponent(errorMessage))
+      router.replace("/integrations")
     }
     if (calendar === "connected") {
-      setCalendarBanner({ kind: "ok", text: "Google Calendar connected." });
+      setCalendarBanner({ kind: "ok", text: "Google Calendar connected." })
     } else if (calendar === "unconfigured") {
       setCalendarBanner({
         kind: "error",
         text: "Google Calendar is not configured on this server.",
-      });
+      })
     } else if (calendar) {
-      const reason = searchParams.get("reason") || "unknown error";
+      const reason = searchParams.get("reason") || "unknown error"
       setCalendarBanner({
         kind: "error",
         text: `Calendar connect failed: ${reason}`,
-      });
+      })
     }
     if (calendar) {
       const t = window.setTimeout(() => {
-        router.replace("/integrations");
-        setCalendarBanner(null);
-      }, 6000);
-      return () => window.clearTimeout(t);
+        router.replace("/integrations")
+        setCalendarBanner(null)
+      }, 6000)
+      return () => window.clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams])
 
   useEffect(() => {
-    loadIntegrations();
-  }, []);
+    loadIntegrations()
+  }, [])
 
   const handleConnect = async (provider: string) => {
-    setConnectingProvider(provider);
-    setError(null);
+    setConnectingProvider(provider)
+    setError(null)
     try {
-      const { authUrl } = await connectIntegration(provider);
-      window.location.href = authUrl;
+      const { authUrl } = await connectIntegration(provider)
+      window.location.href = authUrl
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to connect integration"));
-      setConnectingProvider(null);
+      setError(getErrorMessage(err, "Failed to connect integration"))
+      setConnectingProvider(null)
     }
-  };
+  }
 
   const handleDisconnect = async (provider: string) => {
-    setError(null);
+    setError(null)
     try {
-      await disconnectIntegration(provider);
-      setDisconnectDialog(null);
-      await loadIntegrations();
+      await disconnectIntegration(provider)
+      setDisconnectDialog(null)
+      await loadIntegrations()
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to disconnect integration"));
+      setError(getErrorMessage(err, "Failed to disconnect integration"))
     }
-  };
+  }
 
   const handleSync = async (provider: string) => {
-    setSyncingProvider(provider);
-    setError(null);
+    setSyncingProvider(provider)
+    setError(null)
     try {
-      await syncIntegration(provider);
-      await loadIntegrations();
+      await syncIntegration(provider)
+      await loadIntegrations()
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to sync integration"));
+      setError(getErrorMessage(err, "Failed to sync integration"))
     } finally {
-      setSyncingProvider(null);
+      setSyncingProvider(null)
     }
-  };
+  }
 
   const getConnectionInfo = (
-    providerId: string,
+    providerId: string
   ): ConnectedIntegration | undefined =>
-    connected.find((c) => c.provider === providerId);
+    connected.find((c) => c.provider === providerId)
 
   const formatRelativeTime = (dateStr: string | null) => {
-    if (!dateStr) return "Never";
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
+    if (!dateStr) return "Never"
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffMins < 1) return "Just now"
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -239,9 +236,9 @@ export function IntegrationsClient() {
       ERROR: "Error",
       RATE_LIMITED: "Rate Limited",
       TOKEN_EXPIRED: "Reconnect Required",
-    };
-    return labels[status] || status;
-  };
+    }
+    return labels[status] || status
+  }
 
   if (isLoading) {
     return (
@@ -253,7 +250,7 @@ export function IntegrationsClient() {
           </span>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -290,11 +287,11 @@ export function IntegrationsClient() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {available.map((integration) => {
-            const connectionInfo = getConnectionInfo(integration.id);
-            const isConnected = !!connectionInfo;
-            const isConnecting = connectingProvider === integration.id;
-            const isSyncing = syncingProvider === integration.id;
-            const status = connectionInfo?.status || null;
+            const connectionInfo = getConnectionInfo(integration.id)
+            const isConnected = !!connectionInfo
+            const isConnecting = connectingProvider === integration.id
+            const isSyncing = syncingProvider === integration.id
+            const status = connectionInfo?.status || null
 
             return (
               <div
@@ -385,7 +382,7 @@ export function IntegrationsClient() {
                   )}
                 </div>
               </div>
-            );
+            )
           })}
         </div>
 
@@ -433,5 +430,5 @@ export function IntegrationsClient() {
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

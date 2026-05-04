@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Auto-maintained profile dashboard. Verbatim port of
@@ -12,96 +12,96 @@
  * env.publicApiUrl so the cookie scope still applies.
  */
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
-import { gdprService } from "@/services/gdpr.service";
+import { gdprService } from "@/services/gdpr.service"
 import {
   getProfile,
   refreshProfile,
   type UserProfile,
-} from "@/services/profile.service";
-import { env } from "@/lib/env";
-import { DeleteAccountDialog } from "@/components/gdpr/DeleteAccountDialog";
-import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings";
+} from "@/services/profile.service"
+import { env } from "@/lib/env"
+import { DeleteAccountDialog } from "@/components/gdpr/DeleteAccountDialog"
+import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings"
 
 const formatScheduledDate = (iso: string | null): string => {
-  if (!iso) return "";
+  if (!iso) return ""
   try {
     return new Date(iso).toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
       day: "numeric",
-    });
+    })
   } catch {
-    return iso;
+    return iso
   }
-};
+}
 
 export function ProfileClient() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const router = useRouter()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletionScheduledFor, setDeletionScheduledFor] = useState<
     string | null
-  >(null);
+  >(null)
 
   useEffect(() => {
     gdprService
       .getStatus()
       .then((res) => {
-        setDeletionScheduledFor(res.data?.scheduledFor ?? null);
+        setDeletionScheduledFor(res.data?.scheduledFor ?? null)
       })
       .catch(() => {
         // Non-fatal — banner just doesn't show.
-      });
-  }, []);
+      })
+  }, [])
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     const fetchProfile = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-        const data = await getProfile();
-        if (!cancelled) setProfile(data);
+        setIsLoading(true)
+        setError(null)
+        const data = await getProfile()
+        if (!cancelled) setProfile(data)
       } catch (err) {
         if (!cancelled) {
-          const e = err as { message?: string };
-          setError(e.message || "Failed to load profile");
+          const e = err as { message?: string }
+          setError(e.message || "Failed to load profile")
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setIsLoading(false)
       }
-    };
-    fetchProfile();
+    }
+    fetchProfile()
     return () => {
-      cancelled = true;
-    };
-  }, []);
+      cancelled = true
+    }
+  }, [])
 
   const handleRefresh = async () => {
     try {
-      setIsRefreshing(true);
-      setError(null);
-      const data = await refreshProfile();
-      setProfile(data);
+      setIsRefreshing(true)
+      setError(null)
+      const data = await refreshProfile()
+      setProfile(data)
     } catch (err) {
-      const e = err as { code?: string; message?: string };
+      const e = err as { code?: string; message?: string }
       if (e.code === "ECONNABORTED" || e.message?.includes("timeout")) {
         setError(
-          "Profile refresh is taking longer than expected. Please try again in a moment.",
-        );
+          "Profile refresh is taking longer than expected. Please try again in a moment."
+        )
       } else {
-        setError(e.message || "Failed to refresh profile");
+        setError(e.message || "Failed to refresh profile")
       }
     } finally {
-      setIsRefreshing(false);
+      setIsRefreshing(false)
     }
-  };
+  }
 
   if (isLoading) {
     return (
@@ -110,7 +110,7 @@ export function ProfileClient() {
           Loading profile...
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -194,12 +194,12 @@ export function ProfileClient() {
             onOpenChange={setDeleteDialogOpen}
             scheduledFor={deletionScheduledFor}
             onScheduled={(when) => {
-              setDeletionScheduledFor(when);
-              setDeleteDialogOpen(false);
+              setDeletionScheduledFor(when)
+              setDeleteDialogOpen(false)
             }}
             onCancelled={() => {
-              setDeletionScheduledFor(null);
-              setDeleteDialogOpen(false);
+              setDeletionScheduledFor(null)
+              setDeleteDialogOpen(false)
             }}
           />
 
@@ -238,12 +238,12 @@ export function ProfileClient() {
         </div>
       </div>
     </>
-  );
+  )
 }
 
 function ProfileBody({ profile }: { profile: UserProfile }) {
-  const sp = profile.static_profile.json;
-  const dp = profile.dynamic_profile.json;
+  const sp = profile.static_profile.json
+  const dp = profile.dynamic_profile.json
 
   return (
     <div className="space-y-6">
@@ -363,7 +363,7 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
                     [
                       "Methods",
                       sp.learning_preferences.preferred_learning_methods?.join(
-                        ", ",
+                        ", "
                       ),
                     ],
                     ["Pace", sp.learning_preferences.learning_pace],
@@ -507,12 +507,12 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 interface SectionProps {
-  label: string;
-  children: React.ReactNode;
+  label: string
+  children: React.ReactNode
 }
 
 function Section({ label, children }: SectionProps) {
@@ -523,13 +523,13 @@ function Section({ label, children }: SectionProps) {
       </div>
       {children}
     </div>
-  );
+  )
 }
 
 interface ChipListProps {
-  label: string;
-  items?: string[];
-  colorClass?: string;
+  label: string
+  items?: string[]
+  colorClass?: string
 }
 
 function ChipList({
@@ -537,7 +537,7 @@ function ChipList({
   items,
   colorClass = "bg-gray-100 border-gray-300",
 }: ChipListProps) {
-  if (!Array.isArray(items) || items.length === 0) return null;
+  if (!Array.isArray(items) || items.length === 0) return null
   return (
     <Section label={label}>
       <div className="flex flex-wrap gap-2">
@@ -551,16 +551,16 @@ function ChipList({
         ))}
       </div>
     </Section>
-  );
+  )
 }
 
 interface BulletListProps {
-  label: string;
-  items?: string[];
+  label: string
+  items?: string[]
 }
 
 function BulletList({ label, items }: BulletListProps) {
-  if (!Array.isArray(items) || items.length === 0) return null;
+  if (!Array.isArray(items) || items.length === 0) return null
   return (
     <Section label={label}>
       <ul className="space-y-1 text-sm font-mono text-gray-700">
@@ -572,16 +572,16 @@ function BulletList({ label, items }: BulletListProps) {
         ))}
       </ul>
     </Section>
-  );
+  )
 }
 
 interface KeyValueListProps {
-  items: Array<[string, string | undefined]>;
+  items: Array<[string, string | undefined]>
 }
 
 function KeyValueList({ items }: KeyValueListProps) {
-  const filtered = items.filter(([, value]) => Boolean(value));
-  if (filtered.length === 0) return null;
+  const filtered = items.filter(([, value]) => Boolean(value))
+  if (filtered.length === 0) return null
   return (
     <div className="space-y-1 text-sm font-mono">
       {filtered.map(([key, value]) => (
@@ -591,5 +591,5 @@ function KeyValueList({ items }: KeyValueListProps) {
         </div>
       ))}
     </div>
-  );
+  )
 }

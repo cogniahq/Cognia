@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * 3D mesh viz used by /organization's Mesh tab. Mirrors
@@ -8,38 +8,38 @@
  * Vite client isn't needed here.
  */
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { memo, useCallback, useEffect, useRef, useState } from "react"
+import { OrbitControls } from "@react-three/drei"
+import { Canvas, useFrame } from "@react-three/fiber"
+import * as THREE from "three"
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 
-import type { MemoryMesh } from "@/types/memory";
-import { MemoryMesh3DScene } from "./MemoryMesh3DScene";
+import type { MemoryMesh } from "@/types/memory"
+import { MemoryMesh3DScene } from "./MemoryMesh3DScene"
 
 interface MemoryMesh3DProps {
-  className?: string;
-  meshData: MemoryMesh | null;
-  isLoading?: boolean;
-  error?: string | null;
-  onNodeClick?: (memoryId: string) => void;
-  selectedMemoryId?: string;
-  highlightedMemoryIds?: string[];
-  memorySources?: Record<string, string>;
-  memoryUrls?: Record<string, string>;
+  className?: string
+  meshData: MemoryMesh | null
+  isLoading?: boolean
+  error?: string | null
+  onNodeClick?: (memoryId: string) => void
+  selectedMemoryId?: string
+  highlightedMemoryIds?: string[]
+  memorySources?: Record<string, string>
+  memoryUrls?: Record<string, string>
 }
 
 function ControlsUpdater({
   controlsRef,
 }: {
-  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>
 }) {
   useFrame(() => {
     if (controlsRef.current) {
-      controlsRef.current.update();
+      controlsRef.current.update()
     }
-  });
-  return null;
+  })
+  return null
 }
 
 function MemoryMesh3DComponent({
@@ -53,37 +53,37 @@ function MemoryMesh3DComponent({
   memorySources,
   memoryUrls,
 }: MemoryMesh3DProps) {
-  const [isCompactView, setIsCompactView] = useState(false);
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const [isCompactView, setIsCompactView] = useState(false)
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
   // Reset orbit target only on the first mesh load — preserve camera Y on
   // subsequent refreshes so vertical scrolling isn't yanked back to 0.
-  const didInitialiseTargetRef = useRef(false);
+  const didInitialiseTargetRef = useRef(false)
   useEffect(() => {
-    if (!controlsRef.current) return;
-    if (didInitialiseTargetRef.current) return;
-    if (!meshData) return;
-    controlsRef.current.target.set(0, 0, 0);
-    controlsRef.current.update();
-    didInitialiseTargetRef.current = true;
-  }, [meshData]);
+    if (!controlsRef.current) return
+    if (didInitialiseTargetRef.current) return
+    if (!meshData) return
+    controlsRef.current.target.set(0, 0, 0)
+    controlsRef.current.update()
+    didInitialiseTargetRef.current = true
+  }, [meshData])
 
   const handleNodeClick = useCallback(
     (memoryId: string) => {
-      onNodeClick?.(memoryId);
+      onNodeClick?.(memoryId)
     },
-    [onNodeClick],
-  );
+    [onNodeClick]
+  )
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.key === "c" || event.key === "C") {
-        setIsCompactView((prev) => !prev);
+        setIsCompactView((prev) => !prev)
       }
-    };
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, []);
+    }
+    window.addEventListener("keydown", handleKeyPress)
+    return () => window.removeEventListener("keydown", handleKeyPress)
+  }, [])
 
   if (isLoading) {
     return (
@@ -92,7 +92,7 @@ function MemoryMesh3DComponent({
           <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -102,7 +102,7 @@ function MemoryMesh3DComponent({
           <div className="text-sm font-mono text-red-600">[ERROR] {error}</div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!meshData) {
@@ -112,7 +112,7 @@ function MemoryMesh3DComponent({
           <div className="text-sm font-mono text-gray-600">[NO MESH DATA]</div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -164,8 +164,8 @@ function MemoryMesh3DComponent({
         </Canvas>
       </div>
     </div>
-  );
+  )
 }
 
-export const MemoryMesh3D = memo(MemoryMesh3DComponent);
-export default MemoryMesh3D;
+export const MemoryMesh3D = memo(MemoryMesh3DComponent)
+export default MemoryMesh3D

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Analytics dashboard. Verbatim port of client/src/pages/analytics.page.tsx.
@@ -7,38 +7,38 @@
  * everything below that is a self-contained data fetch + chart layout.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
 
-import { getAnalytics } from "@/services/analytics.service";
-import type { AnalyticsData } from "@/types/analytics";
+import { getAnalytics } from "@/services/analytics.service"
+import type { AnalyticsData } from "@/types/analytics"
 
 export function AnalyticsClient() {
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     const fetchAnalytics = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-        const data = await getAnalytics();
-        if (!cancelled) setAnalytics(data);
+        setIsLoading(true)
+        setError(null)
+        const data = await getAnalytics()
+        if (!cancelled) setAnalytics(data)
       } catch (err) {
         if (!cancelled) {
-          const error = err as { message?: string };
-          setError(error.message || "Failed to load analytics");
+          const error = err as { message?: string }
+          setError(error.message || "Failed to load analytics")
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setIsLoading(false)
       }
-    };
-    fetchAnalytics();
+    }
+    fetchAnalytics()
     return () => {
-      cancelled = true;
-    };
-  }, []);
+      cancelled = true
+    }
+  }, [])
 
   if (isLoading) {
     return (
@@ -47,7 +47,7 @@ export function AnalyticsClient() {
           Loading analytics...
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -55,27 +55,27 @@ export function AnalyticsClient() {
       <div className="flex items-center justify-center py-24">
         <div className="text-sm font-mono text-red-600">Error: {error}</div>
       </div>
-    );
+    )
   }
 
-  if (!analytics) return null;
+  if (!analytics) return null
 
   const formatNumber = (num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
-    return num.toLocaleString();
-  };
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M"
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K"
+    return num.toLocaleString()
+  }
 
   const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
+    const date = new Date(dateStr)
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-    });
-  };
+    })
+  }
 
-  const sortedDates = Object.keys(analytics.tokenUsage.byDate).sort();
-  const sortedWeeks = Object.keys(analytics.tokenTrends.byWeek).sort();
+  const sortedDates = Object.keys(analytics.tokenUsage.byDate).sort()
+  const sortedWeeks = Object.keys(analytics.tokenTrends.byWeek).sort()
 
   return (
     <div
@@ -294,7 +294,7 @@ export function AnalyticsClient() {
                   <span className="text-gray-600">Total relations</span>
                   <span className="font-semibold text-gray-900">
                     {formatNumber(
-                      analytics.relationshipAnalytics.totalRelations,
+                      analytics.relationshipAnalytics.totalRelations
                     )}
                   </span>
                 </div>
@@ -302,7 +302,7 @@ export function AnalyticsClient() {
                   <span className="text-gray-600">Avg per memory</span>
                   <span className="font-semibold text-gray-900">
                     {analytics.relationshipAnalytics.averageConnectionsPerMemory.toFixed(
-                      2,
+                      2
                     )}
                   </span>
                 </div>
@@ -342,7 +342,7 @@ export function AnalyticsClient() {
                           <div className="text-gray-500">tokens</div>
                         </div>
                       </div>
-                    ),
+                    )
                   )
                 ) : (
                   <div className="text-xs text-gray-500 text-center py-4">
@@ -390,7 +390,7 @@ export function AnalyticsClient() {
               {sortedDates.length > 0 ? (
                 <div className="space-y-1 max-h-64 overflow-y-auto text-xs">
                   {sortedDates.slice(-30).map((date) => {
-                    const usage = analytics.tokenUsage.byDate[date];
+                    const usage = analytics.tokenUsage.byDate[date]
                     return (
                       <div
                         key={date}
@@ -403,7 +403,7 @@ export function AnalyticsClient() {
                           {formatNumber(usage.total)}
                         </span>
                       </div>
-                    );
+                    )
                   })}
                 </div>
               ) : (
@@ -520,7 +520,7 @@ export function AnalyticsClient() {
                           {count}
                         </div>
                       </div>
-                    ),
+                    )
                   )
                 ) : (
                   <div className="text-xs text-gray-500 text-center py-4">
@@ -536,10 +536,10 @@ export function AnalyticsClient() {
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {Object.entries(
-                  analytics.categoryTopicAnalytics.sentimentDistribution,
+                  analytics.categoryTopicAnalytics.sentimentDistribution
                 ).length > 0 ? (
                   Object.entries(
-                    analytics.categoryTopicAnalytics.sentimentDistribution,
+                    analytics.categoryTopicAnalytics.sentimentDistribution
                   ).map(([sentiment, count]) => (
                     <div key={sentiment} className="text-center">
                       <div className="text-xl font-bold text-gray-900">
@@ -561,5 +561,5 @@ export function AnalyticsClient() {
         </div>
       </div>
     </div>
-  );
+  )
 }

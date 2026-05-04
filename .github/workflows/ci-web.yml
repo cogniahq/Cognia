@@ -1,0 +1,57 @@
+name: CI - Web
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    env:
+      # Required by web/lib/env.ts at build time. Public URL, safe to inline.
+      NEXT_PUBLIC_API_URL: https://api.cogniahq.tech
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-web-
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Check formatting
+        working-directory: web
+        run: npm run format:check
+
+      - name: Typecheck
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Run linter
+        working-directory: web
+        run: npm run lint
+
+      - name: Build project
+        working-directory: web
+        run: npm run build

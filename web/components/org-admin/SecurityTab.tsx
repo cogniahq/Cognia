@@ -1,15 +1,15 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
 import {
   orgAdminService,
   type SecurityStatus,
-} from "@/services/org-admin.service";
+} from "@/services/org-admin.service"
 
 interface SecurityTabProps {
-  slug: string;
+  slug: string
 }
 
 function StatusBadge({
@@ -17,9 +17,9 @@ function StatusBadge({
   okLabel = "Enabled",
   offLabel = "Disabled",
 }: {
-  ok: boolean;
-  okLabel?: string;
-  offLabel?: string;
+  ok: boolean
+  okLabel?: string
+  offLabel?: string
 }) {
   return (
     <span
@@ -31,7 +31,7 @@ function StatusBadge({
     >
       {ok ? okLabel : offLabel}
     </span>
-  );
+  )
 }
 
 function MetricCard({
@@ -40,10 +40,10 @@ function MetricCard({
   hint,
   children,
 }: {
-  label: string;
-  value?: React.ReactNode;
-  hint?: string;
-  children?: React.ReactNode;
+  label: string
+  value?: React.ReactNode
+  hint?: string
+  children?: React.ReactNode
 }) {
   return (
     <div className="border border-gray-200 rounded-xl p-5 bg-white">
@@ -58,32 +58,32 @@ function MetricCard({
       {hint && <div className="mt-1 text-xs text-gray-500">{hint}</div>}
       {children}
     </div>
-  );
+  )
 }
 
 export default function SecurityTab({ slug }: SecurityTabProps) {
-  const [status, setStatus] = useState<SecurityStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<SecurityStatus | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const data = await orgAdminService.getSecurityStatus(slug);
-      setStatus(data);
+      const data = await orgAdminService.getSecurityStatus(slug)
+      setStatus(data)
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load security status",
-      );
+        err instanceof Error ? err.message : "Failed to load security status"
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [slug]);
+  }, [slug])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   if (isLoading && !status) {
     return (
@@ -93,7 +93,7 @@ export default function SecurityTab({ slug }: SecurityTabProps) {
           Loading security status...
         </span>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -101,13 +101,13 @@ export default function SecurityTab({ slug }: SecurityTabProps) {
       <div className="px-4 py-3 border border-red-200 rounded-xl bg-red-50 text-xs text-red-700">
         {error}
       </div>
-    );
+    )
   }
 
-  if (!status) return null;
+  if (!status) return null
 
-  const twoFa = status.twoFaEnrollment;
-  const twoFaPct = twoFa.total > 0 ? twoFa.percentage : 0;
+  const twoFa = status.twoFaEnrollment
+  const twoFaPct = twoFa.total > 0 ? twoFa.percentage : 0
 
   return (
     <div className="space-y-6">
@@ -227,5 +227,5 @@ export default function SecurityTab({ slug }: SecurityTabProps) {
           </div>
         )}
     </div>
-  );
+  )
 }

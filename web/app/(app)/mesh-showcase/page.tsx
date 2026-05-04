@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 
-import MeshShowcaseClient from "@/components/mesh-showcase/MeshShowcaseClient";
+import MeshShowcaseClient from "@/components/mesh-showcase/MeshShowcaseClient"
 
 export const metadata: Metadata = {
   title: "Mesh Showcase",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Pure 3D demo. The MeshShowcaseClient wrapper is "use client" so it can
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
  * from inside a client component.
  */
 export default function MeshShowcasePage() {
-  return <MeshShowcaseClient />;
+  return <MeshShowcaseClient />
 }

@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
-import { useSession } from "@/lib/auth/client";
+import { useSession } from "@/lib/auth/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
 
 interface OrgSwitcherProps {
   /** Override navigate behaviour (useful in tests). */
-  onNavigate?: (path: string) => void;
+  onNavigate?: (path: string) => void
 }
 
 /**
@@ -25,33 +25,33 @@ interface OrgSwitcherProps {
  * to flip between orgs.
  */
 export function OrgSwitcher({ onNavigate }: OrgSwitcherProps) {
-  const session = useSession();
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const session = useSession()
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
 
   const go = (path: string) => {
-    if (onNavigate) onNavigate(path);
-    else router.push(path);
-  };
+    if (onNavigate) onNavigate(path)
+    else router.push(path)
+  }
 
-  const orgs = session.organizations;
-  const current = session.primaryOrg;
+  const orgs = session.organizations
+  const current = session.primaryOrg
 
   const handleSelectOrg = (slug: string) => {
-    setBusy(true);
+    setBusy(true)
     try {
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("currentOrgSlug", slug);
+        window.localStorage.setItem("currentOrgSlug", slug)
       }
     } catch {
       // storage may be unavailable; the server still resolves org context
     }
-    go("/organization");
-    setBusy(false);
-  };
+    go("/organization")
+    setBusy(false)
+  }
 
-  const triggerLabel = current?.name ?? "Select workspace";
-  const isAdmin = current?.role === "ADMIN";
+  const triggerLabel = current?.name ?? "Select workspace"
+  const isAdmin = current?.role === "ADMIN"
 
   return (
     <DropdownMenu modal={false}>
@@ -114,7 +114,7 @@ export function OrgSwitcher({ onNavigate }: OrgSwitcherProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
 
-export default OrgSwitcher;
+export default OrgSwitcher

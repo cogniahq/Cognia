@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * 2FA enrollment + management. Mirrors
@@ -10,150 +10,150 @@
  * swap this for a self-hosted /api/auth/2fa/qr-code that returns a PNG.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
 
 import {
   TwoFactorService,
   type TwoFactorSetupResponse,
   type TwoFactorStatus,
-} from "@/services/two-factor.service";
+} from "@/services/two-factor.service"
 
-type SetupStep = "idle" | "setup" | "verify" | "complete" | "disable";
+type SetupStep = "idle" | "setup" | "verify" | "complete" | "disable"
 
 export function TwoFactorSettings() {
-  const [status, setStatus] = useState<TwoFactorStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [setupStep, setSetupStep] = useState<SetupStep>("idle");
+  const [status, setStatus] = useState<TwoFactorStatus | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [setupStep, setSetupStep] = useState<SetupStep>("idle")
   const [setupData, setSetupData] = useState<TwoFactorSetupResponse | null>(
-    null,
-  );
-  const [verificationCode, setVerificationCode] = useState("");
-  const [disableCode, setDisableCode] = useState("");
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [showBackupCodes, setShowBackupCodes] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+    null
+  )
+  const [verificationCode, setVerificationCode] = useState("")
+  const [disableCode, setDisableCode] = useState("")
+  const [backupCodes, setBackupCodes] = useState<string[]>([])
+  const [showBackupCodes, setShowBackupCodes] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const fetchStatus = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      const data = await TwoFactorService.getStatus();
-      setStatus(data);
+      setIsLoading(true)
+      setError(null)
+      const data = await TwoFactorService.getStatus()
+      setStatus(data)
     } catch (err) {
       const e = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(
-        e.response?.data?.message || e.message || "Failed to load 2FA status",
-      );
+        e.response?.data?.message || e.message || "Failed to load 2FA status"
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    fetchStatus()
+  }, [])
 
   const handleStartSetup = async () => {
     try {
-      setIsProcessing(true);
-      setError(null);
-      const data = await TwoFactorService.setup();
-      setSetupData(data);
-      setBackupCodes(data.backupCodes);
-      setSetupStep("setup");
+      setIsProcessing(true)
+      setError(null)
+      const data = await TwoFactorService.setup()
+      setSetupData(data)
+      setBackupCodes(data.backupCodes)
+      setSetupStep("setup")
     } catch (err) {
       const e = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(
-        e.response?.data?.message || e.message || "Failed to start 2FA setup",
-      );
+        e.response?.data?.message || e.message || "Failed to start 2FA setup"
+      )
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleVerify = async () => {
     if (verificationCode.length !== 6) {
-      setError("Please enter a 6-digit code");
-      return;
+      setError("Please enter a 6-digit code")
+      return
     }
     try {
-      setIsProcessing(true);
-      setError(null);
-      await TwoFactorService.verify(verificationCode);
-      setSetupStep("complete");
-      await fetchStatus();
+      setIsProcessing(true)
+      setError(null)
+      await TwoFactorService.verify(verificationCode)
+      setSetupStep("complete")
+      await fetchStatus()
     } catch (err) {
       const e = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(
-        e.response?.data?.message || e.message || "Invalid verification code",
-      );
+        e.response?.data?.message || e.message || "Invalid verification code"
+      )
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleDisable = async () => {
     if (disableCode.length !== 6) {
-      setError("Please enter a 6-digit code");
-      return;
+      setError("Please enter a 6-digit code")
+      return
     }
     try {
-      setIsProcessing(true);
-      setError(null);
-      await TwoFactorService.disable(disableCode);
-      setSetupStep("idle");
-      setDisableCode("");
-      await fetchStatus();
+      setIsProcessing(true)
+      setError(null)
+      await TwoFactorService.disable(disableCode)
+      setSetupStep("idle")
+      setDisableCode("")
+      await fetchStatus()
     } catch (err) {
       const e = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
-      setError(e.response?.data?.message || e.message || "Invalid code");
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+      setError(e.response?.data?.message || e.message || "Invalid code")
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleRegenerateBackupCodes = async () => {
     const code = prompt(
-      "Enter your current 2FA code to regenerate backup codes:",
-    );
-    if (!code) return;
+      "Enter your current 2FA code to regenerate backup codes:"
+    )
+    if (!code) return
     try {
-      setIsProcessing(true);
-      setError(null);
-      const data = await TwoFactorService.regenerateBackupCodes(code);
-      setBackupCodes(data.backupCodes);
-      setShowBackupCodes(true);
+      setIsProcessing(true)
+      setError(null)
+      const data = await TwoFactorService.regenerateBackupCodes(code)
+      setBackupCodes(data.backupCodes)
+      setShowBackupCodes(true)
     } catch (err) {
       const e = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
+        response?: { data?: { message?: string } }
+        message?: string
+      }
       setError(
         e.response?.data?.message ||
           e.message ||
-          "Failed to regenerate backup codes",
-      );
+          "Failed to regenerate backup codes"
+      )
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const copyBackupCodes = () => {
-    navigator.clipboard.writeText(backupCodes.join("\n"));
-  };
+    navigator.clipboard.writeText(backupCodes.join("\n"))
+  }
 
   if (isLoading) {
     return (
@@ -163,7 +163,7 @@ export function TwoFactorSettings() {
         </div>
         <div className="text-sm text-gray-500">Loading 2FA status...</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -249,7 +249,7 @@ export function TwoFactorSettings() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                setupData.qrCodeUri,
+                setupData.qrCodeUri
               )}`}
               alt="2FA QR Code"
               className="w-48 h-48"
@@ -312,8 +312,8 @@ export function TwoFactorSettings() {
               type="text"
               value={verificationCode}
               onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-                setVerificationCode(value);
+                const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                setVerificationCode(value)
               }}
               placeholder="000000"
               className="flex-1 px-3 py-2 text-center text-lg font-mono tracking-widest border border-gray-300 focus:border-gray-900 focus:outline-none"
@@ -324,9 +324,9 @@ export function TwoFactorSettings() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setSetupStep("setup");
-                setVerificationCode("");
-                setError(null);
+                setSetupStep("setup")
+                setVerificationCode("")
+                setError(null)
               }}
               className="flex-1 px-3 py-2 text-sm font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
             >
@@ -356,10 +356,10 @@ export function TwoFactorSettings() {
 
           <button
             onClick={() => {
-              setSetupStep("idle");
-              setSetupData(null);
-              setVerificationCode("");
-              setBackupCodes([]);
+              setSetupStep("idle")
+              setSetupData(null)
+              setVerificationCode("")
+              setBackupCodes([])
             }}
             className="w-full px-3 py-2 text-sm font-mono text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
           >
@@ -385,8 +385,8 @@ export function TwoFactorSettings() {
               type="text"
               value={disableCode}
               onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-                setDisableCode(value);
+                const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                setDisableCode(value)
               }}
               placeholder="000000"
               className="flex-1 px-3 py-2 text-center text-lg font-mono tracking-widest border border-gray-300 focus:border-gray-900 focus:outline-none"
@@ -397,9 +397,9 @@ export function TwoFactorSettings() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setSetupStep("idle");
-                setDisableCode("");
-                setError(null);
+                setSetupStep("idle")
+                setDisableCode("")
+                setError(null)
               }}
               className="flex-1 px-3 py-2 text-sm font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 transition-colors"
             >
@@ -445,8 +445,8 @@ export function TwoFactorSettings() {
               </button>
               <button
                 onClick={() => {
-                  setShowBackupCodes(false);
-                  setBackupCodes([]);
+                  setShowBackupCodes(false)
+                  setBackupCodes([])
                 }}
                 className="flex-1 px-3 py-2 text-sm font-mono text-white bg-gray-900 hover:bg-gray-800 transition-colors"
               >
@@ -457,5 +457,5 @@ export function TwoFactorSettings() {
         </div>
       )}
     </div>
-  );
+  )
 }

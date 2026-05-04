@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   createApiKey,
@@ -13,7 +13,7 @@ import {
   type ApiKeyMetadata,
   type ApiKeyScope,
   type ApiKeyWithPlaintext,
-} from "@/services/api-keys.service";
+} from "@/services/api-keys.service"
 import {
   Dialog,
   DialogContent,
@@ -21,48 +21,48 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 
 interface ApiKeyManagerProps {
   /**
    * If provided, all keys created and listed here are scoped to this org.
    * Pass `undefined` for the personal-account context.
    */
-  organizationId?: string;
+  organizationId?: string
   /** Display label for the org context (slug). Used to render the "Org" column. */
-  organizationLabel?: string;
+  organizationLabel?: string
 }
 
 function formatRelative(iso: string | null | undefined): string {
-  if (!iso) return "Never";
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return iso;
-  const diffMs = Date.now() - then;
-  if (diffMs < 0) return "Just now";
-  const sec = Math.floor(diffMs / 1000);
-  if (sec < 60) return `${sec}s ago`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const day = Math.floor(hr / 24);
-  if (day < 30) return `${day}d ago`;
-  const month = Math.floor(day / 30);
-  if (month < 12) return `${month}mo ago`;
-  const year = Math.floor(day / 365);
-  return `${year}y ago`;
+  if (!iso) return "Never"
+  const then = new Date(iso).getTime()
+  if (!Number.isFinite(then)) return iso
+  const diffMs = Date.now() - then
+  if (diffMs < 0) return "Just now"
+  const sec = Math.floor(diffMs / 1000)
+  if (sec < 60) return `${sec}s ago`
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const day = Math.floor(hr / 24)
+  if (day < 30) return `${day}d ago`
+  const month = Math.floor(day / 30)
+  if (month < 12) return `${month}mo ago`
+  const year = Math.floor(day / 365)
+  return `${year}y ago`
 }
 
 function formatAbsolute(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "—"
   try {
     return new Date(iso).toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
+    })
   } catch {
-    return iso;
+    return iso
   }
 }
 
@@ -72,146 +72,146 @@ function buildCurlExample(token: string): string {
     `  -H "Authorization: Bearer ${token}" \\`,
     `  -H "Content-Type: application/json" \\`,
     `  -d '{"query":"hello","limit":10}'`,
-  ].join("\n");
+  ].join("\n")
 }
 
 export function ApiKeyManager({
   organizationId,
   organizationLabel,
 }: ApiKeyManagerProps) {
-  const [keys, setKeys] = useState<ApiKeyMetadata[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [keys, setKeys] = useState<ApiKeyMetadata[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState("");
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState("")
   const [newScopes, setNewScopes] = useState<ApiKeyScope[]>([
     "memories.read",
     "search",
-  ]);
-  const [creating, setCreating] = useState(false);
+  ])
+  const [creating, setCreating] = useState(false)
 
-  const [created, setCreated] = useState<ApiKeyWithPlaintext | null>(null);
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(false);
-  const [copiedCurl, setCopiedCurl] = useState(false);
+  const [created, setCreated] = useState<ApiKeyWithPlaintext | null>(null)
+  const [acknowledged, setAcknowledged] = useState(false)
+  const [copiedKey, setCopiedKey] = useState(false)
+  const [copiedCurl, setCopiedCurl] = useState(false)
 
-  const [revokeTarget, setRevokeTarget] = useState<ApiKeyMetadata | null>(null);
-  const [revoking, setRevoking] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<ApiKeyMetadata | null>(null)
+  const [revoking, setRevoking] = useState(false)
 
   const visibleKeys = useMemo(() => {
     if (organizationId) {
-      return keys.filter((k) => k.organization_id === organizationId);
+      return keys.filter((k) => k.organization_id === organizationId)
     }
-    return keys.filter((k) => !k.organization_id);
-  }, [keys, organizationId]);
+    return keys.filter((k) => !k.organization_id)
+  }, [keys, organizationId])
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(null);
+    setIsLoading(true)
+    setLoadError(null)
     try {
-      const data = await listApiKeys(organizationId);
-      setKeys(data);
+      const data = await listApiKeys(organizationId)
+      setKeys(data)
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : "Failed to load API keys",
-      );
+        err instanceof Error ? err.message : "Failed to load API keys"
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [organizationId]);
+  }, [organizationId])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   const toggleScope = (scope: ApiKeyScope) => {
     setNewScopes((prev) =>
-      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
-    );
-  };
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
+    )
+  }
 
   const resetCreateForm = () => {
-    setNewName("");
-    setNewScopes(["memories.read", "search"]);
-  };
+    setNewName("")
+    setNewScopes(["memories.read", "search"])
+  }
 
   const handleCreate = async () => {
-    const trimmed = newName.trim();
+    const trimmed = newName.trim()
     if (!trimmed) {
-      toast.error("Name is required");
-      return;
+      toast.error("Name is required")
+      return
     }
     if (newScopes.length === 0) {
-      toast.error("Select at least one scope");
-      return;
+      toast.error("Select at least one scope")
+      return
     }
-    setCreating(true);
+    setCreating(true)
     try {
       const result = await createApiKey({
         name: trimmed,
         scopes: newScopes,
         organizationId,
-      });
+      })
       if (!result?.token) {
-        throw new Error("Server did not return a token");
+        throw new Error("Server did not return a token")
       }
-      setCreated(result);
-      setShowCreate(false);
-      resetCreateForm();
-      setAcknowledged(false);
-      setCopiedKey(false);
-      setCopiedCurl(false);
-      await load();
+      setCreated(result)
+      setShowCreate(false)
+      resetCreateForm()
+      setAcknowledged(false)
+      setCopiedKey(false)
+      setCopiedCurl(false)
+      await load()
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to create API key",
-      );
+        err instanceof Error ? err.message : "Failed to create API key"
+      )
     } finally {
-      setCreating(false);
+      setCreating(false)
     }
-  };
+  }
 
   const handleCopyKey = async () => {
-    if (!created?.token) return;
+    if (!created?.token) return
     try {
-      await navigator.clipboard.writeText(created.token);
-      setCopiedKey(true);
-      toast.success("Key copied to clipboard");
+      await navigator.clipboard.writeText(created.token)
+      setCopiedKey(true)
+      toast.success("Key copied to clipboard")
     } catch {
-      toast.error("Could not copy to clipboard");
+      toast.error("Could not copy to clipboard")
     }
-  };
+  }
 
   const handleCopyCurl = async () => {
-    if (!created?.token) return;
+    if (!created?.token) return
     try {
-      await navigator.clipboard.writeText(buildCurlExample(created.token));
-      setCopiedCurl(true);
-      toast.success("curl example copied");
+      await navigator.clipboard.writeText(buildCurlExample(created.token))
+      setCopiedCurl(true)
+      toast.success("curl example copied")
     } catch {
-      toast.error("Could not copy to clipboard");
+      toast.error("Could not copy to clipboard")
     }
-  };
+  }
 
   const handleRevokeConfirm = async () => {
-    if (!revokeTarget) return;
-    setRevoking(true);
+    if (!revokeTarget) return
+    setRevoking(true)
     try {
-      await revokeApiKey(revokeTarget.id);
-      toast.success(`Revoked "${revokeTarget.name}"`);
-      setRevokeTarget(null);
-      await load();
+      await revokeApiKey(revokeTarget.id)
+      toast.success(`Revoked "${revokeTarget.name}"`)
+      setRevokeTarget(null)
+      await load()
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to revoke API key",
-      );
+        err instanceof Error ? err.message : "Failed to revoke API key"
+      )
     } finally {
-      setRevoking(false);
+      setRevoking(false)
     }
-  };
+  }
 
-  const orgColumnLabel = organizationLabel ?? (organizationId ? "Org" : "—");
+  const orgColumnLabel = organizationLabel ?? (organizationId ? "Org" : "—")
 
   return (
     <div className="space-y-5">
@@ -280,7 +280,7 @@ export function ApiKeyManager({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {visibleKeys.map((key) => {
-                  const isRevoked = !!key.revoked_at;
+                  const isRevoked = !!key.revoked_at
                   return (
                     <tr key={key.id} className="hover:bg-gray-50">
                       <td className="px-4 py-2.5 text-gray-900 truncate max-w-[200px]">
@@ -333,7 +333,7 @@ export function ApiKeyManager({
                         )}
                       </td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
@@ -344,7 +344,7 @@ export function ApiKeyManager({
       <Dialog
         open={showCreate}
         onOpenChange={(open) => {
-          if (!creating) setShowCreate(open);
+          if (!creating) setShowCreate(open)
         }}
       >
         <DialogContent>
@@ -382,7 +382,7 @@ export function ApiKeyManager({
               </span>
               <div className="space-y-2">
                 {VALID_SCOPES.map((scope) => {
-                  const checked = newScopes.includes(scope);
+                  const checked = newScopes.includes(scope)
                   return (
                     <label
                       key={scope}
@@ -404,7 +404,7 @@ export function ApiKeyManager({
                         </span>
                       </span>
                     </label>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -436,19 +436,19 @@ export function ApiKeyManager({
         open={!!created}
         onOpenChange={(open) => {
           if (!open && acknowledged) {
-            setCreated(null);
+            setCreated(null)
           }
         }}
       >
         <DialogContent
           onEscapeKeyDown={(e) => {
-            if (!acknowledged) e.preventDefault();
+            if (!acknowledged) e.preventDefault()
           }}
           onPointerDownOutside={(e) => {
-            if (!acknowledged) e.preventDefault();
+            if (!acknowledged) e.preventDefault()
           }}
           onInteractOutside={(e) => {
-            if (!acknowledged) e.preventDefault();
+            if (!acknowledged) e.preventDefault()
           }}
         >
           <DialogHeader>
@@ -516,7 +516,7 @@ export function ApiKeyManager({
             <button
               type="button"
               onClick={() => {
-                if (acknowledged) setCreated(null);
+                if (acknowledged) setCreated(null)
               }}
               disabled={!acknowledged}
               className="text-xs font-medium px-3 py-2 bg-gray-900 text-white hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed"
@@ -530,7 +530,7 @@ export function ApiKeyManager({
       <Dialog
         open={!!revokeTarget}
         onOpenChange={(open) => {
-          if (!revoking && !open) setRevokeTarget(null);
+          if (!revoking && !open) setRevokeTarget(null)
         }}
       >
         <DialogContent>
@@ -564,7 +564,7 @@ export function ApiKeyManager({
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
 
-export default ApiKeyManager;
+export default ApiKeyManager

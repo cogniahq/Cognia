@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"
 
-import type { Document } from "@/types/organization";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import type { Document } from "@/types/organization"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const FILE_TYPE_LABELS: Record<string, string> = {
   "application/pdf": "PDF",
@@ -14,7 +14,7 @@ const FILE_TYPE_LABELS: Record<string, string> = {
   "image/png": "PNG",
   "image/jpeg": "JPG",
   "image/webp": "WEBP",
-};
+}
 
 const INTEGRATION_SOURCE_LABELS: Record<string, string> = {
   google_drive: "Google Drive",
@@ -22,53 +22,53 @@ const INTEGRATION_SOURCE_LABELS: Record<string, string> = {
   notion: "Notion",
   box: "Box",
   github: "GitHub",
-};
+}
 
 const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 1) return "Just now"
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
 
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-  });
-};
+  })
+}
 
 interface ActionMenuProps {
-  doc: Document;
-  isAdmin: boolean;
-  onView: () => void;
-  onRemove: () => void;
+  doc: Document
+  isAdmin: boolean
+  onView: () => void
+  onRemove: () => void
 }
 
 function ActionMenu({ doc, isAdmin, onView, onRemove }: ActionMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   return (
     <div className="relative" ref={menuRef}>
@@ -83,8 +83,8 @@ function ActionMenu({ doc, isAdmin, onView, onRemove }: ActionMenuProps) {
           {doc.url && (
             <button
               onClick={() => {
-                onView();
-                setIsOpen(false);
+                onView()
+                setIsOpen(false)
               }}
               className="w-full text-left px-3 py-2 text-xs font-mono text-gray-700 hover:bg-gray-50 transition-colors"
             >
@@ -94,8 +94,8 @@ function ActionMenu({ doc, isAdmin, onView, onRemove }: ActionMenuProps) {
           {isAdmin && (
             <button
               onClick={() => {
-                onRemove();
-                setIsOpen(false);
+                onRemove()
+                setIsOpen(false)
               }}
               className="w-full text-left px-3 py-2 text-xs font-mono text-red-600 hover:bg-red-50 transition-colors"
             >
@@ -105,16 +105,16 @@ function ActionMenu({ doc, isAdmin, onView, onRemove }: ActionMenuProps) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 interface DocumentListProps {
-  documents: Document[];
-  isAdmin: boolean;
+  documents: Document[]
+  isAdmin: boolean
   onDelete: (
     documentId: string,
-    type?: "document" | "integration",
-  ) => Promise<void>;
+    type?: "document" | "integration"
+  ) => Promise<void>
 }
 
 export function DocumentList({
@@ -122,27 +122,27 @@ export function DocumentList({
   isAdmin,
   onDelete,
 }: DocumentListProps) {
-  const [deleteDoc, setDeleteDoc] = useState<Document | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDoc, setDeleteDoc] = useState<Document | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
-    if (!deleteDoc) return;
-    setIsDeleting(true);
+    if (!deleteDoc) return
+    setIsDeleting(true)
     try {
-      await onDelete(deleteDoc.id, deleteDoc.type);
+      await onDelete(deleteDoc.id, deleteDoc.type)
     } catch (err) {
-      console.error("Failed to delete document:", err);
+      console.error("Failed to delete document:", err)
     } finally {
-      setIsDeleting(false);
-      setDeleteDoc(null);
+      setIsDeleting(false)
+      setDeleteDoc(null)
     }
-  };
+  }
 
   const handleView = (doc: Document) => {
     if (doc.url) {
-      window.open(doc.url, "_blank", "noopener,noreferrer");
+      window.open(doc.url, "_blank", "noopener,noreferrer")
     }
-  };
+  }
 
   if (documents.length === 0) {
     return (
@@ -152,7 +152,7 @@ export function DocumentList({
           Upload files to make them searchable
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -169,24 +169,20 @@ export function DocumentList({
         </div>
 
         {documents.map((doc) => {
-          const isIntegration = doc.type === "integration";
+          const isIntegration = doc.type === "integration"
           const typeLabel = isIntegration
             ? INTEGRATION_SOURCE_LABELS[doc.source || ""] ||
               doc.source?.toUpperCase() ||
               "SYNC"
-            : FILE_TYPE_LABELS[doc.mime_type] || "FILE";
+            : FILE_TYPE_LABELS[doc.mime_type] || "FILE"
 
-          const uploaderName = doc.metadata?.uploader_name as
-            | string
-            | undefined;
-          const uploaderRole = doc.metadata?.uploader_role as
-            | string
-            | undefined;
+          const uploaderName = doc.metadata?.uploader_name as string | undefined
+          const uploaderRole = doc.metadata?.uploader_role as string | undefined
           const tags = Array.isArray(doc.metadata?.tags)
             ? (doc.metadata?.tags as string[]).filter(
-                (tag) => typeof tag === "string",
+                (tag) => typeof tag === "string"
               )
-            : [];
+            : []
 
           return (
             <div
@@ -265,7 +261,7 @@ export function DocumentList({
                 />
               </div>
             </div>
-          );
+          )
         })}
       </div>
 
@@ -282,5 +278,5 @@ export function DocumentList({
         onConfirm={handleDelete}
       />
     </>
-  );
+  )
 }

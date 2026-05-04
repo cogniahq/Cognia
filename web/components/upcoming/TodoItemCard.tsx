@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 import {
   Calendar,
   CalendarPlus,
@@ -10,44 +10,44 @@ import {
   Pencil,
   Trash2,
   X,
-} from "lucide-react";
+} from "lucide-react"
 
-import { todosService, type MemoryTodo } from "@/services/todos.service";
+import { todosService, type MemoryTodo } from "@/services/todos.service"
 
 interface TodoItemCardProps {
-  todo: MemoryTodo;
-  showOwner?: boolean;
-  ownerEmail?: string | null;
-  calendarConnected: boolean;
-  onChange: (next: MemoryTodo) => void;
-  onRemove: (id: string) => void;
-  onCalendarConnectRequested: () => void;
+  todo: MemoryTodo
+  showOwner?: boolean
+  ownerEmail?: string | null
+  calendarConnected: boolean
+  onChange: (next: MemoryTodo) => void
+  onRemove: (id: string) => void
+  onCalendarConnectRequested: () => void
 }
 
 function formatDueAt(iso: string | null): string {
-  if (!iso) return "No date";
+  if (!iso) return "No date"
   try {
-    const d = new Date(iso);
+    const d = new Date(iso)
     return d.toLocaleString(undefined, {
       month: "short",
       day: "numeric",
       hour: "numeric",
       minute: "2-digit",
-    });
+    })
   } catch {
-    return iso;
+    return iso
   }
 }
 
 function dueIsoForInput(iso: string | null): string {
-  if (!iso) return "";
+  if (!iso) return ""
   try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ""
+    const pad = (n: number) => String(n).padStart(2, "0")
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
   } catch {
-    return "";
+    return ""
   }
 }
 
@@ -60,86 +60,86 @@ export function TodoItemCard({
   onRemove,
   onCalendarConnectRequested,
 }: TodoItemCardProps) {
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(todo.title);
-  const [dueAt, setDueAt] = useState(dueIsoForInput(todo.due_at));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false)
+  const [title, setTitle] = useState(todo.title)
+  const [dueAt, setDueAt] = useState(dueIsoForInput(todo.due_at))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [calendarToast, setCalendarToast] = useState<{
-    href: string;
-    label: string;
-  } | null>(null);
+    href: string
+    label: string
+  } | null>(null)
 
-  const isDone = todo.status === "DONE";
-  const isPushed = !!todo.calendar_event_id;
+  const isDone = todo.status === "DONE"
+  const isPushed = !!todo.calendar_event_id
 
   const toggleDone = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      const next = isDone ? "PENDING" : "DONE";
-      const res = await todosService.update(todo.id, { status: next });
-      onChange(res.data);
+      const next = isDone ? "PENDING" : "DONE"
+      const res = await todosService.update(todo.id, { status: next })
+      onChange(res.data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Update failed");
+      setError(err instanceof Error ? err.message : "Update failed")
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const dismiss = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await todosService.remove(todo.id);
-      onRemove(todo.id);
+      await todosService.remove(todo.id)
+      onRemove(todo.id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Remove failed");
-      setBusy(false);
+      setError(err instanceof Error ? err.message : "Remove failed")
+      setBusy(false)
     }
-  };
+  }
 
   const saveEdit = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
       const res = await todosService.update(todo.id, {
         title: title.trim(),
         due_at: dueAt ? new Date(dueAt).toISOString() : null,
-      });
-      onChange(res.data);
-      setEditing(false);
+      })
+      onChange(res.data)
+      setEditing(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : "Save failed")
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const addToCalendar = async () => {
     if (!calendarConnected) {
-      onCalendarConnectRequested();
-      return;
+      onCalendarConnectRequested()
+      return
     }
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
       const res = await todosService.addToCalendar(todo.id, {
         duration_minutes: 30,
-      });
-      onChange(res.data.todo);
-      setCalendarToast({ href: res.data.html_link, label: "Open event" });
-      window.setTimeout(() => setCalendarToast(null), 6000);
+      })
+      onChange(res.data.todo)
+      setCalendarToast({ href: res.data.html_link, label: "Open event" })
+      window.setTimeout(() => setCalendarToast(null), 6000)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed";
+      const msg = err instanceof Error ? err.message : "Failed"
       if (msg.toLowerCase().includes("connect google calendar")) {
-        onCalendarConnectRequested();
+        onCalendarConnectRequested()
       }
-      setError(msg);
+      setError(msg)
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <div
@@ -189,9 +189,9 @@ export function TodoItemCard({
               <button
                 type="button"
                 onClick={() => {
-                  setEditing(false);
-                  setTitle(todo.title);
-                  setDueAt(dueIsoForInput(todo.due_at));
+                  setEditing(false)
+                  setTitle(todo.title)
+                  setDueAt(dueIsoForInput(todo.due_at))
                 }}
                 disabled={busy}
                 className="px-2 py-1 text-xs font-mono text-gray-600 hover:text-gray-900 rounded"
@@ -312,5 +312,5 @@ export function TodoItemCard({
         )}
       </div>
     </div>
-  );
+  )
 }

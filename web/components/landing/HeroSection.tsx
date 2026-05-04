@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import React from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
+import React from "react"
+import Link from "next/link"
+import { motion } from "framer-motion"
 
-import { AnimatedStagger } from "@/components/shared/site-motion";
-import { fadeUpVariants } from "@/components/shared/site-motion-variants";
+import { AnimatedStagger } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
-import { Section } from "./Section";
+import { Section } from "./Section"
 
 export const HeroSection: React.FC = () => {
   return (
@@ -94,5 +94,5 @@ export const HeroSection: React.FC = () => {
         </AnimatedStagger>
       </div>
     </Section>
-  );
-};
+  )
+}

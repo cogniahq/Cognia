@@ -1,7 +1,7 @@
-import type { Variants } from "framer-motion";
+import type { Variants } from "framer-motion"
 
-const MOTION_EASE = [0.22, 1, 0.36, 1] as const;
-const SECTION_REVEAL_Y = 20;
+const MOTION_EASE = [0.22, 1, 0.36, 1] as const
+const SECTION_REVEAL_Y = 20
 
 // Route-level transitions: opacity-only. translateY/scale shifts on every
 // navigation caused visible layout jumps on tab/route switches.
@@ -23,7 +23,7 @@ export const pageVariants: Variants = {
       ease: MOTION_EASE,
     },
   },
-};
+}
 
 export const fadeUpVariants: Variants = {
   initial: {
@@ -40,7 +40,7 @@ export const fadeUpVariants: Variants = {
       ease: MOTION_EASE,
     },
   },
-};
+}
 
 export const staggerContainerVariants: Variants = {
   initial: {},
@@ -50,7 +50,7 @@ export const staggerContainerVariants: Variants = {
       delayChildren: 0.05,
     },
   },
-};
+}
 
 export const tabContentVariants: Variants = {
   initial: {
@@ -70,7 +70,7 @@ export const tabContentVariants: Variants = {
       ease: MOTION_EASE,
     },
   },
-};
+}
 
 export const scaleInVariants: Variants = {
   initial: {
@@ -85,4 +85,4 @@ export const scaleInVariants: Variants = {
       ease: MOTION_EASE,
     },
   },
-};
+}

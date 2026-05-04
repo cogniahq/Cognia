@@ -1,13 +1,13 @@
-import React from "react";
+import React from "react"
 
-import { Footer } from "@/components/landing/Footer";
-import { Header } from "@/components/landing/Header";
+import { Footer } from "@/components/landing/Footer"
+import { Header } from "@/components/landing/Header"
 
 interface LegalPageLayoutProps {
-  title: string;
-  subtitle?: string;
-  lastUpdated?: string;
-  children: React.ReactNode;
+  title: string
+  subtitle?: string
+  lastUpdated?: string
+  children: React.ReactNode
 }
 
 /**
@@ -47,5 +47,5 @@ export const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
       </main>
       <Footer />
     </div>
-  );
-};
+  )
+}

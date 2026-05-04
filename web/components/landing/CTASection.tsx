@@ -1,7 +1,7 @@
-import React from "react";
-import Link from "next/link";
+import React from "react"
+import Link from "next/link"
 
-import { Section } from "./Section";
+import { Section } from "./Section"
 
 export const CTASection: React.FC = () => {
   return (
@@ -62,5 +62,5 @@ export const CTASection: React.FC = () => {
         </div>
       </div>
     </Section>
-  );
-};
+  )
+}

@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
+import type { Metadata } from "next"
+import { Suspense } from "react"
 
-import { IntegrationsClient } from "@/components/integrations/IntegrationsClient";
+import { IntegrationsClient } from "@/components/integrations/IntegrationsClient"
 
 export const metadata: Metadata = {
   title: "Integrations",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Provider grid + Calendar OAuth banner. The list is fetched on the
@@ -23,5 +23,5 @@ export default function IntegrationsPage() {
     <Suspense fallback={null}>
       <IntegrationsClient />
     </Suspense>
-  );
+  )
 }

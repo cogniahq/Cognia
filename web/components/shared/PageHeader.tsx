@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import Image from "next/image"
+import { usePathname, useRouter } from "next/navigation"
+import { Search } from "lucide-react"
 
-import { logoutAction } from "@/lib/auth/actions";
-import { useSession } from "@/lib/auth/client";
+import { logoutAction } from "@/lib/auth/actions"
+import { useSession } from "@/lib/auth/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,21 +13,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { OrgSwitcher } from "@/components/shared/OrgSwitcher";
+} from "@/components/ui/dropdown-menu"
+import { OrgSwitcher } from "@/components/shared/OrgSwitcher"
 
 interface UserMenuProps {
-  email?: string;
+  email?: string
 }
 
 function UserMenu({ email }: UserMenuProps) {
-  const router = useRouter();
+  const router = useRouter()
   const handleLogout = async () => {
     // logoutAction throws NEXT_REDIRECT after clearing the cookie, but it's
     // a Server Action so we just await it and let it redirect.
-    await logoutAction();
-  };
-  const initial = email?.trim().charAt(0).toUpperCase() || "U";
+    await logoutAction()
+  }
+  const initial = email?.trim().charAt(0).toUpperCase() || "U"
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -74,26 +74,26 @@ function UserMenu({ email }: UserMenuProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
 
 interface NavItem {
-  label: string;
-  path: string;
+  label: string
+  path: string
   /** Path prefixes that should mark this nav item as active. */
-  matchPrefixes?: string[];
+  matchPrefixes?: string[]
 }
 
 function CommandMenuTrigger() {
   const isMac =
     typeof navigator !== "undefined" &&
-    navigator.platform.toUpperCase().includes("MAC");
+    navigator.platform.toUpperCase().includes("MAC")
 
   const handleClick = () => {
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("cognia:open-command-menu"));
+      window.dispatchEvent(new CustomEvent("cognia:open-command-menu"))
     }
-  };
+  }
 
   return (
     <button
@@ -108,7 +108,7 @@ function CommandMenuTrigger() {
         <kbd className="font-mono">K</kbd>
       </span>
     </button>
-  );
+  )
 }
 
 /**
@@ -118,20 +118,20 @@ function CommandMenuTrigger() {
  * (Admin sees Admin + Billing nav slots; everyone else does not).
  */
 export function PageHeader() {
-  const router = useRouter();
-  const pathname = usePathname() ?? "";
-  const session = useSession();
+  const router = useRouter()
+  const pathname = usePathname() ?? ""
+  const session = useSession()
 
-  const currentOrg = session.primaryOrg;
-  const inOrgContext = !!currentOrg;
+  const currentOrg = session.primaryOrg
+  const inOrgContext = !!currentOrg
 
   // RBAC: the upstream API exposes per-org permissions, but for nav-gating
   // we only need the role (Admin vs Editor/Viewer). The "audit.read" and
   // "billing.read" permissions are admin-only on the server, so this
   // mirrors that without a separate permissions hydrate.
-  const isAdmin = currentOrg?.role === "ADMIN";
-  const showAdminNav = inOrgContext && !!currentOrg?.slug && isAdmin;
-  const showBillingNav = inOrgContext && !!currentOrg?.slug && isAdmin;
+  const isAdmin = currentOrg?.role === "ADMIN"
+  const showAdminNav = inOrgContext && !!currentOrg?.slug && isAdmin
+  const showBillingNav = inOrgContext && !!currentOrg?.slug && isAdmin
 
   const navItems: NavItem[] = [
     ...(inOrgContext
@@ -156,18 +156,18 @@ export function PageHeader() {
         ]
       : []),
     ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
-  ];
+  ]
 
   const isActive = (item: NavItem) => {
-    const prefixes = item.matchPrefixes ?? [item.path];
+    const prefixes = item.matchPrefixes ?? [item.path]
     return prefixes.some(
-      (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
-    );
-  };
+      (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+    )
+  }
 
   // Brand button always lands on /organization — Cognia is org-only and the
   // (app)/layout guarantees the user has at least one membership.
-  const dashboardPath = "/organization";
+  const dashboardPath = "/organization"
 
   return (
     <>
@@ -198,7 +198,7 @@ export function PageHeader() {
                 aria-label="Primary"
               >
                 {navItems.map((item) => {
-                  const active = isActive(item);
+                  const active = isActive(item)
                   return (
                     <button
                       key={item.path}
@@ -218,7 +218,7 @@ export function PageHeader() {
                         />
                       )}
                     </button>
-                  );
+                  )
                 })}
               </nav>
             </div>
@@ -234,5 +234,5 @@ export function PageHeader() {
       </header>
       <div className="h-14" aria-hidden="true" />
     </>
-  );
+  )
 }

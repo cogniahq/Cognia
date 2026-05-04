@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 
 import {
   Dialog,
@@ -8,18 +8,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { OrganizationWithRole } from "@/types/organization";
+} from "@/components/ui/dialog"
+import type { OrganizationWithRole } from "@/types/organization"
 
 interface CreateOrganizationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onCreate: (
     name: string,
     description?: string,
     industry?: string,
-    teamSize?: string,
-  ) => Promise<OrganizationWithRole>;
+    teamSize?: string
+  ) => Promise<OrganizationWithRole>
 }
 
 const INDUSTRIES = [
@@ -36,68 +36,68 @@ const INDUSTRIES = [
   { value: "media", label: "Media & Entertainment" },
   { value: "realestate", label: "Real Estate" },
   { value: "other", label: "Other" },
-];
+]
 
 const TEAM_SIZES = [
   { value: "1-10", label: "1-10" },
   { value: "11-50", label: "11-50" },
   { value: "51-200", label: "51-200" },
   { value: "200+", label: "200+" },
-];
+]
 
 export function CreateOrganizationDialog({
   open,
   onOpenChange,
   onCreate,
 }: CreateOrganizationDialogProps) {
-  const [name, setName] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [teamSize, setTeamSize] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [name, setName] = useState("")
+  const [industry, setIndustry] = useState("")
+  const [teamSize, setTeamSize] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!name.trim()) {
-      setError("Workspace name is required");
-      return;
+      setError("Workspace name is required")
+      return
     }
     if (!industry) {
-      setError("Please select an industry");
-      return;
+      setError("Please select an industry")
+      return
     }
     if (!teamSize) {
-      setError("Please select your team size");
-      return;
+      setError("Please select your team size")
+      return
     }
 
-    setIsSubmitting(true);
-    setError("");
+    setIsSubmitting(true)
+    setError("")
 
     try {
-      await onCreate(name.trim(), undefined, industry, teamSize);
-      setName("");
-      setIndustry("");
-      setTeamSize("");
-      onOpenChange(false);
+      await onCreate(name.trim(), undefined, industry, teamSize)
+      setName("")
+      setIndustry("")
+      setTeamSize("")
+      onOpenChange(false)
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to create workspace",
-      );
+        err instanceof Error ? err.message : "Failed to create workspace"
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      setName("");
-      setIndustry("");
-      setTeamSize("");
-      setError("");
+      setName("")
+      setIndustry("")
+      setTeamSize("")
+      setError("")
     }
-    onOpenChange(isOpen);
-  };
+    onOpenChange(isOpen)
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -125,8 +125,8 @@ export function CreateOrganizationDialog({
                 placeholder="e.g., Acme Corporation"
                 value={name}
                 onChange={(e) => {
-                  setName(e.target.value);
-                  setError("");
+                  setName(e.target.value)
+                  setError("")
                 }}
                 disabled={isSubmitting}
                 className="w-full px-3 py-2 border border-gray-300 text-sm font-mono focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
@@ -141,8 +141,8 @@ export function CreateOrganizationDialog({
               <select
                 value={industry}
                 onChange={(e) => {
-                  setIndustry(e.target.value);
-                  setError("");
+                  setIndustry(e.target.value)
+                  setError("")
                 }}
                 disabled={isSubmitting}
                 className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500 bg-white"
@@ -166,8 +166,8 @@ export function CreateOrganizationDialog({
                     key={size.value}
                     type="button"
                     onClick={() => {
-                      setTeamSize(size.value);
-                      setError("");
+                      setTeamSize(size.value)
+                      setError("")
                     }}
                     disabled={isSubmitting}
                     className={`px-3 py-2 border text-xs font-mono text-center transition-colors ${
@@ -209,5 +209,5 @@ export function CreateOrganizationDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

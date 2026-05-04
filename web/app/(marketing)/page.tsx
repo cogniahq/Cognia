@@ -1,21 +1,21 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 
-import { AnalyticsDemo } from "@/components/landing/AnalyticsDemo";
-import { CTASection } from "@/components/landing/CTASection";
-import { EmailDraftingDemo } from "@/components/landing/EmailDraftingDemo";
-import { FlowSection } from "@/components/landing/FlowSection";
-import { Footer } from "@/components/landing/Footer";
-import { Header } from "@/components/landing/Header";
-import { HeroSection } from "@/components/landing/HeroSection";
-import { IntegrationsDemo } from "@/components/landing/IntegrationsDemo";
-import { LandingBackground } from "@/components/landing/LandingBackground";
-import MemoryMeshDemo from "@/components/landing/MemoryMeshDemoClient";
-import { Section } from "@/components/landing/Section";
-import { SecuritySection } from "@/components/landing/SecuritySection";
-import { getSession } from "@/lib/auth/session";
+import { AnalyticsDemo } from "@/components/landing/AnalyticsDemo"
+import { CTASection } from "@/components/landing/CTASection"
+import { EmailDraftingDemo } from "@/components/landing/EmailDraftingDemo"
+import { FlowSection } from "@/components/landing/FlowSection"
+import { Footer } from "@/components/landing/Footer"
+import { Header } from "@/components/landing/Header"
+import { HeroSection } from "@/components/landing/HeroSection"
+import { IntegrationsDemo } from "@/components/landing/IntegrationsDemo"
+import { LandingBackground } from "@/components/landing/LandingBackground"
+import MemoryMeshDemo from "@/components/landing/MemoryMeshDemoClient"
+import { Section } from "@/components/landing/Section"
+import { SecuritySection } from "@/components/landing/SecuritySection"
+import { getSession } from "@/lib/auth/session"
 
-const SITE_URL = "https://cogniahq.tech";
+const SITE_URL = "https://cogniahq.tech"
 
 export const metadata: Metadata = {
   // Use the root layout's default title (no template suffix on /).
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
       "Capture, weave, and recall everything your team reads, writes, and decides — a living knowledge graph for the modern web.",
     url: "/",
   },
-};
+}
 
 const softwareApplicationLdJson = {
   "@context": "https://schema.org",
@@ -53,7 +53,7 @@ const softwareApplicationLdJson = {
     name: "Cognia",
     url: SITE_URL,
   },
-};
+}
 
 /**
  * Marketing landing. Authenticated users are bounced to /organization
@@ -62,9 +62,9 @@ const softwareApplicationLdJson = {
  * for SEO + first-paint.
  */
 export default async function HomePage() {
-  const session = await getSession();
+  const session = await getSession()
   if (session && session.organizations.length > 0) {
-    redirect("/organization");
+    redirect("/organization")
   }
 
   return (
@@ -107,5 +107,5 @@ export default async function HomePage() {
         <Footer />
       </main>
     </>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-"use server";
+"use server"
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { env } from "../env";
-import { clearSessionCookie, forwardSessionCookie } from "./cookie";
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { env } from "../env"
+import { clearSessionCookie, forwardSessionCookie } from "./cookie"
 
 /**
  * Server Actions for the auth + onboarding flows. Each action posts to the
@@ -16,63 +16,63 @@ import { clearSessionCookie, forwardSessionCookie } from "./cookie";
  * never wrap action bodies in try/catch unless you re-throw the redirect.
  */
 
-const POST_LOGIN_PATH = "/organization";
-const ONBOARDING_PATH = "/onboarding/workspace";
+const POST_LOGIN_PATH = "/organization"
+const ONBOARDING_PATH = "/onboarding/workspace"
 
 export interface ActionError {
-  error: string;
+  error: string
 }
 
 export interface ActionInfo {
-  ok: true;
-  message?: string;
+  ok: true
+  message?: string
 }
 
 interface ApiErrorBody {
-  message?: string;
-  error?: string;
-  detail?: string;
-  data?: { message?: string };
+  message?: string
+  error?: string
+  detail?: string
+  data?: { message?: string }
 }
 
 async function readErrorMessage(res: Response, fallback: string) {
   try {
-    const body = (await res.json()) as ApiErrorBody;
+    const body = (await res.json()) as ApiErrorBody
     return (
       body.message ??
       body.error ??
       body.detail ??
       body.data?.message ??
       fallback
-    );
+    )
   } catch {
-    return fallback;
+    return fallback
   }
 }
 
 interface LoginApiResponse {
-  success?: boolean;
-  message?: string;
+  success?: boolean
+  message?: string
   data?: {
-    requires2FA?: boolean;
-    message?: string;
-    user?: { id: string; email: string };
-    requiresOnboarding?: boolean;
-  };
+    requires2FA?: boolean
+    message?: string
+    user?: { id: string; email: string }
+    requiresOnboarding?: boolean
+  }
 }
 
 interface RegisterApiResponse {
-  message?: string;
-  user?: { id: string; email: string };
-  requiresOnboarding?: boolean;
+  message?: string
+  user?: { id: string; email: string }
+  requiresOnboarding?: boolean
 }
 
 interface OrgApiResponse {
-  success?: boolean;
-  message?: string;
+  success?: boolean
+  message?: string
   data?: {
-    organization?: { id: string; name: string; slug: string };
-  };
+    organization?: { id: string; name: string; slug: string }
+  }
 }
 
 // ===========================================================================
@@ -81,17 +81,17 @@ interface OrgApiResponse {
 
 export async function loginAction(
   _prev: ActionError | null,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionError | null> {
-  const email = (formData.get("email") ?? "").toString().trim();
-  const password = (formData.get("password") ?? "").toString();
+  const email = (formData.get("email") ?? "").toString().trim()
+  const password = (formData.get("password") ?? "").toString()
   const totpCode =
-    (formData.get("totpCode") ?? "").toString().trim() || undefined;
+    (formData.get("totpCode") ?? "").toString().trim() || undefined
   const backupCode =
-    (formData.get("backupCode") ?? "").toString().trim() || undefined;
+    (formData.get("backupCode") ?? "").toString().trim() || undefined
 
   if (!email || !password) {
-    return { error: "Please enter email and password" };
+    return { error: "Please enter email and password" }
   }
 
   const res = await fetch(`${env.publicApiUrl}/api/auth/login`, {
@@ -102,28 +102,28 @@ export async function loginAction(
     },
     body: JSON.stringify({ email, password, totpCode, backupCode }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
-    return { error: await readErrorMessage(res, "Invalid credentials") };
+    return { error: await readErrorMessage(res, "Invalid credentials") }
   }
 
-  const body = (await res.json().catch(() => ({}))) as LoginApiResponse;
+  const body = (await res.json().catch(() => ({}))) as LoginApiResponse
 
   // 2FA required — bounce back to the form so it can render the TOTP UI.
   if (body.data?.requires2FA) {
-    return { error: "REQUIRES_2FA" };
+    return { error: "REQUIRES_2FA" }
   }
 
-  const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"));
+  const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"))
   if (!forwarded) {
-    return { error: "Login succeeded but no session cookie was returned" };
+    return { error: "Login succeeded but no session cookie was returned" }
   }
 
   // Login responses don't include an explicit requiresOnboarding flag
   // (only /register does), so always send the user to /organization. If they
   // have no org membership the (app)/layout will bounce them to onboarding.
-  redirect(body.data?.requiresOnboarding ? ONBOARDING_PATH : POST_LOGIN_PATH);
+  redirect(body.data?.requiresOnboarding ? ONBOARDING_PATH : POST_LOGIN_PATH)
 }
 
 // ===========================================================================
@@ -132,16 +132,16 @@ export async function loginAction(
 
 export async function registerAction(
   _prev: ActionError | null,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionError | null> {
-  const email = (formData.get("email") ?? "").toString().trim();
-  const password = (formData.get("password") ?? "").toString();
+  const email = (formData.get("email") ?? "").toString().trim()
+  const password = (formData.get("password") ?? "").toString()
 
   if (!email || !password) {
-    return { error: "Please enter email and password" };
+    return { error: "Please enter email and password" }
   }
   if (password.length < 8) {
-    return { error: "Password must be at least 8 characters long" };
+    return { error: "Password must be at least 8 characters long" }
   }
 
   const res = await fetch(`${env.publicApiUrl}/api/auth/register`, {
@@ -152,25 +152,25 @@ export async function registerAction(
     },
     body: JSON.stringify({ email, password }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
-    return { error: await readErrorMessage(res, "Failed to register") };
+    return { error: await readErrorMessage(res, "Failed to register") }
   }
 
   // Register always returns requiresOnboarding: true, but parse defensively.
-  const body = (await res.json().catch(() => ({}))) as RegisterApiResponse;
+  const body = (await res.json().catch(() => ({}))) as RegisterApiResponse
 
-  const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"));
+  const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"))
   if (!forwarded) {
     return {
       error: "Registration succeeded but no session cookie was returned",
-    };
+    }
   }
 
   redirect(
-    body.requiresOnboarding === false ? POST_LOGIN_PATH : ONBOARDING_PATH,
-  );
+    body.requiresOnboarding === false ? POST_LOGIN_PATH : ONBOARDING_PATH
+  )
 }
 
 // ===========================================================================
@@ -180,8 +180,8 @@ export async function registerAction(
 export async function logoutAction(): Promise<void> {
   // Best-effort upstream logout; even if the API fails, we still clear the
   // local cookie so the browser can't replay a stale session.
-  const cookieStore = await cookies();
-  const session = cookieStore.get("cognia_session")?.value;
+  const cookieStore = await cookies()
+  const session = cookieStore.get("cognia_session")?.value
   try {
     await fetch(`${env.publicApiUrl}/api/auth/logout`, {
       method: "POST",
@@ -192,13 +192,13 @@ export async function logoutAction(): Promise<void> {
           }
         : { accept: "application/json" },
       cache: "no-store",
-    });
+    })
   } catch {
     // ignore — we still clear the cookie below
   }
 
-  await clearSessionCookie();
-  redirect("/login");
+  await clearSessionCookie()
+  redirect("/login")
 }
 
 // ===========================================================================
@@ -207,17 +207,17 @@ export async function logoutAction(): Promise<void> {
 
 export async function createWorkspaceAction(
   _prev: ActionError | null,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionError | null> {
-  const name = (formData.get("name") ?? "").toString().trim();
+  const name = (formData.get("name") ?? "").toString().trim()
   if (!name) {
-    return { error: "Enter a workspace name to continue." };
+    return { error: "Enter a workspace name to continue." }
   }
 
-  const cookieStore = await cookies();
-  const session = cookieStore.get("cognia_session")?.value;
+  const cookieStore = await cookies()
+  const session = cookieStore.get("cognia_session")?.value
   if (!session) {
-    redirect("/login");
+    redirect("/login")
   }
 
   const res = await fetch(`${env.publicApiUrl}/api/onboarding/workspace`, {
@@ -229,23 +229,23 @@ export async function createWorkspaceAction(
     },
     body: JSON.stringify({ name }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
     return {
       error: await readErrorMessage(
         res,
-        "Failed to create workspace. Try again.",
+        "Failed to create workspace. Try again."
       ),
-    };
+    }
   }
 
-  const body = (await res.json().catch(() => ({}))) as OrgApiResponse;
+  const body = (await res.json().catch(() => ({}))) as OrgApiResponse
   if (!body.data?.organization?.slug) {
-    return { error: "Server did not return a workspace." };
+    return { error: "Server did not return a workspace." }
   }
 
-  redirect(POST_LOGIN_PATH);
+  redirect(POST_LOGIN_PATH)
 }
 
 // ===========================================================================
@@ -254,17 +254,17 @@ export async function createWorkspaceAction(
 
 export async function acceptInviteAction(
   _prev: ActionError | null,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionError | null> {
-  const code = (formData.get("code") ?? "").toString().trim();
+  const code = (formData.get("code") ?? "").toString().trim()
   if (!code) {
-    return { error: "Paste your invite code to continue." };
+    return { error: "Paste your invite code to continue." }
   }
 
-  const cookieStore = await cookies();
-  const session = cookieStore.get("cognia_session")?.value;
+  const cookieStore = await cookies()
+  const session = cookieStore.get("cognia_session")?.value
   if (!session) {
-    redirect("/login");
+    redirect("/login")
   }
 
   const res = await fetch(`${env.publicApiUrl}/api/onboarding/accept-invite`, {
@@ -276,20 +276,20 @@ export async function acceptInviteAction(
     },
     body: JSON.stringify({ code }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
     return {
       error: await readErrorMessage(res, "Invite code is invalid or expired."),
-    };
+    }
   }
 
-  const body = (await res.json().catch(() => ({}))) as OrgApiResponse;
+  const body = (await res.json().catch(() => ({}))) as OrgApiResponse
   if (!body.data?.organization?.slug) {
-    return { error: "Server did not return a workspace." };
+    return { error: "Server did not return a workspace." }
   }
 
-  redirect(POST_LOGIN_PATH);
+  redirect(POST_LOGIN_PATH)
 }
 
 // ===========================================================================
@@ -297,9 +297,9 @@ export async function acceptInviteAction(
 // ===========================================================================
 
 export async function verifyEmailAction(
-  token: string,
+  token: string
 ): Promise<ActionError | ActionInfo> {
-  if (!token) return { error: "Missing verification token." };
+  if (!token) return { error: "Missing verification token." }
 
   // The API exposes verify-email as POST { token }. We call it server-side
   // so the page can render the result without a client round-trip.
@@ -311,16 +311,16 @@ export async function verifyEmailAction(
     },
     body: JSON.stringify({ token }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
-    return { error: await readErrorMessage(res, "Verification failed") };
+    return { error: await readErrorMessage(res, "Verification failed") }
   }
 
   // Verification doesn't issue a session, but if the API ever does we forward
   // it through anyway — cheap and harmless.
-  await forwardSessionCookie(res.headers.get("set-cookie"));
-  return { ok: true, message: "Email verified" };
+  await forwardSessionCookie(res.headers.get("set-cookie"))
+  return { ok: true, message: "Email verified" }
 }
 
 // ===========================================================================
@@ -328,9 +328,9 @@ export async function verifyEmailAction(
 // ===========================================================================
 
 export interface MagicLinkRequestState {
-  ok?: true;
-  email?: string;
-  error?: string;
+  ok?: true
+  email?: string
+  error?: string
 }
 
 /**
@@ -342,11 +342,11 @@ export interface MagicLinkRequestState {
  */
 export async function requestMagicLinkAction(
   _prev: MagicLinkRequestState | null,
-  formData: FormData,
+  formData: FormData
 ): Promise<MagicLinkRequestState> {
-  const email = (formData.get("email") ?? "").toString().trim();
+  const email = (formData.get("email") ?? "").toString().trim()
   if (!email) {
-    return { error: "Enter your email to receive a sign-in link." };
+    return { error: "Enter your email to receive a sign-in link." }
   }
 
   const res = await fetch(`${env.publicApiUrl}/api/auth/magic-link/send`, {
@@ -357,18 +357,18 @@ export async function requestMagicLinkAction(
     },
     body: JSON.stringify({ email }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
     return {
       error: await readErrorMessage(
         res,
-        "Could not send the sign-in link. Try again in a moment.",
+        "Could not send the sign-in link. Try again in a moment."
       ),
-    };
+    }
   }
 
-  return { ok: true, email };
+  return { ok: true, email }
 }
 
 // ===========================================================================
@@ -376,9 +376,9 @@ export async function requestMagicLinkAction(
 // ===========================================================================
 
 export async function magicLinkAction(
-  token: string,
+  token: string
 ): Promise<ActionError | null> {
-  if (!token) return { error: "Missing sign-in token." };
+  if (!token) return { error: "Missing sign-in token." }
 
   const res = await fetch(`${env.publicApiUrl}/api/auth/magic-link/consume`, {
     method: "POST",
@@ -388,21 +388,21 @@ export async function magicLinkAction(
     },
     body: JSON.stringify({ token }),
     cache: "no-store",
-  });
+  })
 
   if (!res.ok) {
     return {
       error: await readErrorMessage(
         res,
-        "This link is invalid or has already been used.",
+        "This link is invalid or has already been used."
       ),
-    };
+    }
   }
 
-  const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"));
+  const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"))
   if (!forwarded) {
-    return { error: "Sign-in succeeded but no session cookie was returned" };
+    return { error: "Sign-in succeeded but no session cookie was returned" }
   }
 
-  return null; // caller redirects on null
+  return null // caller redirects on null
 }

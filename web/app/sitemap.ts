@@ -1,13 +1,11 @@
-import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next"
 
-const SITE_URL = "https://cogniahq.tech";
+const SITE_URL = "https://cogniahq.tech"
 
 interface MarketingRoute {
-  path: string;
-  changeFrequency: NonNullable<
-    MetadataRoute.Sitemap[number]["changeFrequency"]
-  >;
-  priority: number;
+  path: string
+  changeFrequency: NonNullable<MetadataRoute.Sitemap[number]["changeFrequency"]>
+  priority: number
 }
 
 // Public, indexable routes only. Auth + app routes live behind the auth
@@ -23,14 +21,14 @@ const ROUTES: MarketingRoute[] = [
   { path: "/terms", changeFrequency: "yearly", priority: 0.5 },
   { path: "/subprocessors", changeFrequency: "monthly", priority: 0.5 },
   { path: "/dpa", changeFrequency: "yearly", priority: 0.5 },
-];
+]
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
+  const lastModified = new Date()
   return ROUTES.map((r) => ({
     url: r.path === "/" ? SITE_URL : `${SITE_URL}${r.path}`,
     lastModified,
     changeFrequency: r.changeFrequency,
     priority: r.priority,
-  }));
+  }))
 }

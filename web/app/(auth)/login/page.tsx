@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { getSession } from "@/lib/auth/session";
+import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { LoginForm } from "@/components/auth/LoginForm"
+import { getSession } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Sign in",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Sign-in surface. If the visitor already has a valid session, bounce them
@@ -14,13 +14,13 @@ export const metadata: Metadata = {
  * yet) — same UX the old client/ Login page applied through useEffect.
  */
 export default async function LoginPage() {
-  const session = await getSession();
+  const session = await getSession()
   if (session) {
     redirect(
       session.organizations.length === 0
         ? "/onboarding/workspace"
-        : "/organization",
-    );
+        : "/organization"
+    )
   }
-  return <LoginForm mode="signin" />;
+  return <LoginForm mode="signin" />
 }

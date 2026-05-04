@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import { redirect } from "next/navigation";
-import { OnboardingForm } from "@/components/auth/OnboardingForm";
-import { getSession } from "@/lib/auth/session";
+import type { Metadata } from "next"
+import Image from "next/image"
+import { redirect } from "next/navigation"
+import { OnboardingForm } from "@/components/auth/OnboardingForm"
+import { getSession } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Set up your workspace",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Forced onboarding wall. Reached two ways:
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
  * (<OnboardingForm />) which posts to the create/join Server Actions.
  */
 export default async function OnboardingWorkspacePage() {
-  const session = await getSession();
+  const session = await getSession()
   if (!session) {
-    redirect("/login");
+    redirect("/login")
   }
   if (session.organizations.length > 0) {
-    redirect("/organization");
+    redirect("/organization")
   }
 
   return (
@@ -67,5 +67,5 @@ export default async function OnboardingWorkspacePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Firebase availability shim.
@@ -15,15 +15,15 @@
  * call. The signature is intentionally kept compatible with that future
  * implementation so call sites won't have to change.
  */
-import { env } from "./env";
+import { env } from "./env"
 
 export function isFirebaseConfigured(): boolean {
   return Boolean(
     env.firebase.apiKey &&
-      env.firebase.authDomain &&
-      env.firebase.projectId &&
-      env.firebase.appId,
-  );
+    env.firebase.authDomain &&
+    env.firebase.projectId &&
+    env.firebase.appId
+  )
 }
 
 /**
@@ -31,5 +31,5 @@ export function isFirebaseConfigured(): boolean {
  * dependency of `web/`. See file header for migration path.
  */
 export async function getFirebase(): Promise<null> {
-  return null;
+  return null
 }

@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 
-import { getSession } from "@/lib/auth/session";
-import { OrgAdminClient } from "@/components/org-admin/OrgAdminClient";
+import { getSession } from "@/lib/auth/session"
+import { OrgAdminClient } from "@/components/org-admin/OrgAdminClient"
 
 /**
  * Workspace admin console. The page-level Server Component does two
@@ -20,41 +20,41 @@ import { OrgAdminClient } from "@/components/org-admin/OrgAdminClient";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = await params
   return {
     title: `${slug} · Admin`,
     robots: { index: false, follow: false },
-  };
+  }
 }
 
 export default async function OrgAdminPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params;
-  const session = await getSession();
-  if (!session) return null; // (app) layout redirects before we get here
+  const { slug } = await params
+  const session = await getSession()
+  if (!session) return null // (app) layout redirects before we get here
 
-  const org = session.organizations.find((o) => o.slug === slug);
+  const org = session.organizations.find((o) => o.slug === slug)
   if (!org) {
     // The session has organizations but the slug doesn't belong to any of
     // them. 404 keeps the URL space clean rather than leaking a "you don't
     // have access" hint.
-    notFound();
+    notFound()
   }
 
-  const isAdmin = org.role === "ADMIN";
-  const isEditor = org.role === "EDITOR";
+  const isAdmin = org.role === "ADMIN"
+  const isEditor = org.role === "EDITOR"
   // The matrix mirrors api/src/services/auth/permissions.config.ts:
   //   - api_key.create + api_key.revoke → ADMIN only
   //   - audit.read → ADMIN, EDITOR, VIEWER (everyone in the org)
   //   - member.remove → ADMIN only
-  const canManageMembers = isAdmin;
-  const canSeeApiKeys = isAdmin;
-  const canSeeUpcomingTab = isAdmin || isEditor || org.role === "VIEWER";
+  const canManageMembers = isAdmin
+  const canSeeApiKeys = isAdmin
+  const canSeeUpcomingTab = isAdmin || isEditor || org.role === "VIEWER"
 
   return (
     <OrgAdminClient
@@ -65,5 +65,5 @@ export default async function OrgAdminPage({
       canSeeApiKeys={canSeeApiKeys}
       canSeeUpcomingTab={canSeeUpcomingTab}
     />
-  );
+  )
 }

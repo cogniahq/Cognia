@@ -1,15 +1,15 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
 import {
   orgAdminService,
   type IntegrationHealth,
-} from "@/services/org-admin.service";
+} from "@/services/org-admin.service"
 
 interface IntegrationsHealthTabProps {
-  slug: string;
+  slug: string
 }
 
 const STATUS_STYLES: Record<
@@ -23,49 +23,49 @@ const STATUS_STYLES: Record<
   RATE_LIMITED: { label: "Rate limited", tone: "red" },
   TOKEN_EXPIRED: { label: "Token expired", tone: "red" },
   DISCONNECTED: { label: "Disconnected", tone: "red" },
-};
+}
 
 const TONE_CLASSES: Record<string, string> = {
   green: "border-green-200 bg-green-50 text-green-700",
   yellow: "border-yellow-200 bg-yellow-50 text-yellow-700",
   red: "border-red-200 bg-red-50 text-red-700",
   gray: "border-gray-200 bg-gray-50 text-gray-600",
-};
+}
 
 function formatDate(iso?: string | null): string {
-  if (!iso) return "Never";
+  if (!iso) return "Never"
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString()
   } catch {
-    return iso;
+    return iso
   }
 }
 
 export default function IntegrationsHealthTab({
   slug,
 }: IntegrationsHealthTabProps) {
-  const [items, setItems] = useState<IntegrationHealth[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<IntegrationHealth[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const data = await orgAdminService.getIntegrationsHealth(slug);
-      setItems(data);
+      const data = await orgAdminService.getIntegrationsHealth(slug)
+      setItems(data)
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load integrations",
-      );
+        err instanceof Error ? err.message : "Failed to load integrations"
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [slug]);
+  }, [slug])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   return (
     <div className="space-y-4">
@@ -112,7 +112,7 @@ export default function IntegrationsHealthTab({
               const style = STATUS_STYLES[item.status?.toUpperCase()] || {
                 label: item.status || "Unknown",
                 tone: "gray" as const,
-              };
+              }
               return (
                 <li
                   key={item.id}
@@ -145,11 +145,11 @@ export default function IntegrationsHealthTab({
                     )}
                   </div>
                 </li>
-              );
+              )
             })}
           </ul>
         )}
       </div>
     </div>
-  );
+  )
 }

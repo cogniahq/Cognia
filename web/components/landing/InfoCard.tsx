@@ -1,9 +1,9 @@
-import React from "react";
+import React from "react"
 
 interface InfoCardProps {
-  children: React.ReactNode;
-  className?: string;
-  hover?: boolean;
+  children: React.ReactNode
+  className?: string
+  hover?: boolean
 }
 
 export const InfoCard: React.FC<InfoCardProps> = ({
@@ -13,7 +13,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
 }) => {
   const hoverClasses = hover
     ? "hover:border-black transition-all duration-300"
-    : "";
+    : ""
 
   return (
     <div
@@ -21,16 +21,16 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     >
       {children}
     </div>
-  );
-};
+  )
+}
 
 interface InfoCardWithIconProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  features?: React.ReactNode[];
-  className?: string;
-  hover?: boolean;
+  icon: React.ReactNode
+  title: string
+  description: string
+  features?: React.ReactNode[]
+  className?: string
+  hover?: boolean
 }
 
 export const InfoCardWithIcon: React.FC<InfoCardWithIconProps> = ({
@@ -56,5 +56,5 @@ export const InfoCardWithIcon: React.FC<InfoCardWithIconProps> = ({
         </div>
       )}
     </InfoCard>
-  );
-};
+  )
+}

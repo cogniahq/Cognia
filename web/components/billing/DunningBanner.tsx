@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
+import React, { useState } from "react"
 
-import type { BillingSubscription } from "@/services/billing.service";
+import type { BillingSubscription } from "@/services/billing.service"
 
 interface DunningBannerProps {
-  subscription: BillingSubscription | null | undefined;
-  onUpdatePayment: () => void | Promise<void>;
+  subscription: BillingSubscription | null | undefined
+  onUpdatePayment: () => void | Promise<void>
 }
 
 /**
@@ -19,8 +19,8 @@ export const DunningBanner: React.FC<DunningBannerProps> = ({
   subscription,
   onUpdatePayment,
 }) => {
-  const [busy, setBusy] = useState(false);
-  const status = subscription?.status?.toLowerCase();
+  const [busy, setBusy] = useState(false)
+  const status = subscription?.status?.toLowerCase()
   const showBanner =
     status === "halted" ||
     status === "pending" ||
@@ -28,19 +28,19 @@ export const DunningBanner: React.FC<DunningBannerProps> = ({
     // surfaced.
     status === "past_due" ||
     status === "unpaid" ||
-    status === "incomplete";
+    status === "incomplete"
 
-  if (!showBanner) return null;
+  if (!showBanner) return null
 
   const handleClick = async () => {
-    if (busy) return;
-    setBusy(true);
+    if (busy) return
+    setBusy(true)
     try {
-      await onUpdatePayment();
+      await onUpdatePayment()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <div
@@ -76,7 +76,7 @@ export const DunningBanner: React.FC<DunningBannerProps> = ({
         {busy ? "Opening..." : "Update payment"}
       </button>
     </div>
-  );
-};
+  )
+}
 
-export default DunningBanner;
+export default DunningBanner

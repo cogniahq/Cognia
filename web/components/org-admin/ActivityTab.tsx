@@ -1,24 +1,21 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Loader2 } from "lucide-react"
 
-import {
-  orgAdminService,
-  type ActivityRow,
-} from "@/services/org-admin.service";
+import { orgAdminService, type ActivityRow } from "@/services/org-admin.service"
 
 interface ActivityTabProps {
-  slug: string;
+  slug: string
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 50
 
 interface Filters {
-  eventType: string;
-  eventCategory: string;
-  startDate: string;
-  endDate: string;
+  eventType: string
+  eventCategory: string
+  startDate: string
+  endDate: string
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -26,24 +23,24 @@ const EMPTY_FILTERS: Filters = {
   eventCategory: "",
   startDate: "",
   endDate: "",
-};
+}
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString()
   } catch {
-    return iso;
+    return iso
   }
 }
 
 export default function ActivityTab({ slug }: ActivityTabProps) {
-  const [rows, setRows] = useState<ActivityRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [pendingFilters, setPendingFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [rows, setRows] = useState<ActivityRow[]>([])
+  const [total, setTotal] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
+  const [pendingFilters, setPendingFilters] = useState<Filters>(EMPTY_FILTERS)
 
   const queryParams = useMemo<Record<string, string | number | undefined>>(
     () => ({
@@ -54,47 +51,47 @@ export default function ActivityTab({ slug }: ActivityTabProps) {
       startDate: filters.startDate || undefined,
       endDate: filters.endDate || undefined,
     }),
-    [offset, filters],
-  );
+    [offset, filters]
+  )
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const res = await orgAdminService.getActivity(slug, queryParams);
-      setRows(res.data || []);
-      setTotal(res.pagination?.total || 0);
+      const res = await orgAdminService.getActivity(slug, queryParams)
+      setRows(res.data || [])
+      setTotal(res.pagination?.total || 0)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load activity");
+      setError(err instanceof Error ? err.message : "Failed to load activity")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [slug, queryParams]);
+  }, [slug, queryParams])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   const handleApplyFilters = () => {
-    setOffset(0);
-    setFilters(pendingFilters);
-  };
+    setOffset(0)
+    setFilters(pendingFilters)
+  }
 
   const handleResetFilters = () => {
-    setPendingFilters(EMPTY_FILTERS);
-    setFilters(EMPTY_FILTERS);
-    setOffset(0);
-  };
+    setPendingFilters(EMPTY_FILTERS)
+    setFilters(EMPTY_FILTERS)
+    setOffset(0)
+  }
 
   const csvUrl = orgAdminService.activityCsvUrl(slug, {
     eventType: filters.eventType || undefined,
     eventCategory: filters.eventCategory || undefined,
     startDate: filters.startDate || undefined,
     endDate: filters.endDate || undefined,
-  });
+  })
 
-  const canPrev = offset > 0;
-  const canNext = offset + PAGE_SIZE < total;
+  const canPrev = offset > 0
+  const canNext = offset + PAGE_SIZE < total
 
   return (
     <div className="space-y-5">
@@ -301,5 +298,5 @@ export default function ActivityTab({ slug }: ActivityTabProps) {
         </div>
       )}
     </div>
-  );
+  )
 }

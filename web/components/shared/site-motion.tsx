@@ -1,25 +1,25 @@
-"use client";
+"use client"
 
-import type { ReactNode } from "react";
-import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
+import type { ReactNode } from "react"
+import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion"
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 import {
   fadeUpVariants,
   pageVariants,
   staggerContainerVariants,
-} from "@/components/shared/site-motion-variants";
+} from "@/components/shared/site-motion-variants"
 
 type AnimatedPageProps = HTMLMotionProps<"div"> & {
-  children: ReactNode;
-};
+  children: ReactNode
+}
 
 export function AnimatedPage({
   children,
   className,
   ...props
 }: AnimatedPageProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion()
 
   return (
     <motion.div
@@ -32,19 +32,19 @@ export function AnimatedPage({
     >
       {children}
     </motion.div>
-  );
+  )
 }
 
 type AnimatedSectionProps = HTMLMotionProps<"section"> & {
-  children: ReactNode;
-};
+  children: ReactNode
+}
 
 export function AnimatedSection({
   children,
   className,
   ...props
 }: AnimatedSectionProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion()
 
   return (
     <motion.section
@@ -57,19 +57,19 @@ export function AnimatedSection({
     >
       {children}
     </motion.section>
-  );
+  )
 }
 
 type AnimatedStaggerProps = HTMLMotionProps<"div"> & {
-  children: ReactNode;
-};
+  children: ReactNode
+}
 
 export function AnimatedStagger({
   children,
   className,
   ...props
 }: AnimatedStaggerProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion()
 
   return (
     <motion.div
@@ -82,5 +82,5 @@ export function AnimatedStagger({
     >
       {children}
     </motion.div>
-  );
+  )
 }

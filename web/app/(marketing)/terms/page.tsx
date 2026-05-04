@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
-import React from "react";
+import type { Metadata } from "next"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
       "The contract that governs your use of Cognia — short, plain-English, and updated as the product evolves.",
     url: "/terms",
   },
-};
+}
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
@@ -28,7 +28,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
       {children}
     </div>
   </section>
-);
+)
 
 export default function TermsPage() {
   return (
@@ -160,5 +160,5 @@ export default function TermsPage() {
         </p>
       </Section>
     </LegalPageLayout>
-  );
+  )
 }

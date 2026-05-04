@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { getSession } from "@/lib/auth/session";
+import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { LoginForm } from "@/components/auth/LoginForm"
+import { getSession } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Create your account",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Registration surface. Reuses LoginForm with mode="signup" so the form
@@ -14,13 +14,13 @@ export const metadata: Metadata = {
  * the form posts to.
  */
 export default async function SignupPage() {
-  const session = await getSession();
+  const session = await getSession()
   if (session) {
     redirect(
       session.organizations.length === 0
         ? "/onboarding/workspace"
-        : "/organization",
-    );
+        : "/organization"
+    )
   }
-  return <LoginForm mode="signup" />;
+  return <LoginForm mode="signup" />
 }

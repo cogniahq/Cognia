@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   identityService,
   type CreatedScimToken,
   type ScimToken,
-} from "@/services/identity.service";
+} from "@/services/identity.service"
 import {
   Dialog,
   DialogContent,
@@ -16,104 +16,102 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 
 interface ScimTokensManagerProps {
-  slug: string;
+  slug: string
 }
 
 function formatDate(iso?: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "—"
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString()
   } catch {
-    return iso;
+    return iso
   }
 }
 
 export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
-  const [tokens, setTokens] = useState<ScimToken[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [tokens, setTokens] = useState<ScimToken[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [creating, setCreating] = useState(false)
 
-  const [created, setCreated] = useState<CreatedScimToken | null>(null);
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [created, setCreated] = useState<CreatedScimToken | null>(null)
+  const [acknowledged, setAcknowledged] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const res = await identityService.listScimTokens(slug);
-      setTokens(res?.data ?? []);
+      const res = await identityService.listScimTokens(slug)
+      setTokens(res?.data ?? [])
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load SCIM tokens",
-      );
+        err instanceof Error ? err.message : "Failed to load SCIM tokens"
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [slug]);
+  }, [slug])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   const handleCreate = async () => {
-    setCreating(true);
+    setCreating(true)
     try {
       const res = await identityService.createScimToken(
         slug,
-        newName.trim() || undefined,
-      );
-      const tok = res?.data;
+        newName.trim() || undefined
+      )
+      const tok = res?.data
       if (!tok?.token) {
-        throw new Error("Server did not return a token");
+        throw new Error("Server did not return a token")
       }
-      setCreated(tok);
-      setShowCreate(false);
-      setNewName("");
-      setAcknowledged(false);
-      setCopied(false);
-      await load();
+      setCreated(tok)
+      setShowCreate(false)
+      setNewName("")
+      setAcknowledged(false)
+      setCopied(false)
+      await load()
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to create token",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to create token")
     } finally {
-      setCreating(false);
+      setCreating(false)
     }
-  };
+  }
 
   const handleCopy = async () => {
-    if (!created?.token) return;
+    if (!created?.token) return
     try {
-      await navigator.clipboard.writeText(created.token);
-      setCopied(true);
-      toast.success("Token copied to clipboard");
+      await navigator.clipboard.writeText(created.token)
+      setCopied(true)
+      toast.success("Token copied to clipboard")
     } catch {
-      toast.error("Could not copy to clipboard");
+      toast.error("Could not copy to clipboard")
     }
-  };
+  }
 
   const handleRevoke = async (tokenId: string) => {
-    setRevokingId(tokenId);
+    setRevokingId(tokenId)
     try {
-      await identityService.revokeScimToken(slug, tokenId);
-      toast.success("Token revoked");
-      await load();
+      await identityService.revokeScimToken(slug, tokenId)
+      toast.success("Token revoked")
+      await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to revoke");
+      toast.error(err instanceof Error ? err.message : "Failed to revoke")
     } finally {
-      setRevokingId(null);
+      setRevokingId(null)
     }
-  };
+  }
 
   return (
     <div className="space-y-4">
@@ -153,7 +151,7 @@ export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
         ) : (
           <div className="divide-y divide-gray-100">
             {tokens.map((t) => {
-              const isRevoked = !!t.revoked_at;
+              const isRevoked = !!t.revoked_at
               return (
                 <div
                   key={t.id}
@@ -192,7 +190,7 @@ export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
                     )}
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         )}
@@ -202,7 +200,7 @@ export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
       <Dialog
         open={showCreate}
         onOpenChange={(open) => {
-          if (!creating) setShowCreate(open);
+          if (!creating) setShowCreate(open)
         }}
       >
         <DialogContent>
@@ -256,7 +254,7 @@ export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
         open={!!created}
         onOpenChange={(open) => {
           if (!open && acknowledged) {
-            setCreated(null);
+            setCreated(null)
           }
         }}
       >
@@ -304,5 +302,5 @@ export default function ScimTokensManager({ slug }: ScimTokensManagerProps) {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

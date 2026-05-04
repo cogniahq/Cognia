@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import React from "react";
+import type { Metadata } from "next"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
 interface RewardTier {
-  severity: string;
-  payout: string;
-  description: string;
+  severity: string
+  payout: string
+  description: string
 }
 
 const REWARDS: RewardTier[] = [
@@ -34,7 +34,7 @@ const REWARDS: RewardTier[] = [
     description:
       "Reflected XSS in unauthenticated surfaces, minor information disclosure.",
   },
-];
+]
 
 export const metadata: Metadata = {
   title: "Bug Bounty",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
       "Scope, rewards from $100 to $5,000, safe-harbor terms, and how to report a vulnerability to Cognia security.",
     url: "/security/bug-bounty",
   },
-};
+}
 
 export default function BugBountyPage() {
   return (
@@ -180,5 +180,5 @@ export default function BugBountyPage() {
         </a>
       </section>
     </LegalPageLayout>
-  );
+  )
 }

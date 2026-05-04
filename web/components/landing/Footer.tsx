@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { motion } from "framer-motion";
+import React from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { motion } from "framer-motion"
 
-import { fadeUpVariants } from "@/components/shared/site-motion-variants";
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
 const TRUST_LINKS: { label: string; to: string; external?: boolean }[] = [
   { label: "Trust center", to: "/trust" },
@@ -15,7 +15,7 @@ const TRUST_LINKS: { label: string; to: string; external?: boolean }[] = [
   { label: "Subprocessors", to: "/subprocessors" },
   { label: "DPA", to: "/dpa" },
   { label: "Bug bounty", to: "/security/bug-bounty" },
-];
+]
 
 export const Footer: React.FC = () => {
   return (
@@ -116,7 +116,7 @@ export const Footer: React.FC = () => {
                   >
                     {link.label}
                   </Link>
-                ),
+                )
               )}
             </nav>
           </div>
@@ -133,5 +133,5 @@ export const Footer: React.FC = () => {
         </div>
       </div>
     </motion.footer>
-  );
-};
+  )
+}

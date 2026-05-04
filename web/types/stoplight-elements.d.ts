@@ -5,33 +5,33 @@
 // condition, so TypeScript with `moduleResolution: bundler` cannot resolve
 // them. We declare the (small) surface we actually use here.
 declare module "@stoplight/elements" {
-  import * as React from "react";
+  import * as React from "react"
 
   interface CommonAPIProps {
-    layout?: "sidebar" | "stacked" | "responsive";
-    logo?: string;
-    hideTryIt?: boolean;
-    hideSamples?: boolean;
-    hideTryItPanel?: boolean;
-    hideSecurityInfo?: boolean;
-    hideServerInfo?: boolean;
-    hideSchemas?: boolean;
-    hideInternal?: boolean;
-    hideExport?: boolean;
-    router?: "history" | "hash" | "memory" | "static";
-    basePath?: string;
-    staticRouterPath?: string;
+    layout?: "sidebar" | "stacked" | "responsive"
+    logo?: string
+    hideTryIt?: boolean
+    hideSamples?: boolean
+    hideTryItPanel?: boolean
+    hideSecurityInfo?: boolean
+    hideServerInfo?: boolean
+    hideSchemas?: boolean
+    hideInternal?: boolean
+    hideExport?: boolean
+    router?: "history" | "hash" | "memory" | "static"
+    basePath?: string
+    staticRouterPath?: string
   }
 
-  type APIPropsWithUrl = { apiDescriptionUrl: string } & CommonAPIProps;
+  type APIPropsWithUrl = { apiDescriptionUrl: string } & CommonAPIProps
   type APIPropsWithDocument = {
-    apiDescriptionDocument: string | object;
-    apiDescriptionUrl?: string;
-  } & CommonAPIProps;
-  export type APIProps = APIPropsWithUrl | APIPropsWithDocument;
+    apiDescriptionDocument: string | object
+    apiDescriptionUrl?: string
+  } & CommonAPIProps
+  export type APIProps = APIPropsWithUrl | APIPropsWithDocument
 
-  export const API: React.FC<APIProps>;
-  export const APIWithStackedLayout: React.FC<APIProps>;
+  export const API: React.FC<APIProps>
+  export const APIWithStackedLayout: React.FC<APIProps>
 }
 
-declare module "@stoplight/elements/styles.min.css";
+declare module "@stoplight/elements/styles.min.css"

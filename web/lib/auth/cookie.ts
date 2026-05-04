@@ -1,7 +1,7 @@
-import "server-only";
-import { cookies } from "next/headers";
+import "server-only"
+import { cookies } from "next/headers"
 
-const SESSION_COOKIE = "cognia_session";
+const SESSION_COOKIE = "cognia_session"
 
 /**
  * Cookie attributes mirror api/src/utils/auth/auth-cookie.util.ts so the
@@ -13,15 +13,15 @@ const SESSION_COOKIE = "cognia_session";
  * so HTTP works without Secure.
  */
 function cookieAttributes() {
-  const isProd = process.env.NODE_ENV === "production";
-  const cookieDomain = process.env.COOKIE_DOMAIN;
+  const isProd = process.env.NODE_ENV === "production"
+  const cookieDomain = process.env.COOKIE_DOMAIN
   return {
     domain: isProd ? (cookieDomain ?? ".cogniahq.tech") : undefined,
     path: "/",
     httpOnly: true,
     secure: isProd,
     sameSite: (isProd ? "none" : "lax") as "none" | "lax",
-  };
+  }
 }
 
 /**
@@ -34,21 +34,21 @@ function cookieAttributes() {
  * Returns true if a cognia_session was forwarded, false otherwise.
  */
 export async function forwardSessionCookie(
-  setCookieHeader: string | null,
+  setCookieHeader: string | null
 ): Promise<boolean> {
-  if (!setCookieHeader) return false;
+  if (!setCookieHeader) return false
   // A single getter call may return multiple Set-Cookie headers concatenated
   // with a comma; that's the spec but it's also ambiguous because cookies can
   // contain commas in Expires. Simplest reliable parse: scan for our cookie
   // name and read until the first semicolon.
   const match = setCookieHeader.match(
-    new RegExp(`${SESSION_COOKIE}=([^;]+)`, "i"),
-  );
-  if (!match) return false;
-  const value = match[1];
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, value, cookieAttributes());
-  return true;
+    new RegExp(`${SESSION_COOKIE}=([^;]+)`, "i")
+  )
+  if (!match) return false
+  const value = match[1]
+  const cookieStore = await cookies()
+  cookieStore.set(SESSION_COOKIE, value, cookieAttributes())
+  return true
 }
 
 /**
@@ -57,12 +57,12 @@ export async function forwardSessionCookie(
  * domain-qualified attributes when in prod.
  */
 export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies()
   cookieStore.delete({
     name: SESSION_COOKIE,
     path: "/",
     domain: cookieAttributes().domain,
-  });
+  })
 }
 
-export const SESSION_COOKIE_NAME = SESSION_COOKIE;
+export const SESSION_COOKIE_NAME = SESSION_COOKIE

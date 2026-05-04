@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"
 
 /**
  * Client-side dynamic import wrapper for MemoryMeshDemo. The mesh viz pulls
@@ -12,6 +12,6 @@ import dynamic from "next/dynamic";
  */
 const MemoryMeshDemo = dynamic(() => import("./MemoryMeshDemo"), {
   ssr: false,
-});
+})
 
-export default MemoryMeshDemo;
+export default MemoryMeshDemo

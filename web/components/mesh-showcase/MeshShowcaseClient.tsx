@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"
 
-import { mockMeshData } from "@/data/mock-mesh-data";
+import { mockMeshData } from "@/data/mock-mesh-data"
 
 // react-three/fiber + drei reach for `window` in their module-init paths,
 // so we render the mesh purely client-side. Next 15 only allows ssr:false
@@ -10,13 +10,13 @@ import { mockMeshData } from "@/data/mock-mesh-data";
 const MemoryMesh3DPreview = dynamic(
   () =>
     import("@/components/landing/mesh-preview/MemoryMesh3DPreview").then(
-      (m) => m.MemoryMesh3DPreview,
+      (m) => m.MemoryMesh3DPreview
     ),
-  { ssr: false },
-);
+  { ssr: false }
+)
 
 export default function MeshShowcaseClient() {
-  const hasNodes = !!mockMeshData?.nodes && mockMeshData.nodes.length > 0;
+  const hasNodes = !!mockMeshData?.nodes && mockMeshData.nodes.length > 0
 
   if (!hasNodes) {
     return (
@@ -25,7 +25,7 @@ export default function MeshShowcaseClient() {
           No mesh data available.
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -65,5 +65,5 @@ export default function MeshShowcaseClient() {
         </div>
       </div>
     </div>
-  );
+  )
 }

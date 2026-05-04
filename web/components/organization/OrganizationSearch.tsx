@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Search tab. Streamlined port of
@@ -16,29 +16,29 @@
  * UI doesn't permanently spin if the SSE pipe drops.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react"
 
-import * as orgService from "@/services/organization.service";
+import * as orgService from "@/services/organization.service"
 import type {
   Document,
   OrganizationSearchResponse,
   OrganizationWithRole,
-} from "@/types/organization";
+} from "@/types/organization"
 
 const FILTERS = [
   { id: "ALL", label: "All Sources", sourceTypes: undefined },
   { id: "DOCUMENTS", label: "Documents", sourceTypes: ["DOCUMENT"] },
   { id: "BROWSING", label: "Browsing", sourceTypes: ["EXTENSION"] },
   { id: "INTEGRATIONS", label: "Integrations", sourceTypes: ["INTEGRATION"] },
-] as const;
+] as const
 
 interface OrganizationSearchProps {
-  currentOrganization: OrganizationWithRole;
-  documents: Document[];
+  currentOrganization: OrganizationWithRole
+  documents: Document[]
 }
 
 function mapAnswerJobCitations(
-  citations: orgService.AnswerJobResult["citations"],
+  citations: orgService.AnswerJobResult["citations"]
 ): OrganizationSearchResponse["citations"] {
   return citations?.map((citation) => ({
     index: citation.label,
@@ -48,36 +48,36 @@ function mapAnswerJobCitations(
     sourceType: citation.source_type || undefined,
     authorEmail: citation.author_email || undefined,
     capturedAt: citation.captured_at || undefined,
-  }));
+  }))
 }
 
 export function OrganizationSearch({
   currentOrganization,
   documents,
 }: OrganizationSearchProps) {
-  const [query, setQuery] = useState("");
-  const [submittedQuery, setSubmittedQuery] = useState("");
+  const [query, setQuery] = useState("")
+  const [submittedQuery, setSubmittedQuery] = useState("")
   const [activeFilterId, setActiveFilterId] =
-    useState<(typeof FILTERS)[number]["id"]>("ALL");
-  const [isSearching, setIsSearching] = useState(false);
+    useState<(typeof FILTERS)[number]["id"]>("ALL")
+  const [isSearching, setIsSearching] = useState(false)
   const [results, setResults] = useState<OrganizationSearchResponse | null>(
-    null,
-  );
-  const [error, setError] = useState("");
-  const [summaryError, setSummaryError] = useState("");
+    null
+  )
+  const [error, setError] = useState("")
+  const [summaryError, setSummaryError] = useState("")
 
   const activeFilter =
-    FILTERS.find((f) => f.id === activeFilterId) || FILTERS[0];
+    FILTERS.find((f) => f.id === activeFilterId) || FILTERS[0]
 
   const runSearch = useCallback(
     async (trimmedQuery: string, filterId: (typeof FILTERS)[number]["id"]) => {
-      setIsSearching(true);
-      setError("");
-      setSummaryError("");
-      setResults(null);
+      setIsSearching(true)
+      setError("")
+      setSummaryError("")
+      setResults(null)
 
       try {
-        const filter = FILTERS.find((f) => f.id === filterId) || FILTERS[0];
+        const filter = FILTERS.find((f) => f.id === filterId) || FILTERS[0]
         const searchResults = await orgService.searchOrganization(
           currentOrganization.slug,
           trimmedQuery,
@@ -86,39 +86,39 @@ export function OrganizationSearch({
             sourceTypes: filter.sourceTypes
               ? [...filter.sourceTypes]
               : undefined,
-          },
-        );
-        setResults(searchResults);
-        setSubmittedQuery(trimmedQuery);
+          }
+        )
+        setResults(searchResults)
+        setSubmittedQuery(trimmedQuery)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Search failed");
+        setError(err instanceof Error ? err.message : "Search failed")
       } finally {
-        setIsSearching(false);
+        setIsSearching(false)
       }
     },
-    [currentOrganization.slug],
-  );
+    [currentOrganization.slug]
+  )
 
   const handleSearch = useCallback(
     async (e: React.FormEvent) => {
-      e.preventDefault();
-      const trimmedQuery = query.trim();
-      if (!trimmedQuery) return;
-      await runSearch(trimmedQuery, activeFilterId);
+      e.preventDefault()
+      const trimmedQuery = query.trim()
+      if (!trimmedQuery) return
+      await runSearch(trimmedQuery, activeFilterId)
     },
-    [activeFilterId, query, runSearch],
-  );
+    [activeFilterId, query, runSearch]
+  )
 
   const handleFilterChange = useCallback(
     (nextFilterId: (typeof FILTERS)[number]["id"]) => {
-      if (nextFilterId === activeFilterId) return;
-      setActiveFilterId(nextFilterId);
-      const rerunQuery = submittedQuery || query.trim();
-      if (!rerunQuery) return;
-      void runSearch(rerunQuery, nextFilterId);
+      if (nextFilterId === activeFilterId) return
+      setActiveFilterId(nextFilterId)
+      const rerunQuery = submittedQuery || query.trim()
+      if (!rerunQuery) return
+      void runSearch(rerunQuery, nextFilterId)
     },
-    [activeFilterId, query, runSearch, submittedQuery],
-  );
+    [activeFilterId, query, runSearch, submittedQuery]
+  )
 
   // Answer-job streaming via SSE. Server returns an answerJobId when summary
   // generation is asynchronous; we subscribe to the event stream and patch
@@ -126,56 +126,56 @@ export function OrganizationSearch({
   // The eventSource is closed automatically by the helper on completion,
   // failure, timeout, or error.
   useEffect(() => {
-    const jobId = results?.answerJobId;
-    if (!jobId) return;
+    const jobId = results?.answerJobId
+    if (!jobId) return
 
-    let cancelled = false;
+    let cancelled = false
     const unsubscribe = orgService.subscribeToAnswerJob(jobId, {
       onCompleted: (job) => {
-        if (cancelled) return;
+        if (cancelled) return
         setResults((current) => {
-          if (!current || current.answerJobId !== jobId) return current;
+          if (!current || current.answerJobId !== jobId) return current
           return {
             ...current,
             answer: job.answer,
             citations: mapAnswerJobCitations(job.citations),
             answerJobId: undefined,
-          };
-        });
+          }
+        })
       },
       onError: (msg) => {
-        if (cancelled) return;
-        setSummaryError(msg);
+        if (cancelled) return
+        setSummaryError(msg)
         setResults((current) => {
-          if (!current || current.answerJobId !== jobId) return current;
-          return { ...current, answerJobId: undefined };
-        });
+          if (!current || current.answerJobId !== jobId) return current
+          return { ...current, answerJobId: undefined }
+        })
       },
-    });
+    })
 
     return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, [results?.answerJobId]);
+      cancelled = true
+      unsubscribe()
+    }
+  }, [results?.answerJobId])
 
-  const isAwaitingAnswer = !!results?.answerJobId;
-  const hasAnswer = !!results?.answer;
-  const visibleResults = results?.results ?? [];
+  const isAwaitingAnswer = !!results?.answerJobId
+  const hasAnswer = !!results?.answer
+  const visibleResults = results?.results ?? []
   const visibleCitations = useMemo(() => {
-    if (!results?.citations) return [];
+    if (!results?.citations) return []
     return results.citations.map((c) => ({
       ...c,
       indices: [c.index],
-    }));
-  }, [results]);
+    }))
+  }, [results])
 
   return (
     <div className="space-y-6">
       {/* Filter pills */}
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((filter) => {
-          const isActive = activeFilterId === filter.id;
+          const isActive = activeFilterId === filter.id
           return (
             <button
               key={filter.id}
@@ -189,7 +189,7 @@ export function OrganizationSearch({
             >
               {filter.label}
             </button>
-          );
+          )
         })}
       </div>
 
@@ -263,7 +263,7 @@ export function OrganizationSearch({
                         target={citation.url ? "_blank" : undefined}
                         rel={citation.url ? "noopener noreferrer" : undefined}
                         onClick={(e) => {
-                          if (!citation.url) e.preventDefault();
+                          if (!citation.url) e.preventDefault()
                         }}
                         className="rounded border border-gray-200 px-2 py-1 text-left text-xs font-mono text-gray-600 transition-colors hover:border-gray-900 hover:text-gray-900"
                       >
@@ -304,9 +304,9 @@ export function OrganizationSearch({
             {visibleResults.map((result) => {
               const tags = Array.isArray(result.metadata?.tags)
                 ? (result.metadata?.tags as string[]).filter(
-                    (tag) => typeof tag === "string",
+                    (tag) => typeof tag === "string"
                   )
-                : [];
+                : []
 
               return (
                 <div
@@ -357,7 +357,7 @@ export function OrganizationSearch({
                     )}
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         </div>
@@ -398,5 +398,5 @@ export function OrganizationSearch({
         </div>
       )}
     </div>
-  );
+  )
 }

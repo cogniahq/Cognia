@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import React from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
+import React from "react"
+import Image from "next/image"
+import { motion } from "framer-motion"
 
-import { fadeUpVariants } from "@/components/shared/site-motion-variants";
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
-import { Navbar } from "./Navbar";
+import { Navbar } from "./Navbar"
 
 export const Header: React.FC = () => {
   return (
@@ -78,5 +78,5 @@ export const Header: React.FC = () => {
         </div>
       </div>
     </motion.header>
-  );
-};
+  )
+}

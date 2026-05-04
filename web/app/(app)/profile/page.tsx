@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 
-import { ProfileClient } from "@/components/profile/ProfileClient";
+import { ProfileClient } from "@/components/profile/ProfileClient"
 
 export const metadata: Metadata = {
   title: "Profile",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Profile dashboard. The static + dynamic profile JSON, the 2FA settings
@@ -14,5 +14,5 @@ export const metadata: Metadata = {
  * fetch session here.
  */
 export default function ProfilePage() {
-  return <ProfileClient />;
+  return <ProfileClient />
 }

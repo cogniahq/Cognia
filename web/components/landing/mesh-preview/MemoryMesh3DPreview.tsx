@@ -1,33 +1,33 @@
-"use client";
+"use client"
 
-import React, { memo, useRef } from "react";
-import { OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import React, { memo, useRef } from "react"
+import { OrbitControls } from "@react-three/drei"
+import { Canvas, useFrame } from "@react-three/fiber"
+import * as THREE from "three"
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 
-import type { MemoryMesh } from "@/types/memory";
-import { MemoryMesh3DPreviewScene } from "./MemoryMesh3DPreviewScene";
+import type { MemoryMesh } from "@/types/memory"
+import { MemoryMesh3DPreviewScene } from "./MemoryMesh3DPreviewScene"
 
 interface MemoryMesh3DPreviewProps {
-  meshData: MemoryMesh;
-  highlightedNodes?: Set<string>;
-  pulseIntensity?: number;
-  showLabels?: boolean;
-  interactive?: boolean;
-  rotationSpeed?: number;
+  meshData: MemoryMesh
+  highlightedNodes?: Set<string>
+  pulseIntensity?: number
+  showLabels?: boolean
+  interactive?: boolean
+  rotationSpeed?: number
 }
 
 const ControlsUpdater: React.FC<{
-  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>
 }> = ({ controlsRef }) => {
   useFrame(() => {
     if (controlsRef.current) {
-      controlsRef.current.update();
+      controlsRef.current.update()
     }
-  });
-  return null;
-};
+  })
+  return null
+}
 
 export const MemoryMesh3DPreview: React.FC<MemoryMesh3DPreviewProps> = ({
   meshData,
@@ -37,7 +37,7 @@ export const MemoryMesh3DPreview: React.FC<MemoryMesh3DPreviewProps> = ({
   interactive = true,
   rotationSpeed = 0.1,
 }) => {
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
   return (
     <Canvas
@@ -84,10 +84,10 @@ export const MemoryMesh3DPreview: React.FC<MemoryMesh3DPreviewProps> = ({
       />
       <ControlsUpdater controlsRef={controlsRef} />
     </Canvas>
-  );
-};
+  )
+}
 
-export const MemoryMesh3DContainer = memo(MemoryMesh3DPreview);
-MemoryMesh3DContainer.displayName = "MemoryMesh3DContainer";
+export const MemoryMesh3DContainer = memo(MemoryMesh3DPreview)
+MemoryMesh3DContainer.displayName = "MemoryMesh3DContainer"
 
-export default MemoryMesh3DPreview;
+export default MemoryMesh3DPreview

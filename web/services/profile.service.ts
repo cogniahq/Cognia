@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Wraps the /api/profile endpoints — get current profile, force a refresh,
@@ -6,17 +6,17 @@
  * client/src/services/profile/profile.service.ts.
  */
 
-import { getRequest, postRequest } from "@/utils/http";
-import type { UserProfile } from "@/types/profile";
+import { getRequest, postRequest } from "@/utils/http"
+import type { UserProfile } from "@/types/profile"
 
-export type { UserProfile };
+export type { UserProfile }
 
 export async function getProfile(): Promise<UserProfile | null> {
-  const response = await getRequest("/profile");
+  const response = await getRequest("/profile")
   if (response.data?.success === false) {
-    throw new Error(response.data?.error || "Failed to load profile");
+    throw new Error(response.data?.error || "Failed to load profile")
   }
-  return response.data?.data?.profile || null;
+  return response.data?.data?.profile || null
 }
 
 export async function refreshProfile(): Promise<UserProfile> {
@@ -27,10 +27,10 @@ export async function refreshProfile(): Promise<UserProfile> {
     {},
     undefined,
     undefined,
-    300000,
-  );
+    300000
+  )
   if (response.data?.success === false) {
-    throw new Error(response.data?.error || "Failed to refresh profile");
+    throw new Error(response.data?.error || "Failed to refresh profile")
   }
-  return response.data?.data?.profile;
+  return response.data?.data?.profile
 }

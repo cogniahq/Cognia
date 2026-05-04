@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
-import Script from "next/script";
+import type { Metadata } from "next"
+import Script from "next/script"
 
-import { BillingClient } from "@/components/billing/BillingClient";
+import { BillingClient } from "@/components/billing/BillingClient"
 
 /**
  * /billing — workspace plan + Razorpay checkout. Everything beyond the
@@ -19,7 +19,7 @@ import { BillingClient } from "@/components/billing/BillingClient";
 export const metadata: Metadata = {
   title: "Billing",
   robots: { index: false, follow: false },
-};
+}
 
 export default function BillingPage() {
   return (
@@ -30,5 +30,5 @@ export default function BillingPage() {
       />
       <BillingClient />
     </>
-  );
+  )
 }

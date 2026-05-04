@@ -1,154 +1,154 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from "react"
+import { motion } from "framer-motion"
+import { toast } from "sonner"
 
-import { useSession } from "@/lib/auth/client";
-import { env } from "@/lib/env";
-import { openRazorpaySubscriptionCheckout } from "@/lib/razorpay";
-import { getPlanTier, type PlanId } from "@/data/plans";
+import { useSession } from "@/lib/auth/client"
+import { env } from "@/lib/env"
+import { openRazorpaySubscriptionCheckout } from "@/lib/razorpay"
+import { getPlanTier, type PlanId } from "@/data/plans"
 import {
   billingService,
   type BillingResponse,
-} from "@/services/billing.service";
-import { DunningBanner } from "@/components/billing/DunningBanner";
-import { PlanComparisonTable } from "@/components/billing/PlanComparisonTable";
-import { UsageBurndownCard } from "@/components/billing/UsageBurndownCard";
+} from "@/services/billing.service"
+import { DunningBanner } from "@/components/billing/DunningBanner"
+import { PlanComparisonTable } from "@/components/billing/PlanComparisonTable"
+import { UsageBurndownCard } from "@/components/billing/UsageBurndownCard"
 import {
   fadeUpVariants,
   staggerContainerVariants,
-} from "@/components/shared/site-motion-variants";
+} from "@/components/shared/site-motion-variants"
 
 function formatAmount(paise?: number, currency?: string): string {
-  if (paise == null) return "—";
+  if (paise == null) return "—"
   // Razorpay reports amounts in paise (smallest unit). Same scale (×100)
   // for INR + USD plans, so dividing by 100 gives the major unit.
-  const amount = (paise / 100).toFixed(2);
-  return `${currency?.toUpperCase() || "INR"} ${amount}`;
+  const amount = (paise / 100).toFixed(2)
+  return `${currency?.toUpperCase() || "INR"} ${amount}`
 }
 
 function formatDate(iso?: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "—"
   try {
     return new Date(iso).toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
+    })
   } catch {
-    return iso;
+    return iso
   }
 }
 
 export function BillingClient() {
-  const session = useSession();
-  const slug = session.primaryOrg?.slug;
-  const orgName = session.primaryOrg?.name;
-  const userEmail = session.user.email;
+  const session = useSession()
+  const slug = session.primaryOrg?.slug
+  const orgName = session.primaryOrg?.name
+  const userEmail = session.user.email
 
-  const [data, setData] = useState<BillingResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null);
+  const [data, setData] = useState<BillingResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null)
   const [actionBusy, setActionBusy] = useState<
     "cancel" | "pause" | "resume" | null
-  >(null);
+  >(null)
 
   const fetchBilling = useCallback(async () => {
-    if (!slug) return;
-    setLoading(true);
-    setError(null);
+    if (!slug) return
+    setLoading(true)
+    setError(null)
     try {
-      const res = await billingService.get(slug);
-      setData(res.data);
+      const res = await billingService.get(slug)
+      setData(res.data)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to load billing";
-      setError(message);
+        err instanceof Error ? err.message : "Failed to load billing"
+      setError(message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [slug]);
+  }, [slug])
 
   useEffect(() => {
-    if (slug) fetchBilling();
-  }, [slug, fetchBilling]);
+    if (slug) fetchBilling()
+  }, [slug, fetchBilling])
 
   const onCancel = useCallback(async () => {
-    if (!slug) return;
+    if (!slug) return
     if (
       !window.confirm("Cancel subscription at the end of the current period?")
     )
-      return;
-    setActionBusy("cancel");
+      return
+    setActionBusy("cancel")
     try {
-      await billingService.cancel(slug, true);
-      toast.success("Subscription set to cancel at period end");
-      await fetchBilling();
+      await billingService.cancel(slug, true)
+      toast.success("Subscription set to cancel at period end")
+      await fetchBilling()
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not cancel subscription",
-      );
+        err instanceof Error ? err.message : "Could not cancel subscription"
+      )
     } finally {
-      setActionBusy(null);
+      setActionBusy(null)
     }
-  }, [slug, fetchBilling]);
+  }, [slug, fetchBilling])
 
   const onPause = useCallback(async () => {
-    if (!slug) return;
-    setActionBusy("pause");
+    if (!slug) return
+    setActionBusy("pause")
     try {
-      await billingService.pause(slug);
-      toast.success("Subscription paused");
-      await fetchBilling();
+      await billingService.pause(slug)
+      toast.success("Subscription paused")
+      await fetchBilling()
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not pause subscription",
-      );
+        err instanceof Error ? err.message : "Could not pause subscription"
+      )
     } finally {
-      setActionBusy(null);
+      setActionBusy(null)
     }
-  }, [slug, fetchBilling]);
+  }, [slug, fetchBilling])
 
   const onResume = useCallback(async () => {
-    if (!slug) return;
-    setActionBusy("resume");
+    if (!slug) return
+    setActionBusy("resume")
     try {
-      await billingService.resume(slug);
-      toast.success("Subscription resumed");
-      await fetchBilling();
+      await billingService.resume(slug)
+      toast.success("Subscription resumed")
+      await fetchBilling()
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not resume subscription",
-      );
+        err instanceof Error ? err.message : "Could not resume subscription"
+      )
     } finally {
-      setActionBusy(null);
+      setActionBusy(null)
     }
-  }, [slug, fetchBilling]);
+  }, [slug, fetchBilling])
 
   const onUpgrade = useCallback(
     async (planTierId: PlanId) => {
-      if (!slug) return;
+      if (!slug) return
       if (planTierId === "enterprise") {
         window.location.href =
-          "mailto:sales@cogniahq.tech?subject=Cognia%20Enterprise";
-        return;
+          "mailto:sales@cogniahq.tech?subject=Cognia%20Enterprise"
+        return
       }
-      if (planTierId === "free") return;
+      if (planTierId === "free") return
 
       const razorpayPlanId =
-        planTierId === "pro" ? env.razorpayPlanPro : undefined;
+        planTierId === "pro" ? env.razorpayPlanPro : undefined
 
       if (!razorpayPlanId) {
-        toast.error("Billing not configured. Contact your admin.");
-        return;
+        toast.error("Billing not configured. Contact your admin.")
+        return
       }
 
-      setPendingPlan(planTierId);
+      setPendingPlan(planTierId)
       try {
-        const out = await billingService.checkout(slug, razorpayPlanId);
-        if (!out.keyId) throw new Error("Razorpay not configured server-side");
+        const out = await billingService.checkout(slug, razorpayPlanId)
+        if (!out.keyId) throw new Error("Razorpay not configured server-side")
         await openRazorpaySubscriptionCheckout({
           keyId: out.keyId,
           subscriptionId: out.subscriptionId,
@@ -156,32 +156,32 @@ export function BillingClient() {
           description: `${planTierId === "pro" ? "Pro" : "Enterprise"} subscription`,
           prefillEmail: userEmail,
           onSuccess: () => {
-            toast.success("Subscription activated. Refreshing…");
+            toast.success("Subscription activated. Refreshing…")
             // Webhook will sync our DB shortly after; refetch.
-            setTimeout(() => fetchBilling(), 1500);
+            setTimeout(() => fetchBilling(), 1500)
           },
           onDismiss: () => toast("Checkout closed"),
-        });
+        })
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Could not start checkout";
-        toast.error(message);
+          err instanceof Error ? err.message : "Could not start checkout"
+        toast.error(message)
       } finally {
-        setPendingPlan(null);
+        setPendingPlan(null)
       }
     },
-    [slug, userEmail, fetchBilling],
-  );
+    [slug, userEmail, fetchBilling]
+  )
 
   const onUpdatePayment = useCallback(async () => {
     // Razorpay has no hosted billing portal — when payments fail the user
     // re-authorises by going through Checkout again with the same plan.
-    if (!slug) return;
-    const planId = (data?.subscription as { plan_id?: string } | null)?.plan_id;
+    if (!slug) return
+    const planId = (data?.subscription as { plan_id?: string } | null)?.plan_id
     const tier =
-      planId === "pro" || planId === "enterprise" ? (planId as PlanId) : "pro";
-    await onUpgrade(tier);
-  }, [slug, data, onUpgrade]);
+      planId === "pro" || planId === "enterprise" ? (planId as PlanId) : "pro"
+    await onUpgrade(tier)
+  }, [slug, data, onUpgrade])
 
   if (!slug) {
     return (
@@ -193,25 +193,25 @@ export function BillingClient() {
           Select an organization to view billing.
         </p>
       </div>
-    );
+    )
   }
 
   const currentPlanId = (data?.usage?.plan ||
     (data?.subscription as { plan_id?: string } | null)?.plan_id ||
-    "free") as string;
-  const currentTier = getPlanTier(currentPlanId);
-  const subscription = data?.subscription || null;
-  const usage = data?.usage?.usage;
-  const invoices = data?.invoices ?? [];
+    "free") as string
+  const currentTier = getPlanTier(currentPlanId)
+  const subscription = data?.subscription || null
+  const usage = data?.usage?.usage
+  const invoices = data?.invoices ?? []
   const subStatus = (
     subscription as { status?: string } | null
-  )?.status?.toLowerCase();
+  )?.status?.toLowerCase()
   const hasActiveSub =
     !!subscription &&
     subStatus !== "cancelled" &&
     subStatus !== "completed" &&
-    subStatus !== "expired";
-  const isPaused = subStatus === "paused";
+    subStatus !== "expired"
+  const isPaused = subStatus === "paused"
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -282,7 +282,7 @@ export function BillingClient() {
                           {" · "}Renews{" "}
                           {formatDate(
                             (subscription as { current_period_end?: string })
-                              .current_period_end,
+                              .current_period_end
                           )}
                         </>
                       )}
@@ -376,7 +376,7 @@ export function BillingClient() {
                           <td className="py-2 pr-4 text-gray-700">
                             {formatAmount(
                               inv.amount_paid_paise ?? inv.amount_due_paise,
-                              inv.currency,
+                              inv.currency
                             )}
                           </td>
                           <td className="py-2 pr-4">
@@ -432,7 +432,7 @@ export function BillingClient() {
         )}
       </motion.div>
     </div>
-  );
+  )
 }
 
-export default BillingClient;
+export default BillingClient

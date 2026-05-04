@@ -1,44 +1,42 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
-import { identityService } from "@/services/identity.service";
-import { orgAdminService } from "@/services/org-admin.service";
+import { identityService } from "@/services/identity.service"
+import { orgAdminService } from "@/services/org-admin.service"
 
-import ScimTokensManager from "./ScimTokensManager";
-import SsoSetupWizard from "./SsoSetupWizard";
+import ScimTokensManager from "./ScimTokensManager"
+import SsoSetupWizard from "./SsoSetupWizard"
 
 interface SsoSetupTabProps {
-  slug: string;
+  slug: string
 }
 
 export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
-  const [hasConfig, setHasConfig] = useState<boolean | null>(null);
-  const [provider, setProvider] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showWizard, setShowWizard] = useState(false);
+  const [hasConfig, setHasConfig] = useState<boolean | null>(null)
+  const [provider, setProvider] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showWizard, setShowWizard] = useState(false)
 
   const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      const data = await orgAdminService.getSecurityStatus(slug);
-      setHasConfig(!!data.sso?.enabled);
-      setProvider(data.sso?.provider ?? null);
+      const data = await orgAdminService.getSecurityStatus(slug)
+      setHasConfig(!!data.sso?.enabled)
+      setProvider(data.sso?.provider ?? null)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load SSO status",
-      );
+      setError(err instanceof Error ? err.message : "Failed to load SSO status")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [slug]);
+  }, [slug])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   if (isLoading && hasConfig === null) {
     return (
@@ -46,7 +44,7 @@ export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
         <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
         <span className="text-xs text-gray-500">Loading SSO status...</span>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -54,7 +52,7 @@ export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
       <div className="px-4 py-3 border border-red-200 rounded-xl bg-red-50 text-xs text-red-700">
         {error}
       </div>
-    );
+    )
   }
 
   return (
@@ -114,8 +112,8 @@ export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
           <SsoSetupWizard
             slug={slug}
             onSaved={() => {
-              setShowWizard(false);
-              load();
+              setShowWizard(false)
+              load()
             }}
           />
         </div>
@@ -133,5 +131,5 @@ export default function SsoSetupTab({ slug }: SsoSetupTabProps) {
         <ScimTokensManager slug={slug} />
       </div>
     </div>
-  );
+  )
 }

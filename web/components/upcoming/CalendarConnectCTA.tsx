@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react"
+import { Calendar, CheckCircle2, Loader2 } from "lucide-react"
 
-import { calendarService } from "@/services/calendar.service";
+import { calendarService } from "@/services/calendar.service"
 
 interface CalendarConnectCTAProps {
   /** Called whenever the connection status flips. */
-  onConnectedChange?: (connected: boolean) => void;
+  onConnectedChange?: (connected: boolean) => void
 }
 
 /**
@@ -20,85 +20,85 @@ export function CalendarConnectCTA({
   onConnectedChange,
 }: CalendarConnectCTAProps) {
   const [status, setStatus] = useState<{
-    connected: boolean;
-    configured: boolean;
-  } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    connected: boolean
+    configured: boolean
+  } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     calendarService
       .status()
       .then((res) => {
-        if (cancelled) return;
-        setStatus(res.data);
-        onConnectedChange?.(res.data.connected);
+        if (cancelled) return
+        setStatus(res.data)
+        onConnectedChange?.(res.data.connected)
       })
       .catch(() => {
-        if (cancelled) return;
-        setStatus({ connected: false, configured: false });
-      });
+        if (cancelled) return
+        setStatus({ connected: false, configured: false })
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [onConnectedChange]);
+      cancelled = true
+    }
+  }, [onConnectedChange])
 
   const handleConnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      const { data } = await calendarService.authUrl();
+      const { data } = await calendarService.authUrl()
       const popup = window.open(
         data.url,
         "cognia-calendar-oauth",
-        "width=520,height=640",
-      );
+        "width=520,height=640"
+      )
       if (!popup) {
-        setError("Popup blocked — allow popups and try again.");
-        setBusy(false);
-        return;
+        setError("Popup blocked — allow popups and try again.")
+        setBusy(false)
+        return
       }
       const poll = window.setInterval(async () => {
         try {
-          const fresh = await calendarService.status();
+          const fresh = await calendarService.status()
           if (fresh.data.connected) {
-            window.clearInterval(poll);
-            setStatus(fresh.data);
-            onConnectedChange?.(true);
-            setBusy(false);
+            window.clearInterval(poll)
+            setStatus(fresh.data)
+            onConnectedChange?.(true)
+            setBusy(false)
             try {
-              popup.close();
+              popup.close()
             } catch {
               // ignore
             }
           } else if (popup.closed) {
-            window.clearInterval(poll);
-            setBusy(false);
+            window.clearInterval(poll)
+            setBusy(false)
           }
         } catch {
           // transient — keep polling
         }
-      }, 1500);
+      }, 1500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start OAuth");
-      setBusy(false);
+      setError(err instanceof Error ? err.message : "Failed to start OAuth")
+      setBusy(false)
     }
-  };
+  }
 
   const handleDisconnect = async () => {
-    setBusy(true);
-    setError(null);
+    setBusy(true)
+    setError(null)
     try {
-      await calendarService.disconnect();
-      setStatus((s) => (s ? { ...s, connected: false } : s));
-      onConnectedChange?.(false);
+      await calendarService.disconnect()
+      setStatus((s) => (s ? { ...s, connected: false } : s))
+      onConnectedChange?.(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to disconnect");
+      setError(err instanceof Error ? err.message : "Failed to disconnect")
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   if (!status) {
     return (
@@ -106,7 +106,7 @@ export function CalendarConnectCTA({
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         Checking calendar status...
       </div>
-    );
+    )
   }
 
   if (!status.configured) {
@@ -119,7 +119,7 @@ export function CalendarConnectCTA({
         </code>
         .
       </div>
-    );
+    )
   }
 
   if (status.connected) {
@@ -138,7 +138,7 @@ export function CalendarConnectCTA({
           {busy ? "..." : "Disconnect"}
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -167,5 +167,5 @@ export function CalendarConnectCTA({
         </button>
       </div>
     </div>
-  );
+  )
 }

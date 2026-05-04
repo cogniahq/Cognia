@@ -1,11 +1,11 @@
-import React from "react";
+import React from "react"
 
-import { formatLimit } from "@/data/plans";
+import { formatLimit } from "@/data/plans"
 
 interface UsageBurndownCardProps {
-  label: string;
-  current: number;
-  limit: number;
+  label: string
+  current: number
+  limit: number
 }
 
 export const UsageBurndownCard: React.FC<UsageBurndownCardProps> = ({
@@ -13,13 +13,13 @@ export const UsageBurndownCard: React.FC<UsageBurndownCardProps> = ({
   current,
   limit,
 }) => {
-  const isUnlimited = limit === -1;
-  const atLimit = !isUnlimited && current >= limit;
+  const isUnlimited = limit === -1
+  const atLimit = !isUnlimited && current >= limit
   const percent = isUnlimited
     ? 0
     : limit <= 0
       ? 0
-      : Math.min(100, Math.round((current / limit) * 100));
+      : Math.min(100, Math.round((current / limit) * 100))
 
   return (
     <div
@@ -67,7 +67,7 @@ export const UsageBurndownCard: React.FC<UsageBurndownCardProps> = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default UsageBurndownCard;
+export default UsageBurndownCard

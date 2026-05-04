@@ -1,24 +1,24 @@
-"use client";
+"use client"
 
-import { useActionState, useState } from "react";
+import { useActionState, useState } from "react"
 import {
   acceptInviteAction,
   createWorkspaceAction,
   type ActionError,
-} from "@/lib/auth/actions";
+} from "@/lib/auth/actions"
 
-type Mode = "create" | "join";
+type Mode = "create" | "join"
 
 export function OnboardingForm() {
-  const [mode, setMode] = useState<Mode>("create");
+  const [mode, setMode] = useState<Mode>("create")
   const [createState, createFormAction, creating] = useActionState<
     ActionError | null,
     FormData
-  >(createWorkspaceAction, null);
+  >(createWorkspaceAction, null)
   const [joinState, joinFormAction, joining] = useActionState<
     ActionError | null,
     FormData
-  >(acceptInviteAction, null);
+  >(acceptInviteAction, null)
 
   return (
     <>
@@ -146,5 +146,5 @@ export function OnboardingForm() {
         )}
       </div>
     </>
-  );
+  )
 }

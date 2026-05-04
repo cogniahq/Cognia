@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server"
 
 /**
  * Route-level auth gate. Runs on every request. The actual heavy lifting
@@ -23,31 +23,31 @@ const PROTECTED_PREFIXES = [
   // isProtected check redirects to /login (not /onboarding/workspace) so
   // there's no loop.
   "/onboarding",
-];
+]
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
-  );
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+  )
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname } = request.nextUrl
   if (!isProtected(pathname)) {
-    return NextResponse.next();
+    return NextResponse.next()
   }
 
-  const sessionCookie = request.cookies.get("cognia_session")?.value;
+  const sessionCookie = request.cookies.get("cognia_session")?.value
   if (!sessionCookie) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("next", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next();
+  return NextResponse.next()
 }
 
 export const config = {
   // Run on everything except Next.js internals and static assets.
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
-};
+}

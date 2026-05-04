@@ -1,16 +1,16 @@
-"use client";
+"use client"
 
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react"
 
-import { mockMeshData } from "@/data/mock-mesh-data";
-import { MemoryMesh3DPreview } from "./mesh-preview/MemoryMesh3DPreview";
-import { Section } from "./Section";
+import { mockMeshData } from "@/data/mock-mesh-data"
+import { MemoryMesh3DPreview } from "./mesh-preview/MemoryMesh3DPreview"
+import { Section } from "./Section"
 
 const teamMembers = [
   { id: "1", name: "Sarah Chen", role: "Admin", initials: "SC" },
   { id: "2", name: "Marcus Johnson", role: "Editor", initials: "MJ" },
   { id: "3", name: "Elena Rodriguez", role: "Viewer", initials: "ER" },
-];
+]
 
 const teamDocuments = [
   { id: "d1", name: "Q4 Strategy.pdf", type: "pdf", uploadedBy: "Sarah" },
@@ -21,89 +21,89 @@ const teamDocuments = [
     uploadedBy: "Marcus",
   },
   { id: "d3", name: "Research Notes.md", type: "md", uploadedBy: "Elena" },
-];
+]
 
 const MemoryMeshDemo: React.FC = () => {
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(false)
   const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(
-    new Set(),
-  );
-  const [pulseIntensity, setPulseIntensity] = useState(0);
-  const [uploadedDocs, setUploadedDocs] = useState<Set<string>>(new Set());
-  const containerRef = useRef<HTMLDivElement>(null);
+    new Set()
+  )
+  const [pulseIntensity, setPulseIntensity] = useState(0)
+  const [uploadedDocs, setUploadedDocs] = useState<Set<string>>(new Set())
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isInView) {
-            setIsInView(true);
+            setIsInView(true)
           }
-        });
+        })
       },
-      { threshold: 0.2 },
-    );
+      { threshold: 0.2 }
+    )
 
-    const currentContainer = containerRef.current;
+    const currentContainer = containerRef.current
     if (currentContainer) {
-      observer.observe(currentContainer);
+      observer.observe(currentContainer)
     }
 
     return () => {
       if (currentContainer) {
-        observer.unobserve(currentContainer);
+        observer.unobserve(currentContainer)
       }
-    };
-  }, [isInView]);
+    }
+  }, [isInView])
 
   // Animate highlighted nodes and pulse when in view
   useEffect(() => {
-    if (!isInView) return;
+    if (!isInView) return
 
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = []
 
     // Gradually highlight nodes
-    const nodesToHighlight = ["1", "2", "5", "10", "15", "20"];
+    const nodesToHighlight = ["1", "2", "5", "10", "15", "20"]
     nodesToHighlight.forEach((nodeId, index) => {
       timers.push(
         setTimeout(
           () => {
-            setHighlightedNodes((prev) => new Set([...prev, nodeId]));
+            setHighlightedNodes((prev) => new Set([...prev, nodeId]))
           },
-          800 + index * 300,
-        ),
-      );
-    });
+          800 + index * 300
+        )
+      )
+    })
 
     // Pulse effect
     timers.push(
       setTimeout(() => {
-        setPulseIntensity(0.5);
-      }, 2500),
-    );
+        setPulseIntensity(0.5)
+      }, 2500)
+    )
 
     timers.push(
       setTimeout(() => {
-        setPulseIntensity(0);
-      }, 3500),
-    );
+        setPulseIntensity(0)
+      }, 3500)
+    )
 
     // Animate document uploads
     teamDocuments.forEach((doc, index) => {
       timers.push(
         setTimeout(
           () => {
-            setUploadedDocs((prev) => new Set([...prev, doc.id]));
+            setUploadedDocs((prev) => new Set([...prev, doc.id]))
           },
-          1200 + index * 400,
-        ),
-      );
-    });
+          1200 + index * 400
+        )
+      )
+    })
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-    };
-  }, [isInView]);
+      timers.forEach((timer) => clearTimeout(timer))
+    }
+  }, [isInView])
 
   return (
     <Section className="bg-transparent py-12 sm:py-16 lg:py-20 xl:py-24">
@@ -190,7 +190,7 @@ const MemoryMeshDemo: React.FC = () => {
               </p>
               <div className="space-y-2">
                 {teamDocuments.map((doc) => {
-                  const isUploaded = uploadedDocs.has(doc.id);
+                  const isUploaded = uploadedDocs.has(doc.id)
                   return (
                     <div
                       key={doc.id}
@@ -232,7 +232,7 @@ const MemoryMeshDemo: React.FC = () => {
                         </svg>
                       )}
                     </div>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -385,7 +385,7 @@ const MemoryMeshDemo: React.FC = () => {
         </div>
       </div>
     </Section>
-  );
-};
+  )
+}
 
-export default MemoryMeshDemo;
+export default MemoryMeshDemo

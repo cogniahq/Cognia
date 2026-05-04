@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import React from "react";
+import type { Metadata } from "next"
+import Link from "next/link"
+import React from "react"
 
-import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
 interface DocLink {
-  title: string;
-  description: string;
-  href: string;
-  external?: boolean;
+  title: string
+  description: string
+  href: string
+  external?: boolean
 }
 
 const COMPLIANCE_LINKS: DocLink[] = [
@@ -43,7 +43,7 @@ const COMPLIANCE_LINKS: DocLink[] = [
     description: "Scope, rewards, and how to report a vulnerability.",
     href: "/security/bug-bounty",
   },
-];
+]
 
 export const metadata: Metadata = {
   title: "Trust Center",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
       "Security, privacy, terms, subprocessors, DPA, and bug bounty — everything you need to evaluate Cognia.",
     url: "/trust",
   },
-};
+}
 
 export default function TrustPage() {
   return (
@@ -84,5 +84,5 @@ export default function TrustPage() {
         </div>
       </section>
     </LegalPageLayout>
-  );
+  )
 }

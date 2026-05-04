@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"
 
 /**
  * Client-side dynamic import wrapper for MemoryMesh3D. The mesh viz pulls
@@ -12,7 +12,7 @@ import dynamic from "next/dynamic";
  */
 const MemoryMesh3D = dynamic(
   () => import("./MemoryMesh3D").then((m) => m.MemoryMesh3D),
-  { ssr: false },
-);
+  { ssr: false }
+)
 
-export default MemoryMesh3D;
+export default MemoryMesh3D

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Workspace landing — full client port of client/src/pages/organization.page.tsx.
@@ -21,44 +21,44 @@
  *     (documents, members) are loaded via useOrganizationData on mount.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
-import { useOrganizationData } from "@/hooks/use-organization-data";
-import { useOrganizationMesh } from "@/hooks/use-organization-mesh";
+import { useOrganizationData } from "@/hooks/use-organization-data"
+import { useOrganizationMesh } from "@/hooks/use-organization-mesh"
 import {
   getOrgIntegrationSettings,
   updateOrgIntegrationSettings,
   type OrgSyncSettings,
-} from "@/services/organization.service";
-import type { MemoryMeshNode } from "@/types/memory";
-import type { OrganizationWithRole } from "@/types/organization";
+} from "@/services/organization.service"
+import type { MemoryMeshNode } from "@/types/memory"
+import type { OrganizationWithRole } from "@/types/organization"
 
-import { CreateOrganizationDialog } from "./CreateOrganizationDialog";
-import { DocumentList } from "./DocumentList";
-import { DocumentUpload } from "./DocumentUpload";
-import { OrganizationSearch } from "./OrganizationSearch";
-import { SetupChecklist } from "./SetupChecklist";
+import { CreateOrganizationDialog } from "./CreateOrganizationDialog"
+import { DocumentList } from "./DocumentList"
+import { DocumentUpload } from "./DocumentUpload"
+import { OrganizationSearch } from "./OrganizationSearch"
+import { SetupChecklist } from "./SetupChecklist"
 
-import MemoryMesh3D from "@/components/memories/mesh/MemoryMesh3DClient";
+import MemoryMesh3D from "@/components/memories/mesh/MemoryMesh3DClient"
 
 const getErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error && error.message ? error.message : fallback;
+  error instanceof Error && error.message ? error.message : fallback
 
 interface OrganizationClientProps {
-  initialOrgSlug: string | null;
+  initialOrgSlug: string | null
 }
 
-type TabId = "search" | "mesh" | "documents" | "settings";
+type TabId = "search" | "mesh" | "documents" | "settings"
 
 export function OrganizationClient({
   initialOrgSlug,
 }: OrganizationClientProps) {
-  const data = useOrganizationData(initialOrgSlug);
+  const data = useOrganizationData(initialOrgSlug)
 
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>("search");
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabId>("search")
 
   // Mesh state lives at the page level so node selection persists across
   // tab switches.
@@ -66,17 +66,17 @@ export function OrganizationClient({
     meshData,
     isLoading: meshLoading,
     error: meshError,
-  } = useOrganizationMesh(data.currentOrganization?.slug || null);
-  const [clickedNodeId, setClickedNodeId] = useState<string | null>(null);
+  } = useOrganizationMesh(data.currentOrganization?.slug || null)
+  const [clickedNodeId, setClickedNodeId] = useState<string | null>(null)
 
   const handleNodeClick = useCallback((memoryId: string) => {
-    setClickedNodeId(memoryId);
-  }, []);
+    setClickedNodeId(memoryId)
+  }, [])
 
   const highlightedMemoryIds = useMemo(
     () => (clickedNodeId ? [clickedNodeId] : []),
-    [clickedNodeId],
-  );
+    [clickedNodeId]
+  )
 
   const memorySources = useMemo(
     () =>
@@ -84,10 +84,10 @@ export function OrganizationClient({
         (meshData?.nodes || []).map((n) => [
           n.id,
           (n as MemoryMeshNode & { source?: string }).source || "",
-        ]),
+        ])
       ),
-    [meshData],
-  );
+    [meshData]
+  )
 
   const memoryUrls = useMemo(
     () =>
@@ -95,10 +95,10 @@ export function OrganizationClient({
         (meshData?.nodes || []).map((n) => [
           n.id,
           (n as MemoryMeshNode & { url?: string }).url || "",
-        ]),
+        ])
       ),
-    [meshData],
-  );
+    [meshData]
+  )
 
   // Loading state — initial fetch in flight, no orgs known yet.
   if (data.isLoading && data.organizations.length === 0) {
@@ -111,7 +111,7 @@ export function OrganizationClient({
           </span>
         </div>
       </div>
-    );
+    )
   }
 
   // Empty state — user has zero workspaces.
@@ -190,7 +190,7 @@ export function OrganizationClient({
           onCreate={data.createOrganization}
         />
       </>
-    );
+    )
   }
 
   // Workspace selector — orgs exist but none selected.
@@ -244,18 +244,18 @@ export function OrganizationClient({
           onCreate={data.createOrganization}
         />
       </>
-    );
+    )
   }
 
-  const isAdmin = data.currentOrganization.userRole === "ADMIN";
-  const canEdit = isAdmin || data.currentOrganization.userRole === "EDITOR";
+  const isAdmin = data.currentOrganization.userRole === "ADMIN"
+  const canEdit = isAdmin || data.currentOrganization.userRole === "EDITOR"
 
   const tabs = [
     { id: "search" as const, label: "Search" },
     { id: "mesh" as const, label: "Mesh" },
     { id: "documents" as const, label: "Documents" },
     ...(isAdmin ? [{ id: "settings" as const, label: "Settings" }] : []),
-  ];
+  ]
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -292,7 +292,7 @@ export function OrganizationClient({
         {/* Tabs */}
         <div className="flex gap-1 border-b border-gray-200">
           {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
+            const isActive = activeTab === tab.id
             return (
               <button
                 key={tab.id}
@@ -305,7 +305,7 @@ export function OrganizationClient({
               >
                 {tab.label}
               </button>
-            );
+            )
           })}
         </div>
 
@@ -441,12 +441,12 @@ export function OrganizationClient({
         onCreate={data.createOrganization}
       />
     </div>
-  );
+  )
 }
 
 interface OrganizationSettingsProps {
-  currentOrganization: OrganizationWithRole;
-  onDelete: (slug: string) => Promise<void>;
+  currentOrganization: OrganizationWithRole
+  onDelete: (slug: string) => Promise<void>
 }
 
 const SYNC_FREQUENCIES = [
@@ -455,75 +455,71 @@ const SYNC_FREQUENCIES = [
   { value: "HOURLY", label: "Hourly" },
   { value: "DAILY", label: "Daily" },
   { value: "MANUAL", label: "Manual" },
-];
+]
 
 function OrganizationSettings({
   currentOrganization,
   onDelete,
 }: OrganizationSettingsProps) {
-  const router = useRouter();
+  const router = useRouter()
 
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState("")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  const [syncSettings, setSyncSettings] = useState<OrgSyncSettings | null>(
-    null,
-  );
-  const [isLoadingSync, setIsLoadingSync] = useState(true);
-  const [isSavingSync, setIsSavingSync] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [selectedFrequency, setSelectedFrequency] = useState<string>("HOURLY");
+  const [syncSettings, setSyncSettings] = useState<OrgSyncSettings | null>(null)
+  const [isLoadingSync, setIsLoadingSync] = useState(true)
+  const [isSavingSync, setIsSavingSync] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [selectedFrequency, setSelectedFrequency] = useState<string>("HOURLY")
 
   const loadSyncSettings = useCallback(async () => {
-    setIsLoadingSync(true);
-    setSyncError(null);
+    setIsLoadingSync(true)
+    setSyncError(null)
     try {
-      const settings = await getOrgIntegrationSettings(
-        currentOrganization.slug,
-      );
-      setSyncSettings(settings);
-      setSelectedFrequency(settings.defaultSyncFrequency);
+      const settings = await getOrgIntegrationSettings(currentOrganization.slug)
+      setSyncSettings(settings)
+      setSelectedFrequency(settings.defaultSyncFrequency)
     } catch (err) {
-      setSyncError(getErrorMessage(err, "Failed to load settings"));
+      setSyncError(getErrorMessage(err, "Failed to load settings"))
     } finally {
-      setIsLoadingSync(false);
+      setIsLoadingSync(false)
     }
-  }, [currentOrganization.slug]);
+  }, [currentOrganization.slug])
 
   useEffect(() => {
-    loadSyncSettings();
-  }, [loadSyncSettings]);
+    loadSyncSettings()
+  }, [loadSyncSettings])
 
   const handleSaveSyncSettings = async (frequency: string) => {
-    setSelectedFrequency(frequency);
-    setIsSavingSync(true);
-    setSyncError(null);
+    setSelectedFrequency(frequency)
+    setIsSavingSync(true)
+    setSyncError(null)
     try {
       const updated = await updateOrgIntegrationSettings(
         currentOrganization.slug,
-        { defaultSyncFrequency: frequency, customSyncIntervalMin: null },
-      );
-      setSyncSettings(updated);
+        { defaultSyncFrequency: frequency, customSyncIntervalMin: null }
+      )
+      setSyncSettings(updated)
     } catch (err) {
-      setSyncError(getErrorMessage(err, "Failed to save settings"));
+      setSyncError(getErrorMessage(err, "Failed to save settings"))
     } finally {
-      setIsSavingSync(false);
+      setIsSavingSync(false)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (confirmDelete !== currentOrganization.name) return;
-    setIsDeleting(true);
+    if (confirmDelete !== currentOrganization.name) return
+    setIsDeleting(true)
     try {
-      await onDelete(currentOrganization.slug);
-      router.push("/organization");
+      await onDelete(currentOrganization.slug)
+      router.push("/organization")
     } catch (err) {
-      console.error("Failed to delete organization:", err);
+      console.error("Failed to delete organization:", err)
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-10">
@@ -669,8 +665,8 @@ function OrganizationSettings({
                 <button
                   type="button"
                   onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setConfirmDelete("");
+                    setShowDeleteConfirm(false)
+                    setConfirmDelete("")
                   }}
                   className="px-4 py-2 text-xs border border-gray-300 text-gray-600 hover:border-black hover:text-gray-900 transition-colors"
                 >
@@ -692,5 +688,5 @@ function OrganizationSettings({
         </div>
       </div>
     </div>
-  );
+  )
 }

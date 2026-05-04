@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 /**
  * Per-workspace onboarding progress strip. Streamlined port of
@@ -10,14 +10,14 @@
  * follow-up agent picks them up.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 
 import {
   getSetupProgress,
   type SetupProgress,
-} from "@/services/organization.service";
-import type { Organization } from "@/types/organization";
+} from "@/services/organization.service"
+import type { Organization } from "@/types/organization"
 
 const SETUP_STEPS = [
   { id: "create", title: "Create workspace" },
@@ -26,40 +26,40 @@ const SETUP_STEPS = [
   { id: "security", title: "Security & Compliance" },
   { id: "team", title: "Invite Your Team" },
   { id: "integrations", title: "Connect Integrations" },
-];
+]
 
 interface SetupChecklistProps {
-  organization: Organization;
+  organization: Organization
 }
 
 export function SetupChecklist({ organization }: SetupChecklistProps) {
-  const [progress, setProgress] = useState<SetupProgress | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [progress, setProgress] = useState<SetupProgress | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isMinimized, setIsMinimized] = useState(false)
 
   const loadProgress = useCallback(async () => {
     try {
-      const data = await getSetupProgress(organization.slug);
-      setProgress(data);
-      if (data.percentComplete >= 80) setIsMinimized(true);
+      const data = await getSetupProgress(organization.slug)
+      setProgress(data)
+      if (data.percentComplete >= 80) setIsMinimized(true)
       else if (data.startedAt) {
-        const startDate = new Date(data.startedAt);
+        const startDate = new Date(data.startedAt)
         const daysSinceStart =
-          (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceStart > 14) setIsMinimized(true);
+          (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        if (daysSinceStart > 14) setIsMinimized(true)
       }
     } catch (err) {
-      console.error("Failed to load setup progress:", err);
+      console.error("Failed to load setup progress:", err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [organization.slug]);
+  }, [organization.slug])
 
   useEffect(() => {
-    loadProgress();
-  }, [loadProgress]);
+    loadProgress()
+  }, [loadProgress])
 
-  if (isLoading || !progress || progress.percentComplete >= 100) return null;
+  if (isLoading || !progress || progress.percentComplete >= 100) return null
 
   if (isMinimized) {
     return (
@@ -81,7 +81,7 @@ export function SetupChecklist({ organization }: SetupChecklistProps) {
           Expand
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -121,7 +121,7 @@ export function SetupChecklist({ organization }: SetupChecklistProps) {
 
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
         {SETUP_STEPS.map((step) => {
-          const isComplete = progress.completedSteps.includes(step.id);
+          const isComplete = progress.completedSteps.includes(step.id)
           return (
             <li
               key={step.id}
@@ -138,9 +138,9 @@ export function SetupChecklist({ organization }: SetupChecklistProps) {
               />
               <span className="font-mono">{step.title}</span>
             </li>
-          );
+          )
         })}
       </ul>
     </div>
-  );
+  )
 }

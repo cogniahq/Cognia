@@ -1,16 +1,16 @@
-"use client";
+"use client"
 
-import { memo, useCallback, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { memo, useCallback, useEffect, useRef } from "react"
+import { X } from "lucide-react"
 
 interface ConfirmDialogProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
+  isOpen: boolean
+  title: string
+  message: string
+  confirmLabel?: string
+  cancelLabel?: string
+  onConfirm: () => void
+  onCancel: () => void
 }
 
 function ConfirmDialogComponent({
@@ -22,21 +22,21 @@ function ConfirmDialogComponent({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      const target = e.target as HTMLElement;
+      if (!isOpen) return
+      const target = e.target as HTMLElement
       const isInput =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
+        target.isContentEditable
 
       if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-        onCancel();
+        e.preventDefault()
+        e.stopPropagation()
+        onCancel()
       } else if (
         e.key === "Enter" &&
         !isInput &&
@@ -44,32 +44,32 @@ function ConfirmDialogComponent({
         !e.ctrlKey &&
         !e.metaKey
       ) {
-        e.preventDefault();
-        e.stopPropagation();
-        onConfirm();
+        e.preventDefault()
+        e.stopPropagation()
+        onConfirm()
       }
     },
-    [isOpen, onConfirm, onCancel],
-  );
+    [isOpen, onConfirm, onCancel]
+  )
 
   useEffect(() => {
-    if (!isOpen) return;
-    document.addEventListener("keydown", handleKeyDown, true);
+    if (!isOpen) return
+    document.addEventListener("keydown", handleKeyDown, true)
     return () => {
-      document.removeEventListener("keydown", handleKeyDown, true);
-    };
-  }, [isOpen, handleKeyDown]);
+      document.removeEventListener("keydown", handleKeyDown, true)
+    }
+  }, [isOpen, handleKeyDown])
 
   useEffect(() => {
     if (isOpen && confirmButtonRef.current) {
       const t = setTimeout(() => {
-        confirmButtonRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(t);
+        confirmButtonRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(t)
     }
-  }, [isOpen]);
+  }, [isOpen])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div
@@ -109,8 +109,8 @@ function ConfirmDialogComponent({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export const ConfirmDialog = memo(ConfirmDialogComponent);
-ConfirmDialog.displayName = "ConfirmDialog";
+export const ConfirmDialog = memo(ConfirmDialogComponent)
+ConfirmDialog.displayName = "ConfirmDialog"

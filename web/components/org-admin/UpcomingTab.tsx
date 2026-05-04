@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
-import { UpcomingList } from "@/components/upcoming/UpcomingList";
-import { todosService, type MemoryTodo } from "@/services/todos.service";
+import { UpcomingList } from "@/components/upcoming/UpcomingList"
+import { todosService, type MemoryTodo } from "@/services/todos.service"
 
 interface UpcomingTabProps {
   /** Org id (UUID). Resolved server-side from the slug → session.organizations. */
-  orgId: string;
+  orgId: string
 }
 
 /**
@@ -19,35 +19,35 @@ interface UpcomingTabProps {
  */
 export default function UpcomingTab({ orgId }: UpcomingTabProps) {
   const [initial, setInitial] = useState<{
-    todos: MemoryTodo[];
-    cursor: string | null;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+    todos: MemoryTodo[]
+    cursor: string | null
+  } | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    setError(null);
+    setError(null)
     try {
       const res = await todosService.list({
         organizationId: orgId,
         status: "PENDING",
         allMembers: true,
-      });
-      setInitial({ todos: res.data, cursor: res.nextCursor });
+      })
+      setInitial({ todos: res.data, cursor: res.nextCursor })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load upcoming");
+      setError(err instanceof Error ? err.message : "Failed to load upcoming")
     }
-  }, [orgId]);
+  }, [orgId])
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load()
+  }, [load])
 
   if (error) {
     return (
       <div className="px-4 py-3 border border-red-200 rounded-xl bg-red-50 text-xs text-red-700">
         {error}
       </div>
-    );
+    )
   }
 
   if (!initial) {
@@ -56,7 +56,7 @@ export default function UpcomingTab({ orgId }: UpcomingTabProps) {
         <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
         <span className="text-xs text-gray-500">Loading upcoming...</span>
       </div>
-    );
+    )
   }
 
   return (
@@ -71,5 +71,5 @@ export default function UpcomingTab({ orgId }: UpcomingTabProps) {
         allMembers
       />
     </div>
-  );
+  )
 }

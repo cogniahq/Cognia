@@ -1,4 +1,4 @@
-import type { MemoryMesh } from "@/types/memory";
+import type { MemoryMesh } from "@/types/memory"
 
 export const mockMeshData: MemoryMesh = {
   nodes: [
@@ -1070,4 +1070,4 @@ export const mockMeshData: MemoryMesh = {
     is_latent_space: true,
     projection_method: "umap",
   },
-};
+}

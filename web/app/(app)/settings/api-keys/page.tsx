@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 
-import { ApiKeyManager } from "@/components/api-keys/ApiKeyManager";
+import { ApiKeyManager } from "@/components/api-keys/ApiKeyManager"
 
 export const metadata: Metadata = {
   title: "API keys",
   robots: { index: false, follow: false },
-};
+}
 
 /**
  * Personal-account API keys. The ApiKeyManager component handles the
@@ -35,5 +35,5 @@ export default function ApiKeysPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

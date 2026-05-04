@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import React, { useMemo } from "react";
-import { motion } from "framer-motion";
+import React, { useMemo } from "react"
+import { motion } from "framer-motion"
 
-import { AnimatedStagger } from "@/components/shared/site-motion";
-import { fadeUpVariants } from "@/components/shared/site-motion-variants";
+import { AnimatedStagger } from "@/components/shared/site-motion"
+import { fadeUpVariants } from "@/components/shared/site-motion-variants"
 
-import { Section } from "./Section";
+import { Section } from "./Section"
 
 export const FlowSection: React.FC = () => {
   const flowMoments = useMemo(
@@ -39,8 +39,8 @@ export const FlowSection: React.FC = () => {
         position: "top",
       },
     ],
-    [],
-  );
+    []
+  )
 
   return (
     <Section className="bg-transparent py-8 sm:py-12 md:py-16 lg:py-20 xl:py-24">
@@ -139,5 +139,5 @@ export const FlowSection: React.FC = () => {
         </div>
       </AnimatedStagger>
     </Section>
-  );
-};
+  )
+}

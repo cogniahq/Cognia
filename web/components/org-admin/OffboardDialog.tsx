@@ -1,28 +1,25 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
-import {
-  orgAdminService,
-  type AdminMember,
-} from "@/services/org-admin.service";
+import { orgAdminService, type AdminMember } from "@/services/org-admin.service"
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 
 interface OffboardDialogProps {
-  slug: string;
-  member: AdminMember | null;
-  members: AdminMember[];
-  open: boolean;
-  defaultHardDelete?: boolean;
-  onClose: () => void;
-  onCompleted: () => void;
+  slug: string
+  member: AdminMember | null
+  members: AdminMember[]
+  open: boolean
+  defaultHardDelete?: boolean
+  onClose: () => void
+  onCompleted: () => void
 }
 
 export default function OffboardDialog({
@@ -34,49 +31,49 @@ export default function OffboardDialog({
   onClose,
   onCompleted,
 }: OffboardDialogProps) {
-  const [reason, setReason] = useState("");
-  const [reassignTo, setReassignTo] = useState<string>("");
-  const [hardDelete, setHardDelete] = useState(defaultHardDelete);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reason, setReason] = useState("")
+  const [reassignTo, setReassignTo] = useState<string>("")
+  const [hardDelete, setHardDelete] = useState(defaultHardDelete)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setReason("");
-      setReassignTo("");
-      setHardDelete(defaultHardDelete);
-      setIsSubmitting(false);
+      setReason("")
+      setReassignTo("")
+      setHardDelete(defaultHardDelete)
+      setIsSubmitting(false)
     }
-  }, [open, defaultHardDelete]);
+  }, [open, defaultHardDelete])
 
-  if (!member) return null;
+  if (!member) return null
 
   const reassignChoices = members.filter(
-    (m) => m.id !== member.id && !m.deactivated_at,
-  );
+    (m) => m.id !== member.id && !m.deactivated_at
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!member) return;
-    setIsSubmitting(true);
+    e.preventDefault()
+    if (!member) return
+    setIsSubmitting(true)
     try {
       await orgAdminService.offboardMember(slug, member.id, {
         hardDelete,
         reassignDocsToUserId: reassignTo || undefined,
         reason: reason.trim() || undefined,
-      });
+      })
       toast.success(
-        hardDelete ? "Member permanently removed" : "Member deactivated",
-      );
-      onCompleted();
-      onClose();
+        hardDelete ? "Member permanently removed" : "Member deactivated"
+      )
+      onCompleted()
+      onClose()
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to offboard member",
-      );
+        err instanceof Error ? err.message : "Failed to offboard member"
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
@@ -176,5 +173,5 @@ export default function OffboardDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

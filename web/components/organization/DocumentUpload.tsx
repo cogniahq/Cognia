@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react"
 
-import type { Document } from "@/types/organization";
+import type { Document } from "@/types/organization"
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -13,9 +13,9 @@ const ALLOWED_TYPES = [
   "image/jpeg",
   "image/gif",
   "image/webp",
-];
+]
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
 const FILE_TYPE_LABELS: Record<string, string> = {
   "application/pdf": "PDF",
@@ -27,29 +27,29 @@ const FILE_TYPE_LABELS: Record<string, string> = {
   "image/jpeg": "JPG",
   "image/gif": "GIF",
   "image/webp": "WEBP",
-};
+}
 
 type ProcessingStage =
   | "extracting_text"
   | "chunking"
   | "generating_embeddings"
   | "indexing"
-  | "completed";
+  | "completed"
 
 interface ProcessingProgress {
-  current?: number;
-  total?: number;
-  summary?: string;
+  current?: number
+  total?: number
+  summary?: string
 }
 
 interface UploadingFile {
-  file: File;
-  progress: number;
-  status: "uploading" | "processing" | "completed" | "error";
-  error?: string;
-  document?: Document;
-  processingStage?: ProcessingStage;
-  processingProgress?: ProcessingProgress;
+  file: File
+  progress: number
+  status: "uploading" | "processing" | "completed" | "error"
+  error?: string
+  document?: Document
+  processingStage?: ProcessingStage
+  processingProgress?: ProcessingProgress
 }
 
 const STAGE_LABELS: Record<ProcessingStage, string> = {
@@ -58,38 +58,38 @@ const STAGE_LABELS: Record<ProcessingStage, string> = {
   generating_embeddings: "Generating embeddings",
   indexing: "Indexing",
   completed: "Completed",
-};
+}
 
 interface DocumentUploadProps {
   onUpload: (
     file: File,
-    metadata?: Record<string, unknown>,
-  ) => Promise<Document>;
-  onPollStatus: (documentId: string) => Promise<Document>;
+    metadata?: Record<string, unknown>
+  ) => Promise<Document>
+  onPollStatus: (documentId: string) => Promise<Document>
 }
 
 export function DocumentUpload({
   onUpload,
   onPollStatus,
 }: DocumentUploadProps) {
-  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [tagsInput, setTagsInput] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [tagsInput, setTagsInput] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return "Unsupported file type";
+      return "Unsupported file type"
     }
     if (file.size > MAX_FILE_SIZE) {
-      return "File too large (max 50MB)";
+      return "File too large (max 50MB)"
     }
-    return null;
-  };
+    return null
+  }
 
   const handleUpload = useCallback(
     async (file: File) => {
-      const validationError = validateFile(file);
+      const validationError = validateFile(file)
       if (validationError) {
         setUploadingFiles((prev) => [
           ...prev,
@@ -99,55 +99,55 @@ export function DocumentUpload({
             status: "error",
             error: validationError,
           },
-        ]);
-        return;
+        ])
+        return
       }
 
       const uploadEntry: UploadingFile = {
         file,
         progress: 0,
         status: "uploading",
-      };
+      }
 
-      setUploadingFiles((prev) => [...prev, uploadEntry]);
+      setUploadingFiles((prev) => [...prev, uploadEntry])
 
       try {
         setUploadingFiles((prev) =>
-          prev.map((f) => (f.file === file ? { ...f, progress: 50 } : f)),
-        );
+          prev.map((f) => (f.file === file ? { ...f, progress: 50 } : f))
+        )
 
         const tags = tagsInput
           .split(",")
           .map((tag) => tag.trim())
-          .filter(Boolean);
+          .filter(Boolean)
 
         const metadata: Record<string, unknown> | undefined =
-          tags.length > 0 ? { tags } : undefined;
+          tags.length > 0 ? { tags } : undefined
 
-        const doc = await onUpload(file, metadata);
+        const doc = await onUpload(file, metadata)
 
         setUploadingFiles((prev) =>
           prev.map((f) =>
             f.file === file
               ? { ...f, progress: 100, status: "processing", document: doc }
-              : f,
-          ),
-        );
+              : f
+          )
+        )
 
         // Poll status; clear on terminal state, max 5 minutes overall.
         const pollInterval = setInterval(async () => {
           try {
-            const updatedDoc = await onPollStatus(doc.id);
+            const updatedDoc = await onPollStatus(doc.id)
             const meta = updatedDoc.metadata as
               | {
-                  processing_stage?: ProcessingStage;
-                  processing_progress?: ProcessingProgress;
+                  processing_stage?: ProcessingStage
+                  processing_progress?: ProcessingProgress
                 }
               | null
-              | undefined;
+              | undefined
 
             if (updatedDoc.status === "COMPLETED") {
-              clearInterval(pollInterval);
+              clearInterval(pollInterval)
               setUploadingFiles((prev) =>
                 prev.map((f) =>
                   f.file === file
@@ -158,11 +158,11 @@ export function DocumentUpload({
                         processingStage: "completed",
                         processingProgress: meta?.processing_progress,
                       }
-                    : f,
-                ),
-              );
+                    : f
+                )
+              )
             } else if (updatedDoc.status === "FAILED") {
-              clearInterval(pollInterval);
+              clearInterval(pollInterval)
               setUploadingFiles((prev) =>
                 prev.map((f) =>
                   f.file === file
@@ -171,9 +171,9 @@ export function DocumentUpload({
                         status: "error",
                         error: updatedDoc.error_message || "Processing failed",
                       }
-                    : f,
-                ),
-              );
+                    : f
+                )
+              )
             } else if (
               updatedDoc.status === "PROCESSING" &&
               meta?.processing_stage
@@ -187,16 +187,16 @@ export function DocumentUpload({
                         processingStage: meta.processing_stage,
                         processingProgress: meta.processing_progress,
                       }
-                    : f,
-                ),
-              );
+                    : f
+                )
+              )
             }
           } catch {
             // Ignore polling errors.
           }
-        }, 1500);
+        }, 1500)
 
-        setTimeout(() => clearInterval(pollInterval), 300000);
+        setTimeout(() => clearInterval(pollInterval), 300000)
       } catch (err) {
         setUploadingFiles((prev) =>
           prev.map((f) =>
@@ -206,50 +206,50 @@ export function DocumentUpload({
                   status: "error",
                   error: err instanceof Error ? err.message : "Upload failed",
                 }
-              : f,
-          ),
-        );
+              : f
+          )
+        )
       }
     },
-    [onPollStatus, onUpload, tagsInput],
-  );
+    [onPollStatus, onUpload, tagsInput]
+  )
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
-      if (!files) return;
-      Array.from(files).forEach((file) => handleUpload(file));
+      if (!files) return
+      Array.from(files).forEach((file) => handleUpload(file))
     },
-    [handleUpload],
-  );
+    [handleUpload]
+  )
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      handleFiles(e.dataTransfer.files);
+      e.preventDefault()
+      setIsDragging(false)
+      handleFiles(e.dataTransfer.files)
     },
-    [handleFiles],
-  );
+    [handleFiles]
+  )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
 
   const removeFile = (file: File) => {
-    setUploadingFiles((prev) => prev.filter((f) => f.file !== file));
-  };
+    setUploadingFiles((prev) => prev.filter((f) => f.file !== file))
+  }
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
 
   return (
     <div className="space-y-4">
@@ -372,8 +372,8 @@ export function DocumentUpload({
                 )}
                 <button
                   onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(item.file);
+                    e.stopPropagation()
+                    removeFile(item.file)
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -385,5 +385,5 @@ export function DocumentUpload({
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
+import React, { useState } from "react"
 
 /**
  * "Notify me when subprocessors change" form. Client island because the
@@ -10,20 +10,20 @@ import React, { useState } from "react";
  * just for one form). Phase 6 wires it to a real Resend audience.
  */
 export const SubprocessorSubscribeForm: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("")
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
     if (!email || !email.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
+      setError("Please enter a valid email address.")
+      return
     }
-    setSubmitted(true);
-    setEmail("");
-  };
+    setSubmitted(true)
+    setEmail("")
+  }
 
   return (
     <>
@@ -55,5 +55,5 @@ export const SubprocessorSubscribeForm: React.FC = () => {
       )}
       {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
     </>
-  );
-};
+  )
+}

@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { env } from "@/lib/env";
+import { env } from "@/lib/env"
 
 /**
  * API reference renderer.
@@ -21,11 +21,11 @@ import { env } from "@/lib/env";
  * a React-18-clean build (or migrate to redocly/stoplight-react).
  */
 export default function StoplightDocs() {
-  const apiSpecUrl = `${env.publicApiUrl}/openapi.json`;
+  const apiSpecUrl = `${env.publicApiUrl}/openapi.json`
   // The bundled Stoplight Elements distribution accepts the OpenAPI URL via
   // the apiDescriptionUrl param on the standalone HTML viewer:
   // https://elements-demo.stoplight.io/?spec=...
-  const viewerUrl = `https://elements-demo.stoplight.io/?spec=${encodeURIComponent(apiSpecUrl)}`;
+  const viewerUrl = `https://elements-demo.stoplight.io/?spec=${encodeURIComponent(apiSpecUrl)}`
   return (
     <div className="docs-renderer h-[calc(100vh-3.5rem)]">
       <iframe
@@ -34,5 +34,5 @@ export default function StoplightDocs() {
         className="w-full h-full border-0"
       />
     </div>
-  );
+  )
 }

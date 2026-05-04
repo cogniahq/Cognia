@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { LayoutGroup, motion } from "framer-motion";
+import { useState } from "react"
+import { LayoutGroup, motion } from "framer-motion"
 
 import {
   fadeUpVariants,
   staggerContainerVariants,
-} from "@/components/shared/site-motion-variants";
+} from "@/components/shared/site-motion-variants"
 
-import ActivityTab from "./ActivityTab";
-import ApiKeysTab from "./ApiKeysTab";
-import IntegrationsHealthTab from "./IntegrationsHealthTab";
-import MembersTab from "./MembersTab";
-import SecurityTab from "./SecurityTab";
-import SsoSetupTab from "./SsoSetupTab";
-import UpcomingTab from "./UpcomingTab";
+import ActivityTab from "./ActivityTab"
+import ApiKeysTab from "./ApiKeysTab"
+import IntegrationsHealthTab from "./IntegrationsHealthTab"
+import MembersTab from "./MembersTab"
+import SecurityTab from "./SecurityTab"
+import SsoSetupTab from "./SsoSetupTab"
+import UpcomingTab from "./UpcomingTab"
 
 type AdminTab =
   | "activity"
@@ -23,7 +23,7 @@ type AdminTab =
   | "integrations"
   | "sso"
   | "api-keys"
-  | "upcoming";
+  | "upcoming"
 
 const BASE_TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
   { id: "activity", label: "Activity" },
@@ -31,19 +31,19 @@ const BASE_TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
   { id: "security", label: "Security" },
   { id: "integrations", label: "Integrations" },
   { id: "sso", label: "SSO" },
-];
+]
 
 interface OrgAdminClientProps {
-  slug: string;
-  orgName: string;
+  slug: string
+  orgName: string
   /** Org id (UUID) — required for the API Keys + Upcoming tabs which scope by id rather than slug. */
-  orgId: string;
+  orgId: string
   /** Whether the calling user can manage members (offboard / hard-delete). Maps to the ADMIN role. */
-  canManageMembers: boolean;
+  canManageMembers: boolean
   /** Whether to show the API Keys tab. ADMIN-only (api_key.create / api_key.revoke). */
-  canSeeApiKeys: boolean;
+  canSeeApiKeys: boolean
   /** Whether to show the Upcoming tab. Anyone with audit.read; granted to ADMIN/EDITOR/VIEWER. */
-  canSeeUpcomingTab: boolean;
+  canSeeUpcomingTab: boolean
 }
 
 /**
@@ -60,7 +60,7 @@ export function OrgAdminClient({
   canSeeApiKeys,
   canSeeUpcomingTab,
 }: OrgAdminClientProps) {
-  const [activeTab, setActiveTab] = useState<AdminTab>("activity");
+  const [activeTab, setActiveTab] = useState<AdminTab>("activity")
 
   const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
     ...BASE_TABS,
@@ -68,7 +68,7 @@ export function OrgAdminClient({
     ...(canSeeUpcomingTab
       ? [{ id: "upcoming" as const, label: "Upcoming" }]
       : []),
-  ];
+  ]
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -100,7 +100,7 @@ export function OrgAdminClient({
             variants={fadeUpVariants}
           >
             {TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
+              const isActive = activeTab === tab.id
               return (
                 <motion.button
                   key={tab.id}
@@ -127,7 +127,7 @@ export function OrgAdminClient({
                   )}
                   <span className="relative z-10">{tab.label}</span>
                 </motion.button>
-              );
+              )
             })}
           </motion.div>
         </LayoutGroup>
@@ -158,7 +158,7 @@ export function OrgAdminClient({
         </motion.div>
       </motion.div>
     </div>
-  );
+  )
 }
 
-export default OrgAdminClient;
+export default OrgAdminClient

@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
+import { useEffect } from "react"
 
-import { useSession } from "@/lib/auth/client";
-import { syncSessionToExtension } from "@/lib/auth/extension-bridge";
+import { useSession } from "@/lib/auth/client"
+import { syncSessionToExtension } from "@/lib/auth/extension-bridge"
 
 /**
  * Headless client island mounted under (app)/layout.tsx. Whenever the
@@ -15,13 +15,13 @@ import { syncSessionToExtension } from "@/lib/auth/extension-bridge";
  * no point bridging an anonymous session to the extension.
  */
 export function ExtensionAuthBridge() {
-  const session = useSession();
-  const userId = session.user.id;
+  const session = useSession()
+  const userId = session.user.id
 
   useEffect(() => {
-    if (!userId) return;
-    syncSessionToExtension(userId);
-  }, [userId]);
+    if (!userId) return
+    syncSessionToExtension(userId)
+  }, [userId])
 
-  return null;
+  return null
 }

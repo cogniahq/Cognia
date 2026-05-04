@@ -1,19 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"
 
-import { getSession } from "@/lib/auth/session";
-import { apiFetch, ApiError } from "@/lib/api/server";
-import { UpcomingList } from "@/components/upcoming/UpcomingList";
-import type { MemoryTodo } from "@/services/todos.service";
+import { getSession } from "@/lib/auth/session"
+import { apiFetch, ApiError } from "@/lib/api/server"
+import { UpcomingList } from "@/components/upcoming/UpcomingList"
+import type { MemoryTodo } from "@/services/todos.service"
 
 export const metadata: Metadata = {
   title: "Upcoming",
   robots: { index: false, follow: false },
-};
+}
 
 interface ApiTodosEnvelope {
-  success: boolean;
-  data: MemoryTodo[];
-  nextCursor: string | null;
+  success: boolean
+  data: MemoryTodo[]
+  nextCursor: string | null
 }
 
 /**
@@ -27,9 +27,9 @@ interface ApiTodosEnvelope {
  * unconnected users there via UpcomingList → onCalendarConnectRequested.
  */
 export default async function UpcomingPage() {
-  const session = await getSession();
-  if (!session) return null; // middleware redirects before we get here
-  const orgId = session.primaryOrg?.id;
+  const session = await getSession()
+  if (!session) return null // middleware redirects before we get here
+  const orgId = session.primaryOrg?.id
   if (!orgId) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -37,22 +37,22 @@ export default async function UpcomingPage() {
           Open an organization workspace to see extracted upcoming items.
         </div>
       </div>
-    );
+    )
   }
 
-  let initialTodos: MemoryTodo[] = [];
-  let initialCursor: string | null = null;
+  let initialTodos: MemoryTodo[] = []
+  let initialCursor: string | null = null
   try {
     const res = await apiFetch<ApiTodosEnvelope>(
-      `/api/todos?organizationId=${encodeURIComponent(orgId)}&status=PENDING`,
-    );
-    initialTodos = res.data ?? [];
-    initialCursor = res.nextCursor ?? null;
+      `/api/todos?organizationId=${encodeURIComponent(orgId)}&status=PENDING`
+    )
+    initialTodos = res.data ?? []
+    initialCursor = res.nextCursor ?? null
   } catch (err) {
     // Best-effort SSR fetch — if the upstream is down, fall through with an
     // empty initial list and let the client retry on mount. Anything other
     // than a transient API error should re-throw to the error boundary.
-    if (!(err instanceof ApiError)) throw err;
+    if (!(err instanceof ApiError)) throw err
   }
 
   return (
@@ -80,5 +80,5 @@ export default async function UpcomingPage() {
         />
       </div>
     </div>
-  );
+  )
 }

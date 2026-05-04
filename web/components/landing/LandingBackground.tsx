@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { motion } from "framer-motion";
+import { motion } from "framer-motion"
 
 const BLUR_ORBS = [
   {
@@ -19,7 +19,7 @@ const BLUR_ORBS = [
     to: "#a78bfa",
     opacity: 0.55,
   },
-];
+]
 
 /**
  * Decorative animated gradient orbs + grid backdrop for the landing page.
@@ -76,5 +76,5 @@ export const LandingBackground: React.FC = () => {
         }
       `}</style>
     </>
-  );
-};
+  )
+}

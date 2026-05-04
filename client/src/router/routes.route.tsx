@@ -2,18 +2,10 @@ import { lazy, Suspense, useRef } from "react"
 import { useAuth } from "@/contexts/auth.context"
 import { Navigate, Route, Routes } from "react-router-dom"
 
+import { AppShell } from "@/components/shared/AppShell"
+
 const Landing = lazy(() =>
   import("@/pages/landing.page").then((module) => ({ default: module.Landing }))
-)
-const Memories = lazy(() =>
-  import("@/pages/memories.page").then((module) => ({
-    default: module.Memories,
-  }))
-)
-const MemoriesTrash = lazy(() =>
-  import("@/components/memories/TrashView").then((module) => ({
-    default: module.TrashView,
-  }))
 )
 const Docs = lazy(() =>
   import("@/pages/docs.page").then((module) => ({ default: module.Docs }))
@@ -126,7 +118,15 @@ const LoadingFallback = () => (
   </div>
 )
 
-// Redirect authenticated users to /memories. The require-org-membership
+// Used inside AppShell's Outlet — the AppShell already renders chrome, so
+// this fallback only fills the content area, no chrome flash.
+const ContentLoadingFallback = () => (
+  <div className="flex items-center justify-center py-24">
+    <div className="text-sm font-mono text-gray-500">Loading...</div>
+  </div>
+)
+
+// Redirect authenticated users to /organization. The require-org-membership
 // wall on the server will 403-redirect them to /onboarding/workspace if
 // they haven't created or joined a workspace yet (handled by the axios
 // interceptor).
@@ -141,7 +141,7 @@ const AuthRedirectLanding = () => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/memories" replace />
+    return <Navigate to="/organization" replace />
   }
 
   // Returning user with a stored token that failed auth (expired locally,
@@ -154,48 +154,229 @@ const AuthRedirectLanding = () => {
   return <Landing />
 }
 
+// Authed routes mount inside <AppShell> which renders the persistent
+// PageHeader above an <Outlet>. The Suspense boundary lives INSIDE the shell
+// so lazy-route bundle loads no longer flash the chrome away.
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        <Route path="/" element={<AuthRedirectLanding />} />
-        <Route path="/pricing" element={<Pricing />} />
+    <Routes>
+      {/* Public marketing + auth surfaces — no app chrome */}
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthRedirectLanding />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/pricing"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Pricing />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/security"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Security />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/security/bug-bounty"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <BugBounty />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/trust"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Trust />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/privacy"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Privacy />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Terms />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/subprocessors"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <SubprocessorsPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/dpa"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <DPAPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Login />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Login />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/auth/verify-email"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <VerifyEmail />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/auth/magic"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthMagic />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/onboarding/workspace"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <OnboardingWorkspace />
+          </Suspense>
+        }
+      />
 
-        {/* Public trust & legal pages */}
-        <Route path="/security" element={<Security />} />
-        <Route path="/security/bug-bounty" element={<BugBounty />} />
-        <Route path="/trust" element={<Trust />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/subprocessors" element={<SubprocessorsPage />} />
-        <Route path="/dpa" element={<DPAPage />} />
-
-        {/* App routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Login />} />
-        <Route path="/auth/verify-email" element={<VerifyEmail />} />
-        <Route path="/auth/magic" element={<AuthMagic />} />
-        <Route path="/onboarding/workspace" element={<OnboardingWorkspace />} />
-        <Route path="/memories" element={<Memories />} />
+      {/* Authed app routes — share the persistent AppShell chrome */}
+      <Route element={<AppShell />}>
         <Route
-          path="/memories/v2"
-          element={<Navigate to="/memories" replace />}
+          path="/docs"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Docs />
+            </Suspense>
+          }
         />
-        <Route path="/memories/trash" element={<MemoriesTrash />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/organization" element={<Organization />} />
-        <Route path="/integrations" element={<Integrations />} />
-        <Route path="/mesh-showcase" element={<MeshShowcase />} />
-        <Route path="/org-admin/:slug" element={<OrgAdmin />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/settings/api-keys" element={<ApiKeysPage />} />
-        <Route path="/upcoming" element={<Upcoming />} />
+        <Route
+          path="/analytics"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Analytics />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Profile />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/organization"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Organization />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/integrations"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Integrations />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/mesh-showcase"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <MeshShowcase />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/org-admin/:slug"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <OrgAdmin />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/billing"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Billing />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/settings/api-keys"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <ApiKeysPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/upcoming"
+          element={
+            <Suspense fallback={<ContentLoadingFallback />}>
+              <Upcoming />
+            </Suspense>
+          }
+        />
+      </Route>
 
-        <Route path="*" element={<AuthRedirectLanding />} />
-      </Routes>
-    </Suspense>
+      {/* Legacy /memories paths land authed users back on /organization */}
+      <Route
+        path="/memories"
+        element={<Navigate to="/organization" replace />}
+      />
+      <Route
+        path="/memories/*"
+        element={<Navigate to="/organization" replace />}
+      />
+
+      <Route
+        path="*"
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthRedirectLanding />
+          </Suspense>
+        }
+      />
+    </Routes>
   )
 }
 

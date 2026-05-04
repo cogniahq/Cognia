@@ -21,7 +21,6 @@ import { SetupChecklist } from "@/components/organization/setup"
 import {
   fadeUpVariants,
   staggerContainerVariants,
-  tabContentVariants,
 } from "@/components/shared/site-motion-variants"
 
 const getErrorMessage = (error: unknown, fallback: string) =>
@@ -394,129 +393,129 @@ export function Organization() {
           </motion.div>
         </LayoutGroup>
 
-        {/* Tab content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            className={`bg-white border border-gray-200 rounded-xl shadow-sm min-h-[500px] ${activeTab === "mesh" ? "p-0 overflow-hidden" : "p-6 sm:p-8"}`}
-            key={activeTab}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={tabContentVariants}
-          >
-            {activeTab === "search" && <OrganizationSearch />}
+        {/* Tab content — opacity-only fade keyed on activeTab. Dropped the
+            AnimatePresence mode="wait" wrapper because its enforced
+            old-fades-out → new-fades-in sequencing left the container empty
+            for ~120ms between tabs, which read as a visible jump. */}
+        <motion.div
+          className={`bg-white border border-gray-200 rounded-xl shadow-sm min-h-[500px] ${activeTab === "mesh" ? "p-0 overflow-hidden" : "p-6 sm:p-8"}`}
+          key={activeTab}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18 }}
+        >
+          {activeTab === "search" && <OrganizationSearch />}
 
-            {activeTab === "mesh" && (
+          {activeTab === "mesh" && (
+            <div
+              className="relative"
+              style={{
+                height: "calc(100vh - 300px)",
+                minHeight: "500px",
+              }}
+            >
               <div
-                className="relative"
+                className="w-full h-full"
                 style={{
-                  height: "calc(100vh - 300px)",
-                  minHeight: "500px",
-                }}
-              >
-                <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundImage: `
+                  backgroundImage: `
                         linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
                         linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)
                       `,
-                    backgroundSize: "24px 24px",
-                  }}
-                >
-                  <MemoryMesh3D
-                    className="w-full h-full"
-                    onNodeClick={handleNodeClick}
-                    similarityThreshold={0.3}
-                    selectedMemoryId={clickedNodeId || undefined}
-                    highlightedMemoryIds={highlightedMemoryIds}
-                    memorySources={memorySources}
-                    memoryUrls={memoryUrls}
-                    externalMeshData={meshData}
-                    externalIsLoading={meshLoading}
-                    externalError={meshError}
-                  />
-                </div>
-                <motion.div
-                  className="pointer-events-none absolute left-5 top-5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-1 text-[10px] tracking-[0.2em] uppercase text-gray-500">
-                    Knowledge
-                    <span className="w-1 h-1 rounded-full bg-gray-400" />
-                    Mesh
-                  </div>
-                </motion.div>
-                {meshData && meshData.nodes.length > 0 && (
-                  <motion.div
-                    className="absolute right-5 top-5 z-20 max-w-[200px]"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4, duration: 0.3 }}
-                  >
-                    <div className="bg-white/90 backdrop-blur border border-gray-200 rounded-xl p-4 shadow-sm">
-                      <div className="text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3">
-                        Statistics
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs text-gray-700">
-                          <span>Nodes</span>
-                          <span className="font-mono font-medium text-gray-900">
-                            {meshData.nodes.length}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-700">
-                          <span>Connections</span>
-                          <span className="font-mono font-medium text-gray-900">
-                            {meshData.edges.length}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "documents" && (
-              <motion.div
-                className="space-y-10"
-                initial="initial"
-                animate="animate"
-                variants={staggerContainerVariants}
+                  backgroundSize: "24px 24px",
+                }}
               >
-                {canEdit && (
-                  <motion.div variants={fadeUpVariants}>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-4">
-                      Upload
-                      <span className="w-1 h-1 rounded-full bg-gray-400" />
-                      Documents
-                    </div>
-                    <DocumentUpload />
-                  </motion.div>
-                )}
-                <motion.div variants={fadeUpVariants}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">
-                      Library
-                      <span className="w-1 h-1 rounded-full bg-gray-400" />
-                      Documents
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {documents.length} file
-                      {documents.length !== 1 && "s"}
-                    </span>
-                  </div>
-                  <DocumentList />
-                </motion.div>
+                <MemoryMesh3D
+                  className="w-full h-full"
+                  onNodeClick={handleNodeClick}
+                  similarityThreshold={0.3}
+                  selectedMemoryId={clickedNodeId || undefined}
+                  highlightedMemoryIds={highlightedMemoryIds}
+                  memorySources={memorySources}
+                  memoryUrls={memoryUrls}
+                  externalMeshData={meshData}
+                  externalIsLoading={meshLoading}
+                  externalError={meshError}
+                />
+              </div>
+              <motion.div
+                className="pointer-events-none absolute left-5 top-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-1 text-[10px] tracking-[0.2em] uppercase text-gray-500">
+                  Knowledge
+                  <span className="w-1 h-1 rounded-full bg-gray-400" />
+                  Mesh
+                </div>
               </motion.div>
-            )}
+              {meshData && meshData.nodes.length > 0 && (
+                <motion.div
+                  className="absolute right-5 top-5 z-20 max-w-[200px]"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4, duration: 0.3 }}
+                >
+                  <div className="bg-white/90 backdrop-blur border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3">
+                      Statistics
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-gray-700">
+                        <span>Nodes</span>
+                        <span className="font-mono font-medium text-gray-900">
+                          {meshData.nodes.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-700">
+                        <span>Connections</span>
+                        <span className="font-mono font-medium text-gray-900">
+                          {meshData.edges.length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
 
-            {activeTab === "settings" && isAdmin && <OrganizationSettings />}
-          </motion.div>
-        </AnimatePresence>
+          {activeTab === "documents" && (
+            <motion.div
+              className="space-y-10"
+              initial="initial"
+              animate="animate"
+              variants={staggerContainerVariants}
+            >
+              {canEdit && (
+                <motion.div variants={fadeUpVariants}>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-4">
+                    Upload
+                    <span className="w-1 h-1 rounded-full bg-gray-400" />
+                    Documents
+                  </div>
+                  <DocumentUpload />
+                </motion.div>
+              )}
+              <motion.div variants={fadeUpVariants}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">
+                    Library
+                    <span className="w-1 h-1 rounded-full bg-gray-400" />
+                    Documents
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {documents.length} file
+                    {documents.length !== 1 && "s"}
+                  </span>
+                </div>
+                <DocumentList />
+              </motion.div>
+            </motion.div>
+          )}
+
+          {activeTab === "settings" && isAdmin && <OrganizationSettings />}
+        </motion.div>
       </motion.div>
     </div>
   )

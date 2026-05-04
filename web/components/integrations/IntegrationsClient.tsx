@@ -112,9 +112,7 @@ export function IntegrationsClient() {
     null,
   );
   const [syncingProvider, setSyncingProvider] = useState<string | null>(null);
-  const [disconnectDialog, setDisconnectDialog] = useState<string | null>(
-    null,
-  );
+  const [disconnectDialog, setDisconnectDialog] = useState<string | null>(null);
   const [calendarBanner, setCalendarBanner] = useState<{
     kind: "ok" | "error";
     text: string;

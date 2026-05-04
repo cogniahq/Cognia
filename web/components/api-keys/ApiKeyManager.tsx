@@ -96,9 +96,7 @@ export function ApiKeyManager({
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
-  const [revokeTarget, setRevokeTarget] = useState<ApiKeyMetadata | null>(
-    null,
-  );
+  const [revokeTarget, setRevokeTarget] = useState<ApiKeyMetadata | null>(null);
   const [revoking, setRevoking] = useState(false);
 
   const visibleKeys = useMemo(() => {
@@ -252,9 +250,7 @@ export function ApiKeyManager({
           </div>
         ) : visibleKeys.length === 0 ? (
           <div className="px-5 py-12 text-center">
-            <p className="text-sm font-medium text-gray-900">
-              No API keys yet
-            </p>
+            <p className="text-sm font-medium text-gray-900">No API keys yet</p>
             <p className="text-xs text-gray-500 mt-1">
               Mint your first key to start hitting{" "}
               <code className="font-mono">/v1</code>.
@@ -276,9 +272,7 @@ export function ApiKeyManager({
                   <th className="text-left px-4 py-2.5 font-mono">Prefix</th>
                   <th className="text-left px-4 py-2.5 font-mono">Scopes</th>
                   <th className="text-left px-4 py-2.5 font-mono">Org</th>
-                  <th className="text-left px-4 py-2.5 font-mono">
-                    Last used
-                  </th>
+                  <th className="text-left px-4 py-2.5 font-mono">Last used</th>
                   <th className="text-left px-4 py-2.5 font-mono">Created</th>
                   <th className="text-left px-4 py-2.5 font-mono">Status</th>
                   <th className="text-right px-4 py-2.5 font-mono">Actions</th>
@@ -404,9 +398,7 @@ export function ApiKeyManager({
                         className="mt-0.5"
                       />
                       <span>
-                        <span className="font-mono text-gray-900">
-                          {scope}
-                        </span>
+                        <span className="font-mono text-gray-900">{scope}</span>
                         <span className="block text-gray-500">
                           {SCOPE_DESCRIPTIONS[scope]}
                         </span>

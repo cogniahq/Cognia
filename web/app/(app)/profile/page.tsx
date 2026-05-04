@@ -63,8 +63,8 @@ export default async function ProfilePage() {
         )}
 
         <div className="border border-gray-200 rounded-xl p-6 text-sm font-mono text-gray-600">
-          Static / dynamic profile, 2FA settings, export/delete: shipping in
-          the Phase 3 follow-up. See client/src/pages/profile.page.tsx for the
+          Static / dynamic profile, 2FA settings, export/delete: shipping in the
+          Phase 3 follow-up. See client/src/pages/profile.page.tsx for the
           source-of-truth UI.
         </div>
       </div>

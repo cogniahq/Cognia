@@ -61,9 +61,7 @@ export async function connectIntegration(
 export async function disconnectIntegration(provider: string): Promise<void> {
   const response = await deleteRequest(`/integrations/${provider}`);
   if (response.data?.success === false) {
-    throw new Error(
-      response.data?.error || "Failed to disconnect integration",
-    );
+    throw new Error(response.data?.error || "Failed to disconnect integration");
   }
 }
 

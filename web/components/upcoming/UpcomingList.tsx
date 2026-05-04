@@ -184,8 +184,8 @@ export function UpcomingList({
         </div>
       ) : todos.length === 0 ? (
         <div className="border border-gray-200 rounded-xl py-12 text-center text-xs font-mono text-gray-500">
-          No upcoming items extracted yet. New items appear automatically as
-          you capture more memories.
+          No upcoming items extracted yet. New items appear automatically as you
+          capture more memories.
         </div>
       ) : (
         BUCKET_ORDER.map((b) => {

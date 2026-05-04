@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { SessionProvider } from "@/lib/auth/client";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { ExtensionAuthBridge } from "@/components/auth/ExtensionAuthBridge";
 
 /**
  * Authed shell. The middleware verifies the cognia_session cookie's presence;
@@ -31,6 +32,7 @@ export default async function AppLayout({
         <PageHeader />
         <main>{children}</main>
       </div>
+      <ExtensionAuthBridge />
     </SessionProvider>
   );
 }

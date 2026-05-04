@@ -9,13 +9,14 @@
  * because none of them carried meaningful business logic that would warrant
  * separate files in the Next port.
  *
- * Answer-job streaming is implemented as a polling fallback only; the SSE
- * subscriber from the Vite client lives in two-factor-style streaming
- * helpers that are out of scope for this Phase 3.5 port. Polling delivers
- * the same answer JSON, just on a 1.5s cadence.
+ * Answer-job streaming uses SSE — EventSource against
+ * /api/search/job/<id>/stream with credentials so the cognia_session cookie
+ * (Domain=.cogniahq.tech) authenticates the subscriber. On disconnect or
+ * "error" event we fall back to a single getAnswerJobStatus poll so the
+ * UI doesn't permanently spin if the SSE pipe drops.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import * as orgService from "@/services/organization.service";
 import type {
@@ -119,51 +120,42 @@ export function OrganizationSearch({
     [activeFilterId, query, runSearch, submittedQuery],
   );
 
-  // Answer-job polling. Server returns an answerJobId when summary
-  // generation is asynchronous; we poll status every 1.5s until the job
-  // resolves and patch the answer + citations into the existing results.
-  const pollingRef = useRef<number | undefined>(undefined);
+  // Answer-job streaming via SSE. Server returns an answerJobId when summary
+  // generation is asynchronous; we subscribe to the event stream and patch
+  // the answer + citations into the existing results when the job completes.
+  // The eventSource is closed automatically by the helper on completion,
+  // failure, timeout, or error.
   useEffect(() => {
     const jobId = results?.answerJobId;
     if (!jobId) return;
 
     let cancelled = false;
-    const poll = async () => {
-      try {
-        const job = await orgService.getAnswerJobStatus(jobId);
+    const unsubscribe = orgService.subscribeToAnswerJob(jobId, {
+      onCompleted: (job) => {
         if (cancelled) return;
-        if (job.status === "completed") {
-          setResults((current) => {
-            if (!current || current.answerJobId !== jobId) return current;
-            return {
-              ...current,
-              answer: job.answer,
-              citations: mapAnswerJobCitations(job.citations),
-              answerJobId: undefined,
-            };
-          });
-          return;
-        }
-        if (job.status === "failed") {
-          setSummaryError("Summary generation failed.");
-          setResults((current) => {
-            if (!current || current.answerJobId !== jobId) return current;
-            return { ...current, answerJobId: undefined };
-          });
-          return;
-        }
-        pollingRef.current = window.setTimeout(poll, 1500);
-      } catch (err) {
+        setResults((current) => {
+          if (!current || current.answerJobId !== jobId) return current;
+          return {
+            ...current,
+            answer: job.answer,
+            citations: mapAnswerJobCitations(job.citations),
+            answerJobId: undefined,
+          };
+        });
+      },
+      onError: (msg) => {
         if (cancelled) return;
-        setSummaryError(
-          err instanceof Error ? err.message : "Summary generation failed.",
-        );
-      }
-    };
-    poll();
+        setSummaryError(msg);
+        setResults((current) => {
+          if (!current || current.answerJobId !== jobId) return current;
+          return { ...current, answerJobId: undefined };
+        });
+      },
+    });
+
     return () => {
       cancelled = true;
-      if (pollingRef.current) window.clearTimeout(pollingRef.current);
+      unsubscribe();
     };
   }, [results?.answerJobId]);
 

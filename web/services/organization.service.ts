@@ -217,6 +217,77 @@ export async function getAnswerJobStatus(
   return response.data;
 }
 
+/**
+ * Subscribe to an answer-job via SSE. Returns an unsubscribe function.
+ *
+ * EventSource sends cookies cross-origin via `withCredentials: true` — the
+ * cognia_session cookie is `Domain=.cogniahq.tech` so api.cogniahq.tech
+ * receives it and the existing API auth middleware resolves the user.
+ */
+export function subscribeToAnswerJob(
+  jobId: string,
+  callbacks: {
+    onCompleted: (result: AnswerJobResult) => void
+    onError: (error: string) => void
+    onHeartbeat?: (elapsed: number) => void
+  },
+): () => void {
+  const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "https://api.cogniahq.tech"
+  const url = `${apiUrl}/api/search/job/${jobId}/stream`
+  const eventSource = new EventSource(url, { withCredentials: true })
+
+  eventSource.addEventListener("connected", () => {})
+
+  eventSource.addEventListener("completed", (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data) as AnswerJobResult
+      callbacks.onCompleted(data)
+    } catch {
+      callbacks.onError("Failed to parse response")
+    }
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("failed", (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data)
+      callbacks.onError(data.error || "Answer generation failed")
+    } catch {
+      callbacks.onError("Answer generation failed")
+    }
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("timeout", (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data)
+      callbacks.onError(data.error || "Answer generation timed out")
+    } catch {
+      callbacks.onError("Answer generation timed out")
+    }
+    eventSource.close()
+  })
+
+  eventSource.addEventListener("heartbeat", (event: MessageEvent) => {
+    if (!callbacks.onHeartbeat) return
+    try {
+      const data = JSON.parse(event.data)
+      callbacks.onHeartbeat(data.elapsed)
+    } catch {
+      // Ignore parse errors for heartbeat
+    }
+  })
+
+  eventSource.addEventListener("error", () => {
+    if (eventSource.readyState === EventSource.CLOSED) return
+    callbacks.onError("Connection error")
+    eventSource.close()
+  })
+
+  return () => eventSource.close()
+}
+
 // Mesh ---------------------------------------------------------------------
 
 export interface OrganizationMeshNode {

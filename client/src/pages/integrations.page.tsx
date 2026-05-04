@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { IntegrationsEmptyState } from "@/components/empty-states/IntegrationsEmptyState"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { CalendarConnectCTA } from "@/components/upcoming/CalendarConnectCTA"
 
 // Integration logos as inline SVGs
 const IntegrationLogos: Record<string, React.ReactNode> = {
@@ -114,9 +115,15 @@ export const Integrations: React.FC = () => {
   const [syncingProvider, setSyncingProvider] = useState<string | null>(null)
   const [disconnectDialog, setDisconnectDialog] = useState<string | null>(null)
 
+  const [calendarBanner, setCalendarBanner] = useState<{
+    kind: "ok" | "error"
+    text: string
+  } | null>(null)
+
   useEffect(() => {
     const connectedProvider = searchParams.get("connected")
     const errorMessage = searchParams.get("error")
+    const calendar = searchParams.get("calendar")
 
     if (connectedProvider) {
       navigate("/integrations", { replace: true })
@@ -126,6 +133,28 @@ export const Integrations: React.FC = () => {
     if (errorMessage) {
       setError(decodeURIComponent(errorMessage))
       navigate("/integrations", { replace: true })
+    }
+
+    if (calendar === "connected") {
+      setCalendarBanner({ kind: "ok", text: "Google Calendar connected." })
+    } else if (calendar === "unconfigured") {
+      setCalendarBanner({
+        kind: "error",
+        text: "Google Calendar is not configured on this server.",
+      })
+    } else if (calendar) {
+      const reason = searchParams.get("reason") || "unknown error"
+      setCalendarBanner({
+        kind: "error",
+        text: `Calendar connect failed: ${reason}`,
+      })
+    }
+    if (calendar) {
+      const t = window.setTimeout(() => {
+        navigate("/integrations", { replace: true })
+        setCalendarBanner(null)
+      }, 6000)
+      return () => window.clearTimeout(t)
     }
   }, [searchParams, navigate])
 
@@ -256,6 +285,22 @@ export const Integrations: React.FC = () => {
           <p className="text-xs text-gray-500 mt-1">
             Connect external services to sync your data
           </p>
+        </div>
+
+        {calendarBanner && (
+          <div
+            className={`mb-4 px-3 py-2 rounded text-xs font-mono ${
+              calendarBanner.kind === "ok"
+                ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                : "bg-red-50 text-red-700 border border-red-200"
+            }`}
+          >
+            {calendarBanner.text}
+          </div>
+        )}
+
+        <div className="mb-6">
+          <CalendarConnectCTA />
         </div>
 
         {/* Error message */}

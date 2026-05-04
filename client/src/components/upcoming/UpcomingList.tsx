@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
+import { calendarService } from "@/services/calendar.service"
 import {
   todosService,
   type MemoryTodo,
@@ -6,7 +7,6 @@ import {
 } from "@/services/todos.service"
 import { Loader2 } from "lucide-react"
 
-import { CalendarConnectCTA } from "./CalendarConnectCTA"
 import { TodoItemCard } from "./TodoItemCard"
 
 interface UpcomingListProps {
@@ -75,6 +75,23 @@ export function UpcomingList({
   const [status, setStatus] = useState<TodoStatus | "ALL">(initialStatus)
   const [calendarConnected, setCalendarConnected] = useState(false)
 
+  // Calendar connect lives on /integrations now; just probe status so the
+  // per-todo "Add to Calendar" button can show the right CTA.
+  useEffect(() => {
+    let cancelled = false
+    calendarService
+      .status()
+      .then((res) => {
+        if (!cancelled) setCalendarConnected(res.data.connected)
+      })
+      .catch(() => {
+        if (!cancelled) setCalendarConnected(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const load = useCallback(
     async (cursor?: string) => {
       const setBusy = cursor ? setLoadingMore : setLoading
@@ -111,10 +128,10 @@ export function UpcomingList({
   }, [])
 
   const requestCalendarConnect = useCallback(() => {
-    // The CalendarConnectCTA at the top of the page handles the popup;
-    // scroll up so the user sees it.
+    // Calendar is wired up from the Integrations page now. Send the user
+    // there; the connect-banner there handles the OAuth popup.
     if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" })
+      window.location.href = "/integrations"
     }
   }, [])
 
@@ -122,8 +139,6 @@ export function UpcomingList({
 
   return (
     <div className="space-y-5">
-      <CalendarConnectCTA onConnectedChange={setCalendarConnected} />
-
       <div className="flex items-center gap-2 text-xs font-mono text-gray-600">
         <span>Filter:</span>
         {(["PENDING", "DONE", "DISMISSED", "ALL"] as const).map((s) => (

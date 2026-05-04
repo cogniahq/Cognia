@@ -132,33 +132,35 @@ export const PageHeader = () => {
   const showBillingNav =
     inOrgContext && !!currentOrganization?.slug && canSeeBillingLink
 
-  const baseNavItems: NavItem[] = [
+  // Order by frequency of use: daily-driver surfaces first, occasional ones
+  // next, admin/billing last. Workspace is the primary view; Upcoming is the
+  // daily todo/calendar surface. Analytics and Integrations are weekly-ish.
+  // Admin and Billing only render for users with the right permissions and
+  // are the least-used nav slots.
+  const navItems: NavItem[] = [
+    ...(inOrgContext
+      ? [
+          {
+            label: "Workspace",
+            path: "/organization",
+            matchPrefixes: ["/organization"],
+          },
+          { label: "Upcoming", path: "/upcoming" },
+        ]
+      : []),
     { label: "Analytics", path: "/analytics" },
     { label: "Integrations", path: "/integrations" },
+    ...(showAdminNav
+      ? [
+          {
+            label: "Admin",
+            path: `/org-admin/${currentOrganization!.slug}`,
+            matchPrefixes: ["/org-admin"],
+          },
+        ]
+      : []),
+    ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
   ]
-
-  const orgNavItems: NavItem[] = inOrgContext
-    ? [
-        {
-          label: "Workspace",
-          path: "/organization",
-          matchPrefixes: ["/organization"],
-        },
-        { label: "Upcoming", path: "/upcoming" },
-        ...(showAdminNav
-          ? [
-              {
-                label: "Admin",
-                path: `/org-admin/${currentOrganization!.slug}`,
-                matchPrefixes: ["/org-admin"],
-              },
-            ]
-          : []),
-        ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
-      ]
-    : []
-
-  const navItems: NavItem[] = [...baseNavItems, ...orgNavItems]
 
   const isActive = (item: NavItem) => {
     const prefixes = item.matchPrefixes ?? [item.path]

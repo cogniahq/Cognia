@@ -48,7 +48,7 @@ router.get('/auth/callback', async (req, res) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
   const redirect = (params: Record<string, string>) => {
     const qs = new URLSearchParams(params).toString()
-    return res.redirect(`${frontendUrl}/upcoming?${qs}`)
+    return res.redirect(`${frontendUrl}/integrations?${qs}`)
   }
   try {
     if (!googleCalendarService.isCalendarConfigured()) {

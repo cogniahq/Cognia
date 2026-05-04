@@ -16,7 +16,6 @@ import { MemoryMesh3D } from "@/components/memories/mesh"
 import { CreateOrganizationDialog } from "@/components/organization/CreateOrganizationDialog"
 import { DocumentList } from "@/components/organization/DocumentList"
 import { DocumentUpload } from "@/components/organization/DocumentUpload"
-import { MemberManagement } from "@/components/organization/MemberManagement"
 import { OrganizationSearch } from "@/components/organization/OrganizationSearch"
 import { SetupChecklist } from "@/components/organization/setup"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -44,7 +43,7 @@ export function Organization() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [activeTab, setActiveTab] = useState<
-    "search" | "mesh" | "documents" | "members" | "settings"
+    "search" | "mesh" | "documents" | "settings"
   >("search")
 
   // Memory mesh state - hooks must be called before any conditional returns
@@ -367,7 +366,6 @@ export function Organization() {
                 { id: "search" as const, label: "Search" },
                 { id: "mesh" as const, label: "Mesh" },
                 { id: "documents" as const, label: "Documents" },
-                { id: "members" as const, label: "Team" },
                 ...(isAdmin
                   ? [{ id: "settings" as const, label: "Settings" }]
                   : []),
@@ -523,8 +521,6 @@ export function Organization() {
                   </motion.div>
                 </motion.div>
               )}
-
-              {activeTab === "members" && <MemberManagement />}
 
               {activeTab === "settings" && isAdmin && <OrganizationSettings />}
             </motion.div>

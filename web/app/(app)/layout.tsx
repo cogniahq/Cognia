@@ -1,14 +1,16 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { SessionProvider } from "@/lib/auth/client";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 /**
- * Authed shell. The middleware has already verified that a cognia_session
- * cookie exists; this layout calls the API to materialise the user + orgs
- * and hydrates the client SessionProvider.
+ * Authed shell. The middleware verifies the cognia_session cookie's presence;
+ * this layout calls the API to materialise the user + orgs and hydrates the
+ * client SessionProvider so every (app)/ client island can read user/org
+ * state synchronously without a useEffect-loop fetch.
  *
- * If the API rejects the cookie (expired session), redirect to /login.
- * If the user has no active org membership, redirect to /onboarding/workspace.
+ * If the API rejects the cookie (expired session) → /login.
+ * If the user has no active org membership → /onboarding/workspace.
  */
 export default async function AppLayout({
   children,
@@ -26,8 +28,8 @@ export default async function AppLayout({
   return (
     <SessionProvider session={session}>
       <div className="min-h-screen bg-white">
-        {/* PageHeader will be added in Phase 3 once the component is ported */}
-        {children}
+        <PageHeader />
+        <main>{children}</main>
       </div>
     </SessionProvider>
   );

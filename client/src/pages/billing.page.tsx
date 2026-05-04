@@ -162,7 +162,7 @@ export function Billing() {
       if (!slug) return
       if (planTierId === "enterprise") {
         window.location.href =
-          "mailto:sales@cognia.so?subject=Cognia%20Enterprise"
+          "mailto:sales@cogniahq.tech?subject=Cognia%20Enterprise"
         return
       }
       if (planTierId === "free") return

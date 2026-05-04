@@ -47,10 +47,10 @@ export const DPA: React.FC = () => {
           The standard DPA is pre-signed by Cognia. Counter-sign and email the
           executed copy back to{" "}
           <a
-            href="mailto:legal@cognia.example"
+            href="mailto:legal@cogniahq.tech"
             className="text-blue-600 underline"
           >
-            legal@cognia.example
+            legal@cogniahq.tech
           </a>{" "}
           and we will return it for your records.
         </p>
@@ -72,10 +72,10 @@ export const DPA: React.FC = () => {
           (HIPAA BAA, sector-specific addenda, jurisdiction riders) can request
           a custom DPA. Contact{" "}
           <a
-            href="mailto:legal@cognia.example"
+            href="mailto:legal@cogniahq.tech"
             className="text-blue-600 underline"
           >
-            legal@cognia.example
+            legal@cogniahq.tech
           </a>{" "}
           with the relevant context and we will route to our outside counsel.
         </p>

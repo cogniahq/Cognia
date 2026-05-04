@@ -56,7 +56,7 @@ const TIERS: Tier[] = [
     price: "Talk to sales",
     blurb: "For organisations with compliance and scale needs.",
     cta: "Contact sales",
-    ctaHref: "mailto:sales@cognia.so?subject=Cognia%20Enterprise",
+    ctaHref: "mailto:sales@cogniahq.tech?subject=Cognia%20Enterprise",
     features: [
       "Unlimited users",
       "Unlimited memories",
@@ -64,7 +64,6 @@ const TIERS: Tier[] = [
       "Real-time sync",
       "SSO & SCIM",
       "Audit logs",
-      "SOC 2",
       "Dedicated support",
     ],
   },
@@ -105,7 +104,7 @@ export const Pricing: React.FC = () => {
           </h1>
           <p className="text-sm sm:text-base text-gray-700 max-w-xl mx-auto leading-relaxed">
             Start free, scale to Pro when your team grows, and upgrade to
-            Enterprise when compliance, SSO, and SOC 2 enter the conversation.
+            Enterprise when compliance and SSO enter the conversation.
           </p>
         </div>
 
@@ -186,7 +185,7 @@ export const Pricing: React.FC = () => {
         <div className="text-center text-xs font-mono text-gray-500 mt-10">
           Need something different?{" "}
           <a
-            href="mailto:sales@cognia.so"
+            href="mailto:sales@cogniahq.tech"
             className="underline hover:text-gray-900"
           >
             Email us

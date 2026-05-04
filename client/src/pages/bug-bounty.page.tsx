@@ -47,7 +47,7 @@ export const BugBounty: React.FC = () => {
         </h2>
         <ul className="list-disc pl-6 space-y-1">
           <li>
-            All hosts under <code className="font-mono">*.cognia.example</code>
+            All hosts under <code className="font-mono">*.cogniahq.tech</code>
           </li>
           <li>The Cognia public API</li>
           <li>The Cognia browser extension (Chrome and Firefox)</li>
@@ -151,15 +151,15 @@ export const BugBounty: React.FC = () => {
           Email a written report with reproduction steps, affected URLs or
           endpoints, and your proposed severity to{" "}
           <a
-            href="mailto:security@cognia.example"
+            href="mailto:security@cogniahq.tech"
             className="text-blue-600 underline"
           >
-            security@cognia.example
+            security@cogniahq.tech
           </a>
           . PGP keys are available on request.
         </p>
         <a
-          href="mailto:security@cognia.example?subject=Vulnerability%20report"
+          href="mailto:security@cogniahq.tech?subject=Vulnerability%20report"
           className="inline-block mt-4 px-4 py-2 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-800 transition-colors not-prose"
         >
           Report a vulnerability

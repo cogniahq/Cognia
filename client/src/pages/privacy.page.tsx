@@ -100,10 +100,10 @@ export const Privacy: React.FC = () => {
           <li>
             <strong>By email</strong> — write to{" "}
             <a
-              href="mailto:privacy@cognia.example"
+              href="mailto:privacy@cogniahq.tech"
               className="text-blue-600 underline"
             >
-              privacy@cognia.example
+              privacy@cogniahq.tech
             </a>{" "}
             and we will respond within 30 days.
           </li>

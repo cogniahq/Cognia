@@ -137,10 +137,10 @@ export const Terms: React.FC = () => {
         <p>
           Questions? Email{" "}
           <a
-            href="mailto:legal@cognia.example"
+            href="mailto:legal@cogniahq.tech"
             className="text-blue-600 underline"
           >
-            legal@cognia.example
+            legal@cogniahq.tech
           </a>
           .
         </p>

@@ -1,6 +1,5 @@
-import React, { useState } from "react"
+import React from "react"
 import { Link } from "react-router-dom"
-import { toast } from "sonner"
 
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout"
 
@@ -46,22 +45,6 @@ const COMPLIANCE_LINKS: DocLink[] = [
 ]
 
 export const Trust: React.FC = () => {
-  const [email, setEmail] = useState("")
-  const [submitted, setSubmitted] = useState(false)
-
-  const handleSoc2Request = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || !email.includes("@")) {
-      toast.error("Please enter a valid email address")
-      return
-    }
-    setSubmitted(true)
-    toast.success(
-      "Thanks — once your request is approved, we will email you the SOC 2 letter."
-    )
-    setEmail("")
-  }
-
   return (
     <LegalPageLayout
       title="Trust Center"
@@ -85,65 +68,6 @@ export const Trust: React.FC = () => {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
-          Status page
-        </h2>
-        <p className="text-sm sm:text-base text-gray-700">
-          Real-time uptime and incident history is available at{" "}
-          <a
-            href="https://status.cogniahq.com"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-blue-600 underline"
-          >
-            status.cogniahq.com
-          </a>
-          . Subscribe there to receive incident notifications by email or RSS.
-        </p>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
-          Reports
-        </h2>
-        <p className="text-sm sm:text-base text-gray-700 mb-4">
-          Our SOC 2 Type 1 audit letter is available under NDA. Enter your work
-          email and a member of our security team will follow up.
-        </p>
-        <form
-          onSubmit={handleSoc2Request}
-          className="flex flex-col sm:flex-row gap-2 max-w-lg not-prose"
-        >
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            required
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-          <button
-            type="submit"
-            disabled={submitted}
-            className="px-4 py-2 bg-zinc-900 text-white text-sm rounded-md hover:bg-zinc-800 transition-colors disabled:opacity-50"
-          >
-            {submitted ? "Submitted" : "Request SOC 2 letter"}
-          </button>
-        </form>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
-          Penetration testing
-        </h2>
-        <p className="text-sm sm:text-base text-gray-700">
-          We perform an annual third-party penetration test of our public API,
-          web application, and authentication surfaces. Cure53 is our target
-          partner; pen-test summary letters are available under NDA.
-        </p>
       </section>
     </LegalPageLayout>
   )

@@ -77,7 +77,6 @@ export const PLAN_TIERS: PlanTier[] = [
       "Real-time sync",
       "SSO / SCIM",
       "Audit logs",
-      "SOC 2",
       "BYOK",
       "Dedicated support",
     ],

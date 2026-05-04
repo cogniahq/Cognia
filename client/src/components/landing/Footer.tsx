@@ -12,7 +12,6 @@ const TRUST_LINKS: { label: string; to: string; external?: boolean }[] = [
   { label: "Subprocessors", to: "/subprocessors" },
   { label: "DPA", to: "/dpa" },
   { label: "Bug bounty", to: "/security/bug-bounty" },
-  { label: "Status", to: "https://status.cogniahq.com", external: true },
 ]
 
 export const Footer: React.FC = () => {

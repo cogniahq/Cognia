@@ -46,7 +46,7 @@ export const IntegrationsEmptyState: React.FC<IntegrationsEmptyStateProps> = ({
           </button>
         ) : (
           <a
-            href="mailto:hello@cognia.so?subject=Integration%20request"
+            href="mailto:hello@cogniahq.tech?subject=Integration%20request"
             className="px-5 py-2.5 text-sm font-medium bg-gray-900 text-white hover:bg-black transition-colors"
           >
             Request an integration

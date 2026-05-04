@@ -125,32 +125,16 @@ export const Security: React.FC = () => {
 
       <Section id="data-residency" title="Data residency">
         <p>
-          Production data is stored in AWS us-east-1. EU and APAC residency
-          options are on the Enterprise roadmap; if you require a specific
-          region today, contact{" "}
-          <a
-            href="mailto:sales@cognia.example"
-            className="text-blue-600 underline"
-          >
-            sales@cognia.example
-          </a>
-          .
+          Production data is stored in AWS ap-south-1. EU and APAC residency
+          options are on the roadmap.
         </p>
       </Section>
 
       <Section id="compliance" title="Compliance">
         <ul className="list-disc pl-6 space-y-1">
           <li>
-            SOC 2 Type 1 audit is in progress with a target completion of Q3.
-            The audit letter will be available under NDA via the trust center.
-          </li>
-          <li>
             GDPR-ready: data subject rights (access, rectification, erasure,
             portability) are exposed in-product and by request.
-          </li>
-          <li>
-            HIPAA: available on Enterprise with a signed Business Associate
-            Agreement.
           </li>
         </ul>
       </Section>

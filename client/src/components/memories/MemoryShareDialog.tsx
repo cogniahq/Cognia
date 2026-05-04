@@ -35,10 +35,6 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
     "read"
   )
   const [linkExpiry, setLinkExpiry] = useState<string>("")
-  const [userId, setUserId] = useState("")
-  const [userPermission, setUserPermission] = useState<
-    "read" | "comment" | "edit"
-  >("read")
   const [orgId, setOrgId] = useState("")
   const [orgPermission, setOrgPermission] = useState<
     "read" | "comment" | "edit"
@@ -86,26 +82,6 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create share")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const shareWithUser = async () => {
-    if (!userId.trim()) return
-    setBusy(true)
-    setError(null)
-    try {
-      await shareService.create({
-        memoryId,
-        recipientType: "user",
-        recipientUserId: userId.trim(),
-        permission: userPermission,
-      })
-      setUserId("")
-      await refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to share")
     } finally {
       setBusy(false)
     }
@@ -160,14 +136,13 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Share memory</DialogTitle>
           <DialogDescription>
-            Create a shareable link or share with a user or organization.
+            Create a shareable link or share with another organization.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="link" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="link">Link</TabsTrigger>
-            <TabsTrigger value="user">User</TabsTrigger>
             <TabsTrigger value="organization">Organization</TabsTrigger>
           </TabsList>
 
@@ -201,38 +176,6 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
               data-testid="generate-link-button"
             >
               {busy ? "Generating..." : "Generate link"}
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="user" className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="user-id">User ID or email</Label>
-              <Input
-                id="user-id"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="user@example.com"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="user-permission">Permission</Label>
-              <select
-                id="user-permission"
-                className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white"
-                value={userPermission}
-                onChange={(e) =>
-                  setUserPermission(
-                    e.target.value as "read" | "comment" | "edit"
-                  )
-                }
-              >
-                <option value="read">View only</option>
-                <option value="comment">Can comment</option>
-                <option value="edit">Can edit</option>
-              </select>
-            </div>
-            <Button onClick={shareWithUser} disabled={busy || !userId.trim()}>
-              Share
             </Button>
           </TabsContent>
 
@@ -292,7 +235,7 @@ export const MemoryShareDialog: React.FC<MemoryShareDialogProps> = ({
                       ? s.token
                         ? buildShareUrl(s.token)
                         : "(pending token)"
-                      : s.recipient_user_id || s.recipient_org_id}
+                      : s.recipient_org_id}
                   </span>
                   <span className="text-xs text-gray-500 uppercase">
                     {s.permission}

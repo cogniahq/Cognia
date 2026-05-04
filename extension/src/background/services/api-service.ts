@@ -1,4 +1,5 @@
 import { getApiEndpoint } from './storage-service'
+import { getEffectiveCaptureTarget } from './capture-target.service'
 import { DEFAULT_API_BASE } from '@/utils/core/constants.util'
 import { requireAuthToken, clearAuthToken } from '@/utils/auth'
 import { storage } from '@/lib/browser'
@@ -189,6 +190,34 @@ export async function sendToBackend(data: ContextData): Promise<void> {
       return
     }
 
+    // Resolve the destination for this capture. Both manual and auto
+    // captures need an organization_id now (Cognia is org-only; the server
+    // rejects null org). The effective target chain is: session override
+    // (popup picker) > user-saved default > null. If null, we drop the
+    // request and surface a one-time Chrome notification asking the user
+    // to set a default destination.
+    const target = await getEffectiveCaptureTarget()
+    if (!target.organizationId) {
+      try {
+        if (
+          typeof chrome !== 'undefined' &&
+          chrome.notifications &&
+          typeof chrome.notifications.create === 'function'
+        ) {
+          chrome.notifications.create('cognia-no-default-destination', {
+            type: 'basic',
+            iconUrl: 'icon-128.png',
+            title: 'Set a default workspace',
+            message:
+              'Open the Cognia popup and pick a default workspace before auto-capture works.',
+          })
+        }
+      } catch {
+        // Notifications API unavailable; silently skip the capture.
+      }
+      return
+    }
+
     const payload = {
       content: content,
       url: data.url,
@@ -230,6 +259,11 @@ export async function sendToBackend(data: ContextData): Promise<void> {
         privacy_extension_conflicts: hasPrivacyConflicts,
         privacy_extension_type: privacyInfo?.type || 'none',
         compatibility_mode: privacyInfo?.compatibility_mode || false,
+        // Capture destination — required since Cognia is org-only. Server
+        // rejects payloads with no organization_id. If a workspace_id is
+        // present, the ingestion side validates it belongs to the org.
+        organization_id: target.organizationId,
+        workspace_id: target.workspaceId ?? undefined,
       },
     }
 

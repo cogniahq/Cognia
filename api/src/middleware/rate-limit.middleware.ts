@@ -52,12 +52,19 @@ export function createRateLimiter(options: RateLimitOptions) {
       res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - current))
 
       const ttl = await redis.pttl(key)
-      if (ttl > 0) {
-        res.setHeader('X-RateLimit-Reset', Date.now() + ttl)
-      }
+      // X-RateLimit-Reset is conventionally a UNIX epoch in SECONDS, not ms.
+      // Fall back to windowMs when ttl is missing (shouldn't happen post-incr,
+      // but be defensive — a missing TTL should still produce a sane reset).
+      const remainingMs = ttl > 0 ? ttl : windowMs
+      const resetEpochSec = Math.ceil((Date.now() + remainingMs) / 1000)
+      res.setHeader('X-RateLimit-Reset', resetEpochSec.toString())
 
       if (current > maxRequests) {
         logger.warn(`Rate limit exceeded for ${subject} on ${keyPrefix}`)
+        // Retry-After is the spec-defined header SDKs (including @cogniahq/sdk)
+        // look at to back off correctly. Provide it in seconds.
+        const retryAfterSeconds = Math.max(1, Math.ceil(remainingMs / 1000))
+        res.setHeader('Retry-After', retryAfterSeconds.toString())
         res.status(429).json({ message })
         return
       }

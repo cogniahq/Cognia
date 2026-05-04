@@ -1,12 +1,12 @@
 import { fetchJSON } from "./memory-v2.service"
 
-export type ShareRecipientType = "link" | "user" | "organization"
+// Cognia is org-only; direct user-to-user shares were removed.
+export type ShareRecipientType = "link" | "organization"
 
 export interface Share {
   id: string
   memory_id: string
   recipient_type: ShareRecipientType
-  recipient_user_id?: string | null
   recipient_org_id?: string | null
   permission?: "read" | "comment" | "edit" | string
   token?: string | null
@@ -17,7 +17,6 @@ export interface Share {
 export interface CreateShareInput {
   memoryId: string
   recipientType: ShareRecipientType
-  recipientUserId?: string
   recipientOrgId?: string
   permission?: "read" | "comment" | "edit"
   expiresAt?: string

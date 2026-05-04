@@ -10,11 +10,13 @@ import { OAuthButton } from "@/components/auth/OAuthButton"
 import { SsoDiscovery } from "@/components/auth/SsoDiscovery"
 import { ConsoleButton } from "@/components/landing/ConsoleButton"
 
-type AccountType = "PERSONAL" | "ORGANIZATION"
-
-const getDashboardPath = (type: AccountType | null | undefined): string => {
-  return type === "ORGANIZATION" ? "/organization" : "/memories"
-}
+// Existing users go straight to /memories. Brand-new users get redirected
+// to /onboarding/workspace (handled in handleSubmit) because their /register
+// response carries `requiresOnboarding: true` and they have no active
+// OrganizationMember row yet — the require-org-membership middleware
+// would 403 every other route.
+const POST_LOGIN_PATH = "/memories"
+const ONBOARDING_PATH = "/onboarding/workspace"
 
 // Password requirement indicator
 const PasswordRequirement: React.FC<{
@@ -109,7 +111,6 @@ export const Login = () => {
     login,
     register,
     logout,
-    accountType,
   } = useAuth()
 
   // Default to register mode if user landed via /signup (or /signup?plan=...)
@@ -122,9 +123,6 @@ export const Login = () => {
   const [error, setError] = useState("")
   const [isRegister, setIsRegister] = useState(startAsRegister)
   const [showPassword, setShowPassword] = useState(false)
-  // The signup flow always provisions a personal workspace. Team workspaces are
-  // created post-signup via the CreateOrganizationDialog.
-  const selectedAccountType: AccountType = "PERSONAL"
   const [sessionExpiredMessage, setSessionExpiredMessage] = useState("")
 
   // 2FA state
@@ -206,15 +204,11 @@ export const Login = () => {
     setError("")
 
     try {
-      let resultUser
       if (isRegister) {
-        resultUser = await register(
-          email.trim(),
-          password.trim(),
-          selectedAccountType
-        )
-        const dashboardPath = getDashboardPath(resultUser.account_type)
-        setTimeout(() => navigate(dashboardPath), 500)
+        await register(email.trim(), password.trim())
+        // Brand-new users have no workspace yet — send them through the
+        // onboarding wall instead of /memories (which would 403).
+        setTimeout(() => navigate(ONBOARDING_PATH), 500)
       } else {
         // Handle login with optional 2FA
         const result = await login(
@@ -232,8 +226,7 @@ export const Login = () => {
         }
 
         if (result.user) {
-          const dashboardPath = getDashboardPath(result.user.account_type)
-          setTimeout(() => navigate(dashboardPath), 500)
+          setTimeout(() => navigate(POST_LOGIN_PATH), 500)
         }
       }
     } catch (err) {
@@ -303,17 +296,12 @@ export const Login = () => {
                       {user.email}
                     </span>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {accountType === "ORGANIZATION"
-                      ? "Team Workspace"
-                      : "Personal Account"}
-                  </p>
                 </div>
                 <div className="space-y-3 pt-4">
                   <ConsoleButton
                     variant="console_key"
                     className="w-full group relative overflow-hidden rounded-none px-4 py-2 transition-all duration-200 hover:shadow-md"
-                    onClick={() => navigate(getDashboardPath(accountType))}
+                    onClick={() => navigate(POST_LOGIN_PATH)}
                   >
                     <span className="relative z-10 text-sm font-medium">
                       Continue to Dashboard
@@ -418,7 +406,7 @@ export const Login = () => {
                 </h2>
                 <p className="text-sm text-gray-600">
                   {isRegister
-                    ? "Start free with a personal workspace. You can invite a team later."
+                    ? "Create an account, then set up or join a workspace."
                     : "Enter your credentials to continue"}
                 </p>
               </div>

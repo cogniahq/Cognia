@@ -41,9 +41,11 @@ enum SourceType {
   DEMO
 }
 
-enum AccountType {
-  PERSONAL
-  ORGANIZATION
+enum TodoStatus {
+  PENDING
+  DONE
+  SNOOZED
+  DISMISSED
 }
 
 enum IntegrationStatus {
@@ -91,7 +93,6 @@ enum SharePermission {
 }
 
 enum ShareRecipientType {
-  USER
   ORG
   LINK
 }
@@ -107,7 +108,6 @@ model User {
   email_verified_at        DateTime?
   password_hash            String?
   role                     UserRole             @default(USER)
-  account_type             AccountType          @default(PERSONAL)
   created_at               DateTime             @default(now())
   updated_at               DateTime             @default(now()) @updatedAt
 
@@ -125,6 +125,14 @@ model User {
   consent                  Json?    // { cookies: bool, analytics: bool, marketing: bool, recordedAt: ... }
   legal_hold_until         DateTime?
 
+  // Default capture destination for browser extension (and other clients).
+  // Null = no default set; the user is prompted to pick one at capture time.
+  // Stored as plain UUIDs (no FK relation) so org/workspace deletion does not
+  // require a cascading migration on the user row; the server re-validates
+  // membership + workspace ownership at read time.
+  default_capture_organization_id  String?  @db.Uuid
+  default_capture_workspace_id     String?  @db.Uuid
+
   memories                 Memory[]
   memory_snapshots         MemorySnapshot[]
   token_usage              TokenUsage[]
@@ -140,11 +148,11 @@ model User {
   oauth_identities             OAuthIdentity[]
   email_verification_tokens    EmailVerificationToken[]
   memory_shares_authored       MemoryShare[]            @relation("MemorySharer")
-  memory_shares_received       MemoryShare[]            @relation("MemoryShareRecipient")
   memory_comments              MemoryComment[]
   memory_tags                  MemoryTag[]
   saved_searches               SavedSearch[]
   api_keys                     ApiKey[]
+  todos                        MemoryTodo[]
 
   @@map("users")
 }
@@ -234,6 +242,7 @@ model Organization {
   invoices                     Invoice[]
   usage_records                UsageRecord[]
   api_keys                     ApiKey[]
+  todos                        MemoryTodo[]
 
   @@map("organizations")
 }
@@ -556,11 +565,11 @@ model Memory {
   access_count           Int                  @default(0)
   last_accessed          DateTime             @default(now())
   source_type            SourceType?          @default(EXTENSION)
-  organization_id        String?              @db.Uuid
+  organization_id        String               @db.Uuid
   workspace_id           String?              @db.Uuid
   deleted_at             DateTime?
   user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization           Organization?        @relation(fields: [organization_id], references: [id], onDelete: SetNull)
+  organization           Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   workspace              Workspace?           @relation(fields: [workspace_id], references: [id], onDelete: SetNull)
   related_memories       MemoryRelation[]     @relation("MemoryRelations")
   related_to_memories    MemoryRelation[]     @relation("RelatedMemories")
@@ -569,6 +578,7 @@ model Memory {
   shares                 MemoryShare[]
   comments               MemoryComment[]
   tags                   MemoryTagOnMemory[]
+  todos                  MemoryTodo[]
 
   @@index([user_id])
   @@index([created_at])
@@ -793,7 +803,6 @@ model MemoryShare {
   memory_id           String                 @db.Uuid
   sharer_user_id      String                 @db.Uuid
   recipient_type      ShareRecipientType
-  recipient_user_id   String?                @db.Uuid
   recipient_org_id    String?                @db.Uuid
   link_token          String?                @unique
   permission          SharePermission        @default(READ)
@@ -802,11 +811,9 @@ model MemoryShare {
   revoked_at          DateTime?
   memory              Memory                 @relation(fields: [memory_id], references: [id], onDelete: Cascade)
   sharer_user         User                   @relation("MemorySharer", fields: [sharer_user_id], references: [id], onDelete: Cascade)
-  recipient_user      User?                  @relation("MemoryShareRecipient", fields: [recipient_user_id], references: [id], onDelete: SetNull)
   recipient_org       Organization?          @relation(fields: [recipient_org_id], references: [id], onDelete: SetNull)
 
   @@index([memory_id])
-  @@index([recipient_user_id])
   @@index([recipient_org_id])
   @@map("memory_shares")
 }
@@ -973,7 +980,7 @@ model BillingEvent {
 
 model ApiKey {
   id                  String    @id @default(uuid()) @db.Uuid
-  organization_id     String?   @db.Uuid
+  organization_id     String    @db.Uuid
   user_id             String    @db.Uuid
   name                String
   prefix              String    // first 8 chars (visible)
@@ -983,7 +990,7 @@ model ApiKey {
   created_at          DateTime  @default(now())
   revoked_at          DateTime?
   user                User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization        Organization?  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization        Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
   @@index([user_id])
@@ -1010,4 +1017,33 @@ model WebhookDelivery {
   @@index([status, next_retry_at])
   @@index([organization_id])
   @@map("webhook_deliveries")
+}
+
+model MemoryTodo {
+  id                String     @id @default(uuid()) @db.Uuid
+  memory_id         String     @db.Uuid
+  user_id           String     @db.Uuid
+  organization_id   String     @db.Uuid
+  workspace_id      String?    @db.Uuid
+  title             String
+  description       String?
+  source_excerpt    String?    @db.Text
+  due_at            DateTime?
+  status            TodoStatus @default(PENDING)
+  calendar_event_id String?    // populated when added to a calendar
+  calendar_provider String?    // 'google' (extensible)
+  snoozed_until     DateTime?
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+  completed_at      DateTime?
+
+  memory       Memory       @relation(fields: [memory_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id, status])
+  @@index([user_id, status])
+  @@index([memory_id])
+  @@index([due_at])
+  @@map("memory_todos")
 }

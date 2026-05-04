@@ -26,10 +26,17 @@ router.get(
   '/memories',
   requireScope('memories.read'),
   async (req: ApiKeyRequest, res: Response) => {
+    // Clamp ?limit to [1, 100]; default 50 for missing/invalid/non-positive.
+    // OpenAPI advertises maximum=100; the route is the source of truth.
+    const limitRaw = Number(req.query.limit)
+    const limit =
+      Number.isFinite(limitRaw) && limitRaw > 0
+        ? Math.min(Math.max(1, Math.floor(limitRaw)), 100)
+        : 50
     const out = await listMemories({
       userId: req.apiKey!.userId,
       cursor: req.query.cursor as string | undefined,
-      limit: Number(req.query.limit) || 50,
+      limit,
       q: req.query.q as string | undefined,
     })
     res.json({
@@ -111,6 +118,7 @@ router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: R
       userId: req.apiKey!.userId,
     })
     res.json({
+      mode: 'hybrid',
       data: out.results.map(result => ({
         id: result.memoryId,
         title: result.title,
@@ -129,7 +137,11 @@ router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: R
     return
   }
 
-  // Personal API key (no org): fall back to user-scoped substring match.
+  // Personal API key (no org): substring match against the user's own
+  // memories. This is intentionally lower-quality than the org-scoped
+  // hybrid retrieval — the response advertises mode='substring' and a
+  // Warning header so clients can detect the degraded quality and
+  // surface an org-key upgrade path.
   const items = await prisma.memory.findMany({
     where: {
       user_id: req.apiKey!.userId,
@@ -142,7 +154,12 @@ router.post('/search', requireScope('search'), async (req: ApiKeyRequest, res: R
     take: limit,
     orderBy: { created_at: 'desc' },
   })
+  res.setHeader(
+    'Warning',
+    '299 - "Personal API keys use substring search. For hybrid retrieval, mint a key inside an organization."'
+  )
   res.json({
+    mode: 'substring',
     data: items.map(m => ({
       id: m.id,
       title: m.title,

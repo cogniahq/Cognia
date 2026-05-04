@@ -61,6 +61,12 @@ function UserMenu({ email }: UserMenuProps) {
         >
           Profile
         </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate("/settings/api-keys")}
+          className="cursor-pointer rounded-none text-xs font-mono"
+        >
+          API keys
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}
@@ -108,50 +114,56 @@ function CommandMenuTrigger() {
 export const PageHeader = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { accountType, user } = useAuth()
+  const { user } = useAuth()
   const { currentOrganization } = useOrganization()
 
   const canSeeAdminLink = useHasPermission("audit.read")
   const canSeeBillingLink = useHasPermission("billing.read")
 
+  // Nav is driven by `currentOrganization` presence. Memories/Analytics/
+  // Integrations always show; the org-scoped links (Workspace, Admin,
+  // Billing) appear only when an org is active. Admin remains role-gated
+  // via `audit.read`. Cognia is org-only — every authenticated user is
+  // expected to have at least one active membership; the
+  // require-org-membership wall enforces that on the server.
+  const inOrgContext = !!currentOrganization
   const showAdminNav =
-    accountType === "ORGANIZATION" &&
-    !!currentOrganization?.slug &&
-    canSeeAdminLink
+    inOrgContext && !!currentOrganization?.slug && canSeeAdminLink
   const showBillingNav =
-    accountType === "ORGANIZATION" &&
-    !!currentOrganization?.slug &&
-    canSeeBillingLink
+    inOrgContext && !!currentOrganization?.slug && canSeeBillingLink
 
-  const navItems: NavItem[] =
-    accountType === "ORGANIZATION"
-      ? [
-          {
-            label: "Workspace",
-            path: "/organization",
-            matchPrefixes: ["/organization", "/memories"],
-          },
-          { label: "Integrations", path: "/integrations" },
-          ...(showAdminNav
-            ? [
-                {
-                  label: "Admin",
-                  path: `/org-admin/${currentOrganization!.slug}`,
-                  matchPrefixes: ["/org-admin"],
-                },
-              ]
-            : []),
-          ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
-        ]
-      : [
-          {
-            label: "Memories",
-            path: "/memories",
-            matchPrefixes: ["/memories"],
-          },
-          { label: "Analytics", path: "/analytics" },
-          { label: "Integrations", path: "/integrations" },
-        ]
+  const baseNavItems: NavItem[] = [
+    {
+      label: "Memories",
+      path: "/memories",
+      matchPrefixes: ["/memories"],
+    },
+    { label: "Analytics", path: "/analytics" },
+    { label: "Integrations", path: "/integrations" },
+  ]
+
+  const orgNavItems: NavItem[] = inOrgContext
+    ? [
+        {
+          label: "Workspace",
+          path: "/organization",
+          matchPrefixes: ["/organization"],
+        },
+        { label: "Upcoming", path: "/upcoming" },
+        ...(showAdminNav
+          ? [
+              {
+                label: "Admin",
+                path: `/org-admin/${currentOrganization!.slug}`,
+                matchPrefixes: ["/org-admin"],
+              },
+            ]
+          : []),
+        ...(showBillingNav ? [{ label: "Billing", path: "/billing" }] : []),
+      ]
+    : []
+
+  const navItems: NavItem[] = [...baseNavItems, ...orgNavItems]
 
   const isActive = (item: NavItem) => {
     const prefixes = item.matchPrefixes ?? [item.path]
@@ -162,8 +174,9 @@ export const PageHeader = () => {
     )
   }
 
-  const dashboardPath =
-    accountType === "ORGANIZATION" ? "/organization" : "/memories"
+  // Brand button always lands on /memories; the org context provider will
+  // surface org-scoped data when one is active.
+  const dashboardPath = "/memories"
 
   return (
     <>

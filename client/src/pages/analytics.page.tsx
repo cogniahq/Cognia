@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react"
-import { useAuth } from "@/contexts/auth.context"
 import {
   AnalyticsService,
   type AnalyticsData,
@@ -11,7 +10,6 @@ import { PageHeader } from "@/components/shared/PageHeader"
 
 export const Analytics: React.FC = () => {
   const navigate = useNavigate()
-  const { accountType, isLoading: authLoading } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,13 +23,6 @@ export const Analytics: React.FC = () => {
       navigate("/login")
     }
   }, [navigate])
-
-  // Redirect ORGANIZATION users to their dashboard
-  useEffect(() => {
-    if (!authLoading && accountType === "ORGANIZATION") {
-      navigate("/organization")
-    }
-  }, [accountType, authLoading, navigate])
 
   useEffect(() => {
     if (!isAuthenticated) return

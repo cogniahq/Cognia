@@ -52,7 +52,7 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      select: { id: true, email: true, account_type: true, role: true },
+      select: { id: true, email: true, role: true },
     })
 
     if (!user) {
@@ -87,7 +87,6 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
       data: {
         id: user.id,
         email: user.email,
-        account_type: user.account_type,
         role: user.role,
         personalPermissions,
         orgPermissions,
@@ -187,16 +186,19 @@ router.post(
   }
 )
 
-// Register with email/password
+// Register with email/password.
+//
+// Cognia is org-only: every user must belong to at least one organization
+// before they can use the app. /register creates the User row only — no
+// org. The client redirects the new user to /onboarding/workspace where
+// they either create a workspace (becomes ADMIN) or accept an invite. The
+// require-org-membership middleware blocks every other /api/* call until a
+// membership exists, so there is no way to slip past the wall.
 router.post('/register', registerRateLimiter, async (req: Request, res: Response) => {
   try {
-    const { email, password, account_type } = req.body || {}
+    const { email, password } = req.body || {}
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' })
-    }
-
-    if (!account_type || !['PERSONAL', 'ORGANIZATION'].includes(account_type)) {
-      return res.status(400).json({ message: 'account_type must be PERSONAL or ORGANIZATION' })
     }
 
     // Validate password against standard policy + HIBP breach check for new registrations
@@ -218,7 +220,6 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
       data: {
         email,
         password_hash,
-        account_type: account_type as 'PERSONAL' | 'ORGANIZATION',
         // Email verification is currently a no-op: the email sender is a stub
         // (no Resend/Postmark wired up). Auto-verify so users aren't stranded
         // by a UI banner or future gate. Remove this line when a real email
@@ -231,7 +232,10 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
     // const { token: vToken } = await issueEmailVerificationToken(user.id, 'verify_email')
     // await sendVerificationEmail(user.email!, vToken, 'verify_email').catch(() => {})
 
-    // Kick off sample-workspace seeding asynchronously so registration is not blocked
+    // Kick off sample-workspace seeding asynchronously so registration is
+    // not blocked. The seeder no-ops if the user has no org yet — it gets
+    // re-triggered after onboarding once an org exists (see
+    // /api/onboarding/workspace).
     seedSampleWorkspace(user.id).catch(err =>
       logger.warn('[register] seeder failed', { error: String(err) })
     )
@@ -255,7 +259,9 @@ router.post('/register', registerRateLimiter, async (req: Request, res: Response
     return res.status(201).json({
       message: 'Registered',
       token,
-      user: { id: user.id, email: user.email, account_type: user.account_type },
+      user: { id: user.id, email: user.email },
+      // No organization yet; client routes to /onboarding/workspace.
+      requiresOnboarding: true,
     })
   } catch (error) {
     logger.error('Register error:', error)
@@ -277,7 +283,6 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
         id: true,
         email: true,
         password_hash: true,
-        account_type: true,
         role: true,
         two_factor_enabled: true,
         two_factor_secret: true,
@@ -411,7 +416,6 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
         user: {
           id: user.id,
           email: user.email,
-          account_type: user.account_type,
           role: user.role,
           two_factor_enabled: user.two_factor_enabled,
         },
@@ -448,22 +452,6 @@ router.post('/refresh', async (req: Request, res: Response) => {
     res.clearCookie('cognia_refresh', { path: '/api/auth/refresh' })
     return res.status(401).json({ message: (err as Error).message })
   }
-})
-
-// Demo endpoint to set the session cookie with a provided token/string
-router.post('/session', (req: Request, res: Response) => {
-  const { token } = req.body || {}
-  if (!token || typeof token !== 'string') {
-    return res.status(400).json({ message: 'token is required' })
-  }
-  setAuthCookie(res, token)
-  return res.status(200).json({ message: 'session set' })
-})
-
-// Clear the session cookie
-router.delete('/session', (_req: Request, res: Response) => {
-  clearAuthCookie(res)
-  return res.status(200).json({ message: 'session cleared' })
 })
 
 // Get token for extension - requires authentication, only allows generating token for the authenticated user

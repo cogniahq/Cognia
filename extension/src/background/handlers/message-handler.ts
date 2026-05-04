@@ -2,6 +2,7 @@ import { handleCaptureContext } from './context-handler'
 import { handleSettingsMessage } from './settings-handler'
 import { handleEmailDraft } from './email-handler'
 import { checkApiHealth } from '../services/health-service'
+import { getDestinations, refreshDestinations } from '../services/destinations-service'
 import { storage } from '@/lib/browser'
 import { STORAGE_KEYS, MESSAGE_TYPES } from '@/utils/core/constants.util'
 
@@ -38,9 +39,32 @@ export function handleMessage(
         const token = (message as any).token
         if (token) {
           await storage.local.set({ [STORAGE_KEYS.AUTH_TOKEN]: token })
+          // Warm the destinations cache so the popup picker has fresh data
+          // ready the first time the user clicks it after signing in. We
+          // fire-and-forget; failures are tolerated (the picker surfaces a
+          // load error inline).
+          refreshDestinations().catch(() => {})
         }
       } catch (_error) {}
     })()
+  }
+
+  if (message?.type === MESSAGE_TYPES.GET_DESTINATIONS) {
+    getDestinations()
+      .then(data => sendResponse({ success: true, data }))
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
+  }
+
+  if (message?.type === MESSAGE_TYPES.REFRESH_DESTINATIONS) {
+    refreshDestinations()
+      .then(data =>
+        data
+          ? sendResponse({ success: true, data })
+          : sendResponse({ success: false, error: 'refresh failed' })
+      )
+      .catch(error => sendResponse({ success: false, error: error.message }))
+    return true
   }
 
   if (message?.type === MESSAGE_TYPES.CHECK_API_HEALTH) {

@@ -1,91 +1,125 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useOrganization } from "@/contexts/organization.context"
-import {
-  onboardingService,
-  type OnboardingState,
-} from "@/services/onboarding.service"
+import { memoryV2Service, type MemoryV2 } from "@/services/memory-v2.service"
+import type { SavedSearch } from "@/services/saved-search.service"
 import { requireAuthToken } from "@/utils/auth"
+import { Search, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-import { useMemories } from "@/hooks/use-memories"
-import { useMemoryMeshInteraction } from "@/hooks/use-memory-mesh-interaction"
-import { useSpotlightSearchState } from "@/hooks/use-spotlight-search-state"
-import { MemoriesEmptyState } from "@/components/empty-states/MemoriesEmptyState"
-import { MemoryMesh3D } from "@/components/memories/mesh"
-import { SpotlightSearch } from "@/components/memories/spotlight-search"
-import { SampleDataBanner } from "@/components/onboarding/SampleDataBanner"
-import { CreateOrganizationDialog } from "@/components/organization/CreateOrganizationDialog"
+import { useHasPermission } from "@/hooks/use-permissions"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { Input } from "@/components/ui/input"
+import { MemoryBulkBar } from "@/components/memories/MemoryBulkBar"
+import { MemoryEditDialog } from "@/components/memories/MemoryEditDialog"
+import { MemoryShareDialog } from "@/components/memories/MemoryShareDialog"
+import { VirtualizedMemoryList } from "@/components/memories/VirtualizedMemoryList"
+import { SavedSearchSidebar } from "@/components/saved-searches/SavedSearchSidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
 
+/**
+ * Curation-focused list view at /memories: selection, bulk actions,
+ * edit/share dialogs, saved searches, and a trash entrypoint.
+ */
 export const Memories: React.FC = () => {
   const navigate = useNavigate()
-  const { organizations } = useOrganization()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authed, setAuthed] = useState(false)
+  const [memories, setMemories] = useState<MemoryV2[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [activeQuery, setActiveQuery] = useState("")
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const [editing, setEditing] = useState<MemoryV2 | null>(null)
+  const [sharing, setSharing] = useState<MemoryV2 | null>(null)
+  const [deleting, setDeleting] = useState<MemoryV2 | null>(null)
+  const [deletingBusy, setDeletingBusy] = useState(false)
+
+  // Phase 7 RBAC gating: callbacks are only passed when the user holds the
+  // matching permission. VirtualizedMemoryList already renders the row
+  // buttons conditionally on the presence of these callbacks, so passing
+  // `undefined` hides the button.
+  const canWriteMemory = useHasPermission("memory.write")
+  const canDeleteMemory = useHasPermission("memory.delete")
+  const canShareMemory = useHasPermission("memory.share")
+
+  const { currentOrganization } = useOrganization()
+  const orgId = currentOrganization?.id ?? null
 
   useEffect(() => {
     try {
       requireAuthToken()
-      setIsAuthenticated(true)
-    } catch (error) {
+      setAuthed(true)
+    } catch {
       navigate("/login")
     }
   }, [navigate])
 
-  // accountType is no longer a hard gate: a user with account_type
-  // ORGANIZATION can still want the Personal view, and a PERSONAL user can
-  // belong to a team workspace. The OrgSwitcher in the header is the
-  // canonical way to move between Personal and Workspace views.
-
-  const similarityThreshold = 0.3
-  const { memories, totalMemoryCount } = useMemories()
-  const [onboardingState, setOnboardingState] =
-    useState<OnboardingState | null>(null)
-  const [showCreateOrg, setShowCreateOrg] = useState(false)
-  const [teamBannerDismissed, setTeamBannerDismissed] = useState(false)
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await memoryV2Service.list({
+        limit: 100,
+        q: activeQuery || undefined,
+        organizationId: orgId,
+      })
+      setMemories(res.data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load memories")
+    } finally {
+      setLoading(false)
+    }
+    // Re-fire on workspace switch and pass the active org id; the server
+    // treats absent as personal vault and a present id as org-scoped.
+  }, [activeQuery, orgId])
 
   useEffect(() => {
-    if (!isAuthenticated) return
-    onboardingService
-      .getState()
-      .then(setOnboardingState)
-      .catch(() => {
-        // Best-effort; absence of state simply suppresses the banner.
-      })
-  }, [isAuthenticated])
-  const {
-    isSpotlightOpen,
-    setIsSpotlightOpen,
-    spotlightSearchQuery,
-    setSpotlightSearchQuery,
-    spotlightSearchResults,
-    spotlightIsSearching,
-    spotlightSearchAnswer,
-    spotlightSearchCitations,
-    spotlightEmbeddingOnly,
-    setSpotlightEmbeddingOnly,
-    resetSpotlight,
-  } = useSpotlightSearchState()
+    if (!authed) return
+    refresh()
+  }, [authed, refresh])
 
-  const {
-    clickedNodeId,
-    setSelectedMemory,
-    handleNodeClick,
-    highlightedMemoryIds,
-    memorySources,
-    memoryUrls,
-  } = useMemoryMeshInteraction(memories)
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
-  if (!isAuthenticated) {
-    return null
+  const selectedIdsArray = useMemo(() => Array.from(selectedIds), [selectedIds])
+
+  const handleApplySaved = (s: SavedSearch) => {
+    setSearchQuery(s.query)
+    setActiveQuery(s.query)
   }
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setActiveQuery(searchQuery)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleting) return
+    setDeletingBusy(true)
+    try {
+      await memoryV2Service.delete(deleting.id)
+      setMemories((prev) => prev.filter((m) => m.id !== deleting.id))
+      setDeleting(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete")
+    } finally {
+      setDeletingBusy(false)
+    }
+  }
+
+  if (!authed) return null
+
   return (
-    <div
-      className="min-h-screen bg-white"
-      style={{
-        backgroundImage: "linear-gradient(135deg, #f9fafb, #ffffff, #f3f4f6)",
-      }}
-    >
+    <div className="min-h-screen bg-white">
       <PageHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -93,204 +127,124 @@ export const Memories: React.FC = () => {
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
             Memories
           </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate("/memories/v2")}
-              className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300"
-              data-testid="list-view-link"
-            >
-              List view
-            </button>
-            <button
-              onClick={() => navigate("/memories/trash")}
-              className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300"
-              data-testid="trash-link"
-            >
-              Trash
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/memories/trash")}
+            className="px-3 py-1.5 text-xs font-mono text-gray-600 hover:text-gray-900 hover:bg-gray-100 border border-gray-300 inline-flex items-center gap-1.5"
+            data-testid="trash-link"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Trash
+          </button>
         </div>
       </div>
 
-      {onboardingState && onboardingState.demoMemoryCount > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
-          <SampleDataBanner
-            demoMemoryCount={onboardingState.demoMemoryCount}
-            onDismissed={() =>
-              setOnboardingState((prev) =>
-                prev
-                  ? { ...prev, demoMemoryCount: 0, demoDismissed: true }
-                  : prev
-              )
-            }
-          />
-        </div>
-      )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+          <aside className="space-y-4">
+            <SavedSearchSidebar
+              onSelect={handleApplySaved}
+              currentQuery={activeQuery}
+            />
+          </aside>
 
-      {!teamBannerDismissed && organizations.length === 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
-          <div className="border border-gray-200 bg-white px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
-            <span className="text-gray-700">
-              Want to invite your team? Create a team workspace.
-            </span>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => setShowCreateOrg(true)}
-                className="text-xs font-mono px-3 py-1.5 border border-gray-300 hover:border-black hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                Create team workspace →
-              </button>
-              <button
-                onClick={() => setTeamBannerDismissed(true)}
-                className="text-xs font-mono text-gray-400 hover:text-gray-900"
-                aria-label="Dismiss"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          <main className="space-y-4 min-w-0">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex items-center gap-2"
+              role="search"
+            >
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search your memories..."
+                  className="pl-9"
+                  data-testid="memories-search"
+                />
+              </div>
+              <Button type="submit" variant="outline">
+                Search
+              </Button>
+            </form>
 
-      <CreateOrganizationDialog
-        open={showCreateOrg}
-        onOpenChange={setShowCreateOrg}
+            {error && (
+              <div className="border border-red-200 bg-red-50 text-red-700 text-sm px-3 py-2 rounded">
+                {error}
+              </div>
+            )}
+
+            {loading ? (
+              <div className="text-sm text-gray-500">Loading memories...</div>
+            ) : memories.length === 0 ? (
+              <div className="text-center py-12 text-sm text-gray-500 italic border border-dashed border-gray-300 rounded">
+                No memories match the current filter.
+              </div>
+            ) : (
+              <VirtualizedMemoryList
+                memories={memories}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onEdit={canWriteMemory ? (m) => setEditing(m) : undefined}
+                onShare={canShareMemory ? (m) => setSharing(m) : undefined}
+                onDelete={canDeleteMemory ? (m) => setDeleting(m) : undefined}
+                height={600}
+              />
+            )}
+          </main>
+        </div>
+      </div>
+
+      <MemoryBulkBar
+        selectedIds={selectedIdsArray}
+        onCleared={() => {
+          setSelectedIds(new Set())
+          refresh()
+        }}
       />
 
-      {memories.length === 0 && totalMemoryCount === 0 ? (
-        <MemoriesEmptyState />
-      ) : (
-        <div className="flex flex-col md:flex-row h-[calc(100vh-3.5rem)] relative">
-          <div
-            className="flex-1 relative order-2 md:order-1 h-[50vh] md:h-auto md:min-h-[calc(100vh-3.5rem)] border-b md:border-b-0 bg-white"
-            style={{
-              backgroundImage: `
-              linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)
-            `,
-              backgroundSize: "24px 24px",
-            }}
-          >
-            <MemoryMesh3D
-              className="w-full h-full"
-              onNodeClick={handleNodeClick}
-              similarityThreshold={similarityThreshold}
-              selectedMemoryId={clickedNodeId || undefined}
-              highlightedMemoryIds={highlightedMemoryIds}
-              memorySources={memorySources}
-              memoryUrls={memoryUrls}
-            />
-
-            <div className="pointer-events-none absolute left-4 top-4 text-xs font-mono text-gray-500 uppercase tracking-wider">
-              Memory Mesh
-            </div>
-
-            <div className="absolute right-4 top-4 z-20 max-w-[240px]">
-              <div className="bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-900 p-4 shadow-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Legend
-                  </span>
-                  <button
-                    onClick={() => {
-                      setIsSpotlightOpen(true)
-                      setSpotlightSearchQuery("")
-                    }}
-                    className="text-xs font-medium text-gray-700 hover:text-black px-2 py-1 border border-gray-300 hover:border-black hover:bg-black hover:text-white transition-all rounded-none"
-                  >
-                    Search
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      Statistics
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-gray-900">
-                      <span>Nodes</span>
-                      <span className="font-mono font-semibold">
-                        {totalMemoryCount || memories.length}
-                      </span>
-                    </div>
-                    {spotlightSearchResults &&
-                      spotlightSearchResults.results && (
-                        <div className="flex items-center justify-between text-xs text-gray-900">
-                          <span>Connections</span>
-                          <span className="font-mono font-semibold">
-                            {spotlightSearchResults.results.length}
-                          </span>
-                        </div>
-                      )}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      Node Types
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500" />{" "}
-                        Browser/Extension
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />{" "}
-                        Manual/Docs
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" />{" "}
-                        Integrations
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-gray-400" />{" "}
-                        Other
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      Connections
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-4 h-[1.5px] bg-blue-500" />
-                        Strong (&gt;85%)
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-4 h-[1px] bg-sky-400" />
-                        Medium (&gt;75%)
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-gray-700">
-                        <span className="inline-block w-4 h-[0.5px] bg-gray-400" />
-                        Weak (&lt;75%)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <SpotlightSearch
-            isOpen={isSpotlightOpen}
-            searchQuery={spotlightSearchQuery}
-            searchResults={spotlightSearchResults}
-            isSearching={spotlightIsSearching}
-            searchAnswer={spotlightSearchAnswer}
-            searchCitations={spotlightSearchCitations}
-            isEmbeddingOnly={spotlightEmbeddingOnly}
-            onEmbeddingOnlyChange={setSpotlightEmbeddingOnly}
-            onSearchQueryChange={setSpotlightSearchQuery}
-            onSelectMemory={(memory) => {
-              setSelectedMemory(memory)
-              handleNodeClick(memory.id)
-              setIsSpotlightOpen(false)
-            }}
-            onClose={() => {
-              setIsSpotlightOpen(false)
-              resetSpotlight()
-            }}
-          />
-        </div>
+      {editing && (
+        <MemoryEditDialog
+          open={!!editing}
+          onOpenChange={(open) => {
+            if (!open) setEditing(null)
+          }}
+          memory={editing}
+          onSaved={(next) => {
+            setMemories((prev) =>
+              prev.map((m) => (m.id === next.id ? { ...m, ...next } : m))
+            )
+            setEditing(null)
+          }}
+        />
       )}
+
+      {sharing && (
+        <MemoryShareDialog
+          open={!!sharing}
+          onOpenChange={(open) => {
+            if (!open) setSharing(null)
+          }}
+          memoryId={sharing.id}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={!!deleting}
+        title="Move to trash?"
+        message={
+          deleting
+            ? `"${deleting.title || "Untitled memory"}" will be moved to Trash. You can restore it within 30 days.`
+            : ""
+        }
+        confirmLabel={deletingBusy ? "Deleting..." : "Move to trash"}
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleting(null)}
+      />
     </div>
   )
 }
+
+export default Memories

@@ -2,6 +2,7 @@ import { Response } from 'express'
 import { AuthenticatedRequest } from '../../middleware/auth.middleware'
 import { prisma } from '../../lib/prisma.lib'
 import { logger } from '../../utils/core/logger.util'
+import { resolveActiveOrgContext } from '../../utils/org/active-context.util'
 import { Prisma } from '@prisma/client'
 
 type MemorySelect = Prisma.MemoryGetPayload<{
@@ -32,8 +33,22 @@ export class MemoryCrudController {
 
       const userId = req.user.id
 
+      // Personal-context endpoint: optionally scope to an active organization.
+      // Absent/empty organizationId => personal vault (organization_id IS NULL).
+      // Present => user must be an active member of that org, else 403.
+      const ctx = await resolveActiveOrgContext(
+        userId,
+        req.query.organizationId as string | undefined
+      )
+      if (!ctx.authorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not a member of organization',
+        })
+      }
+
       const memories = await prisma.memory.findMany({
-        where: { user_id: userId },
+        where: { user_id: userId, organization_id: ctx.organizationId },
         select: {
           id: true,
           title: true,
@@ -82,8 +97,19 @@ export class MemoryCrudController {
 
       const userId = req.user.id
 
+      const ctx = await resolveActiveOrgContext(
+        userId,
+        req.query.organizationId as string | undefined
+      )
+      if (!ctx.authorized) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not a member of organization',
+        })
+      }
+
       const count = await prisma.memory.count({
-        where: { user_id: userId },
+        where: { user_id: userId, organization_id: ctx.organizationId },
       })
 
       return res.status(200).json({

@@ -23,6 +23,7 @@ interface OrganizationContextType {
   // Actions
   loadOrganizations: () => Promise<void>
   selectOrganization: (slug: string) => Promise<void>
+  clearOrganization: () => void
   createOrganization: (
     name: string,
     description?: string,
@@ -119,6 +120,25 @@ export function OrganizationProvider({
       throw err
     } finally {
       setIsLoading(false)
+    }
+  }, [])
+
+  /**
+   * Switch back to the Personal pseudo-workspace. Inverse of
+   * selectOrganization — drops the current org plus any org-derived state
+   * (members, documents) and removes the persistence key. Consumers that
+   * gate on currentOrganization (PageHeader nav, useHasPermission, the
+   * OrgSwitcher trigger label) re-evaluate against null on the next render.
+   */
+  const clearOrganization = useCallback(() => {
+    setCurrentOrganization(null)
+    setMembers([])
+    setDocuments([])
+    setError(null)
+    try {
+      localStorage.removeItem("currentOrgSlug")
+    } catch {
+      // localStorage may be unavailable (private mode, SSR); state still clears.
     }
   }, [])
 
@@ -308,6 +328,7 @@ export function OrganizationProvider({
         error,
         loadOrganizations,
         selectOrganization,
+        clearOrganization,
         createOrganization,
         deleteOrganization,
         members,

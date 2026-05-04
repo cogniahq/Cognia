@@ -15,6 +15,8 @@ import { memoryScoringService } from '../services/memory/memory-scoring.service'
 import { logger } from '../utils/core/logger.util'
 import { backgroundGenerationPriorityService } from '../services/core/background-generation-priority.service'
 import { getRedisClient } from '../lib/redis.lib'
+import { isOpenAISearchOnlyModeEnabled } from '../services/ai/ai-config'
+import { todoExtractorService } from '../services/todos/todo-extractor.service'
 
 type PrismaError = {
   code?: string
@@ -29,7 +31,9 @@ const getStringMetadataValue = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined
 
 const shouldSkipProfileUpdate = (metadata: ContentJobData['metadata']) =>
-  metadata?.skip_profile_update === true || metadata?.source_type === 'INTEGRATION'
+  isOpenAISearchOnlyModeEnabled() ||
+  metadata?.skip_profile_update === true ||
+  metadata?.source_type === 'INTEGRATION'
 
 const isSearchPriorityLeaseActive = async (): Promise<boolean> => {
   try {
@@ -262,6 +266,17 @@ export const startContentWorker = () => {
             }
           })
 
+          // Extract TODOs / upcoming events from the captured content. Fire-
+          // and-forget like the relation-generation pattern above; idempotent
+          // and self-skipping for personal-mode (org_id == null) memories.
+          setImmediate(async () => {
+            try {
+              await todoExtractorService.extractTodosFromMemory(metadata.memory_id!)
+            } catch (todoError) {
+              logger.error(`[Redis Worker] Error extracting todos:`, todoError)
+            }
+          })
+
           setImmediate(async () => {
             try {
               if (skipProfileUpdate) {
@@ -286,7 +301,7 @@ export const startContentWorker = () => {
           if (!canonicalData) {
             canonicalData = memoryIngestionService.canonicalizeContent(raw_text, baseUrl)
           }
-          const memoryCreateInput = memoryIngestionService.buildMemoryCreatePayload({
+          const memoryCreateInput = await memoryIngestionService.buildMemoryCreatePayload({
             userId: user_id,
             title: memoryTitle,
             url: baseUrl,
@@ -346,6 +361,17 @@ export const startContentWorker = () => {
               await memoryMeshService.createMemoryRelations(memory.id, user_id)
             } catch (embeddingError) {
               logger.error(`[Redis Worker] Error generating embeddings:`, embeddingError)
+            }
+          })
+
+          // Extract TODOs / upcoming events from the captured content. Fire-
+          // and-forget like the relation-generation pattern above; idempotent
+          // and self-skipping for personal-mode (org_id == null) memories.
+          setImmediate(async () => {
+            try {
+              await todoExtractorService.extractTodosFromMemory(memory.id)
+            } catch (todoError) {
+              logger.error(`[Redis Worker] Error extracting todos:`, todoError)
             }
           })
 

@@ -1,4 +1,10 @@
 import 'dotenv/config'
+import { validateEnv } from './utils/core/env-validation.util'
+
+// Fail loudly at boot if any required variable is missing. Must run before
+// any other module-level imports execute env-dependent side effects.
+validateEnv()
+
 import express, { Request, Response, NextFunction } from 'express'
 
 import morgan from 'morgan'
@@ -33,6 +39,7 @@ import { getAllowedOrigins, getMorganOutputMode } from './utils/core/env.util'
 import { validateRequestSize } from './utils/validation/validation.util'
 import { integrationService } from './services/integration'
 import { applySecurityHeaders } from './middleware/security-headers.middleware'
+import { requireOrgMembership } from './middleware/require-org-membership.middleware'
 
 const app = express()
 app.set('trust proxy', 1)
@@ -267,6 +274,11 @@ app.use(
   })
 )
 app.use(compression())
+// Forced onboarding wall: 403 NO_ORG_MEMBERSHIP for any /api/* call from a
+// logged-in user that hasn't created or joined a workspace yet. Allowlist
+// inside the middleware. Mounted before `routes(app)` so it short-circuits
+// before any route handler runs.
+app.use(requireOrgMembership)
 routes(app)
 app.use(
   globalErrorHandler as unknown as (

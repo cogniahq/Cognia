@@ -10,11 +10,6 @@ const Memories = lazy(() =>
     default: module.Memories,
   }))
 )
-const MemoriesV2 = lazy(() =>
-  import("@/pages/memories-v2.page").then((module) => ({
-    default: module.MemoriesV2,
-  }))
-)
 const MemoriesTrash = lazy(() =>
   import("@/components/memories/TrashView").then((module) => ({
     default: module.TrashView,
@@ -109,6 +104,21 @@ const BugBounty = lazy(() =>
     default: module.BugBounty,
   }))
 )
+const ApiKeysPage = lazy(() =>
+  import("@/pages/api-keys.page").then((module) => ({
+    default: module.ApiKeys,
+  }))
+)
+const Upcoming = lazy(() =>
+  import("@/pages/upcoming.page").then((module) => ({
+    default: module.Upcoming,
+  }))
+)
+const OnboardingWorkspace = lazy(() =>
+  import("@/pages/onboarding/workspace.page").then((module) => ({
+    default: module.OnboardingWorkspace,
+  }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -116,9 +126,12 @@ const LoadingFallback = () => (
   </div>
 )
 
-// Redirect authenticated users to their respective dashboard
+// Redirect authenticated users to /memories. The require-org-membership
+// wall on the server will 403-redirect them to /onboarding/workspace if
+// they haven't created or joined a workspace yet (handled by the axios
+// interceptor).
 const AuthRedirectLanding = () => {
-  const { isAuthenticated, isLoading, accountType } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const hadTokenAtMount = useRef(
     typeof window !== "undefined" && !!localStorage.getItem("auth_token")
   )
@@ -128,11 +141,6 @@ const AuthRedirectLanding = () => {
   }
 
   if (isAuthenticated) {
-    // Redirect based on account type
-    if (accountType === "ORGANIZATION") {
-      return <Navigate to="/organization" replace />
-    }
-    // Default to memories for personal accounts
     return <Navigate to="/memories" replace />
   }
 
@@ -167,8 +175,12 @@ const AppRoutes = () => {
         <Route path="/signup" element={<Login />} />
         <Route path="/auth/verify-email" element={<VerifyEmail />} />
         <Route path="/auth/magic" element={<AuthMagic />} />
+        <Route path="/onboarding/workspace" element={<OnboardingWorkspace />} />
         <Route path="/memories" element={<Memories />} />
-        <Route path="/memories/v2" element={<MemoriesV2 />} />
+        <Route
+          path="/memories/v2"
+          element={<Navigate to="/memories" replace />}
+        />
         <Route path="/memories/trash" element={<MemoriesTrash />} />
         <Route path="/docs" element={<Docs />} />
         <Route path="/analytics" element={<Analytics />} />
@@ -178,6 +190,8 @@ const AppRoutes = () => {
         <Route path="/mesh-showcase" element={<MeshShowcase />} />
         <Route path="/org-admin/:slug" element={<OrgAdmin />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/settings/api-keys" element={<ApiKeysPage />} />
+        <Route path="/upcoming" element={<Upcoming />} />
 
         <Route path="*" element={<AuthRedirectLanding />} />
       </Routes>

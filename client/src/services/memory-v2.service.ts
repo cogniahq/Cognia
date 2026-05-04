@@ -36,6 +36,16 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
   })
   const body = await res.json().catch(() => ({}))
+  // Mirror the axios interceptor: a 403 NO_ORG_MEMBERSHIP means the user
+  // hasn't completed onboarding yet — bounce them to the wall.
+  if (
+    res.status === 403 &&
+    body?.code === "NO_ORG_MEMBERSHIP" &&
+    typeof window !== "undefined" &&
+    window.location.pathname !== "/onboarding/workspace"
+  ) {
+    window.location.href = "/onboarding/workspace"
+  }
   if (!res.ok || body?.success === false) {
     throw new Error(body?.message || `Request failed: ${res.status}`)
   }
@@ -48,6 +58,7 @@ export const memoryV2Service = {
     limit?: number
     onlyDeleted?: boolean
     q?: string
+    organizationId?: string | null
   }) => {
     const qs = new URLSearchParams()
     Object.entries(params).forEach(([k, v]) => {

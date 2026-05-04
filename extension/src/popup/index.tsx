@@ -5,6 +5,7 @@ import { StatusSection } from './components/StatusSection'
 import { ExtensionToggle } from './components/ExtensionToggle'
 import { MemoryInjectionToggle } from './components/MemoryInjectionToggle'
 import { BlockedWebsites } from './components/BlockedWebsites'
+import { DestinationPicker } from './components/DestinationPicker'
 import { ExternalLinkIcon } from './components/Icons'
 import { useExtensionSettings } from './hooks/useExtensionSettings'
 import { useStatus } from './hooks/useStatus'
@@ -54,7 +55,8 @@ const Popup: React.FC = () => {
     blockCurrentDomain,
   } = useExtensionSettings()
 
-  const { isConnected, isAuthenticated, isCheckingHealth, lastCaptureTime } = useStatus()
+  const { isConnected, isAuthenticated, isCheckingHealth, lastCaptureTime, dlpBlockCount } =
+    useStatus()
 
   return (
     <div className="w-[360px] bg-background text-foreground font-primary">
@@ -68,7 +70,10 @@ const Popup: React.FC = () => {
           isAuthenticated={isAuthenticated}
           isCheckingHealth={isCheckingHealth}
           lastCaptureTime={lastCaptureTime}
+          dlpBlockCount={dlpBlockCount}
         />
+
+        <DestinationPicker />
 
         <section className="rounded-lg border border-border bg-card">
           <header className="flex items-center justify-between px-4 pt-3 pb-1">

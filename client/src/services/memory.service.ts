@@ -4,8 +4,11 @@ import * as MemoryMesh from "./memory/memory-mesh.service"
 import * as MemorySearch from "./memory/memory-search.service"
 
 export class MemoryService {
-  static async getMemoriesWithTransactionDetails(limit?: number) {
-    return MemoryApi.getMemoriesWithTransactionDetails(limit)
+  static async getMemoriesWithTransactionDetails(
+    limit?: number,
+    organizationId?: string | null
+  ) {
+    return MemoryApi.getMemoriesWithTransactionDetails(limit, organizationId)
   }
 
   static async getMemoryMesh(limit: number = 50, threshold: number = 0.3) {
@@ -19,7 +22,8 @@ export class MemoryService {
     limit: number = 10,
     signal?: AbortSignal,
     policy?: string,
-    embeddingOnly: boolean = false
+    embeddingOnly: boolean = false,
+    organizationId?: string | null
   ) {
     return MemorySearch.searchMemories(
       query,
@@ -28,7 +32,8 @@ export class MemoryService {
       limit,
       signal,
       policy,
-      embeddingOnly
+      embeddingOnly,
+      organizationId
     )
   }
 
@@ -36,13 +41,23 @@ export class MemoryService {
     query: string,
     filters = {},
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    organizationId?: string | null
   ) {
-    return MemorySearch.searchMemoriesHybrid(query, filters, page, limit)
+    return MemorySearch.searchMemoriesHybrid(
+      query,
+      filters,
+      page,
+      limit,
+      organizationId
+    )
   }
 
-  static async getRecentMemories(count: number = 10) {
-    return MemoryApi.getRecentMemories(count)
+  static async getRecentMemories(
+    count: number = 10,
+    organizationId?: string | null
+  ) {
+    return MemoryApi.getRecentMemories(count, organizationId)
   }
 
   static async getUserMemories(page: number = 1, limit: number = 20) {
@@ -57,8 +72,8 @@ export class MemoryService {
     return MemoryMesh.getMemoryCluster(memoryId, depth)
   }
 
-  static async getUserMemoryCount() {
-    return MemoryApi.getUserMemoryCount()
+  static async getUserMemoryCount(organizationId?: string | null) {
+    return MemoryApi.getUserMemoryCount(organizationId)
   }
 
   static async getMemoryByHash(hash: string) {

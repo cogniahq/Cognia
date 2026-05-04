@@ -5,20 +5,30 @@ import { requireAuthToken } from "@/utils/auth"
 import { LayoutGroup, motion } from "framer-motion"
 import { useNavigate, useParams } from "react-router-dom"
 
+import { useHasPermission } from "@/hooks/use-permissions"
 import ActivityTab from "@/components/org-admin/ActivityTab"
+import ApiKeysTab from "@/components/org-admin/ApiKeysTab"
 import IntegrationsHealthTab from "@/components/org-admin/IntegrationsHealthTab"
 import MembersTab from "@/components/org-admin/MembersTab"
 import SecurityTab from "@/components/org-admin/SecurityTab"
 import SsoSetupTab from "@/components/org-admin/SsoSetupTab"
+import UpcomingTab from "@/components/org-admin/UpcomingTab"
 import { PageHeader } from "@/components/shared/PageHeader"
 import {
   fadeUpVariants,
   staggerContainerVariants,
 } from "@/components/shared/site-motion-variants"
 
-type AdminTab = "activity" | "members" | "security" | "integrations" | "sso"
+type AdminTab =
+  | "activity"
+  | "members"
+  | "security"
+  | "integrations"
+  | "sso"
+  | "api-keys"
+  | "upcoming"
 
-const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
+const BASE_TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
   { id: "activity", label: "Activity" },
   { id: "members", label: "Members" },
   { id: "security", label: "Security" },
@@ -34,6 +44,8 @@ export function OrgAdmin() {
     useOrganization()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [activeTab, setActiveTab] = useState<AdminTab>("activity")
+  const canSeeApiKeys = useHasPermission("api_key.read")
+  const canSeeUpcomingTab = useHasPermission("audit.read")
 
   useEffect(() => {
     try {
@@ -72,6 +84,14 @@ export function OrgAdmin() {
     currentOrganization?.slug === slug
       ? currentOrganization
       : organizations.find((o) => o.slug === slug)
+
+  const TABS: ReadonlyArray<{ id: AdminTab; label: string }> = [
+    ...BASE_TABS,
+    ...(canSeeApiKeys ? [{ id: "api-keys" as const, label: "API Keys" }] : []),
+    ...(canSeeUpcomingTab
+      ? [{ id: "upcoming" as const, label: "Upcoming" }]
+      : []),
+  ]
 
   return (
     <div className="min-h-screen bg-white">
@@ -152,6 +172,12 @@ export function OrgAdmin() {
               <IntegrationsHealthTab slug={slug} />
             )}
             {activeTab === "sso" && <SsoSetupTab slug={slug} />}
+            {activeTab === "api-keys" && matchedOrg?.id && (
+              <ApiKeysTab orgId={matchedOrg.id} slug={slug} />
+            )}
+            {activeTab === "upcoming" && canSeeUpcomingTab && (
+              <UpcomingTab slug={slug} />
+            )}
           </motion.div>
         </motion.div>
       </div>

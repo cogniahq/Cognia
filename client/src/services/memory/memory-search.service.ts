@@ -12,7 +12,8 @@ export async function searchMemories(
   limit: number = 10,
   signal?: AbortSignal,
   policy?: string,
-  embeddingOnly: boolean = false
+  embeddingOnly: boolean = false,
+  organizationId?: string | null
 ): Promise<MemorySearchResponse> {
   try {
     requireAuthToken()
@@ -25,6 +26,7 @@ export async function searchMemories(
         contextOnly: false,
         policy,
         embeddingOnly,
+        ...(organizationId ? { organizationId } : {}),
       },
       undefined,
       signal
@@ -68,7 +70,8 @@ export async function searchMemoriesHybrid(
   query: string,
   filters: SearchFilters = {},
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  organizationId?: string | null
 ): Promise<MemorySearchResponse> {
   try {
     requireAuthToken()
@@ -77,6 +80,7 @@ export async function searchMemoriesHybrid(
       page: page.toString(),
       limit: limit.toString(),
     })
+    if (organizationId) params.set("organizationId", organizationId)
 
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {

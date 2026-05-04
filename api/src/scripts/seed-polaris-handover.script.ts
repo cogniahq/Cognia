@@ -393,7 +393,6 @@ async function ensureUser(email: string): Promise<{ id: string; email: string }>
     data: {
       email,
       password_hash: passwordHash,
-      account_type: 'ORGANIZATION',
       email_verified_at: new Date(),
     },
   })

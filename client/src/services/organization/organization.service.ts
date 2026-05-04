@@ -299,27 +299,21 @@ export function subscribeToAnswerJob(
   const token = localStorage.getItem("auth_token") || ""
   const url = `${baseUrl}/search/job/${jobId}/stream?token=${encodeURIComponent(token)}`
 
-  console.log("[SSE] Connecting to:", url)
   const eventSource = new EventSource(url)
 
-  eventSource.addEventListener("connected", () => {
-    console.log("[SSE] Connected to answer stream", jobId)
-  })
+  eventSource.addEventListener("connected", () => {})
 
   eventSource.addEventListener("completed", (event) => {
-    console.log("[SSE] Received completed event", event.data)
     try {
       const data = JSON.parse(event.data) as AnswerJobResult
       callbacks.onCompleted(data)
-    } catch (err) {
-      console.error("[SSE] Failed to parse completed event", err)
+    } catch {
       callbacks.onError("Failed to parse response")
     }
     eventSource.close()
   })
 
   eventSource.addEventListener("failed", (event) => {
-    console.log("[SSE] Received failed event", event.data)
     try {
       const data = JSON.parse(event.data)
       callbacks.onError(data.error || "Answer generation failed")
@@ -330,7 +324,6 @@ export function subscribeToAnswerJob(
   })
 
   eventSource.addEventListener("timeout", (event) => {
-    console.log("[SSE] Received timeout event", event.data)
     try {
       const data = JSON.parse(event.data)
       callbacks.onError(data.error || "Answer generation timed out")
@@ -340,18 +333,15 @@ export function subscribeToAnswerJob(
     eventSource.close()
   })
 
-  eventSource.addEventListener("error", (event) => {
-    console.log("[SSE] Error event, readyState:", eventSource.readyState, event)
+  eventSource.addEventListener("error", () => {
     if (eventSource.readyState === EventSource.CLOSED) {
-      return // Normal close, ignore
+      return
     }
-    console.error("[SSE] Connection error", event)
     callbacks.onError("Connection error")
     eventSource.close()
   })
 
   eventSource.addEventListener("heartbeat", (event) => {
-    console.log("[SSE] Heartbeat", event.data)
     if (callbacks.onHeartbeat) {
       try {
         const data = JSON.parse(event.data)
@@ -361,11 +351,6 @@ export function subscribeToAnswerJob(
       }
     }
   })
-
-  // Also listen for raw messages
-  eventSource.onmessage = (event) => {
-    console.log("[SSE] Raw message received:", event.data)
-  }
 
   // Return cleanup function
   return () => {

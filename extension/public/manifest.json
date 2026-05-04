@@ -36,7 +36,6 @@
   ],
   "permissions": ["activeTab", "scripting", "tabs", "storage", "webNavigation", "cookies"],
   "host_permissions": [
-    "<all_urls>",
     "*://chatgpt.com/*",
     "*://*.chatgpt.com/*",
     "*://openai.com/*",
@@ -44,7 +43,8 @@
     "*://claude.ai/*",
     "*://*.claude.ai/*",
     "*://anthropic.com/*",
-    "*://*.anthropic.com/*"
+    "*://*.anthropic.com/*",
+    "*://gemini.google.com/*"
   ],
   "web_accessible_resources": [
     {

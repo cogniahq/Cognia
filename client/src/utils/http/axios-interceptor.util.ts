@@ -68,6 +68,20 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // Forced onboarding wall: server returns 403 NO_ORG_MEMBERSHIP for
+    // authenticated users that haven't created or joined a workspace yet.
+    // Redirect them to the onboarding page; everything else (memories,
+    // analytics, billing, ...) would 403 anyway.
+    if (status === 403 && errorCode === "NO_ORG_MEMBERSHIP") {
+      try {
+        if (window.location.pathname !== "/onboarding/workspace") {
+          window.location.href = "/onboarding/workspace"
+        }
+      } catch (e) {
+        // Ignore navigation errors
+      }
+    }
+
     // Handle session expired (419 or specific error code)
     if (status === 419 || errorCode === "SESSION_EXPIRED") {
       try {

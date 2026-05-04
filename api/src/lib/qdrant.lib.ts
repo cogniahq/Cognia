@@ -1,6 +1,7 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
 import { logger } from '../utils/core/logger.util'
 import { getConfiguredEmbeddingDimension } from '../services/ai/ai-config'
+import { retryWithBackoff } from '../utils/core/retry.util'
 import type { SparseVector } from './sparse-encoder.lib'
 
 const globalForQdrant = globalThis as unknown as {
@@ -14,6 +15,22 @@ const COLLECTION_NAME = 'memory_embeddings'
 
 export const DENSE_VECTOR_NAME = 'dense_content'
 export const SPARSE_VECTOR_NAME = 'sparse_bm25'
+
+const QDRANT_QUERY_MAX_RETRIES = 2
+const QDRANT_QUERY_BASE_DELAY_MS = 75
+const QDRANT_QUERY_MAX_DELAY_MS = 300
+
+const TRANSIENT_NETWORK_ERROR_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EAI_AGAIN',
+  'ENOTFOUND',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_SOCKET',
+])
 
 interface QdrantClientOptions {
   url: string
@@ -32,6 +49,106 @@ let ensureCollectionPromise: Promise<void> | null = null
 
 if (process.env.NODE_ENV !== 'production') {
   globalForQdrant.qdrant = qdrantClient
+}
+
+type QdrantQueryRequest = Parameters<typeof qdrantClient.query>[1]
+type QdrantQueryResult = Awaited<ReturnType<typeof qdrantClient.query>>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object'
+}
+
+function readNumericStatus(value: unknown): number | undefined {
+  if (!isRecord(value)) return undefined
+
+  const status = value.status ?? value.statusCode
+  if (typeof status === 'number') return status
+  if (typeof status === 'string') {
+    const parsed = Number(status)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  return undefined
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+  if (!isRecord(error)) return undefined
+
+  return (
+    readNumericStatus(error) ??
+    readNumericStatus(error.response) ??
+    readNumericStatus(error.cause) ??
+    readStatusFromMessage(getErrorMessage(error))
+  )
+}
+
+function readStatusFromMessage(message: string): number | undefined {
+  const match = message.match(/\b(?:Unexpected Response:|status(?: code)?[:=]?)\s*(\d{3})\b/i)
+  if (!match) return undefined
+
+  const parsed = Number(match[1])
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  const candidates = isRecord(error) ? [error, error.cause] : []
+
+  for (const candidate of candidates) {
+    if (!isRecord(candidate)) continue
+    const code = candidate.code
+    if (typeof code === 'string') return code.toUpperCase()
+    if (typeof code === 'number') return String(code)
+  }
+
+  return undefined
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (isRecord(error) && typeof error.message === 'string') return error.message
+  return String(error)
+}
+
+function isTransientQdrantQueryError(error: unknown): boolean {
+  const status = getErrorStatus(error)
+  if (status !== undefined) {
+    return status === 408 || status === 429 || status >= 500
+  }
+
+  const code = getErrorCode(error)
+  if (code && TRANSIENT_NETWORK_ERROR_CODES.has(code)) return true
+
+  if (
+    error instanceof Error &&
+    (error.name === 'AbortError' ||
+      error.name === 'TimeoutError' ||
+      error.name === 'QdrantClientTimeoutError' ||
+      error.name === 'QdrantClientResourceExhaustedError')
+  ) {
+    return true
+  }
+
+  return /\b(fetch failed|network error|socket hang up|connection reset|connection refused|timed?out)\b/i.test(
+    getErrorMessage(error)
+  )
+}
+
+async function queryQdrantWithRetry(request: QdrantQueryRequest): Promise<QdrantQueryResult> {
+  return retryWithBackoff(() => qdrantClient.query(COLLECTION_NAME, request), {
+    maxRetries: QDRANT_QUERY_MAX_RETRIES,
+    baseDelayMs: QDRANT_QUERY_BASE_DELAY_MS,
+    maxDelayMs: QDRANT_QUERY_MAX_DELAY_MS,
+    shouldRetry: isTransientQdrantQueryError,
+    onRetry: (error, attempt, delayMs) => {
+      logger.warn('[qdrant] query failed, retrying', {
+        attempt,
+        delayMs,
+        status: getErrorStatus(error),
+        code: getErrorCode(error),
+        error: getErrorMessage(error),
+      })
+    },
+  })
 }
 
 const PAYLOAD_INDEXES: Array<{
@@ -256,7 +373,7 @@ export async function searchDense(opts: {
   withVector?: boolean
 }): Promise<QdrantPoint[]> {
   await ensureCollection()
-  const result = await qdrantClient.query(COLLECTION_NAME, {
+  const result = await queryQdrantWithRetry({
     query: opts.vector,
     using: DENSE_VECTOR_NAME,
     filter: opts.filter,
@@ -278,7 +395,7 @@ export async function searchSparse(opts: {
   withPayload?: boolean
 }): Promise<QdrantPoint[]> {
   await ensureCollection()
-  const result = await qdrantClient.query(COLLECTION_NAME, {
+  const result = await queryQdrantWithRetry({
     query: { indices: opts.sparse.indices, values: opts.sparse.values },
     using: SPARSE_VECTOR_NAME,
     filter: opts.filter,
@@ -312,7 +429,7 @@ export async function searchHybrid(opts: {
     })
   }
 
-  const result = await qdrantClient.query(COLLECTION_NAME, {
+  const result = await queryQdrantWithRetry({
     prefetch: [
       {
         query: opts.dense,

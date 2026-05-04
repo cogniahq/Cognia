@@ -17,11 +17,16 @@ router.post(
   async (req: AuthenticatedRequest, res) => {
     if (!req.user?.id) return res.status(401).json({ message: 'Unauthorized' })
     try {
+      const recipientType = req.body?.recipientType
+      if (recipientType !== 'ORG' && recipientType !== 'LINK') {
+        return res
+          .status(400)
+          .json({ success: false, message: 'recipientType must be ORG or LINK' })
+      }
       const out = await createShare({
         memoryId: req.body?.memoryId,
         sharerUserId: req.user.id,
-        recipientType: req.body?.recipientType,
-        recipientUserId: req.body?.recipientUserId,
+        recipientType,
         recipientOrgId: req.body?.recipientOrgId,
         permission: req.body?.permission,
         expiresAt: req.body?.expiresAt ? new Date(req.body.expiresAt) : undefined,

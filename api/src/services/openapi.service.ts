@@ -43,7 +43,11 @@ export function getOpenApiSpec() {
           tags: ['Memories'],
           parameters: [
             { in: 'query', name: 'cursor', schema: { type: 'string' } },
-            { in: 'query', name: 'limit', schema: { type: 'integer', maximum: 200 } },
+            {
+              in: 'query',
+              name: 'limit',
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
+            },
             { in: 'query', name: 'q', schema: { type: 'string' } },
           ],
           responses: {

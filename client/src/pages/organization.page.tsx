@@ -106,12 +106,9 @@ export function Organization() {
     }
   }, [navigate])
 
-  // accountType ("PERSONAL" vs "ORGANIZATION") is a User-level flag set at
-  // signup. It doesn't gate workspace access — a PERSONAL user can still
-  // belong to one or more team workspaces, and the OrgSwitcher is the
-  // authoritative way to move between Personal and Workspace views. So this
-  // page is reachable for every authenticated user; the empty/selector
-  // states below handle the "no org yet" / "pick an org" cases.
+  // Cognia is org-only: every authenticated user has at least one active
+  // membership. The empty/selector states below handle the "pick an org"
+  // case for users who belong to multiple workspaces.
 
   useEffect(() => {
     if (isAuthenticated) {

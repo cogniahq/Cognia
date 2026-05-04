@@ -9,6 +9,7 @@ import {
   registerAction,
   type ActionError,
 } from "@/lib/auth/actions";
+import { OAuthButton } from "@/components/auth/OAuthButton";
 
 type Mode = "signin" | "signup";
 
@@ -426,9 +427,29 @@ export function LoginForm({ mode }: LoginFormProps) {
                 </div>
               </form>
 
-              {/* TODO(phase-5): wire Firebase OAuth + magic link UI here.
-                  Phase 2 ships email/password only — magic link is reachable
-                  via the API + /auth/magic page when users have a token. */}
+              {/* OAuth — only on /login. /signup keeps the password-only path
+                  because the upstream OAuth callback implicitly registers if
+                  the email is new, and we don't want to duplicate flows.
+
+                  TODO(phase-5-followup): wire SSO discovery + magic-link
+                  toggle alongside these buttons. */}
+              {!isRegister && (
+                <>
+                  <div className="relative pt-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-4 bg-white/80 text-gray-500">or</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <OAuthButton provider="google" />
+                    <OAuthButton provider="microsoft" />
+                  </div>
+                </>
+              )}
 
               <div className="relative pt-4">
                 <div className="absolute inset-0 flex items-center">

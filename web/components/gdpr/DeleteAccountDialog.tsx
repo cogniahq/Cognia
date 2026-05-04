@@ -92,9 +92,7 @@ export function DeleteAccountDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {scheduledFor
-              ? "Account deletion scheduled"
-              : "Delete my account"}
+            {scheduledFor ? "Account deletion scheduled" : "Delete my account"}
           </DialogTitle>
           <DialogDescription>
             {scheduledFor
@@ -106,9 +104,9 @@ export function DeleteAccountDialog({
         {!scheduledFor && (
           <div className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800">
-              <strong>Heads up.</strong> After 30 days we permanently erase
-              your memories, profile, audit history, integrations, and any
-              other personal data we hold for you. This cannot be undone.
+              <strong>Heads up.</strong> After 30 days we permanently erase your
+              memories, profile, audit history, integrations, and any other
+              personal data we hold for you. This cannot be undone.
             </div>
             <label className="flex items-start gap-2 text-sm text-gray-800">
               <input
@@ -118,8 +116,8 @@ export function DeleteAccountDialog({
                 className="mt-1"
               />
               <span>
-                I understand my data will be erased after 30 days and that
-                this action is irreversible.
+                I understand my data will be erased after 30 days and that this
+                action is irreversible.
               </span>
             </label>
           </div>

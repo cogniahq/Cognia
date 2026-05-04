@@ -32,9 +32,7 @@ import {
   updateOrgIntegrationSettings,
   type OrgSyncSettings,
 } from "@/services/organization.service";
-import type {
-  MemoryMeshNode,
-} from "@/types/memory";
+import type { MemoryMeshNode } from "@/types/memory";
 import type { OrganizationWithRole } from "@/types/organization";
 
 import { CreateOrganizationDialog } from "./CreateOrganizationDialog";
@@ -131,8 +129,8 @@ export function OrganizationClient({
               Create your first workspace
             </h1>
             <p className="text-sm sm:text-base text-gray-700 max-w-md mx-auto leading-relaxed">
-              A workspace lets your team upload documents and search them
-              with AI-powered intelligence.
+              A workspace lets your team upload documents and search them with
+              AI-powered intelligence.
             </p>
           </div>
 

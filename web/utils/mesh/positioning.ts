@@ -45,9 +45,7 @@ export function calculateNodePositions(
   const memorySourcesMap = memorySources
     ? new Map(Object.entries(memorySources))
     : null;
-  const memoryUrlsMap = memoryUrls
-    ? new Map(Object.entries(memoryUrls))
-    : null;
+  const memoryUrlsMap = memoryUrls ? new Map(Object.entries(memoryUrls)) : null;
 
   for (let i = 0; i < nodeCount; i++) {
     const n = meshData.nodes[i];

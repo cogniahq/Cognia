@@ -109,9 +109,7 @@ function MemoryMesh3DComponent({
     return (
       <div className={`w-full h-full ${className}`}>
         <div className="w-full h-full flex items-center justify-center bg-white border border-gray-200">
-          <div className="text-sm font-mono text-gray-600">
-            [NO MESH DATA]
-          </div>
+          <div className="text-sm font-mono text-gray-600">[NO MESH DATA]</div>
         </div>
       </div>
     );

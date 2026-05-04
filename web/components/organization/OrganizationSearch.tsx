@@ -65,7 +65,8 @@ export function OrganizationSearch({
   const [error, setError] = useState("");
   const [summaryError, setSummaryError] = useState("");
 
-  const activeFilter = FILTERS.find((f) => f.id === activeFilterId) || FILTERS[0];
+  const activeFilter =
+    FILTERS.find((f) => f.id === activeFilterId) || FILTERS[0];
 
   const runSearch = useCallback(
     async (trimmedQuery: string, filterId: (typeof FILTERS)[number]["id"]) => {
@@ -227,7 +228,9 @@ export function OrganizationSearch({
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-gray-500">
         <span>[FILTER] {activeFilter.label}</span>
         <div>
-          {submittedQuery && <span>Applied to &quot;{submittedQuery}&quot;</span>}
+          {submittedQuery && (
+            <span>Applied to &quot;{submittedQuery}&quot;</span>
+          )}
         </div>
       </div>
 
@@ -266,9 +269,7 @@ export function OrganizationSearch({
                         key={`${citation.memoryId}-${citation.indices.join("-")}`}
                         href={citation.url || "#"}
                         target={citation.url ? "_blank" : undefined}
-                        rel={
-                          citation.url ? "noopener noreferrer" : undefined
-                        }
+                        rel={citation.url ? "noopener noreferrer" : undefined}
                         onClick={(e) => {
                           if (!citation.url) e.preventDefault();
                         }}
@@ -372,8 +373,7 @@ export function OrganizationSearch({
 
       {results && results.results.length === 0 && (
         <div className="border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">
-          No matching documents or browsing memories were found for this
-          search.
+          No matching documents or browsing memories were found for this search.
         </div>
       )}
 

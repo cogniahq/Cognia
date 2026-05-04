@@ -86,9 +86,7 @@ export function AnalyticsClient() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">
-              Analytics
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Analytics</h1>
             <p className="text-xs text-gray-600">
               Comprehensive statistics about your memories and usage
             </p>
@@ -324,8 +322,7 @@ export function AnalyticsClient() {
                 Token Usage by Operation
               </h2>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {Object.entries(analytics.tokenUsage.byOperation).length >
-                0 ? (
+                {Object.entries(analytics.tokenUsage.byOperation).length > 0 ? (
                   Object.entries(analytics.tokenUsage.byOperation).map(
                     ([op, stats]) => (
                       <div
@@ -336,9 +333,7 @@ export function AnalyticsClient() {
                           <div className="font-medium text-gray-900 capitalize">
                             {op.replace(/_/g, " ")}
                           </div>
-                          <div className="text-gray-600">
-                            {stats.count} ops
-                          </div>
+                          <div className="text-gray-600">{stats.count} ops</div>
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-gray-900">
@@ -429,9 +424,7 @@ export function AnalyticsClient() {
                       key={week}
                       className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0"
                     >
-                      <span className="text-gray-600">
-                        {formatDate(week)}
-                      </span>
+                      <span className="text-gray-600">{formatDate(week)}</span>
                       <span className="font-semibold text-gray-900">
                         {formatNumber(analytics.tokenTrends.byWeek[week])}
                       </span>

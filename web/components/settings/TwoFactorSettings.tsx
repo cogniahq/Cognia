@@ -46,9 +46,7 @@ export function TwoFactorSettings() {
         message?: string;
       };
       setError(
-        e.response?.data?.message ||
-          e.message ||
-          "Failed to load 2FA status",
+        e.response?.data?.message || e.message || "Failed to load 2FA status",
       );
     } finally {
       setIsLoading(false);
@@ -73,9 +71,7 @@ export function TwoFactorSettings() {
         message?: string;
       };
       setError(
-        e.response?.data?.message ||
-          e.message ||
-          "Failed to start 2FA setup",
+        e.response?.data?.message || e.message || "Failed to start 2FA setup",
       );
     } finally {
       setIsProcessing(false);
@@ -99,9 +95,7 @@ export function TwoFactorSettings() {
         message?: string;
       };
       setError(
-        e.response?.data?.message ||
-          e.message ||
-          "Invalid verification code",
+        e.response?.data?.message || e.message || "Invalid verification code",
       );
     } finally {
       setIsProcessing(false);
@@ -229,8 +223,7 @@ export function TwoFactorSettings() {
                   Backup Codes
                 </div>
                 <div className="text-xs text-gray-500">
-                  Use these codes if you lose access to your authenticator
-                  app
+                  Use these codes if you lose access to your authenticator app
                 </div>
               </div>
               <button
@@ -248,8 +241,8 @@ export function TwoFactorSettings() {
       {setupStep === "setup" && setupData && (
         <div className="space-y-4">
           <div className="text-sm text-gray-700">
-            Scan this QR code with your authenticator app (Google
-            Authenticator, Authy, etc.)
+            Scan this QR code with your authenticator app (Google Authenticator,
+            Authy, etc.)
           </div>
 
           <div className="flex justify-center p-4 bg-white border border-gray-200">
@@ -277,8 +270,8 @@ export function TwoFactorSettings() {
               [SAVE YOUR BACKUP CODES]
             </div>
             <div className="text-xs text-yellow-700 mb-2">
-              Store these codes in a safe place. You can use them to access
-              your account if you lose your authenticator device.
+              Store these codes in a safe place. You can use them to access your
+              account if you lose your authenticator device.
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
               {backupCodes.map((code, idx) => (
@@ -382,8 +375,8 @@ export function TwoFactorSettings() {
               Disable Two-Factor Authentication
             </div>
             <div className="text-xs text-red-700">
-              This will remove the extra security layer from your account.
-              Enter your current 2FA code to confirm.
+              This will remove the extra security layer from your account. Enter
+              your current 2FA code to confirm.
             </div>
           </div>
 
@@ -430,8 +423,8 @@ export function TwoFactorSettings() {
               [NEW BACKUP CODES]
             </div>
             <div className="text-sm text-gray-700 mb-4">
-              Your previous backup codes have been invalidated. Save these
-              new codes in a safe place.
+              Your previous backup codes have been invalidated. Save these new
+              codes in a safe place.
             </div>
             <div className="grid grid-cols-2 gap-2 mb-4">
               {backupCodes.map((code, idx) => (

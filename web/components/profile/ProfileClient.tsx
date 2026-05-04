@@ -136,8 +136,7 @@ export function ProfileClient() {
               </div>
             </div>
             <p className="text-xs text-gray-600">
-              Your automatically maintained profile based on processed
-              content
+              Your automatically maintained profile based on processed content
             </p>
           </div>
 
@@ -154,10 +153,7 @@ export function ProfileClient() {
               <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 py-2 bg-red-50 border border-red-200 text-sm text-red-800">
                 <span>
                   Your account is scheduled for deletion on{" "}
-                  <strong>
-                    {formatScheduledDate(deletionScheduledFor)}
-                  </strong>
-                  .
+                  <strong>{formatScheduledDate(deletionScheduledFor)}</strong>.
                 </span>
                 <button
                   type="button"
@@ -171,8 +167,8 @@ export function ProfileClient() {
 
             <p className="text-xs text-gray-600 mb-4">
               Export everything we hold about you, or schedule a permanent
-              account deletion. Deletion runs after a 30-day grace period
-              and can be cancelled any time before then.
+              account deletion. Deletion runs after a 30-day grace period and
+              can be cancelled any time before then.
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -188,9 +184,7 @@ export function ProfileClient() {
                 onClick={() => setDeleteDialogOpen(true)}
                 className="px-3 py-1.5 text-xs font-mono text-red-700 hover:text-red-900 hover:bg-red-50 border border-red-300 transition-colors"
               >
-                {deletionScheduledFor
-                  ? "Manage deletion"
-                  : "Delete my account"}
+                {deletionScheduledFor ? "Manage deletion" : "Delete my account"}
               </button>
             </div>
           </div>
@@ -303,9 +297,7 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
 
           {sp.profession && (
             <Section label="PROFESSION">
-              <p className="text-sm font-mono text-gray-900">
-                {sp.profession}
-              </p>
+              <p className="text-sm font-mono text-gray-900">{sp.profession}</p>
             </Section>
           )}
 
@@ -338,10 +330,7 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
                   ["Work Hours", sp.work_style.preferred_work_hours],
                   ["Collaboration", sp.work_style.collaboration_style],
                   ["Decision Making", sp.work_style.decision_making_style],
-                  [
-                    "Problem Solving",
-                    sp.work_style.problem_solving_approach,
-                  ],
+                  ["Problem Solving", sp.work_style.problem_solving_approach],
                 ]}
               />
             </Section>
@@ -408,9 +397,7 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
                     ],
                     [
                       "Platforms",
-                      sp.technology_preferences.preferred_platforms?.join(
-                        ", ",
-                      ),
+                      sp.technology_preferences.preferred_platforms?.join(", "),
                     ],
                   ]}
                 />
@@ -422,14 +409,8 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
               <Section label="LIFESTYLE PATTERNS">
                 <KeyValueList
                   items={[
-                    [
-                      "Activity Level",
-                      sp.lifestyle_patterns.activity_level,
-                    ],
-                    [
-                      "Social Patterns",
-                      sp.lifestyle_patterns.social_patterns,
-                    ],
+                    ["Activity Level", sp.lifestyle_patterns.activity_level],
+                    ["Social Patterns", sp.lifestyle_patterns.social_patterns],
                     [
                       "Productivity",
                       sp.lifestyle_patterns.productivity_patterns,
@@ -439,21 +420,20 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
               </Section>
             )}
 
-          {sp.cognitive_style &&
-            Object.keys(sp.cognitive_style).length > 0 && (
-              <Section label="COGNITIVE STYLE">
-                <KeyValueList
-                  items={[
-                    ["Thinking", sp.cognitive_style.thinking_pattern],
-                    [
-                      "Information Processing",
-                      sp.cognitive_style.information_processing,
-                    ],
-                    ["Creativity", sp.cognitive_style.creativity_level],
-                  ]}
-                />
-              </Section>
-            )}
+          {sp.cognitive_style && Object.keys(sp.cognitive_style).length > 0 && (
+            <Section label="COGNITIVE STYLE">
+              <KeyValueList
+                items={[
+                  ["Thinking", sp.cognitive_style.thinking_pattern],
+                  [
+                    "Information Processing",
+                    sp.cognitive_style.information_processing,
+                  ],
+                  ["Creativity", sp.cognitive_style.creativity_level],
+                ]}
+              />
+            </Section>
+          )}
         </div>
       </div>
 
@@ -507,10 +487,7 @@ function ProfileBody({ profile }: { profile: UserProfile }) {
             <Section label="EMOTIONAL STATE">
               <KeyValueList
                 items={[
-                  [
-                    "Concerns",
-                    dp.emotional_state.current_concerns?.join(", "),
-                  ],
+                  ["Concerns", dp.emotional_state.current_concerns?.join(", ")],
                   [
                     "Excitements",
                     dp.emotional_state.current_excitements?.join(", "),

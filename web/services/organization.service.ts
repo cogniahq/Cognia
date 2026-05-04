@@ -338,9 +338,7 @@ export interface SetupProgress {
 export async function getSetupProgress(slug: string): Promise<SetupProgress> {
   const response = await getRequest(`${baseUrl}/${slug}/setup`);
   if (!response.data?.success) {
-    throw new Error(
-      response.data?.message || "Failed to fetch setup progress",
-    );
+    throw new Error(response.data?.message || "Failed to fetch setup progress");
   }
   return response.data.data.progress;
 }

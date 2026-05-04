@@ -200,9 +200,7 @@ export function CreateOrganizationDialog({
             </button>
             <button
               type="submit"
-              disabled={
-                isSubmitting || !name.trim() || !industry || !teamSize
-              }
+              disabled={isSubmitting || !name.trim() || !industry || !teamSize}
               className="px-4 py-2 text-xs font-mono bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Creating..." : "Create Workspace"}

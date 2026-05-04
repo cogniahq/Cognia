@@ -169,8 +169,7 @@ export function DocumentUpload({
                     ? {
                         ...f,
                         status: "error",
-                        error:
-                          updatedDoc.error_message || "Processing failed",
+                        error: updatedDoc.error_message || "Processing failed",
                       }
                     : f,
                 ),
@@ -261,8 +260,8 @@ export function DocumentUpload({
               [TAGS]
             </div>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500">
-              Add comma-separated tags that should attach to every file in
-              this upload batch. Tags become available in search filters.
+              Add comma-separated tags that should attach to every file in this
+              upload batch. Tags become available in search filters.
             </p>
           </div>
           <div className="text-xs font-mono text-gray-400">
@@ -328,9 +327,7 @@ export function DocumentUpload({
                 <span className="text-gray-400">
                   [{FILE_TYPE_LABELS[item.file.type] || "FILE"}]
                 </span>
-                <span className="truncate text-gray-900">
-                  {item.file.name}
-                </span>
+                <span className="truncate text-gray-900">{item.file.name}</span>
                 <span className="text-gray-400 flex-shrink-0">
                   {formatFileSize(item.file.size)}
                 </span>

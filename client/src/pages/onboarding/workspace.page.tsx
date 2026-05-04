@@ -47,9 +47,9 @@ export function OnboardingWorkspace() {
 
   const onSuccess = async (slug: string) => {
     // Refresh the auth context so /me + permissions reflect the new
-    // membership, then navigate to /memories. We use a hard reload to
-    // make sure the OrganizationProvider re-fetches the user's orgs
-    // (it only loads on mount).
+    // membership, then navigate to the org workspace. Hard reload so the
+    // OrganizationProvider re-fetches the user's orgs (it only loads on
+    // mount).
     try {
       localStorage.setItem("currentOrgSlug", slug)
     } catch {
@@ -60,7 +60,7 @@ export function OnboardingWorkspace() {
     } catch {
       // ignore
     }
-    window.location.href = "/memories"
+    window.location.href = "/organization"
   }
 
   const handleCreate = async (e: React.FormEvent) => {

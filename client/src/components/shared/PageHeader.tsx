@@ -133,11 +133,6 @@ export const PageHeader = () => {
     inOrgContext && !!currentOrganization?.slug && canSeeBillingLink
 
   const baseNavItems: NavItem[] = [
-    {
-      label: "Memories",
-      path: "/memories",
-      matchPrefixes: ["/memories"],
-    },
     { label: "Analytics", path: "/analytics" },
     { label: "Integrations", path: "/integrations" },
   ]
@@ -174,9 +169,10 @@ export const PageHeader = () => {
     )
   }
 
-  // Brand button always lands on /memories; the org context provider will
-  // surface org-scoped data when one is active.
-  const dashboardPath = "/memories"
+  // Brand button lands on the org workspace dashboard. Cognia is org-only;
+  // every authenticated user has an active membership thanks to the
+  // onboarding wall, so /organization is always reachable.
+  const dashboardPath = "/organization"
 
   return (
     <>

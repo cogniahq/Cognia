@@ -4,7 +4,7 @@ export const Navbar = () => {
   const location = useLocation()
 
   const navItems = [
-    { path: "/memories", label: "Memories" },
+    { path: "/organization", label: "Workspace" },
     { path: "/docs", label: "Docs" },
     { path: "/analytics", label: "Analytics" },
     { path: "/profile", label: "Profile" },

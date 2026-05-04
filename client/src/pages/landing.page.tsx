@@ -20,10 +20,11 @@ export const Landing = () => {
   const { isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
-    // Authenticated users skip the marketing landing and go straight to memories.
-    // Wait for the auth check to finish so we don't bounce signed-out users away.
+    // Authenticated users skip the marketing landing and go straight to the
+    // org workspace. Wait for the auth check to finish so we don't bounce
+    // signed-out users away.
     if (!isLoading && isAuthenticated) {
-      navigate("/memories", { replace: true })
+      navigate("/organization", { replace: true })
     }
   }, [isAuthenticated, isLoading, navigate])
 

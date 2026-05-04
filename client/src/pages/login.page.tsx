@@ -10,12 +10,12 @@ import { OAuthButton } from "@/components/auth/OAuthButton"
 import { SsoDiscovery } from "@/components/auth/SsoDiscovery"
 import { ConsoleButton } from "@/components/landing/ConsoleButton"
 
-// Existing users go straight to /memories. Brand-new users get redirected
+// Existing users go straight to /organization. Brand-new users get redirected
 // to /onboarding/workspace (handled in handleSubmit) because their /register
 // response carries `requiresOnboarding: true` and they have no active
 // OrganizationMember row yet — the require-org-membership middleware
 // would 403 every other route.
-const POST_LOGIN_PATH = "/memories"
+const POST_LOGIN_PATH = "/organization"
 const ONBOARDING_PATH = "/onboarding/workspace"
 
 // Password requirement indicator

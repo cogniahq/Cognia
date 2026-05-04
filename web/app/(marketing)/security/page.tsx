@@ -47,14 +47,13 @@ export default function SecurityPage() {
         </p>
         <p>
           At rest, we apply AES-256-GCM column-level encryption to OAuth access
-          and refresh tokens, TOTP 2FA secrets, and OIDC client secrets.
-          Backing volumes are additionally encrypted by the underlying cloud
-          provider.
+          and refresh tokens, TOTP 2FA secrets, and OIDC client secrets. Backing
+          volumes are additionally encrypted by the underlying cloud provider.
         </p>
         <p>
           Master encryption keys are currently injected via environment
-          variables on isolated runtime hosts. We are migrating to a managed
-          KMS (AWS KMS) with envelope encryption and per-tenant data keys; the
+          variables on isolated runtime hosts. We are migrating to a managed KMS
+          (AWS KMS) with envelope encryption and per-tenant data keys; the
           rotation tooling already lives behind the same interface.
         </p>
       </Section>
@@ -62,8 +61,8 @@ export default function SecurityPage() {
       <Section id="access-controls" title="Access controls">
         <ul className="list-disc pl-6 space-y-1">
           <li>
-            Role-based access control with three tiers — ADMIN, EDITOR, VIEWER
-            — enforced at the API layer.
+            Role-based access control with three tiers — ADMIN, EDITOR, VIEWER —
+            enforced at the API layer.
           </li>
           <li>
             JWT access tokens are short-lived; refresh tokens rotate on every
@@ -99,18 +98,17 @@ export default function SecurityPage() {
           </li>
           <li>OAuth login via Google and Microsoft for personal accounts.</li>
           <li>
-            Password breach checking against the HIBP k-anonymity API on
-            sign-up and password change.
+            Password breach checking against the HIBP k-anonymity API on sign-up
+            and password change.
           </li>
         </ul>
       </Section>
 
       <Section id="audit-logging" title="Audit logging">
         <p>
-          Every security-relevant action — logins, role changes, token
-          issuance, memory exports, settings updates — is appended to an
-          immutable audit log with the actor, timestamp, IP address, and
-          user-agent.
+          Every security-relevant action — logins, role changes, token issuance,
+          memory exports, settings updates — is appended to an immutable audit
+          log with the actor, timestamp, IP address, and user-agent.
         </p>
         <p>
           Org admins can export audit logs as CSV from the admin console.
@@ -122,8 +120,8 @@ export default function SecurityPage() {
       <Section id="network" title="Network">
         <ul className="list-disc pl-6 space-y-1">
           <li>
-            HTTP responses include a strict set of security headers via Helmet
-            — HSTS with preload, a CSP that blocks inline scripts outside an
+            HTTP responses include a strict set of security headers via Helmet —
+            HSTS with preload, a CSP that blocks inline scripts outside an
             explicit nonce list, X-Frame-Options DENY, and Referrer-Policy
             strict-origin-when-cross-origin.
           </li>
@@ -158,19 +156,16 @@ export default function SecurityPage() {
       <Section id="incident-response" title="Incident response">
         <p>
           We acknowledge reported incidents within 24 hours. For confirmed
-          incidents, we publish a public root-cause analysis within 72 hours
-          of resolution and notify affected customers within 24 hours of
-          confirming any exposure of personally identifiable information.
+          incidents, we publish a public root-cause analysis within 72 hours of
+          resolution and notify affected customers within 24 hours of confirming
+          any exposure of personally identifiable information.
         </p>
       </Section>
 
       <Section id="bug-bounty" title="Bug bounty">
         <p>
           Responsible disclosures are rewarded. See our{" "}
-          <Link
-            href="/security/bug-bounty"
-            className="text-blue-600 underline"
-          >
+          <Link href="/security/bug-bounty" className="text-blue-600 underline">
             bug bounty program
           </Link>{" "}
           for scope, rewards, and reporting instructions.

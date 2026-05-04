@@ -94,8 +94,7 @@ html {
 
 /* Custom font classes for design system */
 .font-primary {
-  font-family:
-    var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 300;
 }
 

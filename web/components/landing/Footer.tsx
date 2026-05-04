@@ -125,9 +125,7 @@ export const Footer: React.FC = () => {
         {/* Bottom: Copyright */}
         <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200/50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-gray-500">
-            <div>
-              © {new Date().getFullYear()} Cognia. All rights reserved.
-            </div>
+            <div>© {new Date().getFullYear()} Cognia. All rights reserved.</div>
             <div className="text-gray-400">
               A searchable memory for everything you see online.
             </div>

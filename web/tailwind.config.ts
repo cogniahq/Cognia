@@ -18,7 +18,12 @@ const config: Config = {
       // PP Editorial still loads via @import in globals.css; see
       // TODO(phase-1) in layout.tsx for the planned self-host migration.
       editorial: ['"PP Editorial New Ultralight"', "serif"],
-      mono: ["var(--font-mono)", '"IBM Plex Mono"', "ui-monospace", "monospace"],
+      mono: [
+        "var(--font-mono)",
+        '"IBM Plex Mono"',
+        "ui-monospace",
+        "monospace",
+      ],
       primary: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
       sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
     },

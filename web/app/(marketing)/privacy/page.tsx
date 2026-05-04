@@ -40,9 +40,9 @@ export default function PrivacyPage() {
     >
       <p>
         This policy describes how Cognia (&quot;we&quot;, &quot;us&quot;)
-        handles personal data when you use the Cognia service. We have
-        designed Cognia to follow the principles of data minimization,
-        transparency, and user control.
+        handles personal data when you use the Cognia service. We have designed
+        Cognia to follow the principles of data minimization, transparency, and
+        user control.
       </p>
 
       <Section title="Information we collect">
@@ -96,8 +96,8 @@ export default function PrivacyPage() {
           <Link href="/subprocessors" className="text-blue-600 underline">
             subprocessors page
           </Link>
-          , each bound by a data-processing agreement, and with law
-          enforcement when compelled by valid legal process.
+          , each bound by a data-processing agreement, and with law enforcement
+          when compelled by valid legal process.
         </p>
       </Section>
 
@@ -128,9 +128,9 @@ export default function PrivacyPage() {
       <Section title="Retention">
         <p>
           Memories are retained until you delete them or close your account;
-          deleted memories are purged within 30 days of deletion. Audit logs
-          are retained per your organization&apos;s policy — 90 days, 365
-          days, or unlimited (Enterprise). Backups roll on a 30-day window.
+          deleted memories are purged within 30 days of deletion. Audit logs are
+          retained per your organization&apos;s policy — 90 days, 365 days, or
+          unlimited (Enterprise). Backups roll on a 30-day window.
         </p>
       </Section>
 

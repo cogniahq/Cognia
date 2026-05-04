@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react";
 
-import { Section } from "./Section"
+import { Section } from "./Section";
 
 const stats = [
   { id: "memories", label: "Memories", value: 1247, suffix: "" },
   { id: "tokens", label: "Tokens Used", value: 842, suffix: "K" },
   { id: "searches", label: "Searches", value: 328, suffix: "" },
   { id: "days", label: "Days Active", value: 45, suffix: "" },
-]
+];
 
 const activityData = [
   { day: "Mon", value: 12 },
@@ -19,7 +19,7 @@ const activityData = [
   { day: "Fri", value: 22 },
   { day: "Sat", value: 8 },
   { day: "Sun", value: 5 },
-]
+];
 
 const topicTags = [
   { label: "React", count: 89, color: "#3B82F6" },
@@ -28,75 +28,75 @@ const topicTags = [
   { label: "APIs", count: 48, color: "#10B981" },
   { label: "Testing", count: 41, color: "#F59E0B" },
   { label: "DevOps", count: 36, color: "#8B5CF6" },
-]
+];
 
 const patterns = [
   { label: "Peak hour", value: "2:00 PM" },
   { label: "Most active", value: "Tuesday" },
   { label: "Avg. session", value: "23 min" },
-]
+];
 
 const sentiments = [
   { label: "Positive", value: 62, color: "#22C55E" },
   { label: "Neutral", value: 31, color: "#9CA3AF" },
   { label: "Negative", value: 7, color: "#EF4444" },
-]
+];
 
 // Animated counter hook
 const useAnimatedCounter = (
   target: number,
   duration: number = 1500,
-  shouldAnimate: boolean = false
+  shouldAnimate: boolean = false,
 ) => {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!shouldAnimate) return
+    if (!shouldAnimate) return;
 
-    let startTime: number | null = null
-    let animationFrame: number
+    let startTime: number | null = null;
+    let animationFrame: number;
 
     const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
 
       // Easing function (ease-out-expo)
-      const eased = 1 - Math.pow(2, -10 * progress)
-      setCount(Math.floor(eased * target))
+      const eased = 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(eased * target));
 
       if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate)
+        animationFrame = requestAnimationFrame(animate);
       }
-    }
+    };
 
-    animationFrame = requestAnimationFrame(animate)
+    animationFrame = requestAnimationFrame(animate);
 
     return () => {
       if (animationFrame) {
-        cancelAnimationFrame(animationFrame)
+        cancelAnimationFrame(animationFrame);
       }
-    }
-  }, [target, duration, shouldAnimate])
+    };
+  }, [target, duration, shouldAnimate]);
 
-  return count
-}
+  return count;
+};
 
 const AnimatedStat: React.FC<{
-  label: string
-  value: number
-  suffix: string
-  isInView: boolean
-  delay: number
+  label: string;
+  value: number;
+  suffix: string;
+  isInView: boolean;
+  delay: number;
 }> = ({ label, value, suffix, isInView, delay }) => {
-  const [shouldAnimate, setShouldAnimate] = useState(false)
-  const animatedValue = useAnimatedCounter(value, 1500, shouldAnimate)
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const animatedValue = useAnimatedCounter(value, 1500, shouldAnimate);
 
   useEffect(() => {
     if (isInView) {
-      const timer = setTimeout(() => setShouldAnimate(true), delay)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setShouldAnimate(true), delay);
+      return () => clearTimeout(timer);
     }
-  }, [isInView, delay])
+  }, [isInView, delay]);
 
   return (
     <div className="text-center">
@@ -108,62 +108,62 @@ const AnimatedStat: React.FC<{
         {label}
       </div>
     </div>
-  )
-}
+  );
+};
 
 export const AnalyticsDemo: React.FC = () => {
-  const [isInView, setIsInView] = useState(false)
-  const [showBars, setShowBars] = useState(false)
-  const [showTags, setShowTags] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false);
+  const [showBars, setShowBars] = useState(false);
+  const [showTags, setShowTags] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isInView) {
-            setIsInView(true)
+            setIsInView(true);
           }
-        })
+        });
       },
-      { threshold: 0.2 }
-    )
+      { threshold: 0.2 },
+    );
 
-    const currentContainer = containerRef.current
+    const currentContainer = containerRef.current;
     if (currentContainer) {
-      observer.observe(currentContainer)
+      observer.observe(currentContainer);
     }
 
     return () => {
       if (currentContainer) {
-        observer.unobserve(currentContainer)
+        observer.unobserve(currentContainer);
       }
-    }
-  }, [isInView])
+    };
+  }, [isInView]);
 
   useEffect(() => {
-    if (!isInView) return
+    if (!isInView) return;
 
-    const timers: ReturnType<typeof setTimeout>[] = []
-
-    timers.push(
-      setTimeout(() => {
-        setShowBars(true)
-      }, 800)
-    )
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
     timers.push(
       setTimeout(() => {
-        setShowTags(true)
-      }, 1200)
-    )
+        setShowBars(true);
+      }, 800),
+    );
+
+    timers.push(
+      setTimeout(() => {
+        setShowTags(true);
+      }, 1200),
+    );
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer))
-    }
-  }, [isInView])
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [isInView]);
 
-  const maxBarValue = Math.max(...activityData.map((d) => d.value))
+  const maxBarValue = Math.max(...activityData.map((d) => d.value));
 
   return (
     <Section className="bg-transparent py-12 sm:py-16 lg:py-20 xl:py-24">
@@ -243,7 +243,7 @@ export const AnalyticsDemo: React.FC = () => {
             </p>
             <div className="flex items-end justify-between gap-2 h-32">
               {activityData.map((data, index) => {
-                const heightPercent = (data.value / maxBarValue) * 100
+                const heightPercent = (data.value / maxBarValue) * 100;
                 return (
                   <div
                     key={data.day}
@@ -263,7 +263,7 @@ export const AnalyticsDemo: React.FC = () => {
                     </div>
                     <span className="text-xs text-gray-500">{data.day}</span>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -368,5 +368,5 @@ export const AnalyticsDemo: React.FC = () => {
         </div>
       </div>
     </Section>
-  )
-}
+  );
+};

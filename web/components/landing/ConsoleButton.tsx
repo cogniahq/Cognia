@@ -1,7 +1,6 @@
 import React from "react";
 
-interface ConsoleButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ConsoleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   variant?: "console_key" | "outlined";
 }

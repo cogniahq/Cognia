@@ -44,8 +44,7 @@ export default function DpaPage() {
             control, monitoring, incident response.
           </li>
           <li>
-            Subprocessor flow-down obligations and our notification
-            commitments.
+            Subprocessor flow-down obligations and our notification commitments.
           </li>
           <li>
             International transfer mechanisms (SCCs, UK IDTA, Swiss addendum).
@@ -84,8 +83,8 @@ export default function DpaPage() {
         </h2>
         <p>
           Enterprise customers with specific legal or regulatory requirements
-          (HIPAA BAA, sector-specific addenda, jurisdiction riders) can
-          request a custom DPA. Contact{" "}
+          (HIPAA BAA, sector-specific addenda, jurisdiction riders) can request
+          a custom DPA. Contact{" "}
           <a
             href="mailto:legal@cogniahq.tech"
             className="text-blue-600 underline"

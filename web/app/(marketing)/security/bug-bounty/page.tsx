@@ -85,9 +85,7 @@ export default function BugBountyPage() {
             build, or pre-existing local access
           </li>
           <li>Self-XSS that requires victim cooperation to exploit</li>
-          <li>
-            Missing best-practice headers without a demonstrable impact
-          </li>
+          <li>Missing best-practice headers without a demonstrable impact</li>
         </ul>
       </section>
 
@@ -139,11 +137,10 @@ export default function BugBountyPage() {
           Disclosure window
         </h2>
         <p>
-          We aim to remediate confirmed reports within 90 days. We ask that
-          you withhold public disclosure until we have shipped a fix or the
-          90-day window has elapsed, whichever comes first. If you need a
-          longer or shorter window, tell us and we will negotiate in good
-          faith.
+          We aim to remediate confirmed reports within 90 days. We ask that you
+          withhold public disclosure until we have shipped a fix or the 90-day
+          window has elapsed, whichever comes first. If you need a longer or
+          shorter window, tell us and we will negotiate in good faith.
         </p>
       </section>
 
@@ -153,8 +150,8 @@ export default function BugBountyPage() {
         </h2>
         <p>
           Research conducted within the scope and rules of this program is
-          authorized; we will not pursue or support legal action against you
-          for that research. Please do not access more data than is needed to
+          authorized; we will not pursue or support legal action against you for
+          that research. Please do not access more data than is needed to
           demonstrate the vulnerability, and do not exfiltrate, destroy, or
           modify customer data.
         </p>

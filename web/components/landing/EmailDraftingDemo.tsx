@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react";
 
 const ORIGINAL_EMAIL = {
   from: "Maya Patel",
@@ -13,75 +13,75 @@ const ORIGINAL_EMAIL = {
 Quick heads-up on the Q4 onboarding plan. We're aiming for Nov 30 launch, but Finance tightened the budget.
 
 Can we keep the analytics module in scope or push it to early December?`,
-}
+};
 
 const EMAIL_DRAFT_BODY = `Hi Maya,
 
 Thanks for the update. I reviewed our Notion onboarding plan and your Oct 12 email to verify the numbers.
 
-We can keep the Nov 30 launch by moving the analytics module to Dec 7.`
+We can keep the Nov 30 launch by moving the analytics module to Dec 7.`;
 
 export const EmailDraftingDemo = () => {
-  const [isInView, setIsInView] = useState(false)
-  const [activeStep, setActiveStep] = useState(0)
-  const [showDraft, setShowDraft] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const [showDraft, setShowDraft] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isInView) {
-            setIsInView(true)
+            setIsInView(true);
           }
-        })
+        });
       },
-      { threshold: 0.2 }
-    )
+      { threshold: 0.2 },
+    );
 
-    const currentContainer = containerRef.current
+    const currentContainer = containerRef.current;
     if (currentContainer) {
-      observer.observe(currentContainer)
+      observer.observe(currentContainer);
     }
 
     return () => {
       if (currentContainer) {
-        observer.unobserve(currentContainer)
+        observer.unobserve(currentContainer);
       }
-    }
-  }, [isInView])
+    };
+  }, [isInView]);
 
   useEffect(() => {
-    if (!isInView) return
+    if (!isInView) return;
 
-    const timers: ReturnType<typeof setTimeout>[] = []
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
     // Step 1: Email detected
     timers.push(
       setTimeout(() => {
-        setActiveStep(1)
-      }, 500)
-    )
+        setActiveStep(1);
+      }, 500),
+    );
 
     // Step 2: Context gathered
     timers.push(
       setTimeout(() => {
-        setActiveStep(2)
-      }, 2000)
-    )
+        setActiveStep(2);
+      }, 2000),
+    );
 
     // Step 3: Draft generated
     timers.push(
       setTimeout(() => {
-        setActiveStep(3)
-        setShowDraft(true)
-      }, 3500)
-    )
+        setActiveStep(3);
+        setShowDraft(true);
+      }, 3500),
+    );
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer))
-    }
-  }, [isInView])
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [isInView]);
 
   const flowSteps = [
     {
@@ -99,23 +99,23 @@ export const EmailDraftingDemo = () => {
       label: "Draft generated",
       description: "Creates response grounded in email + memory context",
     },
-  ]
+  ];
 
-  const showPlaceholder = activeStep < 2
-  const showGenerating = activeStep >= 2 && !showDraft
-  const showReady = showDraft
+  const showPlaceholder = activeStep < 2;
+  const showGenerating = activeStep >= 2 && !showDraft;
+  const showReady = showDraft;
 
   const statusLabel = showDraft
     ? "Draft ready"
     : activeStep >= 2
       ? "Gathering context"
-      : "Ready"
+      : "Ready";
 
   const statusClass = showDraft
     ? "border-emerald-200 text-emerald-700 bg-emerald-50"
     : activeStep >= 2
       ? "border-blue-200 text-blue-700 bg-blue-50"
-      : "border-gray-200 text-gray-500 bg-white"
+      : "border-gray-200 text-gray-500 bg-white";
 
   return (
     <div
@@ -131,7 +131,7 @@ export const EmailDraftingDemo = () => {
       {/* Flow Steps */}
       <div className="lg:col-span-1 space-y-4">
         {flowSteps.map((item, index) => {
-          const isActive = activeStep >= item.step
+          const isActive = activeStep >= item.step;
           return (
             <div key={item.step} className="flex gap-4">
               <div className="flex flex-col items-center">
@@ -169,7 +169,7 @@ export const EmailDraftingDemo = () => {
                 </p>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -286,5 +286,5 @@ export const EmailDraftingDemo = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

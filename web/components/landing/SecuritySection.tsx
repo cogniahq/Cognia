@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react";
 
-import { Section } from "./Section"
+import { Section } from "./Section";
 
 const securityFeatures = [
   {
@@ -65,57 +65,57 @@ const securityFeatures = [
       </svg>
     ),
   },
-]
+];
 
 export const SecuritySection: React.FC = () => {
-  const [isInView, setIsInView] = useState(false)
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isInView) {
-            setIsInView(true)
+            setIsInView(true);
           }
-        })
+        });
       },
-      { threshold: 0.2 }
-    )
+      { threshold: 0.2 },
+    );
 
-    const currentContainer = containerRef.current
+    const currentContainer = containerRef.current;
     if (currentContainer) {
-      observer.observe(currentContainer)
+      observer.observe(currentContainer);
     }
 
     return () => {
       if (currentContainer) {
-        observer.unobserve(currentContainer)
+        observer.unobserve(currentContainer);
       }
-    }
-  }, [isInView])
+    };
+  }, [isInView]);
 
   useEffect(() => {
-    if (!isInView) return
+    if (!isInView) return;
 
-    const timers: ReturnType<typeof setTimeout>[] = []
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
     securityFeatures.forEach((feature, index) => {
       timers.push(
         setTimeout(
           () => {
-            setCheckedItems((prev) => new Set([...prev, feature.id]))
+            setCheckedItems((prev) => new Set([...prev, feature.id]));
           },
-          800 + index * 400
-        )
-      )
-    })
+          800 + index * 400,
+        ),
+      );
+    });
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer))
-    }
-  }, [isInView])
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [isInView]);
 
   return (
     <Section className="bg-transparent py-12 sm:py-16 lg:py-20 xl:py-24">
@@ -156,7 +156,7 @@ export const SecuritySection: React.FC = () => {
         {/* Security Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {securityFeatures.map((feature, index) => {
-            const isChecked = checkedItems.has(feature.id)
+            const isChecked = checkedItems.has(feature.id);
             return (
               <div
                 key={feature.id}
@@ -203,7 +203,7 @@ export const SecuritySection: React.FC = () => {
                   {feature.description}
                 </p>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -272,5 +272,5 @@ export const SecuritySection: React.FC = () => {
         </div>
       </div>
     </Section>
-  )
-}
+  );
+};

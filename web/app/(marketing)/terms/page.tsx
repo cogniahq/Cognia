@@ -38,17 +38,16 @@ export default function TermsPage() {
       lastUpdated="2026-04-30"
     >
       <p>
-        By creating an account or otherwise using the Cognia service, you
-        agree to these terms. If you are accepting on behalf of an
-        organization, you represent that you have authority to bind that
-        organization.
+        By creating an account or otherwise using the Cognia service, you agree
+        to these terms. If you are accepting on behalf of an organization, you
+        represent that you have authority to bind that organization.
       </p>
 
       <Section title="The service">
         <p>
           Cognia is a personal and team memory layer for the web. We ingest,
-          summarize, search, and surface content you choose to capture.
-          Specific feature availability varies by plan; see the{" "}
+          summarize, search, and surface content you choose to capture. Specific
+          feature availability varies by plan; see the{" "}
           <a href="/pricing" className="text-blue-600 underline">
             pricing page
           </a>{" "}
@@ -85,8 +84,8 @@ export default function TermsPage() {
       <Section title="Intellectual property">
         <p>
           You retain all rights to the memories and content you upload. By
-          uploading content, you grant Cognia a limited license to process
-          that content on your behalf solely to operate the service.
+          uploading content, you grant Cognia a limited license to process that
+          content on your behalf solely to operate the service.
         </p>
         <p>
           Cognia retains all rights to its software, models, design, and
@@ -97,11 +96,11 @@ export default function TermsPage() {
 
       <Section title="Subscriptions and payment">
         <p>
-          Paid plans are billed through Stripe in advance on a monthly or
-          annual basis. Charges are non-refundable except as required by law
-          or as expressly stated in your order form. You may cancel a
-          subscription at any time via the billing portal; the cancellation
-          takes effect at the end of the current billing period.
+          Paid plans are billed through Stripe in advance on a monthly or annual
+          basis. Charges are non-refundable except as required by law or as
+          expressly stated in your order form. You may cancel a subscription at
+          any time via the billing portal; the cancellation takes effect at the
+          end of the current billing period.
         </p>
         <p>
           Taxes (where applicable) are added to invoices and are your
@@ -112,10 +111,10 @@ export default function TermsPage() {
       <Section title="Liability">
         <p>
           To the maximum extent permitted by law, Cognia&apos;s aggregate
-          liability arising out of or relating to the service is limited to
-          the amounts you paid us in the twelve months preceding the event
-          giving rise to the claim. We are not liable for indirect,
-          incidental, consequential, special, or punitive damages.
+          liability arising out of or relating to the service is limited to the
+          amounts you paid us in the twelve months preceding the event giving
+          rise to the claim. We are not liable for indirect, incidental,
+          consequential, special, or punitive damages.
         </p>
       </Section>
 
@@ -123,8 +122,8 @@ export default function TermsPage() {
         <p>
           You may terminate at any time by cancelling your subscription or
           deleting your account. We may suspend or terminate your account for
-          material breach of these terms (including non-payment) on notice and
-          a reasonable cure period where appropriate. Sections that by their
+          material breach of these terms (including non-payment) on notice and a
+          reasonable cure period where appropriate. Sections that by their
           nature should survive termination will survive.
         </p>
       </Section>
@@ -144,8 +143,7 @@ export default function TermsPage() {
       <Section title="Changes">
         <p>
           We may revise these terms. Material changes will be communicated by
-          email and in-product notice at least 30 days before they take
-          effect.
+          email and in-product notice at least 30 days before they take effect.
         </p>
       </Section>
 

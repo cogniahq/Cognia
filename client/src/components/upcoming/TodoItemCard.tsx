@@ -216,10 +216,10 @@ export function TodoItemCard({
                 <Calendar className="w-3 h-3" />
                 {formatDueAt(todo.due_at)}
               </span>
-              {todo.memory && (
+              {todo.memory?.url && (
                 <a
-                  href={todo.memory.url || `/memories?focus=${todo.memory.id}`}
-                  target={todo.memory.url ? "_blank" : undefined}
+                  href={todo.memory.url}
+                  target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 hover:text-gray-900"
                 >

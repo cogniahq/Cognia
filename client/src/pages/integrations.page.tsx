@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { IntegrationsEmptyState } from "@/components/empty-states/IntegrationsEmptyState"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { CalendarConnectCTA } from "@/components/upcoming/CalendarConnectCTA"
 
 // Integration logos as inline SVGs
@@ -260,24 +259,19 @@ export const Integrations: React.FC = () => {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-white">
-        <PageHeader />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex items-center justify-center">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-            <span className="ml-2 text-gray-500 font-mono text-xs">
-              Loading...
-            </span>
-          </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex items-center justify-center">
+          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          <span className="ml-2 text-gray-500 font-mono text-xs">
+            Loading...
+          </span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <PageHeader />
-
+    <>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -456,7 +450,7 @@ export const Integrations: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
 

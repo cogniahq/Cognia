@@ -2,8 +2,6 @@ import { API } from "@stoplight/elements"
 
 import "@stoplight/elements/styles.min.css"
 
-import { PageHeader } from "@/components/shared/PageHeader"
-
 /**
  * Renders the public Cognia API reference from the live OpenAPI spec at
  * /openapi.json (served by api/src/routes/openapi.route.ts).
@@ -20,11 +18,8 @@ import { PageHeader } from "@/components/shared/PageHeader"
  */
 export function Docs() {
   return (
-    <div className="min-h-screen bg-white">
-      <PageHeader />
-      <div className="docs-renderer h-[calc(100vh-3.5rem)]">
-        <API apiDescriptionUrl="/openapi.json" router="hash" layout="sidebar" />
-      </div>
+    <div className="docs-renderer h-[calc(100vh-3.5rem)]">
+      <API apiDescriptionUrl="/openapi.json" router="hash" layout="sidebar" />
     </div>
   )
 }

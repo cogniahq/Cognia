@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   BarChart3,
   BookOpen,
-  Brain,
   Calendar,
   RefreshCw,
   Search,
@@ -86,10 +85,6 @@ const CommandMenuComponent = () => {
           e.preventDefault()
           navigate("/profile")
           break
-        case "m":
-          e.preventDefault()
-          navigate("/memories")
-          break
         case "a":
           e.preventDefault()
           navigate("/analytics")
@@ -155,13 +150,6 @@ const CommandMenuComponent = () => {
               <Calendar className="mr-2 h-4 w-4" />
               <span>Home</span>
               <CommandShortcut>⌘H</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => handleSelect(() => navigate("/memories"))}
-            >
-              <Brain className="mr-2 h-4 w-4" />
-              <span>Memories</span>
-              <CommandShortcut>⌘M</CommandShortcut>
             </CommandItem>
             <CommandItem
               onSelect={() => handleSelect(() => navigate("/analytics"))}

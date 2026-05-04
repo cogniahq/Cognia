@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom"
 
 import { DeleteAccountDialog } from "@/components/gdpr/DeleteAccountDialog"
 import { TwoFactorSettings } from "@/components/settings/TwoFactorSettings"
-import { PageHeader } from "@/components/shared/PageHeader"
 
 import { EmptyState, ErrorMessage } from "../components/ui/loading-spinner"
 
@@ -106,7 +105,7 @@ export const Profile: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="text-sm font-mono text-gray-600">
           Loading profile...
         </div>
@@ -115,9 +114,7 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PageHeader />
-
+    <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <div>
@@ -215,8 +212,8 @@ export const Profile: React.FC = () => {
               title="No profile available"
               description="Process some content to generate your profile"
               action={{
-                label: "Go to Memories",
-                onClick: () => navigate("/memories"),
+                label: "Go to Workspace",
+                onClick: () => navigate("/organization"),
               }}
             />
           )}
@@ -1142,6 +1139,6 @@ export const Profile: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

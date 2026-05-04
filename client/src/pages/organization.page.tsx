@@ -18,7 +18,6 @@ import { DocumentList } from "@/components/organization/DocumentList"
 import { DocumentUpload } from "@/components/organization/DocumentUpload"
 import { OrganizationSearch } from "@/components/organization/OrganizationSearch"
 import { SetupChecklist } from "@/components/organization/setup"
-import { PageHeader } from "@/components/shared/PageHeader"
 import {
   fadeUpVariants,
   staggerContainerVariants,
@@ -122,7 +121,7 @@ export function Organization() {
   // Loading state
   if (isLoading && organizations.length === 0) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <motion.div
           className="flex flex-col items-center gap-3"
           initial={{ opacity: 0, y: 10 }}
@@ -141,9 +140,7 @@ export function Organization() {
   // Empty state — no organizations
   if (!currentOrganization && organizations.length === 0) {
     return (
-      <div className="min-h-screen bg-white">
-        <PageHeader />
-
+      <>
         <motion.div
           className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20"
           initial="initial"
@@ -227,16 +224,14 @@ export function Organization() {
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
         />
-      </div>
+      </>
     )
   }
 
   // Organization selector — orgs exist but none selected
   if (!currentOrganization) {
     return (
-      <div className="min-h-screen bg-white">
-        <PageHeader />
-
+      <>
         <motion.div
           className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-16"
           initial="initial"
@@ -298,7 +293,7 @@ export function Organization() {
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
         />
-      </div>
+      </>
     )
   }
 
@@ -307,226 +302,222 @@ export function Organization() {
 
   // Main organization view
   return (
-    <div className="min-h-screen bg-white">
-      <PageHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <motion.div
-          className="space-y-8"
-          initial="initial"
-          animate="animate"
-          variants={staggerContainerVariants}
-        >
-          {/* Header */}
-          <motion.div variants={fadeUpVariants}>
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-light font-editorial text-black">
-                  {currentOrganization.name}
-                </h1>
-                {currentOrganization.description && (
-                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                    {currentOrganization.description}
-                  </p>
-                )}
-              </div>
-              <motion.div
-                className="flex items-center gap-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
-                  <span className="font-mono">{documents.length}</span>
-                  <span>docs</span>
-                </div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
-                  <span className="font-mono">{members.length}</span>
-                  <span>members</span>
-                </div>
-              </motion.div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <motion.div
+        className="space-y-8"
+        initial="initial"
+        animate="animate"
+        variants={staggerContainerVariants}
+      >
+        {/* Header */}
+        <motion.div variants={fadeUpVariants}>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-light font-editorial text-black">
+                {currentOrganization.name}
+              </h1>
+              {currentOrganization.description && (
+                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                  {currentOrganization.description}
+                </p>
+              )}
             </div>
-          </motion.div>
-
-          {/* Setup Checklist */}
-          {isAdmin && (
-            <SetupChecklist
-              organization={currentOrganization}
-              onRefresh={() => selectOrganization(currentOrganization.slug)}
-            />
-          )}
-
-          {/* Tabs */}
-          <LayoutGroup id="organization-workspace-tabs">
             <motion.div
-              className="flex gap-1 border-b border-gray-200"
-              variants={fadeUpVariants}
+              className="flex items-center gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
             >
-              {[
-                { id: "search" as const, label: "Search" },
-                { id: "mesh" as const, label: "Mesh" },
-                { id: "documents" as const, label: "Documents" },
-                ...(isAdmin
-                  ? [{ id: "settings" as const, label: "Settings" }]
-                  : []),
-              ].map((tab) => {
-                const isActive = activeTab === tab.id
-
-                return (
-                  <motion.button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`relative overflow-hidden px-4 py-2.5 text-xs font-mono uppercase tracking-wide transition-colors ${
-                      isActive
-                        ? "text-white"
-                        : "text-gray-500 hover:text-gray-900"
-                    }`}
-                    whileHover={{ y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {isActive && (
-                      <motion.span
-                        layoutId="organization-workspace-active-tab"
-                        className="absolute inset-0 bg-gray-900"
-                        transition={{
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab.label}</span>
-                  </motion.button>
-                )
-              })}
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+                <span className="font-mono">{documents.length}</span>
+                <span>docs</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+                <span className="font-mono">{members.length}</span>
+                <span>members</span>
+              </div>
             </motion.div>
-          </LayoutGroup>
+          </div>
+        </motion.div>
 
-          {/* Tab content */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              className={`bg-white border border-gray-200 rounded-xl shadow-sm min-h-[500px] ${activeTab === "mesh" ? "p-0 overflow-hidden" : "p-6 sm:p-8"}`}
-              key={activeTab}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              variants={tabContentVariants}
-            >
-              {activeTab === "search" && <OrganizationSearch />}
+        {/* Setup Checklist */}
+        {isAdmin && (
+          <SetupChecklist
+            organization={currentOrganization}
+            onRefresh={() => selectOrganization(currentOrganization.slug)}
+          />
+        )}
 
-              {activeTab === "mesh" && (
-                <div
-                  className="relative"
-                  style={{
-                    height: "calc(100vh - 300px)",
-                    minHeight: "500px",
-                  }}
+        {/* Tabs */}
+        <LayoutGroup id="organization-workspace-tabs">
+          <motion.div
+            className="flex gap-1 border-b border-gray-200"
+            variants={fadeUpVariants}
+          >
+            {[
+              { id: "search" as const, label: "Search" },
+              { id: "mesh" as const, label: "Mesh" },
+              { id: "documents" as const, label: "Documents" },
+              ...(isAdmin
+                ? [{ id: "settings" as const, label: "Settings" }]
+                : []),
+            ].map((tab) => {
+              const isActive = activeTab === tab.id
+
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative overflow-hidden px-4 py-2.5 text-xs font-mono uppercase tracking-wide transition-colors ${
+                    isActive
+                      ? "text-white"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <div
-                    className="w-full h-full"
-                    style={{
-                      backgroundImage: `
+                  {isActive && (
+                    <motion.span
+                      layoutId="organization-workspace-active-tab"
+                      className="absolute inset-0 bg-gray-900"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        </LayoutGroup>
+
+        {/* Tab content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            className={`bg-white border border-gray-200 rounded-xl shadow-sm min-h-[500px] ${activeTab === "mesh" ? "p-0 overflow-hidden" : "p-6 sm:p-8"}`}
+            key={activeTab}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={tabContentVariants}
+          >
+            {activeTab === "search" && <OrganizationSearch />}
+
+            {activeTab === "mesh" && (
+              <div
+                className="relative"
+                style={{
+                  height: "calc(100vh - 300px)",
+                  minHeight: "500px",
+                }}
+              >
+                <div
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: `
                         linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
                         linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)
                       `,
-                      backgroundSize: "24px 24px",
-                    }}
-                  >
-                    <MemoryMesh3D
-                      className="w-full h-full"
-                      onNodeClick={handleNodeClick}
-                      similarityThreshold={0.3}
-                      selectedMemoryId={clickedNodeId || undefined}
-                      highlightedMemoryIds={highlightedMemoryIds}
-                      memorySources={memorySources}
-                      memoryUrls={memoryUrls}
-                      externalMeshData={meshData}
-                      externalIsLoading={meshLoading}
-                      externalError={meshError}
-                    />
-                  </div>
-                  <motion.div
-                    className="pointer-events-none absolute left-5 top-5"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-1 text-[10px] tracking-[0.2em] uppercase text-gray-500">
-                      Knowledge
-                      <span className="w-1 h-1 rounded-full bg-gray-400" />
-                      Mesh
-                    </div>
-                  </motion.div>
-                  {meshData && meshData.nodes.length > 0 && (
-                    <motion.div
-                      className="absolute right-5 top-5 z-20 max-w-[200px]"
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4, duration: 0.3 }}
-                    >
-                      <div className="bg-white/90 backdrop-blur border border-gray-200 rounded-xl p-4 shadow-sm">
-                        <div className="text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3">
-                          Statistics
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs text-gray-700">
-                            <span>Nodes</span>
-                            <span className="font-mono font-medium text-gray-900">
-                              {meshData.nodes.length}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-gray-700">
-                            <span>Connections</span>
-                            <span className="font-mono font-medium text-gray-900">
-                              {meshData.edges.length}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "documents" && (
-                <motion.div
-                  className="space-y-10"
-                  initial="initial"
-                  animate="animate"
-                  variants={staggerContainerVariants}
+                    backgroundSize: "24px 24px",
+                  }}
                 >
-                  {canEdit && (
-                    <motion.div variants={fadeUpVariants}>
-                      <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-4">
-                        Upload
-                        <span className="w-1 h-1 rounded-full bg-gray-400" />
-                        Documents
-                      </div>
-                      <DocumentUpload />
-                    </motion.div>
-                  )}
-                  <motion.div variants={fadeUpVariants}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">
-                        Library
-                        <span className="w-1 h-1 rounded-full bg-gray-400" />
-                        Documents
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {documents.length} file
-                        {documents.length !== 1 && "s"}
-                      </span>
-                    </div>
-                    <DocumentList />
-                  </motion.div>
+                  <MemoryMesh3D
+                    className="w-full h-full"
+                    onNodeClick={handleNodeClick}
+                    similarityThreshold={0.3}
+                    selectedMemoryId={clickedNodeId || undefined}
+                    highlightedMemoryIds={highlightedMemoryIds}
+                    memorySources={memorySources}
+                    memoryUrls={memoryUrls}
+                    externalMeshData={meshData}
+                    externalIsLoading={meshLoading}
+                    externalError={meshError}
+                  />
+                </div>
+                <motion.div
+                  className="pointer-events-none absolute left-5 top-5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-1 text-[10px] tracking-[0.2em] uppercase text-gray-500">
+                    Knowledge
+                    <span className="w-1 h-1 rounded-full bg-gray-400" />
+                    Mesh
+                  </div>
                 </motion.div>
-              )}
+                {meshData && meshData.nodes.length > 0 && (
+                  <motion.div
+                    className="absolute right-5 top-5 z-20 max-w-[200px]"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4, duration: 0.3 }}
+                  >
+                    <div className="bg-white/90 backdrop-blur border border-gray-200 rounded-xl p-4 shadow-sm">
+                      <div className="text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-3">
+                        Statistics
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs text-gray-700">
+                          <span>Nodes</span>
+                          <span className="font-mono font-medium text-gray-900">
+                            {meshData.nodes.length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-700">
+                          <span>Connections</span>
+                          <span className="font-mono font-medium text-gray-900">
+                            {meshData.edges.length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
 
-              {activeTab === "settings" && isAdmin && <OrganizationSettings />}
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
-      </div>
+            {activeTab === "documents" && (
+              <motion.div
+                className="space-y-10"
+                initial="initial"
+                animate="animate"
+                variants={staggerContainerVariants}
+              >
+                {canEdit && (
+                  <motion.div variants={fadeUpVariants}>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-4">
+                      Upload
+                      <span className="w-1 h-1 rounded-full bg-gray-400" />
+                      Documents
+                    </div>
+                    <DocumentUpload />
+                  </motion.div>
+                )}
+                <motion.div variants={fadeUpVariants}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.2em] text-gray-500">
+                      Library
+                      <span className="w-1 h-1 rounded-full bg-gray-400" />
+                      Documents
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {documents.length} file
+                      {documents.length !== 1 && "s"}
+                    </span>
+                  </div>
+                  <DocumentList />
+                </motion.div>
+              </motion.div>
+            )}
+
+            {activeTab === "settings" && isAdmin && <OrganizationSettings />}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
     </div>
   )
 }

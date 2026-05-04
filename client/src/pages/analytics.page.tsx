@@ -6,8 +6,6 @@ import {
 import { requireAuthToken } from "@/utils/auth"
 import { useNavigate } from "react-router-dom"
 
-import { PageHeader } from "@/components/shared/PageHeader"
-
 export const Analytics: React.FC = () => {
   const navigate = useNavigate()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -51,7 +49,7 @@ export const Analytics: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="text-sm font-mono text-gray-600">
           Loading analytics...
         </div>
@@ -61,7 +59,7 @@ export const Analytics: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="text-sm font-mono text-red-600">Error: {error}</div>
       </div>
     )
@@ -87,13 +85,10 @@ export const Analytics: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-white"
       style={{
         backgroundImage: "linear-gradient(135deg, #f9fafb, #ffffff, #f3f4f6)",
       }}
     >
-      <PageHeader />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <div>

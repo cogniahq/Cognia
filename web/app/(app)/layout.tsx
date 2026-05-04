@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation"
-import { getSession } from "@/lib/auth/session"
-import { SessionProvider } from "@/lib/auth/client"
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
+import { SessionProvider } from "@/lib/auth/client";
 
 /**
  * Authed shell. The middleware has already verified that a cognia_session
@@ -13,14 +13,14 @@ import { SessionProvider } from "@/lib/auth/client"
 export default async function AppLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await getSession()
+  const session = await getSession();
   if (!session) {
-    redirect("/login")
+    redirect("/login");
   }
   if (session.organizations.length === 0) {
-    redirect("/onboarding/workspace")
+    redirect("/onboarding/workspace");
   }
 
   return (
@@ -30,5 +30,5 @@ export default async function AppLayout({
         {children}
       </div>
     </SessionProvider>
-  )
+  );
 }

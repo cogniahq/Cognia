@@ -1,6 +1,6 @@
-import type { MetadataRoute } from "next"
+import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://cogniahq.tech"
+const SITE_URL = "https://cogniahq.tech";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -28,5 +28,5 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
-  }
+  };
 }

@@ -7,16 +7,16 @@
  */
 
 function required(name: string): string {
-  const value = process.env[name]
+  const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required env var: ${name}`)
+    throw new Error(`Missing required env var: ${name}`);
   }
-  return value
+  return value;
 }
 
 function optional(name: string): string | undefined {
-  const value = process.env[name]
-  return value && value.length > 0 ? value : undefined
+  const value = process.env[name];
+  return value && value.length > 0 ? value : undefined;
 }
 
 export const env = {
@@ -33,4 +33,4 @@ export const env = {
     appId: optional("NEXT_PUBLIC_FIREBASE_APP_ID"),
     measurementId: optional("NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID"),
   },
-}
+};

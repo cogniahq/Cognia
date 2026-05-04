@@ -1,9 +1,9 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Cognia",
   alternates: { canonical: "/" },
-}
+};
 
 /**
  * Phase 0 placeholder. Phase 1 replaces this with the real landing page
@@ -19,5 +19,5 @@ export default function HomePage() {
         </p>
       </div>
     </main>
-  )
+  );
 }

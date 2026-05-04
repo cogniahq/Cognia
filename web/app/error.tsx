@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import Link from "next/link"
+import { useEffect } from "react";
+import Link from "next/link";
 
 export default function GlobalError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
     // Surface to whatever logging we wire up in Phase 5.
-    console.error("[web]", error)
-  }, [error])
+    console.error("[web]", error);
+  }, [error]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-white p-8">
@@ -35,5 +35,5 @@ export default function GlobalError({
         </div>
       </div>
     </main>
-  )
+  );
 }

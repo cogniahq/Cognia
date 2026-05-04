@@ -1,6 +1,6 @@
-import type { MetadataRoute } from "next"
+import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://cogniahq.tech"
+const SITE_URL = "https://cogniahq.tech";
 
 /**
  * Public, indexable routes only. Auth + app routes live behind the auth
@@ -8,7 +8,7 @@ const SITE_URL = "https://cogniahq.tech"
  * the real marketing routes once they're ported.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date()
+  const lastModified = new Date();
   return [
     {
       url: SITE_URL,
@@ -16,5 +16,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
-  ]
+  ];
 }

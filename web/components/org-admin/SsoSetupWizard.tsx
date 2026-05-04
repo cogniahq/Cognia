@@ -407,8 +407,8 @@ export function SsoSetupWizard({
       {step === 4 && (
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Map IdP groups to Cognia roles. Users in matching groups receive
-            the mapped role on JIT provisioning.
+            Map IdP groups to Cognia roles. Users in matching groups receive the
+            mapped role on JIT provisioning.
           </p>
           <div className="border border-gray-200">
             <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-gray-50 text-[10px] font-mono uppercase tracking-wide text-gray-500">

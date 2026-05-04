@@ -74,10 +74,7 @@ export const identityService = {
     payload: Record<string, unknown>,
   ): Promise<{ success: boolean }> => {
     try {
-      const res = await apiClient.patch(
-        `/organizations/${slug}/sso`,
-        payload,
-      );
+      const res = await apiClient.patch(`/organizations/${slug}/sso`, payload);
       if (res.data?.success === false) {
         throw new Error(res.data?.message || "Failed to save SSO config");
       }

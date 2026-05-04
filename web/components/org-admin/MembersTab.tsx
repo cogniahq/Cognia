@@ -35,11 +35,16 @@ function formatDate(iso?: string | null): string {
   }
 }
 
-export default function MembersTab({ slug, canManageMembers }: MembersTabProps) {
+export default function MembersTab({
+  slug,
+  canManageMembers,
+}: MembersTabProps) {
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [offboardTarget, setOffboardTarget] = useState<AdminMember | null>(null);
+  const [offboardTarget, setOffboardTarget] = useState<AdminMember | null>(
+    null,
+  );
   const [hardDeleteDefault, setHardDeleteDefault] = useState(false);
 
   const load = useCallback(async () => {

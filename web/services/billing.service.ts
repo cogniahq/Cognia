@@ -106,7 +106,11 @@ function rethrowAxios(err: unknown): never {
     const ax = err as AxiosError<QuotaExceededBody>;
     const status = ax.response?.status;
     const body = ax.response?.data;
-    if (status === 402 && body?.code === "QUOTA_EXCEEDED" && body.quotaExceeded) {
+    if (
+      status === 402 &&
+      body?.code === "QUOTA_EXCEEDED" &&
+      body.quotaExceeded
+    ) {
       dispatchQuotaExceeded({
         quotaExceeded: body.quotaExceeded,
         current: body.current ?? 0,
@@ -165,9 +169,7 @@ export const billingService = {
     unwrap<{ success: boolean }>(apiClient.post(`/billing/${slug}/pause`, {})),
 
   resume: (slug: string) =>
-    unwrap<{ success: boolean }>(
-      apiClient.post(`/billing/${slug}/resume`, {}),
-    ),
+    unwrap<{ success: boolean }>(apiClient.post(`/billing/${slug}/resume`, {})),
 };
 
 // Helper exposed for tests / advanced consumers that want to manually

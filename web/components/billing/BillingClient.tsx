@@ -177,8 +177,7 @@ export function BillingClient() {
     // Razorpay has no hosted billing portal — when payments fail the user
     // re-authorises by going through Checkout again with the same plan.
     if (!slug) return;
-    const planId = (data?.subscription as { plan_id?: string } | null)
-      ?.plan_id;
+    const planId = (data?.subscription as { plan_id?: string } | null)?.plan_id;
     const tier =
       planId === "pro" || planId === "enterprise" ? (planId as PlanId) : "pro";
     await onUpgrade(tier);

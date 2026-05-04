@@ -45,6 +45,22 @@ const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
 const SYNC_PAGE_LIMIT = 50
 
+class CogniaSlackPlugin extends SlackPlugin {
+  readonly scopes = [
+    'channels:history',
+    'channels:read',
+    'groups:history',
+    'groups:read',
+    'im:history',
+    'im:read',
+    'im:write',
+    'app_mentions:read',
+    'chat:write',
+    'users:read',
+    'users:read.email',
+  ]
+}
+
 /**
  * Context for integration operations
  */
@@ -135,7 +151,7 @@ export class IntegrationService {
 
     // Slack
     if (process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET) {
-      PluginRegistry.register(SlackPlugin, {
+      PluginRegistry.register(CogniaSlackPlugin, {
         clientId: process.env.SLACK_CLIENT_ID,
         clientSecret: process.env.SLACK_CLIENT_SECRET,
         redirectUri: process.env.SLACK_REDIRECT_URI || '',
@@ -253,7 +269,7 @@ export class IntegrationService {
     const encryptedRefreshToken = tokens.refreshToken
       ? this.encryptToken(tokens.refreshToken)
       : null
-    const configValue: Prisma.InputJsonValue = options.config ?? {}
+    const configValue = this.buildIntegrationConfig(options.config, tokens.raw)
 
     // Create or update integration
     const integration = await prisma.userIntegration.upsert({
@@ -357,7 +373,7 @@ export class IntegrationService {
     const encryptedRefreshToken = tokens.refreshToken
       ? this.encryptToken(tokens.refreshToken)
       : null
-    const configValue: Prisma.InputJsonValue = options.config ?? {}
+    const configValue = this.buildIntegrationConfig(options.config, tokens.raw)
 
     // Create or update integration
     const integration = await prisma.organizationIntegration.upsert({
@@ -1004,7 +1020,29 @@ export class IntegrationService {
     return this.queueManager.getAllQueueMetrics()
   }
 
+  getDecryptedTokenSet(integration: {
+    access_token: string
+    refresh_token: string | null
+    token_expires_at: Date | null
+  }): TokenSet {
+    return this.getDecryptedTokens(integration)
+  }
+
   // ============ Private helpers ============
+
+  private buildIntegrationConfig(
+    config: Prisma.InputJsonValue | undefined,
+    raw?: Record<string, unknown>
+  ): Prisma.InputJsonValue {
+    const base =
+      config && typeof config === 'object' && !Array.isArray(config)
+        ? (config as Record<string, unknown>)
+        : {}
+    return {
+      ...base,
+      ...(raw ?? {}),
+    } as Prisma.InputJsonValue
+  }
 
   private encryptToken(token: string): string {
     return tokenEncryptor.encrypt(token)

@@ -16,7 +16,11 @@ export const metadata: Metadata = {
 export default async function SignupPage() {
   const session = await getSession();
   if (session) {
-    redirect(session.organizations.length === 0 ? "/onboarding/workspace" : "/organization");
+    redirect(
+      session.organizations.length === 0
+        ? "/onboarding/workspace"
+        : "/organization",
+    );
   }
   return <LoginForm mode="signup" />;
 }

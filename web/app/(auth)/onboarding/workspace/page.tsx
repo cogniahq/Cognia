@@ -58,8 +58,8 @@ export default async function OnboardingWorkspacePage() {
               </div>
             </div>
             <p className="text-sm text-gray-600 max-w-md mx-auto">
-              Cognia organizes memories into shared workspaces. Create your
-              own, or join an existing one with an invite code.
+              Cognia organizes memories into shared workspaces. Create your own,
+              or join an existing one with an invite code.
             </p>
           </div>
 

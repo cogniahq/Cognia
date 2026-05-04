@@ -39,7 +39,11 @@ async function readErrorMessage(res: Response, fallback: string) {
   try {
     const body = (await res.json()) as ApiErrorBody;
     return (
-      body.message ?? body.error ?? body.detail ?? body.data?.message ?? fallback
+      body.message ??
+      body.error ??
+      body.detail ??
+      body.data?.message ??
+      fallback
     );
   } catch {
     return fallback;
@@ -81,7 +85,8 @@ export async function loginAction(
 ): Promise<ActionError | null> {
   const email = (formData.get("email") ?? "").toString().trim();
   const password = (formData.get("password") ?? "").toString();
-  const totpCode = (formData.get("totpCode") ?? "").toString().trim() || undefined;
+  const totpCode =
+    (formData.get("totpCode") ?? "").toString().trim() || undefined;
   const backupCode =
     (formData.get("backupCode") ?? "").toString().trim() || undefined;
 
@@ -158,10 +163,14 @@ export async function registerAction(
 
   const forwarded = await forwardSessionCookie(res.headers.get("set-cookie"));
   if (!forwarded) {
-    return { error: "Registration succeeded but no session cookie was returned" };
+    return {
+      error: "Registration succeeded but no session cookie was returned",
+    };
   }
 
-  redirect(body.requiresOnboarding === false ? POST_LOGIN_PATH : ONBOARDING_PATH);
+  redirect(
+    body.requiresOnboarding === false ? POST_LOGIN_PATH : ONBOARDING_PATH,
+  );
 }
 
 // ===========================================================================
@@ -224,7 +233,10 @@ export async function createWorkspaceAction(
 
   if (!res.ok) {
     return {
-      error: await readErrorMessage(res, "Failed to create workspace. Try again."),
+      error: await readErrorMessage(
+        res,
+        "Failed to create workspace. Try again.",
+      ),
     };
   }
 

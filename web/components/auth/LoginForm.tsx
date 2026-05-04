@@ -106,10 +106,10 @@ function getPasswordStrength(password: string): {
 export function LoginForm({ mode }: LoginFormProps) {
   const isRegister = mode === "signup";
   const action = isRegister ? registerAction : loginAction;
-  const [state, formAction, isPending] = useActionState<ActionError | null, FormData>(
-    action,
-    null,
-  );
+  const [state, formAction, isPending] = useActionState<
+    ActionError | null,
+    FormData
+  >(action, null);
 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

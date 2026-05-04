@@ -32,10 +32,7 @@ export default async function MagicAuthPage({
   const result = await magicLinkAction(token);
   if (result?.error) {
     return (
-      <AuthErrorView
-        title="Sign-in link expired"
-        message={result.error}
-      />
+      <AuthErrorView title="Sign-in link expired" message={result.error} />
     );
   }
 

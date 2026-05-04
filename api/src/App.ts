@@ -5,6 +5,14 @@ import { validateEnv } from './utils/core/env-validation.util'
 // any other module-level imports execute env-dependent side effects.
 validateEnv()
 
+// Memory.timestamp is a Postgres BigInt and surfaces as a JS BigInt in
+// Prisma results. Express `res.json` -> JSON.stringify throws TypeError on
+// BigInt, which the unhandled-rejection handler then escalates to a process
+// exit. Stringifying as decimal is the standard, lossless workaround.
+;(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
+  return this.toString()
+}
+
 import express, { Request, Response, NextFunction } from 'express'
 
 import morgan from 'morgan'

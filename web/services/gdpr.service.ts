@@ -49,4 +49,13 @@ export const gdprService = {
       method: "POST",
     }),
   getStatus: () => fetchJSON<GdprStatusResponse>(`/api/gdpr/delete-status`),
+  recordConsent: (consent: {
+    cookies: boolean
+    analytics: boolean
+    marketing: boolean
+  }) =>
+    fetchJSON<{ success: boolean }>(`/api/gdpr/consent`, {
+      method: "POST",
+      body: JSON.stringify(consent),
+    }),
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { IBM_Plex_Mono, Inter } from "next/font/google"
+import { CookieConsent } from "@/components/legal/CookieConsent"
 import "./globals.css"
 
 const SITE_URL = "https://cogniahq.tech"
@@ -107,6 +108,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <CookieConsent />
       </body>
     </html>
   )

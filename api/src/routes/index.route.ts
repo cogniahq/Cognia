@@ -33,6 +33,7 @@ import gdprRouter from './gdpr.route'
 import extensionRouter from './extension.route'
 import todosRouter from './todos.route'
 import calendarRouter from './calendar.route'
+import slackRouter from './slack.route'
 import { LocalStorageController } from '../controller/storage/local-storage.controller'
 
 export const routes = (app: Express) => {
@@ -65,6 +66,8 @@ export const routes = (app: Express) => {
   app.use('/api/integrations', integrationsRouter)
   // Webhook routes (external services call these)
   app.use('/api/webhooks', webhooksRouter)
+  // Slack bot Events API + interactive approvals
+  app.use('/api/slack', slackRouter)
   // SCIM 2.0 (mounted at bare /scim, not /api/, per Azure AD/Okta conventions)
   app.use('/scim', scimRouter)
   // Onboarding (sample-workspace dismissal, tour completion, state)

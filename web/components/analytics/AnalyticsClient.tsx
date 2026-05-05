@@ -1,0 +1,565 @@
+"use client"
+
+/**
+ * Analytics dashboard. Verbatim port of client/src/pages/analytics.page.tsx.
+ * The Vite client wrapped this in a useNavigate/auth-effect dance — that
+ * goes away here because the (app) layout handles auth gating, and
+ * everything below that is a self-contained data fetch + chart layout.
+ */
+
+import { useEffect, useState } from "react"
+
+import { getAnalytics } from "@/services/analytics.service"
+import type { AnalyticsData } from "@/types/analytics"
+
+export function AnalyticsClient() {
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchAnalytics = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const data = await getAnalytics()
+        if (!cancelled) setAnalytics(data)
+      } catch (err) {
+        if (!cancelled) {
+          const error = err as { message?: string }
+          setError(error.message || "Failed to load analytics")
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    fetchAnalytics()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-sm font-mono text-gray-600">
+          Loading analytics...
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-sm font-mono text-red-600">Error: {error}</div>
+      </div>
+    )
+  }
+
+  if (!analytics) return null
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M"
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K"
+    return num.toLocaleString()
+  }
+
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+  }
+
+  const sortedDates = Object.keys(analytics.tokenUsage.byDate).sort()
+  const sortedWeeks = Object.keys(analytics.tokenTrends.byWeek).sort()
+
+  return (
+    <div
+      style={{
+        backgroundImage: "linear-gradient(135deg, #f9fafb, #ffffff, #f3f4f6)",
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Analytics</h1>
+            <p className="text-xs text-gray-600">
+              Comprehensive statistics about your memories and usage
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">
+                Memories
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatNumber(analytics.overview.totalMemories)}
+              </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">
+                Tokens
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatNumber(analytics.overview.totalTokens)}
+              </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">
+                Searches
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatNumber(analytics.overview.totalSearches)}
+              </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">
+                Memories/Day
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {analytics.growthAnalytics.memoriesPerDay.toFixed(1)}
+              </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">
+                Tokens/Day
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {formatNumber(analytics.growthAnalytics.tokensPerDay)}
+              </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <div className="text-xs text-gray-600 uppercase tracking-wider mb-1">
+                Days Active
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {analytics.growthAnalytics.daysSinceFirst}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Growth Metrics
+              </h2>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Last 7 days</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.growthAnalytics.recentMemories7Days}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Last 30 days</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.growthAnalytics.recentMemories30Days}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Days since last</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.growthAnalytics.daysSinceLast}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Activity Patterns
+              </h2>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Peak hour</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.activityAnalytics.peakHour !== null
+                      ? `${analytics.activityAnalytics.peakHour}:00`
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Peak day</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.activityAnalytics.peakDayOfWeek || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Unique domains</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.diversityAnalytics.uniqueDomains}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Diversity
+              </h2>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Domains</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.diversityAnalytics.uniqueDomains}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Categories</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.diversityAnalytics.uniqueCategories}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Topics</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.diversityAnalytics.uniqueTopics}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Content Length
+              </h2>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Average</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.contentDistribution.average)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Median</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.contentDistribution.median)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Min / Max</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.contentDistribution.min)} /{" "}
+                    {formatNumber(analytics.contentDistribution.max)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Token Usage
+              </h2>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Input tokens</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.overview.totalInputTokens)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Output tokens</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.overview.totalOutputTokens)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">I/O ratio</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.tokenTrends.inputOutputRatio.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Avg per memory</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.tokenTrends.averagePerMemory)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Relationships
+              </h2>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total relations</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(
+                      analytics.relationshipAnalytics.totalRelations
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Avg per memory</span>
+                  <span className="font-semibold text-gray-900">
+                    {analytics.relationshipAnalytics.averageConnectionsPerMemory.toFixed(
+                      2
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Snapshots</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatNumber(analytics.snapshotAnalytics.totalSnapshots)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Token Usage by Operation
+              </h2>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {Object.entries(analytics.tokenUsage.byOperation).length > 0 ? (
+                  Object.entries(analytics.tokenUsage.byOperation).map(
+                    ([op, stats]) => (
+                      <div
+                        key={op}
+                        className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 capitalize">
+                            {op.replace(/_/g, " ")}
+                          </div>
+                          <div className="text-gray-600">{stats.count} ops</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-gray-900">
+                            {formatNumber(stats.total)}
+                          </div>
+                          <div className="text-gray-500">tokens</div>
+                        </div>
+                      </div>
+                    )
+                  )
+                ) : (
+                  <div className="text-xs text-gray-500 text-center py-4">
+                    No token usage data
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Top Domains
+              </h2>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {analytics.domainAnalytics.topDomains.length > 0 ? (
+                  analytics.domainAnalytics.topDomains
+                    .slice(0, 10)
+                    .map(({ domain, count }) => (
+                      <div
+                        key={domain}
+                        className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="font-medium text-gray-900 truncate flex-1">
+                          {domain}
+                        </div>
+                        <div className="font-semibold text-gray-600 ml-4">
+                          {count}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-xs text-gray-500 text-center py-4">
+                    No domain data
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Token Usage Over Time
+              </h2>
+              {sortedDates.length > 0 ? (
+                <div className="space-y-1 max-h-64 overflow-y-auto text-xs">
+                  {sortedDates.slice(-30).map((date) => {
+                    const usage = analytics.tokenUsage.byDate[date]
+                    return (
+                      <div
+                        key={date}
+                        className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0"
+                      >
+                        <span className="text-gray-600">
+                          {formatDate(date)}
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          {formatNumber(usage.total)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 text-center py-4">
+                  No token usage data
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Token Usage by Week
+              </h2>
+              {sortedWeeks.length > 0 ? (
+                <div className="space-y-1 max-h-64 overflow-y-auto text-xs">
+                  {sortedWeeks.slice(-12).map((week) => (
+                    <div
+                      key={week}
+                      className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0"
+                    >
+                      <span className="text-gray-600">{formatDate(week)}</span>
+                      <span className="font-semibold text-gray-900">
+                        {formatNumber(analytics.tokenTrends.byWeek[week])}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 text-center py-4">
+                  No weekly token data
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Top Categories
+              </h2>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {analytics.categoryTopicAnalytics.topCategories.length > 0 ? (
+                  analytics.categoryTopicAnalytics.topCategories
+                    .slice(0, 10)
+                    .map(({ category, count }) => (
+                      <div
+                        key={category}
+                        className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="font-medium text-gray-900 capitalize">
+                          {category}
+                        </div>
+                        <div className="font-semibold text-gray-600">
+                          {count}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-xs text-gray-500 text-center py-4">
+                    No category data
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Top Topics
+              </h2>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {analytics.categoryTopicAnalytics.topTopics.length > 0 ? (
+                  analytics.categoryTopicAnalytics.topTopics
+                    .slice(0, 10)
+                    .map(({ topic, count }) => (
+                      <div
+                        key={topic}
+                        className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="font-medium text-gray-900 capitalize">
+                          {topic}
+                        </div>
+                        <div className="font-semibold text-gray-600">
+                          {count}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-xs text-gray-500 text-center py-4">
+                    No topic data
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Memories by Source
+              </h2>
+              <div className="space-y-2">
+                {Object.entries(analytics.memoryStatistics.bySource).length >
+                0 ? (
+                  Object.entries(analytics.memoryStatistics.bySource).map(
+                    ([source, count]) => (
+                      <div
+                        key={source}
+                        className="flex items-center justify-between text-xs py-1 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="font-medium text-gray-900 capitalize">
+                          {source}
+                        </div>
+                        <div className="font-semibold text-gray-600">
+                          {count}
+                        </div>
+                      </div>
+                    )
+                  )
+                ) : (
+                  <div className="text-xs text-gray-500 text-center py-4">
+                    No source data
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">
+                Sentiment Distribution
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.entries(
+                  analytics.categoryTopicAnalytics.sentimentDistribution
+                ).length > 0 ? (
+                  Object.entries(
+                    analytics.categoryTopicAnalytics.sentimentDistribution
+                  ).map(([sentiment, count]) => (
+                    <div key={sentiment} className="text-center">
+                      <div className="text-xl font-bold text-gray-900">
+                        {count}
+                      </div>
+                      <div className="text-xs text-gray-600 capitalize">
+                        {sentiment}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-xs text-gray-500 text-center py-4">
+                    No sentiment data
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

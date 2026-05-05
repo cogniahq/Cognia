@@ -80,6 +80,8 @@ export type AuditEventType =
   | 'integration_disconnected'
   | 'integration_token_refreshed'
   | 'integration_sync_failed'
+  | 'slack_bot_invoked'
+  | 'slack_bot_tool_called'
   // Data
   | 'memory_shared'
   | 'memory_unshared'

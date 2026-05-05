@@ -1019,6 +1019,63 @@ model WebhookDelivery {
   @@map("webhook_deliveries")
 }
 
+model SlackBotRun {
+  id                String    @id @default(uuid()) @db.Uuid
+  organization_id   String    @db.Uuid
+  integration_id    String    @db.Uuid
+  slack_team_id     String
+  slack_channel_id  String
+  slack_thread_ts   String?
+  slack_event_ts    String
+  slack_event_id    String
+  slack_user_id     String?
+  actor_user_id     String?   @db.Uuid
+  status            String    @default("pending")
+  prompt            String    @db.Text
+  response          String?   @db.Text
+  error             String?   @db.Text
+  tool_trace        Json?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  completed_at      DateTime?
+
+  @@unique([slack_team_id, slack_event_id])
+  @@index([organization_id, created_at])
+  @@index([integration_id])
+  @@index([slack_team_id, slack_channel_id, slack_event_ts])
+  @@map("slack_bot_runs")
+}
+
+model SlackBotApproval {
+  id                       String    @id @default(uuid()) @db.Uuid
+  organization_id          String    @db.Uuid
+  run_id                   String    @db.Uuid
+  action_id                String    @unique
+  tool_name                String
+  tool_arguments           Json
+  slack_team_id            String
+  slack_channel_id         String
+  slack_user_id            String?
+  slack_message_ts         String?
+  slack_thread_ts          String?
+  requester_user_id        String?   @db.Uuid
+  status                   String    @default("pending")
+  expires_at               DateTime
+  decided_by_slack_user_id String?
+  decided_by_user_id       String?   @db.Uuid
+  decided_at               DateTime?
+  execution_result         Json?
+  error                    String?   @db.Text
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+
+  @@index([organization_id, created_at])
+  @@index([run_id])
+  @@index([status, expires_at])
+  @@index([slack_team_id, slack_channel_id])
+  @@map("slack_bot_approvals")
+}
+
 model MemoryTodo {
   id                String     @id @default(uuid()) @db.Uuid
   memory_id         String     @db.Uuid
